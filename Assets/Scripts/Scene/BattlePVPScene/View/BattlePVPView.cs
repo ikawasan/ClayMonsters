@@ -1,6 +1,6 @@
 using Extensions;
 using LighthouseExtends.UIComponent.Button;
-using Scene.BattlePVPScene.Interfaces;
+using Scene.BattlePVPScene.Interface;
 using System;
 using UnityEngine;
 

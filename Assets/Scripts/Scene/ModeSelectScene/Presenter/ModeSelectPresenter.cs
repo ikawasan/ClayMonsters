@@ -1,6 +1,6 @@
 using Cysharp.Threading.Tasks;
-using Scene.Core.Interfaces;
-using Scene.ModeSelectScene.Interfaces;
+using Scene.Core.Interface;
+using Scene.ModeSelectScene.Interface;
 using VContainer;
 
 namespace Scene.ModeSelectScene.Presenter

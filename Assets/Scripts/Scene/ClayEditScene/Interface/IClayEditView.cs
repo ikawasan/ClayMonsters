@@ -1,6 +1,6 @@
 using System;
 
-namespace Scene.ClayEditScene.Interfaces
+namespace Scene.ClayEditScene.Interface
 {
     public interface IClayEditView
     {

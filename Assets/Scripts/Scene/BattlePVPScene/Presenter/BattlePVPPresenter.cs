@@ -1,6 +1,6 @@
 using Cysharp.Threading.Tasks;
-using Scene.BattlePVPScene.Interfaces;
-using Scene.Core.Interfaces;
+using Scene.BattlePVPScene.Interface;
+using Scene.Core.Interface;
 using VContainer;
 
 namespace Scene.BattlePVPScene.Presenter

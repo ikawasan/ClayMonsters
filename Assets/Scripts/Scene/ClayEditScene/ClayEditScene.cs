@@ -1,7 +1,7 @@
 using Cysharp.Threading.Tasks;
 using Lighthouse.Scene;
 using Lighthouse.Scene.SceneBase;
-using Scene.ClayEditScene.Interfaces;
+using Scene.ClayEditScene.Interface;
 using Scene.Core;
 using VContainer;
 

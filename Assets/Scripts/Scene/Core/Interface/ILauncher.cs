@@ -1,6 +1,6 @@
 using Cysharp.Threading.Tasks;
 
-namespace Scene.Core
+namespace Scene.Core.Interface
 {
     public interface ILauncher
     {

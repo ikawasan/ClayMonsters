@@ -1,4 +1,4 @@
-namespace Scene.BattleNpcScene.Interfaces
+namespace Scene.BattleNpcScene.Interface
 {
     public interface IBattleNpcPresenter
     {

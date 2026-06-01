@@ -1,5 +1,6 @@
 using Cysharp.Threading.Tasks;
 using Lighthouse.Scene;
+using Scene.Core.Interface;
 using UnityEngine;
 using VContainer;
 using static Scene.TitleScene.TitleScene;

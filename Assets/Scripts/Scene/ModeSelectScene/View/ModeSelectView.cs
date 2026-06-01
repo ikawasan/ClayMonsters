@@ -1,6 +1,6 @@
 using Extensions;
 using LighthouseExtends.UIComponent.Button;
-using Scene.ModeSelectScene.Interfaces;
+using Scene.ModeSelectScene.Interface;
 using System;
 using UnityEngine;
 

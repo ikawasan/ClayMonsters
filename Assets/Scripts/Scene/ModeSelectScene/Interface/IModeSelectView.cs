@@ -1,7 +1,6 @@
 using System;
-using UnityEngine;
 
-namespace Scene.ModeSelectScene.Interfaces
+namespace Scene.ModeSelectScene.Interface
 {
     public interface IModeSelectView
     {

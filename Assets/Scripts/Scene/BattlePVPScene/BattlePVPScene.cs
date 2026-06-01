@@ -1,7 +1,7 @@
 using Cysharp.Threading.Tasks;
 using Lighthouse.Scene;
 using Lighthouse.Scene.SceneBase;
-using Scene.BattlePVPScene.Interfaces;
+using Scene.BattlePVPScene.Interface;
 using Scene.Core;
 using VContainer;
 

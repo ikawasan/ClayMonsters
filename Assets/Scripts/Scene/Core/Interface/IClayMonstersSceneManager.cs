@@ -1,7 +1,7 @@
 using Cysharp.Threading.Tasks;
 using Lighthouse.Scene;
 
-namespace Scene.Core.Interfaces
+namespace Scene.Core.Interface
 {
     public interface IClayMonsterSceneManager
     {

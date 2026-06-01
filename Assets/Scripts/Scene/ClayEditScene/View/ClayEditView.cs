@@ -1,6 +1,6 @@
 using Extensions;
 using LighthouseExtends.UIComponent.Button;
-using Scene.ClayEditScene.Interfaces;
+using Scene.ClayEditScene.Interface;
 using System;
 using UnityEngine;
 

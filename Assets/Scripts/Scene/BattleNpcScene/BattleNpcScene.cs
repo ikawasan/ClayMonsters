@@ -1,7 +1,7 @@
 using Cysharp.Threading.Tasks;
 using Lighthouse.Scene;
 using Lighthouse.Scene.SceneBase;
-using Scene.BattleNpcScene.Interfaces;
+using Scene.BattleNpcScene.Interface;
 using Scene.Core;
 using VContainer;
 

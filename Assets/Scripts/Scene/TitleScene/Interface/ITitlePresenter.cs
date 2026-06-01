@@ -1,4 +1,4 @@
-namespace Scene.TitleScene.Interfaces
+namespace Scene.TitleScene.Interface
 {
     public interface ITitlePresenter
     {

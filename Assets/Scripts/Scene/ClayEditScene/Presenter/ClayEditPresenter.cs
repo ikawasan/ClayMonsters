@@ -1,6 +1,6 @@
 using Cysharp.Threading.Tasks;
-using Scene.ClayEditScene.Interfaces;
-using Scene.Core.Interfaces;
+using Scene.ClayEditScene.Interface;
+using Scene.Core.Interface;
 using VContainer;
 
 namespace Scene.ClayEditScene.Presenter

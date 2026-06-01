@@ -1,4 +1,4 @@
-namespace Scene.BattlePVPScene.Interfaces
+namespace Scene.BattlePVPScene.Interface
 {
     public interface IBattlePVPPresenter
     {
