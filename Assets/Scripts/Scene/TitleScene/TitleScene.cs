@@ -2,7 +2,7 @@ using Cysharp.Threading.Tasks;
 using Lighthouse.Scene;
 using Lighthouse.Scene.SceneBase;
 using Scene.Core;
-using Scene.TitleScene.Interfaces;
+using Scene.TitleScene.Interface;
 using VContainer;
 
 namespace Scene.TitleScene

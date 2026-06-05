@@ -1,34 +1,40 @@
 using Cysharp.Threading.Tasks;
-using Scene.Core.Interfaces;
-using Scene.TitleScene.Interfaces;
+using Scene.Core.Interface;
+using Scene.TitleScene.Interface;
+using UI.Option.Interface;
 using VContainer;
 
 namespace Scene.TitleScene.Presenter
 {
     public class TitlePresenter : ITitlePresenter
     {
-        IClayMonsterSceneManager sceneManager;
-        ITitleView titleView;
+        readonly IClayMonsterSceneManager sceneManager;
+        readonly ITitleView titleView;
+        readonly IOptionPresenter optionPresenter;
 
         [Inject]
-        public void Construct(IClayMonsterSceneManager sceneManager, ITitleView titleView)
+        public TitlePresenter(
+            IClayMonsterSceneManager sceneManager,
+            ITitleView titleView,
+            IOptionPresenter optionPresenter)
         {
             this.sceneManager = sceneManager;
             this.titleView = titleView;
+            this.optionPresenter = optionPresenter;
         }
 
         void ITitlePresenter.Setup()
         {
-            // Viewからボタンクリックイベントを購読
             titleView.SubscribeScreenButtonClick(OnClickScreenButton);
+            titleView.SubscribeOptionButtonClick(OnClickOptionButton);
         }
 
         void OnClickScreenButton()
         {
             if (sceneManager.IsTransition) return;
-
-            // モード選択シーン（ModeSelect）へ遷移する
             sceneManager.TransitionScene(new ModeSelectScene.ModeSelectScene.ModeSelectTransitionData()).Forget();
         }
+
+        void OnClickOptionButton() => optionPresenter.Show();
     }
 }

@@ -1,5 +1,6 @@
 using Scene.TitleScene.Presenter;
 using Scene.TitleScene.View;
+using UI.Option.View;
 using UnityEngine;
 using VContainer;
 using VContainer.Unity;
@@ -16,7 +17,6 @@ namespace Scene.TitleScene
             // Scene本体の登録
             builder.RegisterComponent(titleScene);
 
-            // Viewをインターフェース経由でバインド
             builder.RegisterComponent(titleView).AsImplementedInterfaces();
 
             // Presenterをシングルトンライフサイクルで登録
