@@ -8,13 +8,17 @@ namespace Scene.TitleScene.View
 {
     public class TitleView : MonoBehaviour, ITitleView
     {
-        [SerializeField]
-        LHButton screenButton;
+        [SerializeField] LHButton newGameButton;
 
-        [SerializeField]
-        LHButton optionButton;
+        [SerializeField] LHButton continueButton;
 
-        IDisposable ITitleView.SubscribeScreenButtonClick(Action action) => screenButton.SubscribeOnClick(action);
+        [SerializeField] LHButton optionButton;
+
+        [SerializeField] LHButton quitGameButton;
+
+        public IDisposable SubscribeNewGameButtonClick(Action action) => newGameButton.SubscribeOnClick(action);
+        public IDisposable SubscribeContinueButtonClick(Action action) => continueButton.SubscribeOnClick(action);
         public IDisposable SubscribeOptionButtonClick(Action action) => optionButton.SubscribeOnClick(action);
+        public IDisposable SubscribeQuitGameButtonClick(Action action) => quitGameButton.SubscribeOnClick(action);
     }
 }

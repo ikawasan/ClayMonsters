@@ -25,16 +25,35 @@ namespace Scene.TitleScene.Presenter
 
         void ITitlePresenter.Setup()
         {
-            titleView.SubscribeScreenButtonClick(OnClickScreenButton);
+            titleView.SubscribeNewGameButtonClick(OnClickNewGameButton);
+            titleView.SubscribeContinueButtonClick(OnClickContinueButton);
             titleView.SubscribeOptionButtonClick(OnClickOptionButton);
+            titleView.SubscribeQuitGameButtonClick(OnClickQuitGameButton);
         }
 
-        void OnClickScreenButton()
+        void OnClickNewGameButton()
+        {
+            if (sceneManager.IsTransition) return;
+            sceneManager.TransitionScene(new ModeSelectScene.ModeSelectScene.ModeSelectTransitionData()).Forget();
+        }
+
+        void OnClickContinueButton()
         {
             if (sceneManager.IsTransition) return;
             sceneManager.TransitionScene(new ModeSelectScene.ModeSelectScene.ModeSelectTransitionData()).Forget();
         }
 
         void OnClickOptionButton() => optionPresenter.Show();
+
+        void OnClickQuitGameButton()
+        {
+#if UNITY_EDITOR
+            // Unityエディタ上でのプレイモードを終了する
+            UnityEditor.EditorApplication.isPlaying = false;
+#else
+    // ビルドされた実際のアプリを終了する
+    UnityEngine.Application.Quit();
+#endif
+        }
     }
 }
