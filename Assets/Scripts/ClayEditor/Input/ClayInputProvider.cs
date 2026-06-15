@@ -1,0 +1,137 @@
+using ClayEditor.Input.Interface;
+using R3;
+using System;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
+using VContainer.Unity;
+
+namespace ClayEditor.Input
+{
+    /// <summary>
+    /// 入力情報を提供するクラス
+    /// </summary>
+    public sealed class ClayInputProvider : IClayInputProvider, ITickable, IDisposable
+    {
+        // イベント用 Subject
+        private readonly Subject<Unit> onUndo = new();
+        private readonly Subject<Unit> onRedo = new();
+        private readonly Subject<Unit> onDelete = new();
+        private readonly Subject<Unit> onPrimaryPressed = new();
+        private readonly Subject<Unit> onSecondaryPressed = new();
+        private readonly Subject<float> onScroll = new();
+        private readonly ReactiveProperty<bool> isPointerOverUI = new(false);
+
+        /// <inheritdoc />
+        public Observable<Unit> OnUndo => onUndo;
+
+        /// <inheritdoc />
+        public Observable<Unit> OnRedo => onRedo;
+
+        /// <inheritdoc />
+        public Observable<Unit> OnDelete => onDelete;
+
+        /// <inheritdoc />
+        public Observable<Unit> OnPrimaryPressed => onPrimaryPressed;
+
+        /// <inheritdoc />
+        public Observable<Unit> OnSecondaryPressed => onSecondaryPressed;
+
+        /// <inheritdoc />
+        public Observable<float> OnScroll => onScroll;
+
+        /// <inheritdoc />
+        public Observable<bool> OnPointerOverUIChanged => isPointerOverUI;
+
+        /// <inheritdoc />
+        public Vector2 PointerPosition { get; private set; }
+
+        /// <inheritdoc />
+        public bool IsPointerOverUI { get; private set; }
+
+        /// <inheritdoc />
+        public bool IsPrimaryHeld { get; private set; }
+
+        /// <inheritdoc />
+        public bool IsSecondaryHeld { get; private set; }
+
+        /// <inheritdoc />
+        public bool IsShiftPressed { get; private set; }
+
+        /// <inheritdoc />
+        public bool IsCtrlPressed { get; private set; }
+
+        /// <inheritdoc />
+        public bool IsAltPressed { get; private set; }
+
+        // スクロールの微小値しきい値
+        private const float ScrollThreshold = 0.01f;
+
+        /// <inheritdoc />
+        public void Tick()
+        {
+            var mouse = Mouse.current;
+            var keyboard = Keyboard.current;
+            if (mouse == null || keyboard == null)
+            {
+                return;
+            }
+
+            // 現在フレームの状態を更新
+            isPointerOverUI.Value = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+            PointerPosition = mouse.position.ReadValue();
+            IsShiftPressed = keyboard.shiftKey.isPressed;
+            IsCtrlPressed = keyboard.ctrlKey.isPressed;
+            IsAltPressed = keyboard.altKey.isPressed;
+            IsPrimaryHeld = mouse.leftButton.isPressed;
+            IsSecondaryHeld = mouse.rightButton.isPressed;
+
+            // UI 上にポインタがある間は造形系の入力イベントを発火しない
+            if (!IsPointerOverUI)
+            {
+                if (IsCtrlPressed && keyboard.zKey.wasPressedThisFrame)
+                {
+                    onUndo.OnNext(Unit.Default);
+                }
+
+                if (IsCtrlPressed && keyboard.yKey.wasPressedThisFrame)
+                {
+                    onRedo.OnNext(Unit.Default);
+                }
+
+                if (keyboard.deleteKey.wasPressedThisFrame)
+                {
+                    onDelete.OnNext(Unit.Default);
+                }
+
+                float scroll = mouse.scroll.ReadValue().y;
+                if (Mathf.Abs(scroll) > ScrollThreshold)
+                {
+                    onScroll.OnNext(scroll);
+                }
+
+                if (mouse.leftButton.wasPressedThisFrame)
+                {
+                    onPrimaryPressed.OnNext(Unit.Default);
+                }
+
+                if (mouse.rightButton.wasPressedThisFrame)
+                {
+                    onSecondaryPressed.OnNext(Unit.Default);
+                }
+            }
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            isPointerOverUI.Dispose();
+            onUndo.Dispose();
+            onRedo.Dispose();
+            onDelete.Dispose();
+            onPrimaryPressed.Dispose();
+            onSecondaryPressed.Dispose();
+            onScroll.Dispose();
+        }
+    }
+}
