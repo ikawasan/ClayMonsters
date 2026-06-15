@@ -1,0 +1,21 @@
+{
+    "name": "UI.ClayEditor",
+    "rootNamespace": "UI.ClayEditor",
+    "references": [
+        "GUID:77221876cc6b8244180b96e320b1bcd4",
+        "GUID:b0214a6008ed146ff8f122a6a9c2f6cc",
+        "GUID:d7694bb812d65f54caff9e2e3980d336",
+        "GUID:6055be8ebefd69e48b49212b09b47b2f",
+        "GUID:ef67cc05b2e697c49b2c3392cf4a1ce0",
+        "GUID:55a1ca089b0a4ca48aa79b5d0adfbfc8"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
