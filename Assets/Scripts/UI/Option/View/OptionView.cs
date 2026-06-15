@@ -3,6 +3,7 @@ using LighthouseExtends.UIComponent.Button;
 using System;
 using UI.Option.Interface;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
 namespace UI.Option.View
@@ -11,7 +12,7 @@ namespace UI.Option.View
     {
         [SerializeField] Canvas canvas;
         [SerializeField] LHButton closeButton;
-        [SerializeField] Slider resolutionSlider;
+
         [SerializeField] Toggle fullScreenToggle;
         [SerializeField] Slider brightnessSlider;
         [SerializeField] Toggle vSyncToggle;
@@ -21,19 +22,15 @@ namespace UI.Option.View
 
         private void Awake()
         {
-            closeButton.SubscribeOnClick(Hide);
             Hide();
         }
 
         public void Show() => canvas.enabled = true;
-        public void Hide()=> canvas.enabled = false;
+        public void Hide() => canvas.enabled = false;
 
-        public IDisposable SubscribeCloseButtonClick(Action action) => closeButton.SubscribeOnClick(action);
 
-        public void InitVideoSettings(int resolutionMax, int resolutionCurrent, bool isFullScreen, float brightness, bool isVSync)
+        public void InitVideoSettings(bool isFullScreen, float brightness, bool isVSync)
         {
-            resolutionSlider.maxValue = resolutionMax;
-            resolutionSlider.SetValueWithoutNotify(resolutionCurrent);
             fullScreenToggle.SetIsOnWithoutNotify(isFullScreen);
             brightnessSlider.SetValueWithoutNotify(brightness);
             vSyncToggle.SetIsOnWithoutNotify(isVSync);
@@ -45,12 +42,13 @@ namespace UI.Option.View
             soundEffectSlider.SetValueWithoutNotify(soundEffectVolume);
         }
 
-        public void SubscribeResolutionChanged(Action<float> action) => resolutionSlider.onValueChanged.AddListener(val => action(val));
-        public void SubscribeFullScreenChanged(Action<bool> action) => fullScreenToggle.onValueChanged.AddListener(val => action(val));
-        public void SubscribeBrightnessChanged(Action<float> action) => brightnessSlider.onValueChanged.AddListener(val => action(val));
-        public void SubscribeVSyncChanged(Action<bool> action) => vSyncToggle.onValueChanged.AddListener(val => action(val));
+        public IDisposable SubscribeCloseButtonClick(Action action) => closeButton.SubscribeOnClick(action);
 
-        public void SubscribeMusicVolumeChanged(Action<float> action) => musicVolumeSlider.onValueChanged.AddListener(val => action(val));
-        public void SubscribeSoundEffectVolumeChanged(Action<float> action) => soundEffectSlider.onValueChanged.AddListener(val => action(val));
+        public void SubscribeFullScreenChanged(UnityAction<bool> action) => fullScreenToggle.onValueChanged.AddListener(action);
+        public void SubscribeBrightnessChanged(UnityAction<float> action) => brightnessSlider.onValueChanged.AddListener(action);
+        public void SubscribeVSyncChanged(UnityAction<bool> action) => vSyncToggle.onValueChanged.AddListener(action);
+
+        public void SubscribeMusicVolumeChanged(UnityAction<float> action) => musicVolumeSlider.onValueChanged.AddListener(action);
+        public void SubscribeSoundEffectVolumeChanged(UnityAction<float> action) => soundEffectSlider.onValueChanged.AddListener(action);
     }
 }

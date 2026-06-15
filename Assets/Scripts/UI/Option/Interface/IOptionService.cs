@@ -4,14 +4,16 @@ namespace UI.Option.Interface
 {
     public interface IOptionService
     {
-        Resolution[] GetSupportedResolutions();
-        float GetBrightness();
+        bool GetFullScreen { get; }
+        bool GetVSync { get; }
+        float GetBrightness { get; }
+        float GetMusicVolume { get; }
+        float GetSoundEffectVolume { get; }
 
-        void ApplyResolution(int index);
-        void ApplyFullScreen(bool isFullScreen);
-        void ApplyVSync(bool isVSync);
-        void ApplyBrightness(float brightness);
-        void ApplyMusicVolume(float volume);
-        void ApplySoundEffectVolume(float volume);
+        void SetFullScreen(bool isFullScreen);
+        void SetVSync(bool isVSync);
+        void SetBrightness(float brightness);
+        void SetMusicVolume(float volume);
+        void SetSoundEffectVolume(float volume);
     }
 }

@@ -1,3 +1,4 @@
+using SaveData;
 using UI.Option.Interface;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -10,7 +11,7 @@ namespace UI.Option.Service
     {
         private readonly VolumeProfile globalVolumeProfile;
         private readonly ColorAdjustments colorAdjustments;
-        private static readonly string BrightnessKey = "Settings_Brightness";
+        private readonly SaveData.SaveData currentSaveData;
 
         [Inject]
         public OptionService(VolumeProfile profile)
@@ -21,57 +22,99 @@ namespace UI.Option.Service
             {
                 globalVolumeProfile.TryGet(out colorAdjustments);
             }
+
+            currentSaveData = SaveDataManager.Load();
+
+            // ‹N“®Žž‚Éƒ[ƒh‚µ‚½Ý’è‚ðƒQ[ƒ€“à‚É”½‰f‚³‚¹‚é
+            ApplySettings();
         }
 
-        public float GetBrightness()
+        private void SaveOptions()
         {
-            return PlayerPrefs.GetFloat(BrightnessKey, 0.5f);
+            SaveDataManager.Save(currentSaveData);
         }
 
-        public void ApplyBrightness(float brightness)
+        private void ApplySettings()
+        {
+            ApplyBrightness(currentSaveData.VideoOptionData.Brightness);
+            ApplyFullScreen(currentSaveData.VideoOptionData.IsFullScreen);
+            ApplyVSync(currentSaveData.VideoOptionData.VSync);
+            ApplyMusicVolume(currentSaveData.SoundOptionData.MusicVolume);
+            ApplySoundEffectVolume(currentSaveData.SoundOptionData.SoundEffectVolume);
+        }
+
+        private void ApplyBrightness(float brightness)
         {
             if (colorAdjustments != null)
             {
                 float mappedExposure = Mathf.Lerp(-2f, 2f, brightness);
                 colorAdjustments.postExposure.value = mappedExposure;
             }
-
-            PlayerPrefs.SetFloat(BrightnessKey, brightness);
         }
 
-        public Resolution[] GetSupportedResolutions()
-        {
-            return Screen.resolutions;
-        }
-
-        public void ApplyResolution(int index)
-        {
-            var resolutions = Screen.resolutions;
-            if (index >= 0 && index < resolutions.Length)
-            {
-                var target = resolutions[index];
-                Screen.SetResolution(target.width, target.height, Screen.fullScreen);
-            }
-        }
-
-        public void ApplyFullScreen(bool isFullScreen)
+        private static void ApplyFullScreen(bool isFullScreen)
         {
             Screen.fullScreen = isFullScreen;
         }
 
-        public void ApplyVSync(bool isVSync)
+        private static void ApplyVSync(bool isVSync)
         {
             QualitySettings.vSyncCount = isVSync ? 1 : 0;
         }
 
-        public void ApplyMusicVolume(float volume)
+        private static void ApplyMusicVolume(float volume)
         {
 
         }
 
-        public void ApplySoundEffectVolume(float volume)
+        private static void ApplySoundEffectVolume(float volume)
         {
 
+        }
+
+        public bool GetFullScreen => currentSaveData.VideoOptionData.IsFullScreen;
+
+        public bool GetVSync => currentSaveData.VideoOptionData.VSync;
+
+        public float GetBrightness => currentSaveData.VideoOptionData.Brightness;
+
+        public float GetMusicVolume => currentSaveData.SoundOptionData.MusicVolume;
+
+        public float GetSoundEffectVolume => currentSaveData.SoundOptionData.SoundEffectVolume;
+
+        public void SetFullScreen(bool isFullScreen)
+        {
+            currentSaveData.VideoOptionData.IsFullScreen = isFullScreen;
+            ApplyFullScreen(isFullScreen);
+            SaveOptions();
+        }
+
+        public void SetBrightness(float brightness)
+        {
+            currentSaveData.VideoOptionData.Brightness = brightness;
+            ApplyBrightness(brightness);
+            SaveOptions();
+        }
+
+        public void SetVSync(bool isVSync)
+        {
+            currentSaveData.VideoOptionData.VSync = isVSync;
+            ApplyVSync(isVSync);
+            SaveOptions();
+        }
+
+        public void SetMusicVolume(float volume)
+        {
+            currentSaveData.SoundOptionData.MusicVolume = volume;
+            ApplyMusicVolume(volume);
+            SaveOptions();
+        }
+
+        public void SetSoundEffectVolume(float volume)
+        {
+            currentSaveData.SoundOptionData.SoundEffectVolume = volume;
+            ApplySoundEffectVolume(volume);
+            SaveOptions();
         }
     }
 }
