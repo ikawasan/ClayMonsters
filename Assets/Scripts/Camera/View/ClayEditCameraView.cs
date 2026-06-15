@@ -89,7 +89,7 @@ namespace Camera.View
 
         private void ReadPresetInput(Keyboard keyboard)
         {
-            if (keyboard.numpad1Key.wasPressedThisFrame || keyboard.digit1Key.wasPressedThisFrame || keyboard.zKey.wasPressedThisFrame)
+            if (keyboard.numpad1Key.wasPressedThisFrame || keyboard.digit1Key.wasPressedThisFrame || (keyboard.zKey.wasPressedThisFrame && !keyboard.ctrlKey.isPressed))
             {
                 cameraModel.SetFrontView();
             }
