@@ -34,9 +34,7 @@ namespace Scene.Core
             builder.RegisterInstance(clayMonstersLifetimeScopeSettings);
             builder.RegisterInstance(globalPostProcessProfile);
             builder.Register<OptionService>(Lifetime.Singleton).AsImplementedInterfaces();
-            builder.RegisterComponentInNewPrefab(optionViewPrefab, Lifetime.Singleton)
-                   .DontDestroyOnLoad()
-                   .AsImplementedInterfaces();
+            builder.RegisterComponent(optionViewPrefab).AsImplementedInterfaces();
             builder.Register<OptionPresenter>(Lifetime.Singleton).AsImplementedInterfaces();
 
 

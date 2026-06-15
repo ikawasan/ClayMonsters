@@ -19,14 +19,44 @@ namespace Scene.ClayEditScene.Presenter
 
         void IClayEditPresenter.Setup()
         {
-            // バトル終了（または戻るボタン）のイベントを登録
-            clayEditView.SubscribeReturnButtonClick(OnClickReturnButton);
+            // イベントを登録
+            clayEditView.SubscribeOpenToModeSelectSceneWindowButtonClick(OpenToModeSelectSceneButton);
+            clayEditView.SubscribeToModeSelectSceneButtonClick(ToModeSelectSceneButton);
+            clayEditView.SubscribeCancelToModeSelectSceneButtonClick(CancelToModeSelectSceneButton);
+            clayEditView.SubscribeOpenSaveWindowButtonClick(OpenSaveWindowButton);
+            clayEditView.SubscribeSaveButtonClick(SaveButton);
+            clayEditView.SubscribeCancelSaveButtonClick(CancelSaveButton);
         }
 
-        void OnClickReturnButton()
+        void IClayEditPresenter.OnEnter()
         {
-            // モード選択シーンの履歴がスタックに残っているため、BackSceneで戻る
+            clayEditView.Inisialize();
+        }
+
+        void OpenToModeSelectSceneButton()
+        {
+            clayEditView.CheckToModeSelectSceneWindow.enabled = true;
+        }
+        void ToModeSelectSceneButton()
+        {
             sceneManager.BackScene().Forget();
+        }
+        void CancelToModeSelectSceneButton()
+        {
+            clayEditView.CheckToModeSelectSceneWindow.enabled = false;
+        }
+
+        void OpenSaveWindowButton()
+        {
+            clayEditView.CheckSaveWindow.enabled = true;
+        }
+        void SaveButton()
+        {
+            sceneManager.BackScene().Forget();
+        }
+        void CancelSaveButton()
+        {
+            clayEditView.CheckSaveWindow.enabled = false;
         }
     }
 }
