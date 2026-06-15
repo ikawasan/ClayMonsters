@@ -140,24 +140,17 @@ namespace ClayEditor
         #region ゲーム実行時（Game画面 / ビルド製品版）の描画オブジェクト生成処理
         private void InitializeRuntimeVisualizer()
         {
-            if (visualizerMaterial == null)
-            {
-                // マテリアルが未指定の場合はシンプルなUnlit系を簡易生成
-                visualizerMaterial = new Material(Shader.Find("Sprites/Default"));
-            }
-
             // 生成したオブジェクトを散らかさないためのコンテナ
             containerObject = new GameObject("BoneVisualizer_Runtime");
-            containerObject.transform.SetParent(transform, false);
+
+            // ★修正1: モデルの極小スケールを引き継がないよう、親に設定する処理を削除（ルートに置く）
+            // containerObject.transform.SetParent(transform, false); // ← この行を削除またはコメントアウト
 
             if (targetRenderer != null && targetRenderer.bones != null && targetRenderer.bones.Length > 0)
             {
                 foreach (Transform bone in targetRenderer.bones)
                 {
-                    if (bone == null)
-                    {
-                        continue;
-                    }
+                    if (bone == null) continue;
                     CreateRuntimeObjects(bone, bone.parent);
                 }
             }
@@ -208,6 +201,7 @@ namespace ClayEditor
                 lr.startWidth = lr.endWidth = boneWidth;
                 lr.positionCount = 2;
                 lr.useWorldSpace = true;
+                lr.sortingOrder = -1;
 
                 pair.lineRenderer = lr;
             }
@@ -229,7 +223,9 @@ namespace ClayEditor
                 {
                     pair.jointSphere.position = pair.bone.position;
                     float size = CalculateJointSize(pair.bone, pair.parent);
-                    pair.jointSphere.localScale = Vector3.one * size;
+
+                    // ★修正3: Gizmos(半径)とSphere(直径)の仕様差を合わせるため「2倍」にする
+                    pair.jointSphere.localScale = Vector3.one * (size * 2f);
                 }
 
                 // ボーン線の位置を更新
