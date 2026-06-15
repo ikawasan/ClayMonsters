@@ -1,0 +1,146 @@
+﻿#pragma kernel InitializeVoxelData
+#pragma kernel GenerateMesh
+#pragma kernel ModifyVoxels
+
+#include "MarchingCubesTables.hlsl"
+
+struct Triangle
+{
+    float3 v1, v2, v3;
+    float3 n1, n2, n3;
+};
+
+AppendStructuredBuffer<Triangle> _Triangles;
+RWStructuredBuffer<float> _Voxels;
+
+int _Size;
+float _IsoLevel;
+float _Scale;
+float3 _Offset; // 中心にずらすためのオフセット値
+
+float3 _HitPosition; // ローカル座標
+float _ModRadius;
+float _ModStrength;
+
+int GetIndex(int x, int y, int z)
+{
+    return x * (_Size + 1) * (_Size + 1) + y * (_Size + 1) + z;
+}
+
+[numthreads(8, 8, 8)]
+void InitializeVoxelData(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x > (uint) _Size || id.y > (uint) _Size || id.z > (uint) _Size)
+    {
+        return;
+    }
+
+    int idx = GetIndex(id.x, id.y, id.z);
+    float3 localPos = (float3) id * _Scale - _Offset;
+    
+    // 中心に球体を作成
+    float dist = length(localPos);
+    float initialRadius = (_Size * _Scale) * 0.25;
+    float val = initialRadius - dist;
+    
+    if (id.x == 0 || id.x == (uint) _Size || id.y == 0 || id.y == (uint) _Size || id.z == 0 || id.z == (uint) _Size)
+    {
+        val = -1.0;
+    }
+
+    _Voxels[idx] = val;
+}
+
+float3 Interpolate(float3 p1, float v1, float3 p2, float v2)
+{
+    return p1 + (_IsoLevel - v1) * (p2 - p1) / (v2 - v1);
+}
+
+float3 GetNormalAt(uint3 p)
+{
+    float3 n;
+    n.x = _Voxels[GetIndex(clamp(p.x + 1, 0, _Size), p.y, p.z)] - _Voxels[GetIndex(clamp(p.x - 1, 0, _Size), p.y, p.z)];
+    n.y = _Voxels[GetIndex(p.x, clamp(p.y + 1, 0, _Size), p.z)] - _Voxels[GetIndex(p.x, clamp(p.y - 1, 0, _Size), p.z)];
+    n.z = _Voxels[GetIndex(p.x, p.y, clamp(p.z + 1, 0, _Size))] - _Voxels[GetIndex(p.x, p.y, clamp(p.z - 1, 0, _Size))];
+    return -normalize(n);
+}
+
+[numthreads(8, 8, 8)]
+void GenerateMesh(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint) _Size || id.y >= (uint) _Size || id.z >= (uint) _Size)
+    {
+        return;
+    }
+
+    float vals[8];
+    float3 cornerNormals[8];
+    int cubeIndex = 0;
+    
+    for (int i = 0; i < 8; i++)
+    {
+        uint3 p = id + (uint3) cornerOffsets[i];
+        vals[i] = _Voxels[GetIndex(p.x, p.y, p.z)];
+        cubeIndex |= (int(vals[i] > _IsoLevel) << i);
+        cornerNormals[i] = GetNormalAt(p);
+    }
+    
+    for (int i = 0; triTable[cubeIndex][i] != -1; i += 3)
+    {
+        Triangle tri;
+        
+        // 頂点1
+        int e1 = triTable[cubeIndex][i];
+        int c1_1 = edgeTable[e1][0];
+        int c2_1 = edgeTable[e1][1];
+        float3 p1_1 = (float3) (id + (uint3) cornerOffsets[c1_1]) * _Scale;
+        float3 p2_1 = (float3) (id + (uint3) cornerOffsets[c2_1]) * _Scale;
+        tri.v1 = Interpolate(p1_1, vals[c1_1], p2_1, vals[c2_1]) - _Offset;
+        tri.n1 = normalize(lerp(cornerNormals[c1_1], cornerNormals[c2_1], (_IsoLevel - vals[c1_1]) / (vals[c2_1] - vals[c1_1])));
+
+        // 頂点2
+        int e2 = triTable[cubeIndex][i + 1];
+        int c1_2 = edgeTable[e2][0];
+        int c2_2 = edgeTable[e2][1];
+        float3 p1_2 = (float3) (id + (uint3) cornerOffsets[c1_2]) * _Scale;
+        float3 p2_2 = (float3) (id + (uint3) cornerOffsets[c2_2]) * _Scale;
+        tri.v2 = Interpolate(p1_2, vals[c1_2], p2_2, vals[c2_2]) - _Offset;
+        tri.n2 = normalize(lerp(cornerNormals[c1_2], cornerNormals[c2_2], (_IsoLevel - vals[c1_2]) / (vals[c2_2] - vals[c1_2])));
+
+        // 頂点3
+        int e3 = triTable[cubeIndex][i + 2];
+        int c1_3 = edgeTable[e3][0];
+        int c2_3 = edgeTable[e3][1];
+        float3 p1_3 = (float3) (id + (uint3) cornerOffsets[c1_3]) * _Scale;
+        float3 p2_3 = (float3) (id + (uint3) cornerOffsets[c2_3]) * _Scale;
+        tri.v3 = Interpolate(p1_3, vals[c1_3], p2_3, vals[c2_3]) - _Offset;
+        tri.n3 = normalize(lerp(cornerNormals[c1_3], cornerNormals[c2_3], (_IsoLevel - vals[c1_3]) / (vals[c2_3] - vals[c1_3])));
+
+        _Triangles.Append(tri);
+    }
+}
+
+[numthreads(8, 8, 8)]
+void ModifyVoxels(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x > (uint) _Size || id.y > (uint) _Size || id.z > (uint) _Size)
+    {
+        return;
+    }
+    
+    // 境界のボクセルは編集させない
+    if (id.x == 0 || id.x == (uint) _Size || id.y == 0 || id.y == (uint) _Size || id.z == 0 || id.z == (uint) _Size)
+    {
+        return;
+    }
+
+    float3 localPos = (float3) id * _Scale - _Offset;
+    float dist = distance(localPos, _HitPosition);
+    
+    if (dist < _ModRadius)
+    {
+        float influence = (1.0 - pow(dist / _ModRadius, 2.0)) * _ModStrength;
+        int idx = GetIndex(id.x, id.y, id.z);
+        _Voxels[idx] += influence;
+    }
+}
