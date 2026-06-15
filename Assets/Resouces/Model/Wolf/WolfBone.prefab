@@ -1143,7 +1143,7 @@ MonoBehaviour:
   boneColor: {r: 0, g: 1, b: 1, a: 1}
   jointColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   drawOnlyWhenSelected: 0
-  visualizerMaterial: {fileID: 0}
+  visualizerMaterial: {fileID: 2100000, guid: 54ed2fb1883d5af45b4c68d7ca11ea85, type: 2}
   autoJointSize: 1
   jointSizeRatio: 0.1
   baseJointSize: 0.05
