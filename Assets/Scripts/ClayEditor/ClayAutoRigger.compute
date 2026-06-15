@@ -1,0 +1,69 @@
+﻿#pragma kernel CalculateBoneWeights
+
+// C#側とメモリレイアウトを合わせるための構造体
+struct BoneWeightData
+{
+    float weight0, weight1, weight2, weight3;
+    int boneIndex0, boneIndex1, boneIndex2, boneIndex3;
+};
+
+RWStructuredBuffer<BoneWeightData> _BoneWeights;
+StructuredBuffer<float3> _Vertices;
+StructuredBuffer<float3> _BonePositions;
+
+int _VertexCount;
+int _BoneCount;
+float4x4 _LocalToWorld;
+
+[numthreads(64, 1, 1)]
+void CalculateBoneWeights(uint3 id : SV_DispatchThreadID)
+{
+    // 頂点数を超えたスレッドは処理しない
+    if (id.x >= (uint) _VertexCount)
+        return;
+
+    // ローカル座標からワールド座標へ変換
+    float3 localPos = _Vertices[id.x];
+    float3 worldPos = mul(_LocalToWorld, float4(localPos, 1.0)).xyz;
+
+    int b0 = 0;
+    int b1 = 0;
+    float d0 = 3.402823466e+38F; // floatの最大値
+    float d1 = 3.402823466e+38F;
+
+    // すべてのボーンとの距離を計算し、近い2つのボーンを特定
+    for (int i = 0; i < _BoneCount; i++)
+    {
+        float d = distance(worldPos, _BonePositions[i]);
+        if (d < d0)
+        {
+            d1 = d0;
+            b1 = b0;
+            d0 = d;
+            b0 = i;
+        }
+        else if (d < d1)
+        {
+            d1 = d;
+            b1 = i;
+        }
+    }
+
+    // 距離の逆数を使ってウェイトを正規化
+    float w0 = 1.0 / max(d0, 0.001);
+    float w1 = 1.0 / max(d1, 0.001);
+    float sum = w0 + w1;
+
+    // 構造体に格納してバッファへ書き込み
+    BoneWeightData bw;
+    bw.weight0 = w0 / sum;
+    bw.weight1 = w1 / sum;
+    bw.weight2 = 0.0;
+    bw.weight3 = 0.0;
+    bw.boneIndex0 = b0;
+    bw.boneIndex1 = b1;
+    bw.boneIndex2 = 0;
+    bw.boneIndex3 = 0;
+
+    _BoneWeights[id.x] = bw;
+}
