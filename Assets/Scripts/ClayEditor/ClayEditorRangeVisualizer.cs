@@ -23,6 +23,7 @@ namespace ClayEditor
             lr.useWorldSpace = false; lr.startWidth = lr.endWidth = 0.05f;
             lr.material = new Material(Shader.Find("Sprites/Default"));
             lr.startColor = lr.endColor = wireframeColor;
+            lr.sortingOrder = -1;
 
             float s = (size * scale) * 0.5f;
             Vector3[] p = {
