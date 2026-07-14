@@ -9,10 +9,10 @@ namespace Scene.Core.Interface
 
         UniTask TransitionScene(
             TransitionDataBase nextTransitionData,
-            TransitionType transitionType = TransitionType.Auto,
+            TransitionType transitionType = TransitionType.Exclusive,
             MainSceneId backMainSceneId = default);
 
-        UniTask BackScene(TransitionType transitionType = TransitionType.Auto);
+        UniTask BackScene(TransitionType transitionType = TransitionType.Exclusive);
 
         UniTask PreReboot();
     }

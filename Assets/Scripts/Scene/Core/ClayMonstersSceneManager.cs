@@ -1,5 +1,9 @@
+using Audio;
+using Audio.Interface;
 using Cysharp.Threading.Tasks;
+using Camera.Utility;
 using Lighthouse.Scene;
+using Scene.Core;
 using Scene.Core.Interface;
 using System;
 using UnityEngine;
@@ -9,16 +13,24 @@ namespace SampleProduct.Core
 {
     public sealed class ClayMonstersSceneManager : IClayMonsterSceneManager
     {
+        readonly IBgmService bgmService;
         readonly ISceneManager sceneManager;
         readonly ILauncher launcher;
+        readonly ISceneFade sceneFade;
 
         public bool IsTransition => sceneManager.IsTransition;
 
         [Inject]
-        public ClayMonstersSceneManager(ISceneManager sceneManager, ILauncher launcher)
+        public ClayMonstersSceneManager(
+            IBgmService bgmService,
+            ISceneManager sceneManager,
+            ILauncher launcher,
+            ISceneFade sceneFade)
         {
+            this.bgmService = bgmService;
             this.sceneManager = sceneManager;
             this.launcher = launcher;
+            this.sceneFade = sceneFade;
         }
 
         async UniTask IClayMonsterSceneManager.TransitionScene(
@@ -28,7 +40,13 @@ namespace SampleProduct.Core
         {
             try
             {
-                await sceneManager.TransitionScene(nextTransitionData, transitionType, backMainSceneId);
+                await PrepareLeaveTransitionAsync(nextTransitionData.MainSceneId, isBackNavigation: false);
+
+                using (CinemachineSceneBlendScope.EnterCutBlend())
+                {
+                    SceneCameraEntryCoordinator.DeactivateAllCameras();
+                    await sceneManager.TransitionScene(nextTransitionData, transitionType, backMainSceneId);
+                }
             }
             catch (OperationCanceledException)
             {
@@ -38,9 +56,10 @@ namespace SampleProduct.Core
             {
                 Debug.LogError($"[ProductSceneManager] Unhandled exception during transition. Rebooting.\n{e}");
 
-                // NOTE: The sample does not reboot.
-                // In a real project, it is recommended to reboot after displaying a dialog box and reporting errors.
-                // launcher.Reboot();
+                if (sceneFade != null)
+                {
+                    await sceneFade.FadeInAsync();
+                }
             }
         }
 
@@ -48,7 +67,13 @@ namespace SampleProduct.Core
         {
             try
             {
-                await sceneManager.BackScene(transitionType);
+                await PrepareLeaveTransitionAsync(null, isBackNavigation: true);
+
+                using (CinemachineSceneBlendScope.EnterCutBlend())
+                {
+                    SceneCameraEntryCoordinator.DeactivateAllCameras();
+                    await sceneManager.BackScene(transitionType);
+                }
             }
             catch (OperationCanceledException)
             {
@@ -62,5 +87,39 @@ namespace SampleProduct.Core
         }
 
         UniTask IClayMonsterSceneManager.PreReboot() => sceneManager.PreReboot();
+
+        private async UniTask PrepareLeaveTransitionAsync(MainSceneId nextMainSceneId, bool isBackNavigation)
+        {
+            UniTask screenFadeTask = sceneFade != null
+                ? sceneFade.FadeOutAsync()
+                : UniTask.CompletedTask;
+
+            UniTask bgmFadeTask = CreateBgmFadeOutTask(nextMainSceneId, isBackNavigation);
+            await UniTask.WhenAll(screenFadeTask, bgmFadeTask);
+        }
+
+        private UniTask CreateBgmFadeOutTask(MainSceneId nextMainSceneId, bool isBackNavigation)
+        {
+            if (bgmService == null || !bgmService.IsPlaying)
+            {
+                return UniTask.CompletedTask;
+            }
+
+            if (isBackNavigation)
+            {
+                return bgmService.FadeOutAsync();
+            }
+
+            BgmTrackId? currentTrackId = bgmService.TryGetCurrentTrack(out BgmTrackId currentTrack)
+                ? currentTrack
+                : null;
+
+            if (!SceneBgmMapping.ShouldFadeOutForTransition(nextMainSceneId, currentTrackId))
+            {
+                return UniTask.CompletedTask;
+            }
+
+            return bgmService.FadeOutAsync();
+        }
     }
 }

@@ -10,30 +10,25 @@ namespace Scene.Core
     {
         static readonly ModuleSceneId[] RequireSceneModuleIds = Array.Empty<ModuleSceneId>();
 
-        // 各メインシーンが個別に要求するモジュールマップ
         static readonly IReadOnlyDictionary<MainSceneId, ModuleSceneId[]> SceneModuleMap =
             new Dictionary<MainSceneId, ModuleSceneId[]>
             {
                 { ClayMonstersMainSceneId.Title, null },
-                { ClayMonstersMainSceneId.ModeSelect, null },
                 { ClayMonstersMainSceneId.ClayEdit, null },
                 { ClayMonstersMainSceneId.BattleNpc, null },
-                { ClayMonstersMainSceneId.BattlePVP, null }
+                { ClayMonstersMainSceneId.BattlePvpArena, null },
+                { ClayMonstersMainSceneId.Training, null }
             };
 
-        // シーンのグループ構成
         static readonly MainSceneId[][] MainSceneGroupList =
         {
-            // グループ1: タイトル単体（または起動、スプラッシュ等）
-            new[] { ClayMonstersMainSceneId.Title },
-            
-            // グループ2: モード選択と、そこから派生するゲーム本編セッション
             new[]
             {
-                ClayMonstersMainSceneId.ModeSelect,
+                ClayMonstersMainSceneId.Title,
                 ClayMonstersMainSceneId.ClayEdit,
                 ClayMonstersMainSceneId.BattleNpc,
-                ClayMonstersMainSceneId.BattlePVP
+                ClayMonstersMainSceneId.BattlePvpArena,
+                ClayMonstersMainSceneId.Training
             }
         };
 

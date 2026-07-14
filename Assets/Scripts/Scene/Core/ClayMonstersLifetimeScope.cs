@@ -1,14 +1,18 @@
+using Audio;
+using Audio.Interface;
+using Audio.Service;
 using Lighthouse.Scene;
 using Lighthouse.Scene.SceneCamera;
 using LighthouseExtends.UIComponent.CanvasSceneObject;
 using LighthouseExtends.UIComponent.InputBlocker;
 using SampleProduct.Core;
+using Scene.PvpLobby;
+using Scene.PvpLobby.Interface;
+using Scene.Core.View;
 using UI.Option;
-using UI.Option.Interface;
 using UI.Option.Service;
 using UI.Option.View;
 using UnityEngine;
-using UnityEngine.Rendering;
 using VContainer;
 using VContainer.Unity;
 
@@ -21,22 +25,35 @@ namespace Scene.Core
         [SerializeField] LHCanvasSceneObject canvasSceneObjectPrefab;
         [SerializeField] LHInputBlocker inputBlockerPrefab;
 
-        [Header("Global Settings")]
-        [SerializeField] VolumeProfile globalPostProcessProfile;
+        // シーン遷移時のフェード用オーバーレイ(色・時間はこのプレハブのSceneFadeViewで設定)
+        [SerializeField] SceneFadeView sceneFadePrefab;
 
+        [Header("Global Settings")]
         // アプリ全体で常駐させるオプション画面のプレハブ
         [SerializeField] OptionView optionViewPrefab;
+
+        [Header("PVP")]
+        [SerializeField] GameObject pvpLobbyHostPrefab;
+
+        [SerializeField] UiSoundSettings uiSoundSettings;
+
+        /// <summary>
+        /// PvpLobbyHostの予備プレハブ
+        /// </summary>
+        public GameObject PvpLobbyHostPrefab => pvpLobbyHostPrefab;
 
         protected override void Configure(IContainerBuilder builder)
         {
             // エントリーポイントと基本設定の登録
             builder.RegisterEntryPoint<ClayMonstersEntryPoint>();
             builder.RegisterInstance(clayMonstersLifetimeScopeSettings);
-            builder.RegisterInstance(globalPostProcessProfile);
+            builder.Register<IBgmService, BgmService>(Lifetime.Singleton);
+            builder.RegisterInstance(uiSoundSettings);
+            builder.Register<IUiSoundService, UiSoundService>(Lifetime.Singleton);
+            builder.Register<ISeService, SeService>(Lifetime.Singleton);
             builder.Register<OptionService>(Lifetime.Singleton).AsImplementedInterfaces();
             builder.RegisterComponent(optionViewPrefab).AsImplementedInterfaces();
             builder.Register<OptionPresenter>(Lifetime.Singleton).AsImplementedInterfaces();
-
 
             // Lighthouse コアシステムの登録
             builder.Register<SceneManager>(Lifetime.Singleton).AsImplementedInterfaces();
@@ -51,9 +68,17 @@ namespace Scene.Core
 
             builder.Register<Launcher>(Lifetime.Singleton).AsImplementedInterfaces();
 
-            // LighthouseUI・入力制御用のプレハブ登録
+            builder.Register<PvpLobbyRegistry>(Lifetime.Singleton)
+                .As<IPvpLobbyRegistry>()
+                .As<IPvpLobby>()
+                .As<IPvpSessionController>();
+
+            // LighthouseのUI・入力制御用のプレハブ登録
             builder.RegisterComponentInNewPrefab(canvasSceneObjectPrefab, Lifetime.Singleton).DontDestroyOnLoad().AsImplementedInterfaces();
             builder.RegisterComponentInNewPrefab(inputBlockerPrefab, Lifetime.Singleton).DontDestroyOnLoad().AsImplementedInterfaces();
+
+            // シーン遷移フェード用オーバーレイの登録(常駐)
+            builder.RegisterComponentInNewPrefab(sceneFadePrefab, Lifetime.Singleton).DontDestroyOnLoad().AsImplementedInterfaces();
         }
     }
 }

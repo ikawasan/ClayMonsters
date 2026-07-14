@@ -7,10 +7,11 @@ namespace Scene.Core
     {
         public static readonly MainSceneId None = new MainSceneId(1, string.Empty);
         public static readonly MainSceneId Title = new MainSceneId(2, "Title");
-        public static readonly MainSceneId ModeSelect = new MainSceneId(3, "ModeSelect");
         public static readonly MainSceneId ClayEdit = new MainSceneId(4, "ClayEdit");
         public static readonly MainSceneId BattleNpc = new MainSceneId(5, "BattleNpc");
-        public static readonly MainSceneId BattlePVP = new MainSceneId(6, "BattlePVP");
+        public static readonly MainSceneId BattlePvpArena = new MainSceneId(6, "BattlePvpArena");
+        public static readonly MainSceneId BattlePVP = BattlePvpArena;
+        public static readonly MainSceneId Training = new MainSceneId(8, "Training");
 
         public static ReadOnlySpan<MainSceneId> All
         {
@@ -20,10 +21,10 @@ namespace Scene.Core
                 {
                     None,
                     Title,
-                    ModeSelect,
                     ClayEdit,
                     BattleNpc,
-                    BattlePVP,
+                    BattlePvpArena,
+                    Training,
                 };
             }
         }
