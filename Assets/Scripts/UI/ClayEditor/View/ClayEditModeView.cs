@@ -1,10 +1,10 @@
-using GameData;
 using R3;
 using System.Collections.Generic;
 using TMPro;
 using UI.ClayEditor.ViewModel;
 using UnityEngine;
 using VContainer;
+using GameData;
 
 namespace UI.ClayEditor.View
 {
@@ -15,8 +15,13 @@ namespace UI.ClayEditor.View
         [SerializeField] private TMP_Dropdown editModeUI;
         [SerializeField] private List<EditModeTypeObject> editModeTypeObjects;
 
-        [SerializeField]
-        private TMP_Text clayModeDescriptorText;
+        private void OnDisable()
+        {
+            if (editModeUI != null)
+            {
+                ClayEditModeDropdownLayout.Collapse(editModeUI);
+            }
+        }
 
         private void Start()
         {
@@ -43,17 +48,6 @@ namespace UI.ClayEditor.View
                     viewModel.HasModel,
                     (mode, hasModel) => (mode, hasModel))
                 .Subscribe(state => UpdateModeObjects(state.mode, state.hasModel))
-                .AddTo(this);
-
-            // 粘土モード用の説明テキスト表示
-            viewModel.ShowClayDescriptor
-                .Subscribe(show =>
-                {
-                    if (clayModeDescriptorText != null)
-                    {
-                        clayModeDescriptorText.gameObject.SetActive(show);
-                    }
-                })
                 .AddTo(this);
         }
 

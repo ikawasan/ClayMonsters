@@ -1,5 +1,6 @@
 using ClayEditor;
 using ClayEditor.Interface;
+using ClayEditor.Rigging;
 using GameData;
 using R3;
 using System;
@@ -11,6 +12,8 @@ namespace UI.ClayEditor.ViewModel
     public sealed class ClayEditModeViewModel : IInitializable, IDisposable
     {
         private readonly IClaySceneContext context;
+        private readonly ClayAutoRigController autoRigController;
+        private readonly ClayVoxelEngine engine;
         private readonly CompositeDisposable disposables = new();
 
         /// <summary>
@@ -24,38 +27,40 @@ namespace UI.ClayEditor.ViewModel
         public ReadOnlyReactiveProperty<bool> HasModel { get; }
 
         /// <summary>
-        /// 粘土モード用の説明テキストを表示するか
+        /// 操作説明テキストを表示するか
         /// </summary>
-        public ReadOnlyReactiveProperty<bool> ShowClayDescriptor { get; }
+        public ReadOnlyReactiveProperty<bool> IsGuideVisible => isGuideVisible;
+
+        private readonly ReactiveProperty<bool> isGuideVisible = new(true);
 
         [Inject]
-        public ClayEditModeViewModel(IClaySceneContext context)
+        public ClayEditModeViewModel(IClaySceneContext context, ClayAutoRigController autoRigController, ClayVoxelEngine engine)
         {
             this.context = context;
+            this.autoRigController = autoRigController;
+            this.engine = engine;
 
             HasModel = context.CurrentModel
                 .Select(model => model != null)
                 .ToReadOnlyReactiveProperty()
                 .AddTo(disposables);
+        }
 
-            ShowClayDescriptor = Observable.CombineLatest(
-                    context.CurrentMode,
-                    context.CurrentModel,
-                    (mode, model) => mode == EditModeType.Clay && model != null)
-                .ToReadOnlyReactiveProperty()
-                .AddTo(disposables);
+        /// <summary>
+        /// 操作説明テキストの表示状態を変更する
+        /// </summary>
+        /// <param name="visible">表示する場合true</param>
+        public void SetGuideVisible(bool visible)
+        {
+            isGuideVisible.Value = visible;
         }
 
         /// <inheritdoc />
         public void Initialize()
         {
-            // モード or モデルが変わったらモデルの Animator に対する操作を行う
-            Observable.CombineLatest(
-                    context.CurrentMode,
-                    context.CurrentModel,
-                    (mode, model) => (mode, model))
-                .Where(state => state.model != null)
-                .Subscribe(state => ApplyModeToModel(state.mode, state.model))
+            // モード遷移に応じて表示するメッシュを切り替える
+            context.CurrentMode
+                .Subscribe(OnModeChanged)
                 .AddTo(disposables);
         }
 
@@ -68,27 +73,15 @@ namespace UI.ClayEditor.ViewModel
             context.ChangeMode(mode);
         }
 
-        private static void ApplyModeToModel(EditModeType mode, ClayModel model)
+        private void OnModeChanged(EditModeType mode)
         {
-            if (model.Animator == null)
-            {
-                return;
-            }
-
-            switch (mode)
-            {
-                case EditModeType.Paint:
-                    model.Animator.SetTrigger("TPose");
-                    break;
-                case EditModeType.Animation:
-                    model.Animator.SetTrigger("Idle");
-                    break;
-            }
+            autoRigController.RestoreSculptEditState(mode);
         }
 
         /// <inheritdoc />
         public void Dispose()
         {
+            isGuideVisible.Dispose();
             disposables.Dispose();
         }
     }
