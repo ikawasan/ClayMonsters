@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace GameData
 {
-    public enum EditModeType { Clay, Paint, Animation, ModelSelect }
+    public enum EditModeType { Clay, Paint, Animation }
 
     [System.Serializable]
     public class EditModeTypeObject
