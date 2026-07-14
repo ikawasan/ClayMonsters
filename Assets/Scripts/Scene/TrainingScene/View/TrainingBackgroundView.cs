@@ -1,0 +1,146 @@
+using Scene.TrainingScene.Domain;
+using Scene.TrainingScene.Interface;
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace Scene.TrainingScene.View
+{
+    /// <summary>
+    /// 育成シーンの背景オブジェクトを行き先ごとに切り替える
+    /// モンスターは常に画面中心へ据え置き背景側だけを差し替える
+    /// </summary>
+    public sealed class TrainingBackgroundView : MonoBehaviour, ITrainingBackgroundView
+    {
+        /// <summary>
+        /// 行き先と背景オブジェクトの対応
+        /// </summary>
+        [Serializable]
+        private struct LocationBackground
+        {
+            [SerializeField] private TrainingLocation location;
+            [SerializeField] private GameObject backgroundObject;
+
+            /// <summary>
+            /// 対応する行き先
+            /// </summary>
+            public TrainingLocation Location => location;
+
+            /// <summary>
+            /// 表示する背景オブジェクト
+            /// </summary>
+            public GameObject BackgroundObject => backgroundObject;
+        }
+
+        [SerializeField] private Transform backgroundRoot;
+        [SerializeField] private GameObject defaultBackground;
+        [SerializeField] private GameObject restBackground;
+        [SerializeField] private LocationBackground[] locationBackgrounds = Array.Empty<LocationBackground>();
+
+        private void Awake()
+        {
+            EnsureSceneOwnership();
+        }
+
+        /// <inheritdoc/>
+        public void ShowLocationBackground(TrainingLocation location)
+        {
+            GameObject target = FindLocationBackground(location);
+            Activate(target != null ? target : defaultBackground);
+        }
+
+        /// <inheritdoc/>
+        public void ShowRestBackground()
+        {
+            Activate(restBackground != null ? restBackground : defaultBackground);
+        }
+
+        /// <inheritdoc/>
+        public void ShowDefaultBackground()
+        {
+            Activate(defaultBackground);
+        }
+
+        /// <inheritdoc/>
+        public void HideForLeave()
+        {
+            foreach (GameObject background in EnumerateBackgrounds())
+            {
+                if (background != null)
+                {
+                    background.SetActive(false);
+                }
+            }
+        }
+
+        /// <summary>
+        /// TrainingSceneルート配下へ移して他シーンと分離する
+        /// </summary>
+        internal void EnsureSceneOwnership()
+        {
+            if (transform.parent != null)
+            {
+                return;
+            }
+
+            Transform trainingRoot = ResolveTrainingSceneRoot();
+            if (trainingRoot != null)
+            {
+                transform.SetParent(trainingRoot, false);
+            }
+        }
+
+        private static Transform ResolveTrainingSceneRoot()
+        {
+            GameObject trainingSceneRoot = GameObject.Find("TrainingScene");
+            return trainingSceneRoot != null ? trainingSceneRoot.transform : null;
+        }
+
+        private GameObject FindLocationBackground(TrainingLocation location)
+        {
+            for (int i = 0; i < locationBackgrounds.Length; i++)
+            {
+                if (locationBackgrounds[i].Location == location)
+                {
+                    return locationBackgrounds[i].BackgroundObject;
+                }
+            }
+
+            return null;
+        }
+
+        private void Activate(GameObject target)
+        {
+            foreach (GameObject background in EnumerateBackgrounds())
+            {
+                if (background == null)
+                {
+                    continue;
+                }
+
+                background.SetActive(background == target);
+            }
+        }
+
+        private IEnumerable<GameObject> EnumerateBackgrounds()
+        {
+            if (defaultBackground != null)
+            {
+                yield return defaultBackground;
+            }
+
+            if (restBackground != null)
+            {
+                yield return restBackground;
+            }
+
+            for (int i = 0; i < locationBackgrounds.Length; i++)
+            {
+                if (locationBackgrounds[i].BackgroundObject != null)
+                {
+                    yield return locationBackgrounds[i].BackgroundObject;
+                }
+            }
+        }
+    }
+}
