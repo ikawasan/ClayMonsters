@@ -1,0 +1,525 @@
+using System.Threading;
+using Battle;
+using Battle.Interface;
+using ClayEditor.Rigging;
+using Cysharp.Threading.Tasks;
+using Camera.View;
+using Extensions;
+using Scene.BattleNpcScene.View;
+using UnityEngine;
+
+namespace Scene.BattleNpcScene
+{
+    /// <summary>
+    /// BattleNpc用の対戦紹介から本番開始までの演出
+    /// </summary>
+    public sealed class BattleNpcStaging : BattleStaging
+    {
+        [Header("参照")]
+        [SerializeField] private ClayEditCameraView cameraView;
+        [SerializeField] private BattleStartOverlayView overlayView;
+        [SerializeField] private BattleMatchupBackgroundView matchupBackground;
+        [SerializeField] private Transform matchupPlayerPoint;
+        [SerializeField] private Transform matchupEnemyPoint;
+
+        /// <summary>
+        /// とどめ命中時のFinish演出
+        /// </summary>
+        public IBattleFinishPresentation FinishPresentation => overlayView;
+
+        [Header("対戦紹介")]
+        [SerializeField] private float matchupSideGapPadding = 0.55f;
+        [SerializeField] private float matchupMinSideSeparation = 1.5f;
+        [SerializeField] private float matchupMaxSideSeparation = 5.5f;
+        [SerializeField] private float matchupSideSeparation = 2.2f;
+        [SerializeField] private float matchupHorizontalAngle = 0f;
+        [SerializeField] private float matchupVerticalAngle = 4f;
+        [SerializeField] private float matchupDistance = 5.5f;
+        [SerializeField] private float matchupFocusHeightOffset = 0.85f;
+        [SerializeField] private float matchupModelTowardCameraDegrees = 34f;
+        [SerializeField] private bool matchupAutoFrame = true;
+        [SerializeField] private float matchupFramePadding = 0.8f;
+        [SerializeField] private float matchupMinDistance = 3.8f;
+        [SerializeField] private float matchupMaxDistance = 7.5f;
+
+        [Header("本番カメラ")]
+        [SerializeField] private float battleHorizontalAngle = 0f;
+        [SerializeField] private float battleVerticalAngle = 10f;
+        [SerializeField] private float battleDistance = 7.5f;
+        [SerializeField] private float battleFocusHeightOffset = 0.75f;
+
+        [Header("勝利演出")]
+        [SerializeField] private float victoryVerticalAngle = 8f;
+        [SerializeField] private float victoryDistance = 5.5f;
+        [SerializeField] private float victoryFocusHeightOffset = 0.9f;
+        [SerializeField] private bool victoryAutoFrame = true;
+        [SerializeField] private float victoryFramePadding = 0.85f;
+        [SerializeField] private float victoryMinDistance = 3.6f;
+        [SerializeField] private float victoryMaxDistance = 7f;
+
+        private void Awake()
+        {
+            if (cameraView == null)
+            {
+                cameraView = FindFirstObjectByType<ClayEditCameraView>();
+            }
+
+            if (overlayView == null)
+            {
+                overlayView = GetComponent<BattleStartOverlayView>();
+                if (overlayView == null)
+                {
+                    overlayView = gameObject.AddComponent<BattleStartOverlayView>();
+                }
+            }
+
+            if (matchupBackground == null)
+            {
+                matchupBackground = GetComponent<BattleMatchupBackgroundView>();
+                if (matchupBackground == null)
+                {
+                    matchupBackground = gameObject.AddComponent<BattleMatchupBackgroundView>();
+                }
+            }
+        }
+
+        /// <summary>
+        /// セーブスロット選択表示前の準備
+        /// 教室は対戦紹介開始時にのみ隠す
+        /// </summary>
+        public void PrepareSelectionEntry()
+        {
+        }
+
+        /// <inheritdoc />
+        public override async UniTask PlayIntroAsync(BattleStagingContext context, CancellationToken cancellationToken)
+        {
+            GameplayTime.Reset();
+            BattleHitStopClock.Clear();
+
+            if (context.ScreenFade != null)
+            {
+                await context.ScreenFade.FadeOutAsync(cancellationToken);
+            }
+
+            PrepareCamera(context);
+            ApplyMatchupLayout(context);
+            context.Player?.PlayMotion(MotionType.Idle);
+            context.Enemy?.PlayMotion(MotionType.Idle);
+
+            Vector3 focus = ResolveMatchupFocus(context);
+            cameraView?.SetFocusPosition(focus);
+            EnsureMatchupModelsVisible(context);
+
+            if (matchupBackground != null)
+            {
+                matchupBackground.SetTargetCamera(UnityEngine.Camera.main);
+                if (context.PlayerModel != null && context.EnemyModel != null)
+                {
+                    matchupBackground.SetCharacterWorldPositions(
+                        context.PlayerModel.position,
+                        context.EnemyModel.position);
+                }
+            }
+
+            matchupBackground?.ShowFlame(focus);
+
+            ApplyMatchupCamera(context);
+
+            if (context.ScreenFade != null)
+            {
+                await context.ScreenFade.FadeInAsync(cancellationToken);
+            }
+
+            context.ScreenFade?.ReleasePresentationInput();
+
+            if (overlayView != null)
+            {
+                overlayView.EnsureMatchupUiReady();
+                string playerName = context.Player?.Name ?? string.Empty;
+                string enemyName = context.Enemy?.Name ?? string.Empty;
+                if (context.AutoStartMatchup || !overlayView.IsVsUiConfigured())
+                {
+                    await overlayView.ShowVsAndAutoStartAsync(playerName, enemyName, cancellationToken);
+                }
+                else
+                {
+                    await overlayView.ShowVsAndWaitStartAsync(playerName, enemyName, cancellationToken);
+                }
+            }
+            else
+            {
+                await DelayUnscaledAsync(1f, cancellationToken);
+            }
+
+            if (context.WaitForMatchupStartAsync != null)
+            {
+                await context.WaitForMatchupStartAsync(cancellationToken);
+            }
+        }
+
+        /// <inheritdoc />
+        public override async UniTask PlayBattleStartAsync(BattleStagingContext context, CancellationToken cancellationToken)
+        {
+            GameplayTime.Reset();
+            BattleHitStopClock.Clear();
+            if (context.ScreenFade != null)
+            {
+                await context.ScreenFade.FadeOutAsync(cancellationToken);
+            }
+
+            matchupBackground?.ShowClassroom();
+            overlayView?.HideVsUi();
+            ApplyBattleFieldLayout(context);
+
+            if (cameraView != null)
+            {
+                cameraView.SetCameraOperatable(false);
+                cameraView.SetFocusPosition(ResolveBattleFocus(context));
+                cameraView.SetOrbitView(battleHorizontalAngle, battleVerticalAngle, battleDistance);
+            }
+
+            if (context.ScreenFade != null)
+            {
+                await context.ScreenFade.FadeInAsync(cancellationToken);
+            }
+
+            if (overlayView != null)
+            {
+                await overlayView.PlayReadyFightAsync(cancellationToken);
+            }
+            else
+            {
+                await DelayUnscaledAsync(1f, cancellationToken);
+            }
+
+            context.ScreenFade?.ReleasePresentationInput();
+        }
+
+        /// <inheritdoc />
+        public override async UniTask PlayVictoryAsync(
+            BattleStagingContext context,
+            BattleUnit winner,
+            CancellationToken cancellationToken)
+        {
+            if (context?.ScreenFade != null)
+            {
+                await context.ScreenFade.FadeOutAsync(cancellationToken);
+            }
+
+            overlayView?.HideImmediate();
+            overlayView?.HideVsUi();
+
+            if (winner != null)
+            {
+                BattleVictoryLayout.Apply(
+                    context,
+                    winner,
+                    battleHorizontalAngle,
+                    matchupModelTowardCameraDegrees);
+                winner.PlayMotion(MotionType.Idle);
+            }
+            else
+            {
+                if (context.PlayerModel != null)
+                {
+                    context.PlayerModel.gameObject.SetActive(false);
+                }
+
+                if (context.EnemyModel != null)
+                {
+                    context.EnemyModel.gameObject.SetActive(false);
+                }
+            }
+
+            matchupBackground?.ShowClassroom();
+            ApplyVictoryCamera(context, winner);
+
+            if (context?.ScreenFade != null)
+            {
+                await context.ScreenFade.FadeInAsync(cancellationToken);
+            }
+
+            if (overlayView != null)
+            {
+                string label = winner != null ? winner.Name : "引き分け";
+                await overlayView.PlayVictoryPresentationAsync(label, cancellationToken);
+            }
+
+            try
+            {
+                IBattleDualVictoryReturnView dualReturnView = context?.VictoryDualReturnView;
+                if (dualReturnView != null)
+                {
+                    dualReturnView.SetDualButtonsVisible(true);
+                    context.VictoryReturnChoice = await dualReturnView.WaitVictoryReturnChoiceAsync(cancellationToken);
+                    dualReturnView.SetDualButtonsVisible(false);
+                }
+                else
+                {
+                    IBattleVictoryReturnView returnView = context?.VictoryReturnView;
+                    if (returnView != null)
+                    {
+                        context.VictoryReturnChoice = BattleVictoryReturnChoice.Title;
+                        returnView.SetReturnButtonVisible(true);
+                        await returnView.WaitReturnButtonClickAsync(cancellationToken);
+                        returnView.SetReturnButtonVisible(false);
+                    }
+                    else
+                    {
+                        await base.PlayVictoryAsync(context, winner, cancellationToken);
+                    }
+                }
+            }
+            finally
+            {
+                overlayView?.EndVictoryPresentation();
+            }
+        }
+
+        private void ApplyVictoryCamera(BattleStagingContext context, BattleUnit winner)
+        {
+            if (cameraView == null || context == null || winner == null)
+            {
+                return;
+            }
+
+            Transform winnerModel = winner == context.Player ? context.PlayerModel : context.EnemyModel;
+            if (winnerModel == null)
+            {
+                return;
+            }
+
+            bool hasBounds = BattleFieldFocusResolver.TryGetCombinedRendererBounds(
+                winnerModel,
+                winnerModel,
+                out Bounds bounds);
+
+            Vector3 focus = hasBounds
+                ? bounds.center
+                : winnerModel.position + Vector3.up * victoryFocusHeightOffset;
+            cameraView.SetCameraOperatable(false);
+            cameraView.SetFocusPosition(focus);
+
+            float distance = victoryDistance;
+            if (victoryAutoFrame && hasBounds)
+            {
+                UnityEngine.Camera camera = UnityEngine.Camera.main;
+                float verticalFov = camera != null ? camera.fieldOfView : 45f;
+                float aspect = camera != null ? camera.aspect : 16f / 9f;
+                distance = BattleFieldFocusResolver.ResolveOrbitDistanceForBounds(
+                    bounds,
+                    verticalFov,
+                    aspect,
+                    victoryFramePadding,
+                    victoryMinDistance,
+                    victoryMaxDistance);
+            }
+
+            cameraView.SetOrbitView(battleHorizontalAngle, victoryVerticalAngle, distance);
+        }
+
+        private void OnDisable()
+        {
+            matchupBackground?.ShowClassroom();
+        }
+
+        private static float ResolveMatchupGroundY(BattleStagingContext context)
+        {
+            float playerY = context.PlayerSpawn != null ? context.PlayerSpawn.position.y : 0f;
+            float enemyY = context.EnemySpawn != null ? context.EnemySpawn.position.y : 0f;
+            return Mathf.Max(playerY, enemyY);
+        }
+
+        private static void EnsureMatchupModelsVisible(BattleStagingContext context)
+        {
+            if (context.PlayerModel != null)
+            {
+                context.PlayerModel.gameObject.SetActive(true);
+            }
+
+            if (context.EnemyModel != null)
+            {
+                context.EnemyModel.gameObject.SetActive(true);
+            }
+        }
+
+        private void ApplyMatchupLayout(BattleStagingContext context)
+        {
+            if (context.PlayerModel == null || context.EnemyModel == null)
+            {
+                return;
+            }
+
+            if (matchupPlayerPoint != null && matchupEnemyPoint != null)
+            {
+                BattleMatchupLayout.Apply(
+                    context.PlayerModel,
+                    context.EnemyModel,
+                    matchupPlayerPoint,
+                    matchupEnemyPoint,
+                    matchupHorizontalAngle,
+                    matchupModelTowardCameraDegrees);
+                SyncMotionLayout(context);
+                return;
+            }
+
+            float sideSeparation = ResolveMatchupIntroSideSeparation(context);
+            BattleMatchupLayout.ApplyFromSpawns(
+                context.PlayerModel,
+                context.EnemyModel,
+                context.PlayerSpawn,
+                context.EnemySpawn,
+                sideSeparation,
+                matchupHorizontalAngle,
+                matchupModelTowardCameraDegrees);
+            SyncMotionLayout(context);
+        }
+
+        private float ResolveMatchupIntroSideSeparation(BattleStagingContext context)
+        {
+            if (context.PlayerModel == null || context.EnemyModel == null)
+            {
+                return matchupSideSeparation;
+            }
+
+            return BattleFieldFocusResolver.ResolveMatchupIntroSeparation(
+                context.PlayerModel,
+                context.EnemyModel,
+                matchupHorizontalAngle,
+                matchupSideGapPadding,
+                matchupMinSideSeparation,
+                matchupMaxSideSeparation);
+        }
+
+        private static void SyncMotionLayout(BattleStagingContext context)
+        {
+            context.Player?.SyncMotionLayoutPosition();
+            context.Enemy?.SyncMotionLayoutPosition();
+        }
+
+        private void ApplyBattleFieldLayout(BattleStagingContext context)
+        {
+            if (context.PlayerModel == null || context.EnemyModel == null)
+            {
+                return;
+            }
+
+            var layout = new BattleFieldLayout(
+                context.PlayerModel,
+                context.EnemyModel,
+                context.PlayerSpawn,
+                context.EnemySpawn,
+                battleHorizontalAngle);
+
+            layout.ApplyInitialBattlePositions(context.InitialBattleDistance, context.MaxBattleDistance);
+            SyncMotionLayout(context);
+        }
+
+        private void PrepareCamera(BattleStagingContext context)
+        {
+            if (cameraView == null)
+            {
+                return;
+            }
+
+            cameraView.SetCameraEnable(true);
+            cameraView.SetCameraOperatable(false);
+            cameraView.SetFocusPosition(ResolveMatchupFocus(context));
+        }
+
+        private Vector3 ResolveBattleFocus(BattleStagingContext context)
+        {
+            float groundY = ResolveBattleGroundY(context);
+            if (context.PlayerModel != null && context.EnemyModel != null)
+            {
+                return BattleFieldFocusResolver.ResolveMidpoint(
+                    context.PlayerModel,
+                    context.EnemyModel,
+                    groundY,
+                    battleFocusHeightOffset);
+            }
+
+            Vector3 playerHome = context.PlayerSpawn != null
+                ? context.PlayerSpawn.position
+                : Vector3.zero;
+            Vector3 enemyHome = context.EnemySpawn != null
+                ? context.EnemySpawn.position
+                : Vector3.zero;
+            Vector3 fallback = (playerHome + enemyHome) * 0.5f;
+            fallback.y = groundY + battleFocusHeightOffset;
+            return fallback;
+        }
+
+        private static float ResolveBattleGroundY(BattleStagingContext context)
+        {
+            float playerY = context.PlayerSpawn != null ? context.PlayerSpawn.position.y : 0f;
+            float enemyY = context.EnemySpawn != null ? context.EnemySpawn.position.y : 0f;
+            return (playerY + enemyY) * 0.5f;
+        }
+
+        private Vector3 ResolveMatchupFocus(BattleStagingContext context)
+        {
+            if (context.PlayerModel != null
+                && context.EnemyModel != null
+                && BattleFieldFocusResolver.TryGetCombinedRendererBounds(
+                    context.PlayerModel,
+                    context.EnemyModel,
+                    out Bounds bounds))
+            {
+                return bounds.center;
+            }
+
+            if (matchupPlayerPoint != null && matchupEnemyPoint != null)
+            {
+                Vector3 focus = (matchupPlayerPoint.position + matchupEnemyPoint.position) * 0.5f;
+                focus.y += matchupFocusHeightOffset;
+                return focus;
+            }
+
+            if (context.PlayerModel != null && context.EnemyModel != null)
+            {
+                return BattleFieldFocusResolver.ResolveMidpoint(
+                    context.PlayerModel,
+                    context.EnemyModel,
+                    ResolveBattleGroundY(context),
+                    matchupFocusHeightOffset);
+            }
+
+            Vector3 center = context.ResolveCenterPosition();
+            center.y += matchupFocusHeightOffset;
+            return center;
+        }
+
+        private void ApplyMatchupCamera(BattleStagingContext context)
+        {
+            if (cameraView == null)
+            {
+                return;
+            }
+
+            float distance = matchupDistance;
+            if (matchupAutoFrame
+                && context.PlayerModel != null
+                && context.EnemyModel != null
+                && BattleFieldFocusResolver.TryGetCombinedRendererBounds(
+                    context.PlayerModel,
+                    context.EnemyModel,
+                    out Bounds bounds))
+            {
+                UnityEngine.Camera camera = UnityEngine.Camera.main;
+                float verticalFov = camera != null ? camera.fieldOfView : 45f;
+                float aspect = camera != null ? camera.aspect : 16f / 9f;
+                distance = BattleFieldFocusResolver.ResolveOrbitDistanceForBounds(
+                    bounds,
+                    verticalFov,
+                    aspect,
+                    matchupFramePadding,
+                    matchupMinDistance,
+                    matchupMaxDistance);
+            }
+
+            cameraView.SetOrbitView(matchupHorizontalAngle, matchupVerticalAngle, distance);
+        }
+    }
+}
