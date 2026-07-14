@@ -1,0 +1,130 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 393a7ddd6fb6bc543b354d6f167a4c73, type: 3}
+  m_Name: MotionRequirement
+  m_EditorClassIdentifier: ClayEditor::ClayEditor.Rigging.MotionRequirement
+  entries:
+  - motionType: 0
+    requiredArmCount: 0
+    requiredLegCount: 0
+    requiredFrontCount: 0
+    requiredBackCount: 0
+  - motionType: 1
+    requiredArmCount: 0
+    requiredLegCount: 0
+    requiredFrontCount: 0
+    requiredBackCount: 0
+  - motionType: 2
+    requiredArmCount: 0
+    requiredLegCount: 0
+    requiredFrontCount: 0
+    requiredBackCount: 0
+  - motionType: 3
+    requiredArmCount: 0
+    requiredLegCount: 0
+    requiredFrontCount: 0
+    requiredBackCount: 0
+  - motionType: 4
+    requiredArmCount: 0
+    requiredLegCount: 0
+    requiredFrontCount: 0
+    requiredBackCount: 0
+  - motionType: 5
+    requiredArmCount: 1
+    requiredLegCount: 0
+    requiredFrontCount: 0
+    requiredBackCount: 0
+  - motionType: 6
+    requiredArmCount: 0
+    requiredLegCount: 1
+    requiredFrontCount: 0
+    requiredBackCount: 0
+  - motionType: 7
+    requiredArmCount: 0
+    requiredLegCount: 0
+    requiredFrontCount: 0
+    requiredBackCount: 0
+  - motionType: 8
+    requiredArmCount: 0
+    requiredLegCount: 0
+    requiredFrontCount: 0
+    requiredBackCount: 1
+  - motionType: 12
+    requiredArmCount: 0
+    requiredLegCount: 0
+    requiredFrontCount: 0
+    requiredBackCount: 0
+  - motionType: 13
+    requiredArmCount: 0
+    requiredLegCount: 0
+    requiredFrontCount: 1
+    requiredBackCount: 0
+  - motionType: 14
+    requiredArmCount: 1
+    requiredLegCount: 0
+    requiredFrontCount: 0
+    requiredBackCount: 0
+  - motionType: 15
+    requiredArmCount: 0
+    requiredLegCount: 1
+    requiredFrontCount: 0
+    requiredBackCount: 0
+  - motionType: 16
+    requiredArmCount: 0
+    requiredLegCount: 0
+    requiredFrontCount: 0
+    requiredBackCount: 0
+  - motionType: 17
+    requiredArmCount: 1
+    requiredLegCount: 0
+    requiredFrontCount: 0
+    requiredBackCount: 0
+  - motionType: 18
+    requiredArmCount: 0
+    requiredLegCount: 1
+    requiredFrontCount: 0
+    requiredBackCount: 0
+  - motionType: 19
+    requiredArmCount: 0
+    requiredLegCount: 0
+    requiredFrontCount: 0
+    requiredBackCount: 0
+  - motionType: 20
+    requiredArmCount: 0
+    requiredLegCount: 0
+    requiredFrontCount: 0
+    requiredBackCount: 0
+  - motionType: 21
+    requiredArmCount: 0
+    requiredLegCount: 0
+    requiredFrontCount: 0
+    requiredBackCount: 0
+  - motionType: 22
+    requiredArmCount: 0
+    requiredLegCount: 0
+    requiredFrontCount: 0
+    requiredBackCount: 0
+  - motionType: 23
+    requiredArmCount: 1
+    requiredLegCount: 0
+    requiredFrontCount: 0
+    requiredBackCount: 0
+  - motionType: 24
+    requiredArmCount: 0
+    requiredLegCount: 1
+    requiredFrontCount: 0
+    requiredBackCount: 0
+  - motionType: 25
+    requiredArmCount: 0
+    requiredLegCount: 0
+    requiredFrontCount: 1
+    requiredBackCount: 0

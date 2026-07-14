@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c4e8a1b23d5f467890ab12cd34ef5678, type: 3}
+  m_Name: BattleLevelDesignSettings
+  m_EditorClassIdentifier: Battle::Battle.BattleLevelDesignSettings
+  maxDistance: 10
+  minCloseSeparation: 0.6
+  timeLimit: 99
+  initialGuts: 50
+  knockbackCloseThreshold: 2.5
+  knockbackPushDistance: 3.5
+  knockbackGutsCost: 15
+  knockbackRecovery: 1.5
+  postAttackLockoutDuration: 1
+  chainBonusWindow: 2
+  counterDamageMultiplier: 1.25
+  damageScale: 2.5
+  enemyAttackTelegraphDuration: 0.65
+  enemyAttackCooldownMin: 1.8
+  enemyAttackCooldownMax: 3.2
+  stepDistance: 2
+  stepDuration: 0.25
+  stepCooldown: 1.2
+  partRepairSecondsPerLimb: 1.1

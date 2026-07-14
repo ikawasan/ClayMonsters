@@ -1,0 +1,68 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c4e2a91b38f5d60e1f9342ac86b5d17, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  runFrequency: 8
+  runSpineAmplitude: 6
+  spinePhasePerDepth: 0.6
+  runLimbAmplitude: 35
+  legRunFrequency: 9
+  legRunLegAmplitude: 45
+  legRunArmAmplitude: 30
+  legRunBodyAmplitude: 5
+  legRunSwingAxis: {x: 1, y: 0, z: 0}
+  attackDuration: 0.72
+  attackAmplitude: 90
+  attackAnticipationRatio: 0.14
+  attackStrikePortion: 0.32
+  forwardDirection: {x: 0, y: 0, z: 1}
+  tackleDistance: 2.2
+  tackleLeanAngle: 42
+  punchAmplitude: 105
+  punchDistance: 0.75
+  kickAmplitude: 110
+  kickDistance: 0.65
+  spinTackleDistance: 3
+  spinTackleSpeed: 1080
+  tailWhipAmplitude: 115
+  tailWhipAxis: {x: 0, y: 1, z: 0}
+  chargePullbackAngle: 32
+  chargeLimbPullbackAngle: 48
+  chargePullbackDistance: 0.38
+  chargeHoldRatio: 0.28
+  chargeBuildRatio: 0.42
+  headbuttAmplitude: 88
+  headbuttDistance: 0.95
+  elbowAmplitude: 120
+  elbowDistance: 0.5
+  stompLiftAngle: 78
+  stompSlamAngle: 55
+  bodySlamDistance: 1.75
+  bodySlamLeanAngle: 52
+  stepDuration: 0.01
+  stepVisualDistance: 20
+  stepLeanAngle: 16
+  stepPrepCrouchAngle: 14
+  stepLimbPrepAngle: 10
+  stepPrepRatio: 0.1
+  stepLandRatio: 0.12
+  stepRollTuckAngle: 18
+  hitDuration: 0.3
+  hitSpineAmplitude: 35
+  hitLimbAmplitude: 25
+  hitKnockbackDistance: 0.22
+  idleFrequency: 1.5
+  idleAmplitude: 3
+  spineBendAxis: {x: 1, y: 0, z: 0}
+  limbSwingAxis: {x: 1, y: 0, z: 0}
+  attackBendAxis: {x: 1, y: 0, z: 0}
