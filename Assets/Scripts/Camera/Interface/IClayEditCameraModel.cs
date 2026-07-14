@@ -66,6 +66,13 @@ namespace Camera.Interface
         void Zoom(float zoomAmount);
 
         /// <summary>
+        /// 画面上のドラッグ量に応じて注視点を移動する
+        /// </summary>
+        /// <param name="screenDelta">マウス移動量</param>
+        /// <param name="panSpeed">移動速度係数</param>
+        void PanFocus(Vector2 screenDelta, float panSpeed);
+
+        /// <summary>
         /// 正面ビューにする
         /// </summary>
         void SetFrontView();

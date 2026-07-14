@@ -15,6 +15,11 @@ namespace Camera.Interface
         void OnEnter();
 
         /// <summary>
+        /// –¾“]Š®—¹Œã‚Ì“üêˆ—
+        /// </summary>
+        void OnEnterAfterFadeIn();
+
+        /// <summary>
         /// ƒV[ƒ“‚©‚ç”²‚¯‚é‚Ìˆ—
         /// </summary>
         void OnExit();

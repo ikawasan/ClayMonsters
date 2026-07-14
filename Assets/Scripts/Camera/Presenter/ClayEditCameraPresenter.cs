@@ -17,15 +17,23 @@ namespace Camera.Presenter
         /// <inheritdoc />
         void IClayEditCameraPresenter.Setup()
         {
+            cameraView.SetFocusPosition(Vector3.zero);
+            cameraView.SetInitializeView();
         }
 
         /// <inheritdoc />
         void IClayEditCameraPresenter.OnEnter()
         {
-            Vector3 volumeCenter = Vector3.zero;
-            cameraView.SetFocusPosition(volumeCenter);
+            cameraView.SetFocusPosition(Vector3.zero);
             cameraView.SetInitializeView();
             cameraView.SetCameraEnable(true);
+            cameraView.SetCameraOperatable(false);
+        }
+
+        /// <inheritdoc />
+        void IClayEditCameraPresenter.OnEnterAfterFadeIn()
+        {
+            cameraView.SetCameraOperatable(true);
         }
 
         /// <inheritdoc />

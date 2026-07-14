@@ -81,6 +81,34 @@ namespace Camera.Model
         }
 
         /// <inheritdoc />
+        public void PanFocus(Vector2 screenDelta, float panSpeed)
+        {
+            if (!isOperatable)
+            {
+                return;
+            }
+
+            float scale = panSpeed * 0.01f * Mathf.Max(distance, 1f);
+            Vector3 screenRight = ResolveScreenRight(horizontalAngle);
+            focusPoint += screenRight * (screenDelta.x * scale) + Vector3.up * (screenDelta.y * scale);
+        }
+
+        private static Vector3 ResolveScreenRight(float horizontalAngleDegrees)
+        {
+            Quaternion orbit = Quaternion.Euler(0f, horizontalAngleDegrees, 0f);
+            Vector3 cameraForward = orbit * Vector3.forward;
+            cameraForward.y = 0f;
+
+            if (cameraForward.sqrMagnitude < 1e-6f)
+            {
+                return Vector3.right;
+            }
+
+            cameraForward.Normalize();
+            return Vector3.Cross(Vector3.up, cameraForward).normalized;
+        }
+
+        /// <inheritdoc />
         public void SetFrontView()
         {
             horizontalAngle = 180f;
