@@ -1,33 +1,102 @@
 using Cysharp.Threading.Tasks;
+
 using Lighthouse.Scene;
-using Lighthouse.Scene.SceneBase;
+
 using Scene.BattleNpcScene.Interface;
+
 using Scene.Core;
+
+using System.Threading;
+
 using VContainer;
 
+
+
 namespace Scene.BattleNpcScene
+
 {
-    public class BattleNpcScene : CanvasMainSceneBase<BattleNpcScene.BattleNpcTransitionData>
+
+    public class BattleNpcScene : FadeInSceneBase<BattleNpcScene.BattleNpcTransitionData>
+
     {
-        IBattleNpcPresenter battleNpcPresenter;
+
+        IBattleNpcSceneCoordinator sceneCoordinator;
+
+
 
         public override MainSceneId MainSceneId => ClayMonstersMainSceneId.BattleNpc;
 
+
+
         public class BattleNpcTransitionData : TransitionDataBase
+
         {
+
             public override MainSceneId MainSceneId => ClayMonstersMainSceneId.BattleNpc;
+
         }
+
+
+
+        protected override bool PerformEntryFadeIn => false;
+
+
 
         [Inject]
-        public void Construct(IBattleNpcPresenter battleNpcPresenter)
+
+        public void Construct(IBattleNpcSceneCoordinator sceneCoordinator)
+
         {
-            this.battleNpcPresenter = battleNpcPresenter;
+
+            this.sceneCoordinator = sceneCoordinator;
+
         }
 
+
+
         protected override UniTask OnSetup()
+
         {
-            battleNpcPresenter.Setup();
+
             return UniTask.CompletedTask;
+
         }
+
+
+
+        protected override UniTask OnEnterCore(ISceneTransitionContext context, CancellationToken cancelToken)
+
+        {
+
+            sceneCoordinator.PrepareEnter();
+
+            return UniTask.CompletedTask;
+
+        }
+
+
+
+        protected override UniTask OnEnterAfterFadeInCore(ISceneTransitionContext context, CancellationToken cancelToken)
+
+        {
+
+            return sceneCoordinator.RunBattleFlowAsync(cancelToken);
+
+        }
+
+
+
+        protected override UniTask OnLeave(ISceneTransitionContext context, CancellationToken cancelToken)
+
+        {
+
+            sceneCoordinator.Leave();
+
+            return base.OnLeave(context, cancelToken);
+
+        }
+
     }
+
 }
+

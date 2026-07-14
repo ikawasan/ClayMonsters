@@ -1,32 +1,17 @@
-using Cysharp.Threading.Tasks;
 using Scene.BattleNpcScene.Interface;
-using Scene.Core.Interface;
 using VContainer;
 
 namespace Scene.BattleNpcScene.Presenter
 {
+    /// <summary>
+    /// BattleNpcã‚·ãƒ¼ãƒ³ã®ãƒ—ãƒ¬ã‚¼ãƒ³ã‚¿ãƒ¼
+    /// å‹åˆ©å¾Œã®æˆ»ã‚‹é·ç§»ã¯BattleFlowRunnerãŒæ‹…å½“ã™ã‚‹
+    /// </summary>
     public class BattleNpcPresenter : IBattleNpcPresenter
     {
-        IClayMonsterSceneManager sceneManager;
-        IBattleNpcView battleNpcView;
-
-        [Inject]
-        public void Construct(IClayMonsterSceneManager sceneManager, IBattleNpcView battleNpcView)
-        {
-            this.sceneManager = sceneManager;
-            this.battleNpcView = battleNpcView;
-        }
-
+        /// <inheritdoc/>
         void IBattleNpcPresenter.Setup()
         {
-            // ƒoƒgƒ‹I—¹i‚Ü‚½‚Í–ß‚éƒ{ƒ^ƒ“j‚ÌƒCƒxƒ“ƒg‚ğ“o˜^
-            battleNpcView.SubscribeReturnButtonClick(OnClickReturnButton);
-        }
-
-        void OnClickReturnButton()
-        {
-            // ƒ‚[ƒh‘I‘ğƒV[ƒ“‚Ì—š—ğ‚ªƒXƒ^ƒbƒN‚Éc‚Á‚Ä‚¢‚é‚½‚ßABackScene‚Å–ß‚é
-            sceneManager.BackScene().Forget();
         }
     }
 }

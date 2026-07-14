@@ -1,9 +1,11 @@
 using System;
+using Battle.Interface;
+using UnityEngine.Events;
 
 namespace Scene.BattleNpcScene.Interface
 {
-    public interface IBattleNpcView
+    public interface IBattleNpcView : IBattleVictoryReturnView
     {
-        IDisposable SubscribeReturnButtonClick(Action action);
+        IDisposable SubscribeReturnButtonClick(UnityAction action);
     }
 }
