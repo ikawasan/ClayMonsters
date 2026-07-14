@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3e4f5a6c7d84e9f0a1b2c3d4e5f6a78, type: 3}
+  m_Name: MatchupFlameEffectSettings
+  m_EditorClassIdentifier: Scene.BattleNpcScene.View::Scene.BattleNpcScene.View.BattleMatchupFlameEffectSettings
+  playerFlamePrefab: {fileID: 8829451551789304542, guid: 244b1cc8940bd0844a05812855fbe45d, type: 3}
+  enemyFlamePrefab: {fileID: 8829451551789304542, guid: 244b1cc8940bd0844a05812855fbe45d, type: 3}
+  clashFlamePrefab: {fileID: 8829451551789304542, guid: 244b1cc8940bd0844a05812855fbe45d, type: 3}
+  sideFlameScale: 1.4
+  clashFlameScale: 2
+  sideFlameLocalScale: {x: 2.2, y: 2.2, z: 2.2}
+  sideInwardTilt: 8
+  sideFlameLocalOffset: {x: 0, y: 0, z: 0}
+  clashFlameLocalOffset: {x: 0, y: 0, z: 0}
+  spawnClashFlame: 0
+  flameOutwardOffset: 2
+  flameIntensityMultiplier: 2
+  particleEmissionMultiplier: 1.85
+  particleSizeMultiplier: 1.35
+  simulationSpeedMultiplier: 1.25
+  materialOpacityBoost: 1.6
+  playerFlameTint: {r: 1, g: 0.18, b: 0.02, a: 1}
+  enemyFlameTint: {r: 0.4, g: 0.85, b: 1, a: 1}
+  clashFlameTint: {r: 1, g: 0.82, b: 0.55, a: 1}
+  playerLightIntensity: 2.2
+  enemyLightIntensity: 2.2
+  clashLightIntensity: 2.4
