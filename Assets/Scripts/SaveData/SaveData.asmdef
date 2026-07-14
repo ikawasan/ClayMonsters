@@ -1,7 +1,16 @@
 {
     "name": "SaveData",
     "rootNamespace": "SaveData",
-    "references": [],
+    "references": [
+        "GUID:b0214a6008ed146ff8f122a6a9c2f6cc",
+        "GUID:a42927d1d4a3b4cda9b076a7adecb9cc",
+        "GUID:55a1ca089b0a4ca48aa79b5d0adfbfc8",
+        "GUID:77221876cc6b8244180b96e320b1bcd4",
+        "GUID:f51ebe6a0ceec4240a699833d6309b23",
+        "GUID:5e7ba8d6d26c84943b64dd07bd1c9510",
+        "GUID:2ba7e454df3c3aa499897b9ee04fe70a",
+        "GUID:ef3e0247172fd7a4e81d37eecd472578"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
