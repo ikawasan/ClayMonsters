@@ -1,0 +1,250 @@
+using UnityEngine;
+
+namespace Battle
+{
+    /// <summary>
+    /// 戦闘カメラの注視点をモデル上下動の影響を受けないよう求める
+    /// </summary>
+    public static class BattleFieldFocusResolver
+    {
+        /// <summary>
+        /// 両モデル間の注視点を返す(高さは地面基準+オフセット)
+        /// </summary>
+        /// <param name="playerModel">プレイヤーモデル</param>
+        /// <param name="enemyModel">敵モデル</param>
+        /// <param name="groundY">地面のY座標</param>
+        /// <param name="heightOffset">注視点の高さオフセット</param>
+        /// <returns>注視点</returns>
+        public static Vector3 ResolveMidpoint(
+            Transform playerModel,
+            Transform enemyModel,
+            float groundY,
+            float heightOffset)
+        {
+            Vector3 focus = ResolveMidpointOnGround(playerModel, enemyModel, groundY);
+            focus.y += heightOffset;
+            return focus;
+        }
+
+        /// <summary>
+        /// 攻撃演出用の注視点を返す(高さは地面基準+オフセット)
+        /// </summary>
+        /// <param name="attackerModel">攻撃側モデル</param>
+        /// <param name="targetModel">被攻撃側モデル</param>
+        /// <param name="groundY">地面のY座標</param>
+        /// <param name="heightOffset">注視点の高さオフセット</param>
+        /// <param name="towardTargetRatio">ターゲット方向へ寄せる比率</param>
+        /// <returns>注視点</returns>
+        public static Vector3 ResolveAttackFocus(
+            Transform attackerModel,
+            Transform targetModel,
+            float groundY,
+            float heightOffset,
+            float towardTargetRatio)
+        {
+            if (attackerModel == null)
+            {
+                return new Vector3(0f, groundY + heightOffset, 0f);
+            }
+
+            Vector3 attackerFlat = FlattenY(attackerModel.position, groundY);
+            Vector3 targetFlat = targetModel != null
+                ? FlattenY(targetModel.position, groundY)
+                : attackerFlat + FlattenDirection(attackerModel.forward);
+
+            Vector3 focus = Vector3.Lerp(attackerFlat, targetFlat, towardTargetRatio);
+            focus.y += heightOffset;
+            return focus;
+        }
+
+        /// <summary>
+        /// 位置のY座標を地面高さへ固定する
+        /// </summary>
+        /// <param name="position">位置</param>
+        /// <param name="groundY">地面のY座標</param>
+        /// <returns>Y固定後の位置</returns>
+        public static Vector3 FlattenY(Vector3 position, float groundY)
+        {
+            position.y = groundY;
+            return position;
+        }
+
+        /// <summary>
+        /// 両モデル間の地面平面上の中点を返す
+        /// </summary>
+        /// <param name="playerModel">プレイヤーモデル</param>
+        /// <param name="enemyModel">敵モデル</param>
+        /// <param name="groundY">地面のY座標</param>
+        /// <returns>中点</returns>
+        public static Vector3 ResolveMidpointOnGround(
+            Transform playerModel,
+            Transform enemyModel,
+            float groundY)
+        {
+            if (playerModel != null && enemyModel != null)
+            {
+                return (FlattenY(playerModel.position, groundY) + FlattenY(enemyModel.position, groundY)) * 0.5f;
+            }
+
+            if (playerModel != null)
+            {
+                return FlattenY(playerModel.position, groundY);
+            }
+
+            if (enemyModel != null)
+            {
+                return FlattenY(enemyModel.position, groundY);
+            }
+
+            return new Vector3(0f, groundY, 0f);
+        }
+
+        /// <summary>
+        /// 両モデルのRenderer境界を結合する
+        /// </summary>
+        /// <param name="playerModel">プレイヤーモデル</param>
+        /// <param name="enemyModel">敵モデル</param>
+        /// <param name="bounds">結合境界</param>
+        /// <returns>境界を取得できたか</returns>
+        public static bool TryGetCombinedRendererBounds(
+            Transform playerModel,
+            Transform enemyModel,
+            out Bounds bounds)
+        {
+            bounds = default;
+            bool hasBounds = false;
+            hasBounds |= EncapsulateRenderers(playerModel, ref bounds, ref hasBounds);
+            hasBounds |= EncapsulateRenderers(enemyModel, ref bounds, ref hasBounds);
+            return hasBounds;
+        }
+
+        /// <summary>
+        /// 単一モデルのRenderer境界を返す
+        /// </summary>
+        public static bool TryGetModelRendererBounds(Transform model, out Bounds bounds)
+        {
+            bounds = default;
+            bool hasBounds = false;
+            bool encapsulated = EncapsulateRenderers(model, ref bounds, ref hasBounds);
+            return encapsulated && hasBounds;
+        }
+
+        /// <summary>
+        /// 画面上の左右方向へ投影したモデル半幅を返す
+        /// </summary>
+        public static float ResolveHorizontalHalfExtent(Transform model, float cameraHorizontalAngle)
+        {
+            if (!TryGetModelRendererBounds(model, out Bounds bounds))
+            {
+                return 0.75f;
+            }
+
+            Vector3 screenRight = BattleFieldScreenAxis.ResolveScreenRight(cameraHorizontalAngle);
+            Vector3 center = bounds.center;
+            Vector3 extents = bounds.extents;
+            float maxHalf = 0f;
+
+            for (int x = -1; x <= 1; x += 2)
+            {
+                for (int y = -1; y <= 1; y += 2)
+                {
+                    for (int z = -1; z <= 1; z += 2)
+                    {
+                        Vector3 corner = center + Vector3.Scale(extents, new Vector3(x, y, z));
+                        float projection = Mathf.Abs(Vector3.Dot(corner - center, screenRight));
+                        if (projection > maxHalf)
+                        {
+                            maxHalf = projection;
+                        }
+                    }
+                }
+            }
+
+            return Mathf.Max(0.35f, maxHalf);
+        }
+
+        /// <summary>
+        /// 対戦紹介用の横並び間隔をモデルサイズから算出する
+        /// </summary>
+        public static float ResolveMatchupIntroSeparation(
+            Transform playerModel,
+            Transform enemyModel,
+            float cameraHorizontalAngle,
+            float gapPadding,
+            float minSeparation,
+            float maxSeparation)
+        {
+            float playerHalf = ResolveHorizontalHalfExtent(playerModel, cameraHorizontalAngle);
+            float enemyHalf = ResolveHorizontalHalfExtent(enemyModel, cameraHorizontalAngle);
+            float separation = playerHalf + enemyHalf + gapPadding;
+            return Mathf.Clamp(separation, minSeparation, maxSeparation);
+        }
+
+        /// <summary>
+        /// 境界全体が収まるオービット距離を返す
+        /// </summary>
+        /// <param name="bounds">対象境界</param>
+        /// <param name="verticalFovDegrees">垂直FOV</param>
+        /// <param name="aspect">アスペクト比</param>
+        /// <param name="padding">余白係数(小さいほど寄る)</param>
+        /// <param name="minDistance">最小距離</param>
+        /// <param name="maxDistance">最大距離</param>
+        /// <returns>オービット距離</returns>
+        public static float ResolveOrbitDistanceForBounds(
+            Bounds bounds,
+            float verticalFovDegrees,
+            float aspect,
+            float padding,
+            float minDistance,
+            float maxDistance)
+        {
+            float verticalRadians = verticalFovDegrees * Mathf.Deg2Rad;
+            float horizontalRadians = 2f * Mathf.Atan(Mathf.Tan(verticalRadians * 0.5f) * aspect);
+            float halfHeight = bounds.extents.y * 1.08f;
+            float halfWidth = bounds.extents.x * 1.06f;
+            float distanceVertical = halfHeight / Mathf.Tan(verticalRadians * 0.5f);
+            float distanceHorizontal = halfWidth / Mathf.Tan(horizontalRadians * 0.5f);
+            float distance = Mathf.Max(distanceVertical, distanceHorizontal) * padding;
+            return Mathf.Clamp(distance, minDistance, maxDistance);
+        }
+
+        private static bool EncapsulateRenderers(Transform model, ref Bounds bounds, ref bool hasBounds)
+        {
+            if (model == null)
+            {
+                return false;
+            }
+
+            Renderer[] renderers = model.GetComponentsInChildren<Renderer>(false);
+            bool encapsulated = false;
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer == null || !renderer.enabled)
+                {
+                    continue;
+                }
+
+                if (!hasBounds)
+                {
+                    bounds = renderer.bounds;
+                    hasBounds = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(renderer.bounds);
+                }
+
+                encapsulated = true;
+            }
+
+            return encapsulated;
+        }
+
+        private static Vector3 FlattenDirection(Vector3 direction)
+        {
+            direction.y = 0f;
+            return direction.sqrMagnitude > 1e-6f ? direction.normalized : Vector3.forward;
+        }
+    }
+}
