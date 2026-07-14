@@ -1,3 +1,4 @@
+using ClayEditor.Rigging;
 using UnityEngine;
 using VContainer;
 
@@ -8,7 +9,6 @@ namespace ClayEditor
     {
         [Inject] private readonly ClayHistoryManager historyManager;
         [Inject] private readonly ClayVoxelEngine engine;
-        [Inject] private readonly ClayAutoRigger rigger;
         [Inject] private readonly ClayEditorRangeVisualizer editorRangeVisualizer;
 
         [Header("Brush Settings")]
@@ -17,21 +17,32 @@ namespace ClayEditor
         [SerializeField] private float minBrushRadius = 0.1f;
         [SerializeField] private float maxBrushRadius = 20f;
 
+        [Header("Performance")]
+        [Tooltip("造形中にメッシュ表示を更新する間隔（フレーム数）大きいほど軽いが追従が粗くなる")]
+        [SerializeField] private int shapeUpdateInterval = 3;
+
+        // 造形中のメッシュ更新を間引くためのフレームカウンタ
+        private int modifyFrameCounter;
+
+        // 直近の造形でまだ表示へ反映していない変更があるか
+        private bool pendingShapeUpdate;
+
         /// <summary>
         /// 現在のブラシ半径
         /// </summary>
         public float BrushRadius => brushRadius;
 
+        /// <summary>
+        /// レイキャスト深度と対象メッシュの基準Transform
+        /// </summary>
+        public Transform RaycastAnchor => engine.ClayModelTransform;
+
         void Start()
         {
-            // モデル依存のセットアップ（ボーン構築・可視化・初回メッシュ生成）を行う
-            if (rigger.Bones == null || rigger.Bones.Length == 0)
-            {
-                rigger.AutoSetup();
-            }
-
+            // ボーンは自動リギング（ClayAutoRigController）がアニメーションモード遷移時とエクスポート時に
+            // 生成、設定するため、ここでのボーン構築は行わない
             editorRangeVisualizer.RefreshWireframe(engine.size, engine.Scale);
-            UpdateAll();
+            engine.UpdateShapeFast(refreshColliders: true);
         }
 
         /// <summary>
@@ -45,16 +56,40 @@ namespace ClayEditor
 
         /// <summary>
         /// ワールド座標を中心にボクセルを加算 / 減算して造形する
+        /// ボクセル更新は毎フレーム行い、メッシュと当たり判定は shapeUpdateInterval フレームに1回へ間引く
         /// </summary>
         /// <param name="worldPos">造形する中心のワールド座標</param>
-        /// <param name="isSubtract">trueなら削る、falseなら盛る</param>
+        /// <param name="isSubtract">true なら減算、false なら加算</param>
         public void ModifyAtWorldPosition(Vector3 worldPos, bool isSubtract)
         {
             Vector3 localPos = transform.InverseTransformPoint(worldPos);
             float strength = isSubtract ? -brushStrength : brushStrength;
 
             engine.Modify(localPos, brushRadius, strength);
-            UpdateAll();
+
+            // 間引きながらメッシュ表示を更新する
+            modifyFrameCounter++;
+            int interval = Mathf.Max(shapeUpdateInterval, 1);
+            if (modifyFrameCounter >= interval)
+            {
+                modifyFrameCounter = 0;
+                pendingShapeUpdate = false;
+                engine.UpdateShapeFast(refreshColliders: true);
+            }
+            else
+            {
+                pendingShapeUpdate = true;
+            }
+        }
+
+        /// <summary>
+        /// 造形ストロークの終了時などに呼び 間引きで未反映の最終形状を確実に表示へ反映する
+        /// </summary>
+        public void FlushShape()
+        {
+            modifyFrameCounter = 0;
+            pendingShapeUpdate = false;
+            engine.FlushShape();
         }
 
         /// <summary>
@@ -73,19 +108,19 @@ namespace ClayEditor
             if (historyManager.TryUndo(engine.GetVoxelData(), out float[] prevState))
             {
                 engine.SetVoxelData(prevState);
-                UpdateAll();
+                engine.FlushShape();
             }
         }
 
         /// <summary>
-        /// 取り消した操作をやり直す
+        /// 元に戻した操作をやり直す
         /// </summary>
         public void Redo()
         {
             if (historyManager.TryRedo(engine.GetVoxelData(), out float[] nextState))
             {
                 engine.SetVoxelData(nextState);
-                UpdateAll();
+                engine.FlushShape();
             }
         }
 
@@ -95,26 +130,7 @@ namespace ClayEditor
         public void ClearMesh()
         {
             engine.ClearAllVoxels();
-            UpdateAll();
-        }
-
-        private void UpdateAll()
-        {
-            var data = engine.GenerateMeshData();
-            if (data.vertices == null || data.vertices.Length == 0)
-            {
-                var emptyData = new ClayVoxelEngine.MeshData
-                {
-                    vertices = new Vector3[0],
-                    normals = new Vector3[0],
-                    indices = new int[0]
-                };
-                engine.ApplyToRenderer(emptyData, new BoneWeight[0], rigger.BindPoses, rigger.Bones);
-                return;
-            }
-
-            var weights = rigger.Calculate(data.vertices, transform);
-            engine.ApplyToRenderer(data, weights, rigger.BindPoses, rigger.Bones);
+            engine.FlushShape();
         }
     }
 }

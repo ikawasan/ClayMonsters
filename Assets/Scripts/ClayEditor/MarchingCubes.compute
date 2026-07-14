@@ -1,6 +1,8 @@
 ﻿#pragma kernel InitializeVoxelData
 #pragma kernel GenerateMesh
 #pragma kernel ModifyVoxels
+#pragma kernel PaintVoxels
+#pragma kernel InitializeVoxelColors
 
 #include "MarchingCubesTables.hlsl"
 
@@ -8,10 +10,14 @@ struct Triangle
 {
     float3 v1, v2, v3;
     float3 n1, n2, n3;
+    float3 c1, c2, c3; // 各頂点の色（ボクセル色から補間）
 };
 
 AppendStructuredBuffer<Triangle> _Triangles;
 RWStructuredBuffer<float> _Voxels;
+
+// ボクセルごとの色（RGB）_Sizeと同じ解像度
+RWStructuredBuffer<float3> _VoxelColors;
 
 int _Size;
 float _IsoLevel;
@@ -21,6 +27,16 @@ float3 _Offset; // 中心にずらすためのオフセット値
 float3 _HitPosition; // ローカル座標
 float _ModRadius;
 float _ModStrength;
+
+// 部分更新用 GenerateMeshで処理するチャンクの原点（ボクセル座標）と範囲
+int3 _ChunkOrigin;
+int3 _ChunkSize;
+
+// ペイント用
+float3 _PaintColor;
+float _PaintRadius;
+float3 _PaintNormal;
+float3 _DefaultColor;
 
 int GetIndex(int x, int y, int z)
 {
@@ -51,6 +67,19 @@ void InitializeVoxelData(uint3 id : SV_DispatchThreadID)
     _Voxels[idx] = val;
 }
 
+// ボクセル色を既定色で初期化する
+[numthreads(8, 8, 8)]
+void InitializeVoxelColors(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x > (uint) _Size || id.y > (uint) _Size || id.z > (uint) _Size)
+    {
+        return;
+    }
+
+    int idx = GetIndex(id.x, id.y, id.z);
+    _VoxelColors[idx] = _DefaultColor;
+}
+
 float3 Interpolate(float3 p1, float v1, float3 p2, float v2)
 {
     return p1 + (_IsoLevel - v1) * (p2 - p1) / (v2 - v1);
@@ -65,9 +94,42 @@ float3 GetNormalAt(uint3 p)
     return -normalize(n);
 }
 
-[numthreads(8, 8, 8)]
-void GenerateMesh(uint3 id : SV_DispatchThreadID)
+// 既定色かどうかを判定する
+bool IsDefaultColor(float3 color)
 {
+    return distance(color, _DefaultColor) < 0.02;
+}
+
+// エッジ上の補間位置に合わせて 2つのコーナーのボクセル色を補間する
+float3 InterpolateColor(uint3 cornerA, uint3 cornerB, float valA, float valB)
+{
+    float t = (_IsoLevel - valA) / (valB - valA);
+    float3 colorA = _VoxelColors[GetIndex(cornerA.x, cornerA.y, cornerA.z)];
+    float3 colorB = _VoxelColors[GetIndex(cornerB.x, cornerB.y, cornerB.z)];
+
+    bool paintedA = !IsDefaultColor(colorA);
+    bool paintedB = !IsDefaultColor(colorB);
+
+    // 塗り色と未塗りの境界では補間せず近いコーナー色をそのまま使う
+    if (paintedA != paintedB)
+    {
+        return t < 0.5 ? colorA : colorB;
+    }
+
+    return lerp(colorA, colorB, t);
+}
+
+[numthreads(8, 8, 8)]
+void GenerateMesh(uint3 tid : SV_DispatchThreadID)
+{
+    // ディスパッチされたスレッドIDにチャンク原点を足してボクセル座標を得る
+    uint3 id = tid + (uint3) _ChunkOrigin;
+
+    if (tid.x >= (uint) _ChunkSize.x || tid.y >= (uint) _ChunkSize.y || tid.z >= (uint) _ChunkSize.z)
+    {
+        return;
+    }
+
     if (id.x >= (uint) _Size || id.y >= (uint) _Size || id.z >= (uint) _Size)
     {
         return;
@@ -93,28 +155,37 @@ void GenerateMesh(uint3 id : SV_DispatchThreadID)
         int e1 = triTable[cubeIndex][i];
         int c1_1 = edgeTable[e1][0];
         int c2_1 = edgeTable[e1][1];
-        float3 p1_1 = (float3) (id + (uint3) cornerOffsets[c1_1]) * _Scale;
-        float3 p2_1 = (float3) (id + (uint3) cornerOffsets[c2_1]) * _Scale;
+        uint3 corner1A = id + (uint3) cornerOffsets[c1_1];
+        uint3 corner1B = id + (uint3) cornerOffsets[c2_1];
+        float3 p1_1 = (float3) corner1A * _Scale;
+        float3 p2_1 = (float3) corner1B * _Scale;
         tri.v1 = Interpolate(p1_1, vals[c1_1], p2_1, vals[c2_1]) - _Offset;
         tri.n1 = normalize(lerp(cornerNormals[c1_1], cornerNormals[c2_1], (_IsoLevel - vals[c1_1]) / (vals[c2_1] - vals[c1_1])));
+        tri.c1 = InterpolateColor(corner1A, corner1B, vals[c1_1], vals[c2_1]);
 
         // 頂点2
         int e2 = triTable[cubeIndex][i + 1];
         int c1_2 = edgeTable[e2][0];
         int c2_2 = edgeTable[e2][1];
-        float3 p1_2 = (float3) (id + (uint3) cornerOffsets[c1_2]) * _Scale;
-        float3 p2_2 = (float3) (id + (uint3) cornerOffsets[c2_2]) * _Scale;
+        uint3 corner2A = id + (uint3) cornerOffsets[c1_2];
+        uint3 corner2B = id + (uint3) cornerOffsets[c2_2];
+        float3 p1_2 = (float3) corner2A * _Scale;
+        float3 p2_2 = (float3) corner2B * _Scale;
         tri.v2 = Interpolate(p1_2, vals[c1_2], p2_2, vals[c2_2]) - _Offset;
         tri.n2 = normalize(lerp(cornerNormals[c1_2], cornerNormals[c2_2], (_IsoLevel - vals[c1_2]) / (vals[c2_2] - vals[c1_2])));
+        tri.c2 = InterpolateColor(corner2A, corner2B, vals[c1_2], vals[c2_2]);
 
         // 頂点3
         int e3 = triTable[cubeIndex][i + 2];
         int c1_3 = edgeTable[e3][0];
         int c2_3 = edgeTable[e3][1];
-        float3 p1_3 = (float3) (id + (uint3) cornerOffsets[c1_3]) * _Scale;
-        float3 p2_3 = (float3) (id + (uint3) cornerOffsets[c2_3]) * _Scale;
+        uint3 corner3A = id + (uint3) cornerOffsets[c1_3];
+        uint3 corner3B = id + (uint3) cornerOffsets[c2_3];
+        float3 p1_3 = (float3) corner3A * _Scale;
+        float3 p2_3 = (float3) corner3B * _Scale;
         tri.v3 = Interpolate(p1_3, vals[c1_3], p2_3, vals[c2_3]) - _Offset;
         tri.n3 = normalize(lerp(cornerNormals[c1_3], cornerNormals[c2_3], (_IsoLevel - vals[c1_3]) / (vals[c2_3] - vals[c1_3])));
+        tri.c3 = InterpolateColor(corner3A, corner3B, vals[c1_3], vals[c2_3]);
 
         _Triangles.Append(tri);
     }
@@ -143,4 +214,35 @@ void ModifyVoxels(uint3 id : SV_DispatchThreadID)
         int idx = GetIndex(id.x, id.y, id.z);
         _Voxels[idx] += influence;
     }
+}
+
+// ブラシ範囲内のボクセル色を塗る
+[numthreads(8, 8, 8)]
+void PaintVoxels(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x > (uint) _Size || id.y > (uint) _Size || id.z > (uint) _Size)
+    {
+        return;
+    }
+
+    float3 localPos = (float3) id * _Scale - _Offset;
+    if (distance(localPos, _HitPosition) >= _PaintRadius)
+    {
+        return;
+    }
+
+    // ヒット面の裏側へ塗りが回り込まないよう法線方向の手前側だけに限定する
+    // 表面シェルを確実に塗るため内側は数ボクセル分まで許容する
+    if (dot(_PaintNormal, _PaintNormal) > 1e-6)
+    {
+        float3 paintNormal = normalize(_PaintNormal);
+        float3 toVoxel = localPos - _HitPosition;
+        if (dot(toVoxel, paintNormal) < -_Scale * 2.0)
+        {
+            return;
+        }
+    }
+
+    int idx = GetIndex(id.x, id.y, id.z);
+    _VoxelColors[idx] = _PaintColor;
 }

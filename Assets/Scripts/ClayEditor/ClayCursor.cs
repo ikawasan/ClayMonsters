@@ -18,9 +18,18 @@ namespace ClayEditor
         [SerializeField] private MeshRenderer cursorMeshRenderer;
         [SerializeField] private LayerMask raycastLayerMask = -1;
         [SerializeField] private float brushSizeChangeSpeed = 0.1f;
+        [SerializeField] [Range(0.05f, 1f)] private float cursorAlpha = 0.4f;
 
         private UnityEngine.Camera mainCamera;
         private readonly CursorRaycaster raycaster = new();
+
+        // 直前フレームに造形していたか（ストローク終了の検知に使う）
+        private bool wasModifying;
+
+        void Awake()
+        {
+            ApplyCursorTransparency();
+        }
 
         void Start()
         {
@@ -51,7 +60,7 @@ namespace ClayEditor
             input.OnScroll
                 .Subscribe(scroll =>
                 {
-                    // 無効状態 / Alt中（カメラ操作中）/ Clayモード以外ではブラシサイズを変更しない
+                    // 非表示中 / Alt中（カメラ操作中）/ Clayモード以外ではブラシサイズを変更しない
                     if (!isActiveAndEnabled || input.IsAltPressed)
                     {
                         return;
@@ -92,15 +101,17 @@ namespace ClayEditor
         /// <inheritdoc />
         public void Tick()
         {
-            // 無効状態（モード切替で GameObject 非アクティブ等）では何もしない
+            // 非表示中（モード切替で GameObject が非アクティブ時）では何もしない
             if (!isActiveAndEnabled)
             {
+                FlushIfStrokeEnded();
                 return;
             }
 
             // Clay モード以外では造形しない
             if (sceneContext.CurrentMode.Value != EditModeType.Clay)
             {
+                FlushIfStrokeEnded();
                 return;
             }
 
@@ -111,13 +122,14 @@ namespace ClayEditor
 
             if (input.IsPointerOverUI)
             {
+                FlushIfStrokeEnded();
                 return;
             }
 
             // カーソル位置の更新
             Vector3 worldPos = raycaster.Resolve(
                 mainCamera,
-                editor.transform,
+                editor.RaycastAnchor,
                 input.PointerPosition,
                 raycastLayerMask,
                 lockDepth: input.IsShiftPressed,
@@ -132,8 +144,11 @@ namespace ClayEditor
             // Alt中（カメラ操作中）は造形しない
             if (input.IsAltPressed)
             {
+                FlushIfStrokeEnded();
                 return;
             }
+
+            bool isModifying = input.IsPrimaryHeld || input.IsSecondaryHeld;
 
             // 左ドラッグ：Ctrlで削り、それ以外は盛る
             if (input.IsPrimaryHeld)
@@ -145,6 +160,24 @@ namespace ClayEditor
             if (input.IsSecondaryHeld)
             {
                 editor.ModifyAtWorldPosition(worldPos, true);
+            }
+
+            // 造形をやめた瞬間に 間引きで未反映の最終形状を反映する
+            if (wasModifying && !isModifying)
+            {
+                editor.FlushShape();
+            }
+
+            wasModifying = isModifying;
+        }
+
+        // 造形中だった状態から外れたときに最終形状を反映する
+        private void FlushIfStrokeEnded()
+        {
+            if (wasModifying)
+            {
+                editor.FlushShape();
+                wasModifying = false;
             }
         }
 
@@ -163,7 +196,28 @@ namespace ClayEditor
             editor.SaveState();
         }
 
-        // 無効状態では操作を無視
+        private void ApplyCursorTransparency()
+        {
+            if (cursorMeshRenderer == null)
+            {
+                return;
+            }
+
+            Material material = cursorMeshRenderer.material;
+            material.SetFloat("_Surface", 1f);
+            material.SetFloat("_Blend", 0f);
+            material.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            material.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            material.SetFloat("_ZWrite", 0f);
+            material.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+            material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+
+            Color baseColor = material.GetColor("_BaseColor");
+            baseColor.a = cursorAlpha;
+            material.SetColor("_BaseColor", baseColor);
+        }
+
+        // 非表示中では操作を無視
         private void TryInvoke(System.Action action)
         {
             if (!isActiveAndEnabled)

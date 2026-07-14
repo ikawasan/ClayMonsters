@@ -22,6 +22,9 @@ namespace ClayEditor.Input
         private readonly Subject<float> onScroll = new();
         private readonly ReactiveProperty<bool> isPointerOverUI = new(false);
 
+        // 入力受付の有効/無効
+        private bool isInputEnabled = true;
+
         /// <inheritdoc />
         public Observable<Unit> OnUndo => onUndo;
 
@@ -47,7 +50,7 @@ namespace ClayEditor.Input
         public Vector2 PointerPosition { get; private set; }
 
         /// <inheritdoc />
-        public bool IsPointerOverUI { get; private set; }
+        public bool IsPointerOverUI => isPointerOverUI.Value;
 
         /// <inheritdoc />
         public bool IsPrimaryHeld { get; private set; }
@@ -64,8 +67,14 @@ namespace ClayEditor.Input
         /// <inheritdoc />
         public bool IsAltPressed { get; private set; }
 
-        // スクロールの微小値しきい値
+        // スクロールの反応値だがしきい値
         private const float ScrollThreshold = 0.01f;
+
+        /// <inheritdoc />
+        public void SetInputEnabled(bool isEnabled)
+        {
+            isInputEnabled = isEnabled;
+        }
 
         /// <inheritdoc />
         public void Tick()
@@ -74,6 +83,18 @@ namespace ClayEditor.Input
             var keyboard = Keyboard.current;
             if (mouse == null || keyboard == null)
             {
+                return;
+            }
+
+            // 入力が無効化されている間は、モデルへ影響する操作を一切受け付けない
+            if (!isInputEnabled)
+            {
+                // 押下・修飾キーの状態をクリアして、無効化中に編集が継続しないようにする
+                IsPrimaryHeld = false;
+                IsSecondaryHeld = false;
+                IsShiftPressed = false;
+                IsCtrlPressed = false;
+                IsAltPressed = false;
                 return;
             }
 
@@ -86,7 +107,7 @@ namespace ClayEditor.Input
             IsPrimaryHeld = mouse.leftButton.isPressed;
             IsSecondaryHeld = mouse.rightButton.isPressed;
 
-            // UI 上にポインタがある間は造形系の入力イベントを発火しない
+            // UI 上にポインタがある状態は操作系の入力イベントを発火しない
             if (!IsPointerOverUI)
             {
                 if (IsCtrlPressed && keyboard.zKey.wasPressedThisFrame)

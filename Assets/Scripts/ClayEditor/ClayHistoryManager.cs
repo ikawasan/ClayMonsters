@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using UnityEngine;
 
 namespace ClayEditor
 {
@@ -43,6 +42,15 @@ namespace ClayEditor
             }
             nextState = null;
             return false;
+        }
+
+        /// <summary>
+        /// Undo / Redo 履歴をすべて破棄する（シーン退出時の初期化用）
+        /// </summary>
+        public void Clear()
+        {
+            undoList.Clear();
+            redoList.Clear();
         }
     }
 }

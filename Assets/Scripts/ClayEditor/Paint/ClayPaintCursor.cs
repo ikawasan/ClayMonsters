@@ -1,6 +1,5 @@
 using ClayEditor.Input.Interface;
 using ClayEditor.Interface;
-using ClayEditor.Paint;
 using GameData;
 using R3;
 using UI.ColorPicker;
@@ -8,16 +7,15 @@ using UnityEngine;
 using VContainer;
 using VContainer.Unity;
 
-namespace ClayEditor
+namespace ClayEditor.Paint
 {
     /// <summary>
-    /// Paint モード専用のカーソル。カラーピッカーの色を取得して、
-    /// メッシュ表面にレイキャストして頂点カラーをペイントする。
-    /// クレイカーソルと同様、レイがヒットしなくてもカーソルは深度に投影した位置へ追従する。
+    /// Paintモード専用のカーソル
     /// </summary>
     public class ClayPaintCursor : MonoBehaviour, ITickable
     {
         [Inject] private readonly ClayPainter painter;
+        [Inject] private readonly ClayVoxelEngine engine;
         [Inject] private readonly IClayInputProvider input;
         [Inject] private readonly IClaySceneContext sceneContext;
         [Inject] private readonly ColorPicker colorPicker;
@@ -29,11 +27,17 @@ namespace ClayEditor
 
         private UnityEngine.Camera mainCamera;
         private readonly CursorRaycaster raycaster = new();
+        private float cursorMeshDiameter = 1f;
 
         // カーソルの色表示に使うマテリアルのインスタンス
         private Material cursorMaterial;
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
-        private static readonly int ColorId = Shader.PropertyToID("_Color");
+
+        // 直前フレームに塗っていたか(ストローク終了の検知に使う)
+        private bool wasPainting;
+
+        // 現在のストロークで実際に1回でも塗ったか(空振りを履歴へ入れないため)
+        private bool paintedInStroke;
 
         private void Start()
         {
@@ -48,6 +52,8 @@ namespace ClayEditor
             {
                 cursorMaterial = cursorMeshRenderer.material;
             }
+
+            CacheCursorMeshDiameter();
 
             // 初期色をカーソルへ反映
             ApplyCursorColor(painter.CurrentColor);
@@ -65,7 +71,34 @@ namespace ClayEditor
             input.OnScroll
                 .Subscribe(scroll =>
                 {
-                    if (!isActiveAndEnabled || input.IsAltPressed)
+                    if (!IsPaintActive())
+                    {
+                        return;
+                    }
+
+                    painter.ChangeBrushRadius(scroll * 0.001f * brushSizeChangeSpeed);
+                })
+                .AddTo(this);
+
+            // ストローク開始時に履歴へ新しいストロークを開始する
+            input.OnPrimaryPressed
+                .Subscribe(_ =>
+                {
+                    if (!IsPaintActive())
+                    {
+                        return;
+                    }
+
+                    painter.BeginStroke();
+                    paintedInStroke = false;
+                })
+                .AddTo(this);
+
+            // Ctrl + Z で取り消す(Paintモード時のみ)
+            input.OnUndo
+                .Subscribe(_ =>
+                {
+                    if (!isActiveAndEnabled)
                     {
                         return;
                     }
@@ -75,11 +108,29 @@ namespace ClayEditor
                         return;
                     }
 
-                    painter.ChangeBrushRadius(scroll * 0.001f * brushSizeChangeSpeed);
+                    painter.Undo();
                 })
                 .AddTo(this);
 
-            // PaintモードかつUI上でないときだけカーソルを表示する
+            // Ctrl + Y でやり直す(Paintモード時のみ)
+            input.OnRedo
+                .Subscribe(_ =>
+                {
+                    if (!isActiveAndEnabled)
+                    {
+                        return;
+                    }
+
+                    if (sceneContext.CurrentMode.Value != EditModeType.Paint)
+                    {
+                        return;
+                    }
+
+                    painter.Redo();
+                })
+                .AddTo(this);
+
+            // Paintモード時かつ UI 上でないときだけカーソルを表示する
             Observable.CombineLatest(
                     sceneContext.CurrentMode,
                     input.OnPointerOverUIChanged,
@@ -104,6 +155,7 @@ namespace ClayEditor
         {
             if (!isActiveAndEnabled)
             {
+                EndStrokeIfNeeded();
                 return;
             }
 
@@ -115,44 +167,107 @@ namespace ClayEditor
             // Paintモード以外では何もしない
             if (sceneContext.CurrentMode.Value != EditModeType.Paint)
             {
+                EndStrokeIfNeeded();
                 return;
             }
 
             if (input.IsPointerOverUI)
             {
+                EndStrokeIfNeeded();
                 return;
             }
 
-            // カーソル位置の更新（ヒットしなくても深度に投影した位置へ追従させる）
-            Vector3 worldPos = raycaster.Resolve(
-                mainCamera,
-                painter.transform,
-                input.PointerPosition,
-                raycastLayerMask,
-                lockDepth: input.IsShiftPressed,
-                resetDepthOnMiss: true);
+            // カーソル位置の更新(表示メッシュへのレイヒットを優先する)
+            bool hasSurfaceHit = engine.TryRaycastSurface(mainCamera, input.PointerPosition, out RaycastHit surfaceHit);
+            Vector3 worldPos;
+            if (hasSurfaceHit)
+            {
+                worldPos = surfaceHit.point;
+                raycaster.RecordDepth(mainCamera, input.PointerPosition, surfaceHit.point);
+            }
+            else
+            {
+                worldPos = raycaster.Resolve(
+                    mainCamera,
+                    painter.RaycastAnchor,
+                    input.PointerPosition,
+                    raycastLayerMask,
+                    lockDepth: input.IsShiftPressed,
+                    resetDepthOnMiss: true,
+                    out _,
+                    out _);
+            }
 
             if (cursorObject != null)
             {
                 cursorObject.transform.position = worldPos;
-                cursorObject.transform.localScale = Vector3.one * painter.BrushRadius;
+                float cursorScale = painter.BrushRadius * 2f / cursorMeshDiameter;
+                cursorObject.transform.localScale = Vector3.one * cursorScale;
             }
 
-            // Alt中（カメラ操作中）はペイントしない
+            // Alt中(カメラ操作中)はペイントしない
             if (input.IsAltPressed)
             {
+                EndStrokeIfNeeded();
                 return;
             }
 
-            // ペイントはメッシュ表面にヒットしたときのみ行う
-            if (input.IsPrimaryHeld)
+            bool isPainting = false;
+
+            // ペイントはカメラ側の表面にヒットしたときのみ行う
+            if (input.IsPrimaryHeld && hasSurfaceHit)
             {
-                Ray ray = mainCamera.ScreenPointToRay(input.PointerPosition);
-                if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, raycastLayerMask))
-                {
-                    painter.PaintAtWorldPosition(hit.point);
-                }
+                painter.PaintAtWorldPosition(surfaceHit.point, surfaceHit.normal);
+                paintedInStroke = true;
+                isPainting = true;
             }
+            else if (input.IsPrimaryHeld)
+            {
+                isPainting = true;
+            }
+
+            // 塗るのをやめた瞬間にストロークを確定する
+            if (wasPainting && !isPainting)
+            {
+                CommitStroke();
+            }
+
+            wasPainting = isPainting;
+        }
+
+        // 塗っていた状態から外れたときにストロークを確定する
+        private void EndStrokeIfNeeded()
+        {
+            if (wasPainting)
+            {
+                CommitStroke();
+                wasPainting = false;
+            }
+        }
+
+        // ストロークを確定し 実際に塗った場合のみ使用色を履歴へ追加する
+        private void CommitStroke()
+        {
+            painter.EndStroke();
+            engine.FlushPaintMesh(refreshCollider: true);
+
+            if (paintedInStroke)
+            {
+                colorPicker.AddColorToHistory(painter.CurrentColor);
+            }
+
+            paintedInStroke = false;
+        }
+
+        // Paint操作(ペイント 消し ブラシ変更)が有効な状態か
+        private bool IsPaintActive()
+        {
+            if (!isActiveAndEnabled || input.IsAltPressed)
+            {
+                return false;
+            }
+
+            return sceneContext.CurrentMode.Value == EditModeType.Paint;
         }
 
         private void ApplyCursorColor(Color color)
@@ -162,15 +277,31 @@ namespace ClayEditor
                 return;
             }
 
-            // URP は _BaseColor、Built-in は _Color を使う
             if (cursorMaterial.HasProperty(BaseColorId))
             {
-                cursorMaterial.SetColor(BaseColorId, color);
+                cursorMaterial.SetColor(BaseColorId, PaintColorUtility.ToMaterialColor(color));
             }
-            else if (cursorMaterial.HasProperty(ColorId))
+        }
+
+        private void CacheCursorMeshDiameter()
+        {
+            MeshFilter meshFilter = null;
+            if (cursorMeshRenderer != null)
             {
-                cursorMaterial.SetColor(ColorId, color);
+                meshFilter = cursorMeshRenderer.GetComponent<MeshFilter>();
             }
+            else if (cursorObject != null)
+            {
+                meshFilter = cursorObject.GetComponent<MeshFilter>();
+            }
+
+            if (meshFilter == null || meshFilter.sharedMesh == null)
+            {
+                return;
+            }
+
+            Vector3 meshSize = meshFilter.sharedMesh.bounds.size;
+            cursorMeshDiameter = Mathf.Max(meshSize.x, Mathf.Max(meshSize.y, meshSize.z));
         }
 
         private void OnDestroy()
