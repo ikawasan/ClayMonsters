@@ -1,12 +1,38 @@
 using System;
+using UnityEngine.Events;
 
 namespace Scene.TitleScene.Interface
 {
     public interface ITitleView
     {
-        public IDisposable SubscribeNewGameButtonClick(Action action);
-        public IDisposable SubscribeContinueButtonClick(Action action);
-        public IDisposable SubscribeOptionButtonClick(Action action);
-        public IDisposable SubscribeQuitGameButtonClick(Action action);
+        /// <summary>
+        /// ClayEditボタン押下を購読する
+        /// </summary>
+        IDisposable SubscribeClayEditButtonClick(UnityAction action);
+
+        /// <summary>
+        /// BattleNpcボタン押下を購読する
+        /// </summary>
+        IDisposable SubscribeBattleNpcButtonClick(UnityAction action);
+
+        /// <summary>
+        /// BattlePVPボタン押下を購読する
+        /// </summary>
+        IDisposable SubscribeBattlePvpButtonClick(UnityAction action);
+
+        /// <summary>
+        /// 育成モードボタン押下を購読する
+        /// </summary>
+        IDisposable SubscribeTrainingButtonClick(UnityAction action);
+
+        /// <summary>
+        /// オプションボタン押下を購読する
+        /// </summary>
+        IDisposable SubscribeOptionButtonClick(UnityAction action);
+
+        /// <summary>
+        /// ゲーム終了ボタン押下を購読する
+        /// </summary>
+        IDisposable SubscribeQuitGameButtonClick(UnityAction action);
     }
 }

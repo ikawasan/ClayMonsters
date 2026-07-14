@@ -1,6 +1,10 @@
+using Camera.Model;
+using Camera.View;
+using SaveData;
+using SaveData.Interface;
+using SaveData.Service;
 using Scene.TitleScene.Presenter;
 using Scene.TitleScene.View;
-using UI.Option.View;
 using UnityEngine;
 using VContainer;
 using VContainer.Unity;
@@ -11,16 +15,42 @@ namespace Scene.TitleScene
     {
         [SerializeField] TitleScene titleScene;
         [SerializeField] TitleView titleView;
+        [SerializeField] TitleMessageWindowView messageWindowView;
+
+        [Header("Camera")]
+        [SerializeField] ClayEditCameraView cameraView;
+
+        [Header("Model Display")]
+        [SerializeField] TitleModelDisplay titleModelDisplay;
+        [SerializeField] TitleSceneCamera titleSceneCamera;
 
         protected override void Configure(IContainerBuilder builder)
         {
-            // Scene–{‘Ì‚Ì“o˜^
             builder.RegisterComponent(titleScene);
-
             builder.RegisterComponent(titleView).AsImplementedInterfaces();
+            if (messageWindowView == null)
+            {
+                messageWindowView = titleView.GetComponent<TitleMessageWindowView>();
+            }
 
-            // Presenter‚ğƒVƒ“ƒOƒ‹ƒgƒ“ƒ‰ƒCƒtƒTƒCƒNƒ‹‚Å“o˜^
+            if (messageWindowView == null)
+            {
+                Debug.LogError("[TitleLifetimeScope] TitleMessageWindowViewãŒæœªè¨­å®šã§ã™", this);
+            }
+            else
+            {
+                builder.RegisterComponent(messageWindowView).AsImplementedInterfaces();
+            }
             builder.Register<TitlePresenter>(Lifetime.Singleton).AsImplementedInterfaces();
+
+            builder.RegisterComponent(cameraView).AsImplementedInterfaces();
+            builder.Register<ClayEditCameraModel>(Lifetime.Singleton).AsImplementedInterfaces();
+            builder.RegisterComponent(titleModelDisplay);
+            builder.RegisterComponent(titleSceneCamera);
+
+            builder.Register<ClayModelSaveService>(Lifetime.Singleton).As<IClayModelSaveService>();
+            builder.Register<ClayModelGltfImporter>(Lifetime.Singleton).As<IClayModelImporter>();
+            builder.Register<ClayModelGltfExporter>(Lifetime.Singleton).As<IClayModelExporter>();
         }
     }
 }
