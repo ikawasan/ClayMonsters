@@ -1,82 +1,37 @@
+using Audio.Interface;
 using SaveData;
 using UI.Option.Interface;
 using UnityEngine;
-using UnityEngine.Rendering;
-using UnityEngine.Rendering.Universal;
 using VContainer;
 
 namespace UI.Option.Service
 {
-    public class OptionService : IOptionService
+    /// <summary>
+    /// 繧ｪ繝励す繝ｧ繝ｳ險ｭ螳壹�ｮ菫晏ｭ倥→逕ｻ髱｢繝ｻ髻ｳ驥上∈縺ｮ蜿肴丐繧定｡後≧
+    /// </summary>
+    public sealed class OptionService : IOptionService
     {
-        private readonly VolumeProfile globalVolumeProfile;
-        private readonly ColorAdjustments colorAdjustments;
         private readonly SaveData.SaveData currentSaveData;
+        private readonly IBgmService bgmService;
+        private readonly IUiSoundService uiSoundService;
+        private readonly ISeService seService;
 
         [Inject]
-        public OptionService(VolumeProfile profile)
+        public OptionService(
+            IBgmService bgmService,
+            IUiSoundService uiSoundService,
+            ISeService seService)
         {
-            globalVolumeProfile = profile;
-
-            if (globalVolumeProfile != null)
-            {
-                globalVolumeProfile.TryGet(out colorAdjustments);
-            }
-
+            this.bgmService = bgmService;
+            this.uiSoundService = uiSoundService;
+            this.seService = seService;
             currentSaveData = SaveDataManager.Load();
-
-            // 起動時にロードした設定をゲーム内に反映させる
             ApplySettings();
-        }
-
-        private void SaveOptions()
-        {
-            SaveDataManager.Save(currentSaveData);
-        }
-
-        private void ApplySettings()
-        {
-            ApplyBrightness(currentSaveData.VideoOptionData.Brightness);
-            ApplyFullScreen(currentSaveData.VideoOptionData.IsFullScreen);
-            ApplyVSync(currentSaveData.VideoOptionData.VSync);
-            ApplyMusicVolume(currentSaveData.SoundOptionData.MusicVolume);
-            ApplySoundEffectVolume(currentSaveData.SoundOptionData.SoundEffectVolume);
-        }
-
-        private void ApplyBrightness(float brightness)
-        {
-            if (colorAdjustments != null)
-            {
-                float mappedExposure = Mathf.Lerp(-2f, 2f, brightness);
-                colorAdjustments.postExposure.value = mappedExposure;
-            }
-        }
-
-        private static void ApplyFullScreen(bool isFullScreen)
-        {
-            Screen.fullScreen = isFullScreen;
-        }
-
-        private static void ApplyVSync(bool isVSync)
-        {
-            QualitySettings.vSyncCount = isVSync ? 1 : 0;
-        }
-
-        private static void ApplyMusicVolume(float volume)
-        {
-
-        }
-
-        private static void ApplySoundEffectVolume(float volume)
-        {
-
         }
 
         public bool GetFullScreen => currentSaveData.VideoOptionData.IsFullScreen;
 
         public bool GetVSync => currentSaveData.VideoOptionData.VSync;
-
-        public float GetBrightness => currentSaveData.VideoOptionData.Brightness;
 
         public float GetMusicVolume => currentSaveData.SoundOptionData.MusicVolume;
 
@@ -86,13 +41,6 @@ namespace UI.Option.Service
         {
             currentSaveData.VideoOptionData.IsFullScreen = isFullScreen;
             ApplyFullScreen(isFullScreen);
-            SaveOptions();
-        }
-
-        public void SetBrightness(float brightness)
-        {
-            currentSaveData.VideoOptionData.Brightness = brightness;
-            ApplyBrightness(brightness);
             SaveOptions();
         }
 
@@ -115,6 +63,40 @@ namespace UI.Option.Service
             currentSaveData.SoundOptionData.SoundEffectVolume = volume;
             ApplySoundEffectVolume(volume);
             SaveOptions();
+        }
+
+        private void SaveOptions()
+        {
+            SaveDataManager.Save(currentSaveData);
+        }
+
+        private void ApplySettings()
+        {
+            ApplyFullScreen(currentSaveData.VideoOptionData.IsFullScreen);
+            ApplyVSync(currentSaveData.VideoOptionData.VSync);
+            ApplyMusicVolume(currentSaveData.SoundOptionData.MusicVolume);
+            ApplySoundEffectVolume(currentSaveData.SoundOptionData.SoundEffectVolume);
+        }
+
+        private static void ApplyFullScreen(bool isFullScreen)
+        {
+            Screen.fullScreen = isFullScreen;
+        }
+
+        private static void ApplyVSync(bool isVSync)
+        {
+            QualitySettings.vSyncCount = isVSync ? 1 : 0;
+        }
+
+        private void ApplyMusicVolume(float volume)
+        {
+            bgmService?.SetMusicVolume(volume);
+        }
+
+        private void ApplySoundEffectVolume(float volume)
+        {
+            uiSoundService?.SetSoundEffectVolume(volume);
+            seService?.SetSoundEffectVolume(volume);
         }
     }
 }
