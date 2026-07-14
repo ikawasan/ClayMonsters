@@ -1,8 +1,11 @@
+using Cysharp.Threading.Tasks;
 using Extensions;
 using LighthouseExtends.UIComponent.Button;
 using Scene.ClayEditScene.Interface;
 using System;
+using System.Threading;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace Scene.ClayEditScene.View
 {
@@ -12,28 +15,22 @@ namespace Scene.ClayEditScene.View
         [SerializeField] LHButton toModeSelectSceneButton;
         [SerializeField] LHButton cancelToModeSelectSceneButton;
 
-        [SerializeField] LHButton openSaveWindowButton;
-        [SerializeField] LHButton saveButton;
-        [SerializeField] LHButton cancelSaveButton;
-
         [SerializeField] Canvas checkToModeSelectSceneWindow;
-        [SerializeField] Canvas checkSaveWindow;
+
+        [SerializeField] GameObject inputBlocker;
 
         Canvas IClayEditView.CheckToModeSelectSceneWindow => checkToModeSelectSceneWindow;
-        Canvas IClayEditView.CheckSaveWindow => checkSaveWindow;
 
-        IDisposable IClayEditView.SubscribeOpenToModeSelectSceneWindowButtonClick(Action action) => openToModeSelectSceneButton.SubscribeOnClick(action);
-        IDisposable IClayEditView.SubscribeToModeSelectSceneButtonClick(Action action) => toModeSelectSceneButton.SubscribeOnClick(action);
-        IDisposable IClayEditView.SubscribeCancelToModeSelectSceneButtonClick(Action action) => cancelToModeSelectSceneButton.SubscribeOnClick(action);
+        GameObject IClayEditView.InputBlocker => inputBlocker;
 
-        IDisposable IClayEditView.SubscribeOpenSaveWindowButtonClick(Action action) => openSaveWindowButton.SubscribeOnClick(action);
-        IDisposable IClayEditView.SubscribeSaveButtonClick(Action action) => saveButton.SubscribeOnClick(action);
-        IDisposable IClayEditView.SubscribeCancelSaveButtonClick(Action action) => cancelSaveButton.SubscribeOnClick(action);
+        IDisposable IClayEditView.SubscribeOpenToModeSelectSceneWindowButtonClick(UnityAction action) => openToModeSelectSceneButton.SubscribeOnClick(action);
+        IDisposable IClayEditView.SubscribeToModeSelectSceneButtonClick(UnityAction<CancellationToken> action)
+            => toModeSelectSceneButton.SubscribeOnClick(() => action(this.GetCancellationTokenOnDestroy()));
+        IDisposable IClayEditView.SubscribeCancelToModeSelectSceneButtonClick(UnityAction action) => cancelToModeSelectSceneButton.SubscribeOnClick(action);
 
         void IClayEditView.Inisialize()
         {
             checkToModeSelectSceneWindow.enabled = false;
-            checkSaveWindow.enabled = false;
         }
     }
 }

@@ -1,20 +1,19 @@
 using System;
+using System.Threading;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace Scene.ClayEditScene.Interface
 {
     public interface IClayEditView
     {
         Canvas CheckToModeSelectSceneWindow { get; }
-        Canvas CheckSaveWindow { get; }
 
-        IDisposable SubscribeOpenToModeSelectSceneWindowButtonClick(Action action);
-        IDisposable SubscribeToModeSelectSceneButtonClick(Action action);
-        IDisposable SubscribeCancelToModeSelectSceneButtonClick(Action action);
+        GameObject InputBlocker { get; }
 
-        IDisposable SubscribeOpenSaveWindowButtonClick(Action action);
-        IDisposable SubscribeSaveButtonClick(Action action);
-        IDisposable SubscribeCancelSaveButtonClick(Action action);
+        IDisposable SubscribeOpenToModeSelectSceneWindowButtonClick(UnityAction action);
+        IDisposable SubscribeToModeSelectSceneButtonClick(UnityAction<CancellationToken> action);
+        IDisposable SubscribeCancelToModeSelectSceneButtonClick(UnityAction action);
 
         void Inisialize();
     }

@@ -1,18 +1,22 @@
 using Camera.Interface;
 using Cysharp.Threading.Tasks;
 using Lighthouse.Scene;
-using Lighthouse.Scene.SceneBase;
+using Scene.BattleNpcScene.Interface;
 using Scene.ClayEditScene.Interface;
 using Scene.Core;
+using Scene.BattleNpcScene;
 using System.Threading;
 using VContainer;
 
 namespace Scene.ClayEditScene
 {
-    public class ClayEditScene : CanvasMainSceneBase<ClayEditScene.ClayEditTransitionData>
+    public class ClayEditScene : FadeInSceneBase<ClayEditScene.ClayEditTransitionData>
     {
         IClayEditPresenter clayEditPresenter;
         IClayEditCameraPresenter cameraPresenter;
+        IBattleNpcPostProcess battleNpcPostProcess;
+        BattleClassroomLighting classroomLighting;
+        ClayEditSceneResetter sceneResetter;
 
         public override MainSceneId MainSceneId => ClayMonstersMainSceneId.ClayEdit;
 
@@ -22,10 +26,18 @@ namespace Scene.ClayEditScene
         }
 
         [Inject]
-        public void Construct(IClayEditPresenter clayEditPresenter, IClayEditCameraPresenter cameraPresenter)
+        public void Construct(
+            IClayEditPresenter clayEditPresenter,
+            IClayEditCameraPresenter cameraPresenter,
+            IBattleNpcPostProcess battleNpcPostProcess,
+            BattleClassroomLighting classroomLighting,
+            ClayEditSceneResetter sceneResetter)
         {
             this.clayEditPresenter = clayEditPresenter;
             this.cameraPresenter = cameraPresenter;
+            this.battleNpcPostProcess = battleNpcPostProcess;
+            this.classroomLighting = classroomLighting;
+            this.sceneResetter = sceneResetter;
         }
 
         protected override UniTask OnSetup()
@@ -35,11 +47,29 @@ namespace Scene.ClayEditScene
             return UniTask.CompletedTask;
         }
 
-        protected override UniTask OnEnter(ISceneTransitionContext context, CancellationToken cancelToken)
+        protected override UniTask OnEnterCore(ISceneTransitionContext context, CancellationToken cancelToken)
         {
-            clayEditPresenter.OnEnter(); 
+            classroomLighting.Apply();
+            clayEditPresenter.OnEnter();
             cameraPresenter.OnEnter();
-            return base.OnEnter(context, cancelToken);
+            battleNpcPostProcess.Enable();
+            return UniTask.CompletedTask;
+        }
+
+        protected override UniTask OnEnterAfterFadeInCore(ISceneTransitionContext context, CancellationToken cancelToken)
+        {
+            cameraPresenter.OnEnterAfterFadeIn();
+            return UniTask.CompletedTask;
+        }
+
+        protected override UniTask OnLeave(ISceneTransitionContext context, CancellationToken cancelToken)
+        {
+            battleNpcPostProcess.Disable();
+            classroomLighting.DisableLighting();
+            cameraPresenter.OnExit();
+            sceneResetter.Reset();
+
+            return base.OnLeave(context, cancelToken);
         }
     }
 }
