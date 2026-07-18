@@ -17,7 +17,8 @@ namespace Battle
             bool partLost,
             BonePart lostPart,
             int lostLimbIndex,
-            bool isKnockout)
+            bool isKnockout,
+            int attackSequence = 0)
         {
             MoveIndex = moveIndex;
             Hit = hit;
@@ -26,6 +27,7 @@ namespace Battle
             LostPart = lostPart;
             LostLimbIndex = lostLimbIndex;
             IsKnockout = isKnockout;
+            AttackSequence = attackSequence;
         }
 
         /// <summary>
@@ -62,5 +64,10 @@ namespace Battle
         /// とどめか
         /// </summary>
         public bool IsKnockout { get; }
+
+        /// <summary>
+        /// 攻撃開始同期番号・カウンター無効化判定用
+        /// </summary>
+        public int AttackSequence { get; }
     }
 }

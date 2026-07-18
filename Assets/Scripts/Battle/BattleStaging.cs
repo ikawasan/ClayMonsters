@@ -1,5 +1,4 @@
 using Battle.Interface;
-using ClayEditor.Rigging;
 using Cysharp.Threading.Tasks;
 using System.Threading;
 using UnityEngine;
@@ -42,7 +41,7 @@ namespace Battle
         {
             if (winner != null)
             {
-                winner.PlayMotion(MotionType.Idle);
+                winner.PreparePresentationIdle();
             }
 
             await DelayUnscaledAsync(victorySeconds, cancellationToken);

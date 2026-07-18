@@ -156,7 +156,6 @@ namespace Battle.Presenter
             for (int i = 0; i < unit.Moves.Count; i++)
             {
                 AttackMove m = unit.Moves[i];
-                float hitRate = unit.GetHitRate(i);
                 bool usable = system.IsMoveUsableForUnit(isPlayer, i);
                 destination.Add(new MoveDisplay(
                     m.DisplayName,
@@ -165,9 +164,9 @@ namespace Battle.Presenter
                     m.RangeMax,
                     m.GutsCost,
                     m.Power,
-                    BattleCombatRules.ToHitRateLabel(hitRate),
                     ToIconId(m.Motion),
-                    ToTargetPartId(m.TargetDestroyPart)));
+                    ToTargetPartId(m.TargetDestroyPart),
+                    ToRequiredPartId(m.RequiredPart)));
             }
         }
 
@@ -238,6 +237,20 @@ namespace Battle.Presenter
                 case BonePart.Front: return MoveTargetPartId.Front;
                 case BonePart.Back: return MoveTargetPartId.Back;
                 case BonePart.Body: return MoveTargetPartId.Any;
+                default: return MoveTargetPartId.None;
+            }
+        }
+
+        // ドメインの必要部位をUIの識別子へ変換する
+        private static MoveTargetPartId ToRequiredPartId(BonePart part)
+        {
+            switch (part)
+            {
+                case BonePart.Arm: return MoveTargetPartId.Arm;
+                case BonePart.Leg: return MoveTargetPartId.Leg;
+                case BonePart.Front: return MoveTargetPartId.Front;
+                case BonePart.Back: return MoveTargetPartId.Back;
+                case BonePart.Body: return MoveTargetPartId.Body;
                 default: return MoveTargetPartId.None;
             }
         }

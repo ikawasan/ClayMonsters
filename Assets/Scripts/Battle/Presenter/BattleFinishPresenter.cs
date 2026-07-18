@@ -1,8 +1,8 @@
-using System;
-using System.Threading;
 using Battle.Interface;
 using Cysharp.Threading.Tasks;
 using R3;
+using System;
+using System.Threading;
 
 namespace Battle.Presenter
 {
@@ -12,7 +12,6 @@ namespace Battle.Presenter
     public sealed class BattleFinishPresenter : IDisposable
     {
         private readonly IBattleFinishPresentation finishPresentation;
-        private readonly BattleSystem system;
         private readonly CancellationToken cancellationToken;
         private readonly CompositeDisposable disposables = new CompositeDisposable();
 
@@ -25,17 +24,24 @@ namespace Battle.Presenter
             CancellationToken cancellationToken)
         {
             this.finishPresentation = finishPresentation;
-            this.system = system;
             this.cancellationToken = cancellationToken;
 
-            if (finishPresentation == null)
+            if (finishPresentation == null || system == null)
             {
                 return;
             }
 
             system.OnMoveUsed
                 .Where(result => result.IsKnockout)
-                .Subscribe(_ => PlayFinishAsync().Forget())
+                .Subscribe(_ =>
+                {
+                    if (finishPresentation is IBattlePartBreakPresentation partBreakPresentation)
+                    {
+                        partBreakPresentation.HidePartBreakImmediate();
+                    }
+
+                    PlayFinishAsync().Forget();
+                })
                 .AddTo(disposables);
         }
 

@@ -39,8 +39,9 @@ namespace Battle
 
             winnerModel.gameObject.SetActive(true);
 
-            // 欠損部位をすべて元へ戻してから配置し見た目を完全復元する
+            // 欠損部位を戻しIdle基準ポーズへ揃えてから足元を地面に合わせる
             winner.RestoreAllParts();
+            winner.PreparePresentationIdle();
 
             Vector3 center = context.ResolveCenterPosition();
             float groundY = ResolveGroundY(context);
@@ -53,6 +54,7 @@ namespace Battle
 
             BattleSpawnPlacement.ApplyAt(winnerModel, center, facing, groundY);
             RecenterHorizontally(winnerModel, center);
+            BattleSpawnPlacement.SnapBottomToGroundY(winnerModel, groundY);
             winner.SyncMotionLayoutPosition();
         }
 
@@ -105,7 +107,7 @@ namespace Battle
         {
             float playerY = context.PlayerSpawn != null ? context.PlayerSpawn.position.y : 0f;
             float enemyY = context.EnemySpawn != null ? context.EnemySpawn.position.y : 0f;
-            return (playerY + enemyY) * 0.5f;
+            return Mathf.Max(playerY, enemyY);
         }
     }
 }

@@ -73,6 +73,8 @@ namespace Battle
 
             public Interface.IBattleFinishPresentation FinishPresentation;
 
+            public Interface.IBattlePartBreakPresentation PartBreakPresentation;
+
             public IBattleEnemyAi EnemyAi;
 
             public Func<CancellationToken, UniTask<BattleParticipant>> EnemyLoader;
@@ -177,6 +179,7 @@ namespace Battle
             BattleFieldCameraPresenter cameraPresenter = null;
             BattleCombatFeedbackPresenter combatFeedbackPresenter = null;
             BattleFinishPresenter finishPresenter = null;
+            BattlePartBreakPresenter partBreakPresenter = null;
 
             BattleSystem system = null;
             BattleKeyboardMovementInput movementInput = null;
@@ -445,6 +448,14 @@ namespace Battle
                         cancellationToken);
                 }
 
+                if (context.PartBreakPresentation != null)
+                {
+                    partBreakPresenter = new BattlePartBreakPresenter(
+                        context.PartBreakPresentation,
+                        system,
+                        cancellationToken);
+                }
+
                 context.CombatSync?.BeginListening();
                 GameplayTime.Reset();
                 BattleHitStopClock.Clear();
@@ -481,6 +492,8 @@ namespace Battle
                     combatFeedbackPresenter = null;
                     finishPresenter?.Dispose();
                     finishPresenter = null;
+                    partBreakPresenter?.Dispose();
+                    partBreakPresenter = null;
                     fieldPresenter.Dispose();
                     fieldPresenter = null;
                     cameraPresenter?.Dispose();
@@ -511,6 +524,7 @@ namespace Battle
                 presenter?.Dispose();
                 combatFeedbackPresenter?.Dispose();
                 finishPresenter?.Dispose();
+                partBreakPresenter?.Dispose();
                 fieldPresenter?.Dispose();
                 cameraPresenter?.Dispose();
 

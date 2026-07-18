@@ -79,6 +79,9 @@ namespace Battle
     /// </summary>
     public sealed class BattleSystem
     {
+        private const float DistanceCorrectionThreshold = 0.03f;
+        private const float DistanceSyncInterval = 0.2f;
+
         private readonly BattleUnit player;
         private readonly BattleUnit enemy;
         private readonly BattleSettings settings;
@@ -98,6 +101,7 @@ namespace Battle
         private float pendingAttackWindUpRemaining;
         private float pendingAttackPowerMultiplier = 1f;
         private bool pendingAttackIsCounter;
+        private int pendingAttackSequence;
         private float attackLockoutRemaining;
         private float enemyAttackCooldownRemaining;
         private int lastPlayerMoveIndex = -1;
@@ -117,13 +121,19 @@ namespace Battle
         private float enemyStepElapsed;
         private float partRepairProgress;
         private int repairingLimbIndex = -1;
+        private bool isPartRepairVisualActive;
         private float enemyPartRepairProgress;
         private int enemyRepairingLimbIndex = -1;
+        private bool isEnemyPartRepairVisualActive;
         private readonly IBattleEnemyAi enemyAi;
         private readonly IBattlePvpCombatSync combatSync;
         private int lastRemoteEnemyMoveIndex = -1;
         private BattleRemoteStrikePayload pendingFailedRemoteStrike;
         private bool hasPendingFailedRemoteStrike;
+        private int deferredEnemyAttackSequence;
+        private bool deferredEnemyAttackConsumed;
+        private float distanceSyncRemaining;
+        private readonly HashSet<int> cancelledAttackSequences = new HashSet<int>();
         private IBattleFieldBoundary fieldBoundary;
         private IBattleFieldMovement fieldMovement;
 
@@ -240,6 +250,12 @@ namespace Battle
         public bool IsPlayerPerformingAttack =>
             (pendingAttackAttacker == player && pendingAttackWindUpRemaining > 0f)
             || player.IsPerformingAttack;
+
+        /// <summary>
+        /// 攻撃演出中か(双方の溜めまたは攻撃モーション)
+        /// </summary>
+        public bool IsAttackPresentationActive =>
+            IsPlayerPerformingAttack || IsEnemyPerformingAttack;
 
         /// <summary>
         /// プレイヤーがステップ移動中か
@@ -447,7 +463,7 @@ namespace Battle
             if (playerMovementInput != null)
             {
                 playerMovementInput.RefreshInput();
-                if (!isPlayerStepping && !IsEnemyPerformingAttack)
+                if (!isPlayerStepping && !IsAttackPresentationActive)
                 {
                     SetPlayerMovement(playerMovementInput.MovementIntent);
                 }
@@ -459,7 +475,7 @@ namespace Battle
 
             if (playerCombatInput != null)
             {
-                if (!isPlayerStepping && !IsEnemyPerformingAttack)
+                if (!isPlayerStepping && !IsAttackPresentationActive)
                 {
                     int stepIntent = playerCombatInput.ConsumeStepIntent();
                     if (stepIntent != 0)
@@ -514,16 +530,20 @@ namespace Battle
             player.Tick(deltaTime, gainGuts);
             enemy.Tick(deltaTime, gainGuts);
 
+            // カウンター無効化を溜め解決より先に反映する
+            ProcessRemoteCombatSync();
             UpdateAttackWindUp(deltaTime);
             if (IsFinished)
             {
                 return;
             }
 
-            if (pendingAttackAttacker != null)
+            if (IsAttackPresentationActive)
             {
                 player.MovementIntent = 0;
                 enemy.MovementIntent = 0;
+                PausePartRepair();
+                PauseEnemyPartRepair();
             }
             else
             {
@@ -541,7 +561,6 @@ namespace Battle
                 return;
             }
 
-            ProcessRemoteCombatSync();
             UpdatePlayerStep(deltaTime);
             UpdateEnemyStep(deltaTime);
             if (!isPlayerStepping && !isEnemyStepping)
@@ -549,6 +568,7 @@ namespace Battle
                 UpdateDistance(deltaTime);
             }
 
+            UpdateDistanceAuthoritySync(deltaTime);
             player.UpdateLocomotionMotion();
             enemy.UpdateLocomotionMotion();
             updatedSubject.OnNext(Unit.Default);
@@ -623,7 +643,7 @@ namespace Battle
             if (IsPlayerPerformingAttack || pendingAttackAttacker != null)
             {
                 enemy.MovementIntent = 0;
-                CancelEnemyPartRepair();
+                PauseEnemyPartRepair();
                 return;
             }
 
@@ -636,7 +656,7 @@ namespace Battle
             if (!enemy.CanAct)
             {
                 enemy.MovementIntent = 0;
-                CancelEnemyPartRepair();
+                PauseEnemyPartRepair();
                 return;
             }
 
@@ -659,7 +679,7 @@ namespace Battle
                 return;
             }
 
-            CancelEnemyPartRepair();
+            PauseEnemyPartRepair();
             if (decision.StepIntent != 0)
             {
                 TryBeginEnemyStep(decision.StepIntent);
@@ -687,7 +707,8 @@ namespace Battle
                 enemy.Moves[decision.AttackMoveIndex],
                 decision.AttackMoveIndex,
                 1f,
-                false);
+                false,
+                decision.AttackSequence);
         }
 
         private void BeginAttackWindUp(
@@ -696,7 +717,8 @@ namespace Battle
             AttackMove move,
             int moveIndex,
             float powerMultiplier,
-            bool isCounter)
+            bool isCounter,
+            int attackSequence = 0)
         {
             if (attackLockoutRemaining > 0f && !isCounter)
             {
@@ -718,6 +740,7 @@ namespace Battle
             pendingAttackWindUpRemaining = windUp;
             pendingAttackPowerMultiplier = powerMultiplier;
             pendingAttackIsCounter = isCounter;
+            pendingAttackSequence = attackSequence;
 
             if (attacker == enemy)
             {
@@ -767,6 +790,7 @@ namespace Battle
             float powerMultiplier = pendingAttackPowerMultiplier;
             bool wasCounter = pendingAttackIsCounter;
             bool wasEnemyAttack = attacker == enemy;
+            int attackSequence = pendingAttackSequence;
 
             ClearPendingAttack();
 
@@ -782,9 +806,19 @@ namespace Battle
                 return;
             }
 
+            // カウンターされた攻撃は命中解決しない
+            if (!wasCounter
+                && !wasEnemyAttack
+                && attackSequence > 0
+                && cancelledAttackSequences.Contains(attackSequence))
+            {
+                attacker.PlayMotion(MotionType.Idle);
+                return;
+            }
+
             if (wasCounter)
             {
-                ExecuteMove(attacker, target, move, moveIndex, settings.CounterDamageMultiplier);
+                ExecuteMove(attacker, target, move, moveIndex, settings.CounterDamageMultiplier, attackSequence);
                 enemyAttackCooldownRemaining = UnityEngine.Random.Range(
                     settings.EnemyAttackCooldownMin,
                     settings.EnemyAttackCooldownMax);
@@ -795,6 +829,8 @@ namespace Battle
             {
                 enemy.PlayMotion(move.Motion, move.Recovery);
                 enemy.ConsumeForMove(move);
+                deferredEnemyAttackSequence = attackSequence;
+                deferredEnemyAttackConsumed = attackSequence > 0;
                 enemyAttackCooldownRemaining = UnityEngine.Random.Range(
                     settings.EnemyAttackCooldownMin,
                     settings.EnemyAttackCooldownMax);
@@ -802,7 +838,7 @@ namespace Battle
                 return;
             }
 
-            ExecuteMove(attacker, target, move, moveIndex, powerMultiplier);
+            ExecuteMove(attacker, target, move, moveIndex, powerMultiplier, attackSequence);
 
             if (wasEnemyAttack)
             {
@@ -821,6 +857,7 @@ namespace Battle
             pendingAttackWindUpRemaining = 0f;
             pendingAttackPowerMultiplier = 1f;
             pendingAttackIsCounter = false;
+            pendingAttackSequence = 0;
         }
 
         private void ExecutePlayerMove(int moveIndex)
@@ -839,7 +876,10 @@ namespace Battle
 
             AttackMove move = player.Moves[moveIndex];
             float powerMultiplier = BattleCombatRules.ComputeChainPowerMultiplier(playerChainCount);
-            BeginAttackWindUp(player, enemy, move, moveIndex, powerMultiplier, false);
+            int attackSequence = combatSync != null
+                ? combatSync.ReportLocalAttackStart(moveIndex)
+                : 0;
+            BeginAttackWindUp(player, enemy, move, moveIndex, powerMultiplier, false, attackSequence);
         }
 
         private void ResolveCounter(int moveIndex)
@@ -857,23 +897,34 @@ namespace Battle
             chainWindowRemaining = settings.ChainBonusWindow;
 
             AttackMove playerMove = player.Moves[moveIndex];
+            int counteredAttackSequence = pendingAttackSequence;
+            if (counteredAttackSequence > 0)
+            {
+                cancelledAttackSequences.Add(counteredAttackSequence);
+                combatSync?.ReportLocalCounter(counteredAttackSequence);
+            }
+
             ClearPendingAttack();
             enemyAttackCooldownRemaining = UnityEngine.Random.Range(
                 settings.EnemyAttackCooldownMin,
                 settings.EnemyAttackCooldownMax);
 
+            int counterAttackSequence = combatSync != null
+                ? combatSync.ReportLocalAttackStart(moveIndex)
+                : 0;
             BeginAttackWindUp(
                 player,
                 enemy,
                 playerMove,
                 moveIndex,
                 settings.CounterDamageMultiplier,
-                true);
+                true,
+                counterAttackSequence);
         }
 
         private void TryKnockback()
         {
-            if (pendingAttackAttacker != null)
+            if (IsAttackPresentationActive)
             {
                 return;
             }
@@ -892,26 +943,58 @@ namespace Battle
             player.BeginRecovery(settings.KnockbackRecovery);
             player.PlayMotion(MotionType.Tackle);
             Distance = Mathf.Min(settings.MaxDistance, Distance + settings.KnockbackPushDistance);
+            combatSync?.ReportLocalKnockback(Distance);
+            distanceResyncSubject.OnNext(Unit.Default);
+        }
+
+        private void ApplyRemoteEnemyKnockback(float resultingDistance)
+        {
+            if (IsFinished)
+            {
+                return;
+            }
+
+            if (enemy.Guts >= settings.KnockbackGutsCost)
+            {
+                enemy.ConsumeGuts(settings.KnockbackGutsCost);
+            }
+
+            enemy.BeginRecovery(settings.KnockbackRecovery);
+            enemy.PlayMotion(MotionType.Tackle);
+            Distance = Mathf.Clamp(resultingDistance, 0f, settings.MaxDistance);
+            distanceResyncSubject.OnNext(Unit.Default);
         }
 
         private void UpdatePartRepair(float deltaTime)
         {
             if (playerCombatInput == null || !playerCombatInput.IsHoldingPartRepair)
             {
-                CancelPartRepair();
+                PausePartRepair();
                 return;
             }
 
-            if (IsFinished || pendingAttackAttacker != null || player.LostPartCount <= 0)
+            if (IsFinished || player.LostPartCount <= 0)
             {
-                CancelPartRepair();
+                ResetPartRepair();
+                return;
+            }
+
+            if (IsAttackPresentationActive)
+            {
+                PausePartRepair();
                 return;
             }
 
             int? nextLimb = player.PeekNextRestoreLimbIndex();
             if (!nextLimb.HasValue)
             {
-                CancelPartRepair();
+                ResetPartRepair();
+                return;
+            }
+
+            if (repairingLimbIndex >= 0 && repairingLimbIndex != nextLimb.Value)
+            {
+                ResetPartRepair();
                 return;
             }
 
@@ -922,18 +1005,12 @@ namespace Battle
             {
                 repairingLimbIndex = nextLimb.Value;
                 partRepairProgress = 0f;
-                player.BeginPartRepairVisual(repairingLimbIndex);
                 player.PlayMotion(MotionType.Idle);
-            }
-            else if (repairingLimbIndex != nextLimb.Value)
-            {
-                CancelPartRepair();
-                return;
             }
 
             partRepairProgress += deltaTime;
             float progress = Mathf.Clamp01(partRepairProgress / repairDuration);
-            player.SetPartRepairVisualProgress(repairingLimbIndex, progress);
+            EnsurePartRepairVisual(repairingLimbIndex, progress);
 
             if (progress < 1f)
             {
@@ -943,39 +1020,68 @@ namespace Battle
             int restoredLimbIndex = repairingLimbIndex;
             if (player.TryRestoreOnePart())
             {
-                repairingLimbIndex = -1;
-                partRepairProgress = 0f;
+                ResetPartRepair();
                 combatSync?.ReportLocalPlayerPartRestored(restoredLimbIndex);
                 return;
             }
 
-            CancelPartRepair();
+            ResetPartRepair();
         }
 
-        private void CancelPartRepair()
+        private void EnsurePartRepairVisual(int limbIndex, float progress)
         {
-            if (repairingLimbIndex >= 0)
+            if (!isPartRepairVisualActive)
             {
-                player.CancelPartRepairVisual();
-                repairingLimbIndex = -1;
+                player.BeginPartRepairVisual(limbIndex);
+                isPartRepairVisualActive = true;
             }
 
+            player.SetPartRepairVisualProgress(limbIndex, progress);
+        }
+
+        private void PausePartRepair()
+        {
+            if (!isPartRepairVisualActive)
+            {
+                return;
+            }
+
+            player.CancelPartRepairVisual();
+            isPartRepairVisualActive = false;
+        }
+
+        private void ResetPartRepair()
+        {
+            PausePartRepair();
+            repairingLimbIndex = -1;
             partRepairProgress = 0f;
         }
 
         // 敵の欠損部位を時間経過で1つずつ修復する
         private void UpdateEnemyPartRepair(float deltaTime)
         {
-            if (IsFinished || pendingAttackAttacker != null || enemy.LostPartCount <= 0)
+            if (IsFinished || enemy.LostPartCount <= 0)
             {
-                CancelEnemyPartRepair();
+                ResetEnemyPartRepair();
+                return;
+            }
+
+            if (IsAttackPresentationActive)
+            {
+                PauseEnemyPartRepair();
                 return;
             }
 
             int? nextLimb = enemy.PeekNextRestoreLimbIndex();
             if (!nextLimb.HasValue)
             {
-                CancelEnemyPartRepair();
+                ResetEnemyPartRepair();
+                return;
+            }
+
+            if (enemyRepairingLimbIndex >= 0 && enemyRepairingLimbIndex != nextLimb.Value)
+            {
+                ResetEnemyPartRepair();
                 return;
             }
 
@@ -986,18 +1092,12 @@ namespace Battle
             {
                 enemyRepairingLimbIndex = nextLimb.Value;
                 enemyPartRepairProgress = 0f;
-                enemy.BeginPartRepairVisual(enemyRepairingLimbIndex);
                 enemy.PlayMotion(MotionType.Idle);
-            }
-            else if (enemyRepairingLimbIndex != nextLimb.Value)
-            {
-                CancelEnemyPartRepair();
-                return;
             }
 
             enemyPartRepairProgress += deltaTime;
             float progress = Mathf.Clamp01(enemyPartRepairProgress / repairDuration);
-            enemy.SetPartRepairVisualProgress(enemyRepairingLimbIndex, progress);
+            EnsureEnemyPartRepairVisual(enemyRepairingLimbIndex, progress);
 
             if (progress < 1f)
             {
@@ -1006,28 +1106,45 @@ namespace Battle
 
             if (combatSync != null)
             {
-                CancelEnemyPartRepair();
+                ResetEnemyPartRepair();
                 return;
             }
 
             if (enemy.TryRestoreOnePart())
             {
-                enemyRepairingLimbIndex = -1;
-                enemyPartRepairProgress = 0f;
+                ResetEnemyPartRepair();
                 return;
             }
 
-            CancelEnemyPartRepair();
+            ResetEnemyPartRepair();
         }
 
-        private void CancelEnemyPartRepair()
+        private void EnsureEnemyPartRepairVisual(int limbIndex, float progress)
         {
-            if (enemyRepairingLimbIndex >= 0)
+            if (!isEnemyPartRepairVisualActive)
             {
-                enemy.CancelPartRepairVisual();
-                enemyRepairingLimbIndex = -1;
+                enemy.BeginPartRepairVisual(limbIndex);
+                isEnemyPartRepairVisualActive = true;
             }
 
+            enemy.SetPartRepairVisualProgress(limbIndex, progress);
+        }
+
+        private void PauseEnemyPartRepair()
+        {
+            if (!isEnemyPartRepairVisualActive)
+            {
+                return;
+            }
+
+            enemy.CancelPartRepairVisual();
+            isEnemyPartRepairVisualActive = false;
+        }
+
+        private void ResetEnemyPartRepair()
+        {
+            PauseEnemyPartRepair();
+            enemyRepairingLimbIndex = -1;
             enemyPartRepairProgress = 0f;
         }
 
@@ -1040,9 +1157,81 @@ namespace Battle
 
             combatSync.EnsureListening();
             combatSync.PollRemoteSync();
+            ProcessRemoteCounterSync();
             ProcessRemoteStrikeSync();
+            ProcessRemoteDistanceSync();
+            ProcessRemoteKnockbackSync();
             ProcessRemoteStepSync();
             ProcessRemotePartRestoreSync();
+        }
+
+        private void ProcessRemoteKnockbackSync()
+        {
+            while (combatSync.TryConsumeRemoteKnockback(out float resultingDistance))
+            {
+                ApplyRemoteEnemyKnockback(resultingDistance);
+            }
+        }
+
+        private void ProcessRemoteDistanceSync()
+        {
+            if (combatSync.IsDistanceAuthority || isPlayerStepping || isEnemyStepping)
+            {
+                return;
+            }
+
+            bool received = false;
+            float authoritativeDistance = Distance;
+            while (combatSync.TryConsumeAuthoritativeDistance(out float distance))
+            {
+                authoritativeDistance = distance;
+                received = true;
+            }
+
+            authoritativeDistance = Mathf.Clamp(authoritativeDistance, 0f, settings.MaxDistance);
+            if (!received || Mathf.Abs(authoritativeDistance - Distance) < DistanceCorrectionThreshold)
+            {
+                return;
+            }
+
+            Distance = authoritativeDistance;
+            distanceResyncSubject.OnNext(Unit.Default);
+        }
+
+        private void UpdateDistanceAuthoritySync(float deltaTime)
+        {
+            if (combatSync == null || !combatSync.IsDistanceAuthority)
+            {
+                return;
+            }
+
+            distanceSyncRemaining -= deltaTime;
+            if (distanceSyncRemaining > 0f)
+            {
+                return;
+            }
+
+            distanceSyncRemaining = DistanceSyncInterval;
+            combatSync.ReportAuthoritativeDistance(Distance);
+        }
+
+        private void ProcessRemoteCounterSync()
+        {
+            while (combatSync.TryConsumeRemoteCounter(out int counteredAttackSequence))
+            {
+                if (counteredAttackSequence <= 0)
+                {
+                    continue;
+                }
+
+                cancelledAttackSequences.Add(counteredAttackSequence);
+                if (pendingAttackAttacker == player
+                    && pendingAttackSequence == counteredAttackSequence)
+                {
+                    ClearPendingAttack();
+                    player.PlayMotion(MotionType.Idle);
+                }
+            }
         }
 
         private void ProcessRemotePartRestoreSync()
@@ -1075,6 +1264,19 @@ namespace Battle
 
         private bool TryApplyRemoteStrikePayload(BattleRemoteStrikePayload payload)
         {
+            // カウンター済みの相手攻撃結果は破棄する
+            if (payload.AttackSequence > 0
+                && cancelledAttackSequences.Contains(payload.AttackSequence))
+            {
+                if (pendingAttackAttacker == enemy
+                    && pendingAttackSequence == payload.AttackSequence)
+                {
+                    ClearPendingAttack();
+                }
+
+                return true;
+            }
+
             if (pendingAttackAttacker == enemy)
             {
                 ClearPendingAttack();
@@ -1136,12 +1338,7 @@ namespace Battle
 
         private void TryBeginPlayerStep(int stepIntent)
         {
-            if (IsFinished || stepIntent == 0 || isPlayerStepping || isEnemyStepping || pendingAttackAttacker != null)
-            {
-                return;
-            }
-
-            if (IsEnemyPerformingAttack)
+            if (IsFinished || stepIntent == 0 || isPlayerStepping || isEnemyStepping || IsAttackPresentationActive)
             {
                 return;
             }
@@ -1285,7 +1482,8 @@ namespace Battle
             BattleUnit target,
             AttackMove move,
             int moveIndex,
-            float powerMultiplier = 1f)
+            float powerMultiplier = 1f,
+            int attackSequence = 0)
         {
             float hitRate = BattleCombatRules.ComputeHitRate(move.Accuracy, attacker.Guts, attacker.MaxGuts);
             attacker.PlayMotion(move.Motion, move.Recovery);
@@ -1307,18 +1505,6 @@ namespace Battle
                 isKnockout = target.IsDefeated;
             }
 
-            var result = new MoveUsedResult(
-                attacker,
-                target,
-                move,
-                hit,
-                damage,
-                partLost,
-                lostPart,
-                isKnockout,
-                lostLimbIndex);
-            PublishMoveUsed(result);
-
             if (hit)
             {
                 if (isKnockout)
@@ -1331,9 +1517,21 @@ namespace Battle
                 }
             }
 
+            var result = new MoveUsedResult(
+                attacker,
+                target,
+                move,
+                hit,
+                damage,
+                partLost,
+                lostPart,
+                isKnockout,
+                lostLimbIndex);
+            PublishMoveUsed(result);
+
             if (attacker == player && combatSync != null)
             {
-                combatSync.ReportLocalPlayerStrike(result, moveIndex);
+                combatSync.ReportLocalPlayerStrike(result, moveIndex, attackSequence);
             }
 
             if (target.IsDefeated)
@@ -1351,7 +1549,15 @@ namespace Battle
             BattleRemoteStrikePayload payload)
         {
             AttackMove strikeMove = ResolveMoveForUnit(attacker, payload.MoveIndex) ?? move;
-            if (!attacker.IsPerformingAttack)
+            bool skipConsume = deferredEnemyAttackConsumed
+                && payload.AttackSequence > 0
+                && payload.AttackSequence == deferredEnemyAttackSequence;
+            if (skipConsume)
+            {
+                deferredEnemyAttackConsumed = false;
+                deferredEnemyAttackSequence = 0;
+            }
+            else if (!attacker.IsPerformingAttack)
             {
                 attacker.PlayMotion(strikeMove.Motion, strikeMove.Recovery);
                 attacker.ConsumeForMove(strikeMove);
@@ -1381,17 +1587,6 @@ namespace Battle
                 target.PlayHitMotion(partLost);
             }
 
-            PublishMoveUsed(new MoveUsedResult(
-                attacker,
-                target,
-                strikeMove,
-                hit,
-                damage,
-                partLost,
-                lostPart,
-                isKnockout,
-                payload.LostLimbIndex));
-
             if (hit)
             {
                 if (isKnockout)
@@ -1403,6 +1598,17 @@ namespace Battle
                     BeginHitFeedback(partLost);
                 }
             }
+
+            PublishMoveUsed(new MoveUsedResult(
+                attacker,
+                target,
+                strikeMove,
+                hit,
+                damage,
+                partLost,
+                lostPart,
+                isKnockout,
+                payload.LostLimbIndex));
 
             if (target.IsDefeated)
             {

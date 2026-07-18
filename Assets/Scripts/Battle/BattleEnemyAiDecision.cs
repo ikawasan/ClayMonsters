@@ -12,12 +12,19 @@ namespace Battle
         /// <param name="attackMoveIndex">攻撃する技番号・攻撃しないとき-1</param>
         /// <param name="wantsRepair">部位修復を行うか</param>
         /// <param name="stepIntent">ステップ移動意図・通常移動でないとき0以外</param>
-        public BattleEnemyAiDecision(int movementIntent, int attackMoveIndex, bool wantsRepair = false, int stepIntent = 0)
+        /// <param name="attackSequence">ネットワーク攻撃開始同期番号・未使用時0</param>
+        public BattleEnemyAiDecision(
+            int movementIntent,
+            int attackMoveIndex,
+            bool wantsRepair = false,
+            int stepIntent = 0,
+            int attackSequence = 0)
         {
             MovementIntent = movementIntent;
             AttackMoveIndex = attackMoveIndex;
             WantsRepair = wantsRepair;
             StepIntent = stepIntent;
+            AttackSequence = attackSequence;
         }
 
         /// <summary>
@@ -41,6 +48,11 @@ namespace Battle
         public int StepIntent { get; }
 
         /// <summary>
+        /// ネットワーク攻撃開始同期番号・未使用時0
+        /// </summary>
+        public int AttackSequence { get; }
+
+        /// <summary>
         /// 停止のみの決定
         /// </summary>
         public static BattleEnemyAiDecision Hold => new BattleEnemyAiDecision(0, -1);
@@ -49,5 +61,6 @@ namespace Battle
         /// 部位修復に専念する決定
         /// </summary>
         public static BattleEnemyAiDecision Repair => new BattleEnemyAiDecision(0, -1, true);
+
     }
 }

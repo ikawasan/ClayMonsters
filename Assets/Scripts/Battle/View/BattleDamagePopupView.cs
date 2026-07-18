@@ -77,10 +77,12 @@ namespace Battle.View
             labelText.fontStyle = FontStyles.Bold;
             labelText.color = color;
             labelText.text = label;
-            labelText.outlineWidth = 0.22f;
-            labelText.outlineColor = new Color(0.12f, 0.02f, 0.02f, 0.95f);
             labelText.sortingOrder = 500;
             AppTmpFontUtility.ApplyDefaultFont(labelText);
+            AppTmpFontUtility.ApplyOutline(
+                labelText,
+                0.22f,
+                new Color(0.12f, 0.02f, 0.02f, 0.95f));
 
             MeshRenderer meshRenderer = labelText.GetComponent<MeshRenderer>();
             if (meshRenderer != null)
@@ -114,7 +116,7 @@ namespace Battle.View
 
             private void LateUpdate()
             {
-                elapsed += Time.unscaledDeltaTime;
+                elapsed += GameplayTime.PresentationDeltaTime;
                 float normalized = Mathf.Clamp01(elapsed / lifetime);
                 float eased = 1f - (1f - normalized) * (1f - normalized);
 

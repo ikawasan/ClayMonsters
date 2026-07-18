@@ -1,11 +1,12 @@
 using Battle.Interface;
+using Extensions;
 using UnityEngine;
 
 namespace Battle.View
 {
     /// <summary>
     /// 攻撃命中時にパーティクルバーストをワールド座標へ表示する
-    /// ヒットストップ中も見えるよう非スケール時間で再生する
+    /// ヒットストップ中だけ非スケール時間で再生しスローモーション時はゲーム側と同じ倍率で進める
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class BattleHitEffectView : MonoBehaviour, IBattleHitEffect
@@ -88,7 +89,7 @@ namespace Battle.View
             if (particleSystem != null)
             {
                 ParticleSystem.MainModule main = particleSystem.main;
-                main.useUnscaledTime = true;
+                main.useUnscaledTime = GameplayTime.UseUnscaledParticleTime;
                 particleSystem.Play(true);
                 float lifetime = main.duration + main.startLifetime.constantMax;
                 ScheduleUnscaledDestroy(instance, Mathf.Max(0.5f, lifetime));
@@ -145,7 +146,7 @@ namespace Battle.View
             main.startSize = new ParticleSystem.MinMaxCurve(isPartBreak ? 0.9f : 0.65f, isPartBreak ? 1.4f : 1f);
             main.maxParticles = isPartBreak ? 8 : 5;
             main.simulationSpace = ParticleSystemSimulationSpace.World;
-            main.useUnscaledTime = true;
+            main.useUnscaledTime = GameplayTime.UseUnscaledParticleTime;
             main.startColor = new ParticleSystem.MinMaxGradient(
                 new Color(1f, 1f, 1f, 0.95f),
                 new Color(1f, isPartBreak ? 0.5f : 0.85f, isPartBreak ? 0.15f : 0.35f, 0.75f));
@@ -181,7 +182,7 @@ namespace Battle.View
             main.startSize = new ParticleSystem.MinMaxCurve(0.22f, isPartBreak ? 0.62f : 0.48f);
             main.maxParticles = isPartBreak ? 72 : 48;
             main.simulationSpace = ParticleSystemSimulationSpace.World;
-            main.useUnscaledTime = true;
+            main.useUnscaledTime = GameplayTime.UseUnscaledParticleTime;
             main.startColor = isPartBreak
                 ? new ParticleSystem.MinMaxGradient(Color.white, new Color(1f, 0.55f, 0.2f, 1f))
                 : new ParticleSystem.MinMaxGradient(Color.white, new Color(1f, 0.95f, 0.45f, 1f));
@@ -217,7 +218,7 @@ namespace Battle.View
             main.startSize = new ParticleSystem.MinMaxCurve(0.14f, isPartBreak ? 0.4f : 0.3f);
             main.maxParticles = isPartBreak ? 48 : 30;
             main.simulationSpace = ParticleSystemSimulationSpace.World;
-            main.useUnscaledTime = true;
+            main.useUnscaledTime = GameplayTime.UseUnscaledParticleTime;
             main.startColor = isPartBreak
                 ? new ParticleSystem.MinMaxGradient(new Color(1f, 0.42f, 0.12f, 1f), new Color(1f, 0.72f, 0.18f, 1f))
                 : new ParticleSystem.MinMaxGradient(new Color(1f, 0.78f, 0.2f, 1f), new Color(1f, 0.95f, 0.45f, 1f));
@@ -266,7 +267,7 @@ namespace Battle.View
             main.gravityModifier = 1.1f;
             main.maxParticles = isPartBreak ? 44 : 28;
             main.simulationSpace = ParticleSystemSimulationSpace.World;
-            main.useUnscaledTime = true;
+            main.useUnscaledTime = GameplayTime.UseUnscaledParticleTime;
             main.startColor = new ParticleSystem.MinMaxGradient(
                 new Color(1f, 0.95f, 0.65f, 1f),
                 new Color(1f, 0.45f, 0.1f, 1f));
@@ -322,7 +323,7 @@ namespace Battle.View
             main.gravityModifier = 1.4f;
             main.maxParticles = 32;
             main.simulationSpace = ParticleSystemSimulationSpace.World;
-            main.useUnscaledTime = true;
+            main.useUnscaledTime = GameplayTime.UseUnscaledParticleTime;
             main.startColor = new ParticleSystem.MinMaxGradient(
                 new Color(1f, 0.28f, 0.1f, 1f),
                 new Color(0.85f, 0.12f, 0.08f, 1f));
@@ -520,7 +521,7 @@ namespace Battle.View
 
             private void Update()
             {
-                elapsed += Time.unscaledDeltaTime;
+                elapsed += GameplayTime.PresentationDeltaTime;
                 if (pointLight == null)
                 {
                     return;
@@ -548,7 +549,7 @@ namespace Battle.View
 
             private void Update()
             {
-                remainingSeconds -= Time.unscaledDeltaTime;
+                remainingSeconds -= GameplayTime.PresentationDeltaTime;
                 if (remainingSeconds <= 0f)
                 {
                     Destroy(gameObject);

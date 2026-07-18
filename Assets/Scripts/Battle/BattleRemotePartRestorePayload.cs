@@ -8,10 +8,11 @@ namespace Battle
         /// <summary>
         /// 同期修復完了を生成する
         /// </summary>
-        public BattleRemotePartRestorePayload(int limbIndex, int sequence)
+        public BattleRemotePartRestorePayload(int limbIndex, int sequence, int matchGeneration = 0)
         {
             LimbIndex = limbIndex;
             Sequence = sequence;
+            MatchGeneration = matchGeneration;
         }
 
         /// <summary>
@@ -23,5 +24,10 @@ namespace Battle
         /// 同期番号
         /// </summary>
         public int Sequence { get; }
+
+        /// <summary>
+        /// 対戦世代番号・再戦後の遅延パケット破棄用
+        /// </summary>
+        public int MatchGeneration { get; }
     }
 }

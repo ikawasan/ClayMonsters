@@ -702,6 +702,14 @@ namespace Battle
         }
 
         /// <summary>
+        /// 勝利演出配置前に攻撃状態を捨てIdle基準ポーズへ戻す
+        /// </summary>
+        public void PreparePresentationIdle()
+        {
+            motion?.PreparePresentationIdle();
+        }
+
+        /// <summary>
         /// 部位欠損メッシュの再構築を止める
         /// </summary>
         public void SuspendPartLossRebuild()
