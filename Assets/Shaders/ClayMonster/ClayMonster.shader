@@ -110,6 +110,8 @@ Shader "Custom/ClayMonster"
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS_CASCADE
             #pragma multi_compile _ _SHADOWS_SOFT
+            #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
+            #pragma multi_compile_fog
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -128,7 +130,25 @@ Shader "Custom/ClayMonster"
                 float3 positionWS  : TEXCOORD0;
                 float3 normalWS    : TEXCOORD1;
                 float4 color       : COLOR;
+                float fogCoord     : TEXCOORD2;
             };
+
+            half3 ClayMonsterSoftAdditionalDiffuse(float3 positionWS, float3 normalWS, half3 albedo)
+            {
+                half3 additionalDiffuse = 0;
+#if defined(_ADDITIONAL_LIGHTS)
+                uint lightCount = GetAdditionalLightsCount();
+                for (uint lightIndex = 0u; lightIndex < lightCount; lightIndex++)
+                {
+                    Light light = GetAdditionalLight(lightIndex, positionWS);
+                    half halfLambert = saturate(dot(normalWS, light.direction) * 0.5h + 0.5h);
+                    half wrapLight = saturate((halfLambert + _Wrap) / (1.0h + _Wrap));
+                    half lightAmount = pow(wrapLight, _DiffuseSoftness);
+                    additionalDiffuse += albedo * light.color * light.distanceAttenuation * lightAmount * 0.55h;
+                }
+#endif
+                return additionalDiffuse;
+            }
 
             Varyings vert (Attributes IN)
             {
@@ -137,6 +157,7 @@ Shader "Custom/ClayMonster"
                 OUT.positionHCS = TransformWorldToHClip(OUT.positionWS);
                 OUT.normalWS = TransformObjectToWorldNormal(IN.normalOS);
                 OUT.color = IN.color;
+                OUT.fogCoord = ComputeFogFactor(OUT.positionHCS.z);
                 return OUT;
             }
 
@@ -163,6 +184,7 @@ Shader "Custom/ClayMonster"
                 half3 shadowTint = albedo * _ShadowColor.rgb;
                 half3 diffuseColor = lerp(shadowTint * shadowMix, litColor, lightAmount);
                 diffuseColor *= lerp(1.0h, 0.68h, cavity * _CavityStrength);
+                diffuseColor += ClayMonsterSoftAdditionalDiffuse(IN.positionWS, normalWS, albedo);
 
                 half glossMask = ClayMonsterGlossMask(IN.color.a);
 
@@ -196,6 +218,7 @@ Shader "Custom/ClayMonster"
 
                 half3 finalColor = ClayMonsterClampOutput(
                     diffuseColor + specularColor + rimLight + subsurface + ambient);
+                finalColor = MixFog(finalColor, IN.fogCoord);
 
                 return half4(finalColor, 1.0);
             }
