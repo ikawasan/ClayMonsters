@@ -56,7 +56,7 @@ namespace Scene.TitleScene.View
             if (canvas == null || messageText == null || okButton == null)
             {
                 Debug.LogError(
-                    "[TitleMessageWindowView] シーン上のUI参照が未設定です。Tools/ClayMonsters/Migrate Title Scene UIを実行してください",
+                    "[TitleMessageWindowView] シーン上のUI参照が未設定です。HierarchyでUI参照を確認してください",
                     this);
             }
         }

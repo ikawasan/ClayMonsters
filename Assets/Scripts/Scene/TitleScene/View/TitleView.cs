@@ -66,7 +66,7 @@ namespace Scene.TitleScene.View
 
                 Debug.LogError(
 
-                    "[TitleView] シーン上のUI参照が未設定です。Tools/ClayMonsters/Migrate Title Scene UIを実行してください",
+                    "[TitleView] シーン上のUI参照が未設定です。HierarchyでUI参照を確認してください",
 
                     this);
 
