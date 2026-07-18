@@ -35,6 +35,19 @@ namespace Extensions
         }
 
         /// <summary>
+        /// ヒット演出とSEに使うデルタ時間
+        /// ヒットストップ中だけ非スケール時間で進めスローモーション時はゲーム側と同じ倍率にする
+        /// </summary>
+        public static float PresentationDeltaTime =>
+            IsHitStopActive ? Time.unscaledDeltaTime : DeltaTime;
+
+        /// <summary>
+        /// パーティクルを非スケール時間で再生するか
+        /// ヒットストップ中のみtrue
+        /// </summary>
+        public static bool UseUnscaledParticleTime => IsHitStopActive;
+
+        /// <summary>
         /// 演出用時間制御を通常状態へ戻す
         /// </summary>
         public static void Reset()
