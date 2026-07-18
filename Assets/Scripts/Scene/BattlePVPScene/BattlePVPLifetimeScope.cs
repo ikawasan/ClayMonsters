@@ -273,7 +273,7 @@ namespace Scene.BattlePVPScene
             if (battlePvpFlowRunner == null)
             {
                 Debug.LogError(
-                    "[BattlePVPLifetimeScope] BattlePvpFlowRunner が未設定です。Tools/ClayMonsters/Create BattlePVP Sceneを実行してください");
+                    "[BattlePVPLifetimeScope] BattlePvpFlowRunner が未設定です。シーン上の参照をHierarchyで確認してください");
                 return;
             }
 
@@ -285,7 +285,7 @@ namespace Scene.BattlePVPScene
             if (component == null)
             {
                 Debug.LogError(
-                    $"[BattlePVPLifetimeScope] {typeof(T).Name} が未設定です。Tools/ClayMonsters/Create BattlePVP Sceneを実行してください");
+                    $"[BattlePVPLifetimeScope] {typeof(T).Name} が未設定です。シーン上の参照をHierarchyで確認してください");
                 return;
             }
 
@@ -297,7 +297,7 @@ namespace Scene.BattlePVPScene
             if (component == null)
             {
                 Debug.LogError(
-                    $"[BattlePVPLifetimeScope] {typeof(T).Name} が未設定です。Tools/ClayMonsters/Create BattlePVP Sceneを実行してください");
+                    $"[BattlePVPLifetimeScope] {typeof(T).Name} が未設定です。シーン上の参照をHierarchyで確認してください");
                 return;
             }
 

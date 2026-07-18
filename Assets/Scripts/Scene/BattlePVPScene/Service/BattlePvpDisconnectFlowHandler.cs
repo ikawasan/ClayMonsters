@@ -8,16 +8,17 @@ namespace Scene.BattlePVPScene.Service
 {
     /// <summary>
     /// 通信切断検知からUI表示とタイトル遷移までをまとめる
-    /// PvPフロー中の切断時に戦闘停止と戻り導線を提供する
     /// </summary>
     public sealed class BattlePvpDisconnectFlowHandler : IDisposable
     {
-        private readonly IBattlePvpDisconnectView disconnectView;
+        private IBattlePvpDisconnectView disconnectView;
         private readonly BattlePvpDisconnectWatcher watcher = new BattlePvpDisconnectWatcher();
         private Func<CancellationToken, UniTask> returnToTitleAsync;
         private Func<CancellationToken> destroyTokenProvider;
         private Action stopBattleFlow;
         private bool isHandling;
+        private bool isDisposed;
+        private CancellationTokenSource subscribeRetryCts;
 
         /// <summary>
         /// 切断UIと監視を初期化する
@@ -42,11 +43,23 @@ namespace Scene.BattlePVPScene.Service
         }
 
         /// <summary>
+        /// 切断UI参照を後から補完する
+        /// </summary>
+        public void SetDisconnectView(IBattlePvpDisconnectView view)
+        {
+            if (view != null)
+            {
+                disconnectView = view;
+            }
+        }
+
+        /// <summary>
         /// 切断監視を開始する
         /// </summary>
         public void BeginMonitoring()
         {
             watcher.BeginMonitoring();
+            StartSubscribeRetry();
         }
 
         /// <summary>
@@ -54,6 +67,7 @@ namespace Scene.BattlePVPScene.Service
         /// </summary>
         public void SuppressNotifications()
         {
+            StopSubscribeRetry();
             watcher.SuppressNotifications();
             watcher.EndMonitoring();
         }
@@ -61,13 +75,65 @@ namespace Scene.BattlePVPScene.Service
         /// <inheritdoc/>
         public void Dispose()
         {
+            if (isDisposed)
+            {
+                return;
+            }
+
+            isDisposed = true;
+            StopSubscribeRetry();
             watcher.Disconnected -= OnDisconnected;
             watcher.Dispose();
         }
 
+        private void StartSubscribeRetry()
+        {
+            StopSubscribeRetry();
+            subscribeRetryCts = new CancellationTokenSource();
+            EnsureSubscribedAsync(subscribeRetryCts.Token).Forget();
+        }
+
+        private void StopSubscribeRetry()
+        {
+            if (subscribeRetryCts == null)
+            {
+                return;
+            }
+
+            subscribeRetryCts.Cancel();
+            subscribeRetryCts.Dispose();
+            subscribeRetryCts = null;
+        }
+
+        private async UniTaskVoid EnsureSubscribedAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                for (int i = 0; i < 180; i++)
+                {
+                    if (cancellationToken.IsCancellationRequested || isDisposed)
+                    {
+                        return;
+                    }
+
+                    if (watcher.TryEnsureSubscribed())
+                    {
+                        return;
+                    }
+
+                    await UniTask.DelayFrame(1, cancellationToken: cancellationToken);
+                }
+
+                Debug.LogWarning("[BattlePvpDisconnect] NetworkManager購読に失敗しました");
+            }
+            catch (OperationCanceledException)
+            {
+            }
+        }
+
         private void OnDisconnected()
         {
-            if (isHandling)
+            if (isHandling || isDisposed)
             {
                 return;
             }
@@ -80,6 +146,7 @@ namespace Scene.BattlePVPScene.Service
         {
             try
             {
+                Debug.LogWarning("[BattlePvpDisconnect] 切断UIを表示します");
                 stopBattleFlow?.Invoke();
 
                 if (disconnectView != null)

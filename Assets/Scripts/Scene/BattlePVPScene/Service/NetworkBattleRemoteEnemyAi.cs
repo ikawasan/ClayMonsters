@@ -33,21 +33,21 @@ namespace Scene.BattlePVPScene.Service
             if (opponentRelay != null
                 && opponentRelay.TryConsumeRemoteAttackStart(out int rpcMoveIndex, out int rpcSequence))
             {
-                lastRemoteAttackSequence = Mathf.Max(lastRemoteAttackSequence, rpcSequence);
-                if (rpcMoveIndex >= 0)
+                if (rpcSequence > lastRemoteAttackSequence && rpcMoveIndex >= 0)
                 {
-                    return new BattleEnemyAiDecision(0, rpcMoveIndex);
+                    lastRemoteAttackSequence = rpcSequence;
+                    return new BattleEnemyAiDecision(0, rpcMoveIndex, attackSequence: rpcSequence);
                 }
             }
 
             int remoteAttackSequence = inputRelay.OpponentAttackSequence;
-            if (remoteAttackSequence != lastRemoteAttackSequence)
+            if (remoteAttackSequence > lastRemoteAttackSequence)
             {
                 lastRemoteAttackSequence = remoteAttackSequence;
                 int moveIndex = inputRelay.OpponentAttackMoveIndex;
                 if (moveIndex >= 0)
                 {
-                    return new BattleEnemyAiDecision(0, moveIndex);
+                    return new BattleEnemyAiDecision(0, moveIndex, attackSequence: remoteAttackSequence);
                 }
             }
 

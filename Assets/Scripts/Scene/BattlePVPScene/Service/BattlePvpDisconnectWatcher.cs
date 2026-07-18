@@ -31,6 +31,21 @@ namespace Scene.BattlePVPScene.Service
         }
 
         /// <summary>
+        /// NetworkManager準備後の購読を再試行する
+        /// </summary>
+        /// <returns>購読済みならtrue</returns>
+        public bool TryEnsureSubscribed()
+        {
+            if (!isMonitoring || suppressNotifications)
+            {
+                return isSubscribed;
+            }
+
+            Subscribe();
+            return isSubscribed;
+        }
+
+        /// <summary>
         /// 切断監視を停止する
         /// </summary>
         public void EndMonitoring()
@@ -64,12 +79,17 @@ namespace Scene.BattlePVPScene.Service
             NetworkManager manager = NetworkManager.Singleton;
             if (manager == null)
             {
+                Debug.LogWarning("[BattlePvpDisconnect] NetworkManager未準備のため監視購読を保留します");
                 return;
             }
 
             manager.OnClientDisconnectCallback += OnClientDisconnect;
             manager.OnClientStopped += OnClientStopped;
+            manager.OnServerStopped += OnServerStopped;
+            manager.OnTransportFailure += OnTransportFailure;
+            manager.OnConnectionEvent += OnConnectionEvent;
             isSubscribed = true;
+            Debug.Log("[BattlePvpDisconnect] 切断監視を開始しました");
         }
 
         private void Unsubscribe()
@@ -84,6 +104,9 @@ namespace Scene.BattlePVPScene.Service
             {
                 manager.OnClientDisconnectCallback -= OnClientDisconnect;
                 manager.OnClientStopped -= OnClientStopped;
+                manager.OnServerStopped -= OnServerStopped;
+                manager.OnTransportFailure -= OnTransportFailure;
+                manager.OnConnectionEvent -= OnConnectionEvent;
             }
 
             isSubscribed = false;
@@ -97,32 +120,66 @@ namespace Scene.BattlePVPScene.Service
             }
 
             NetworkManager manager = NetworkManager.Singleton;
-            if (manager == null || !manager.IsServer)
-            {
-                return;
-            }
-
-            if (clientId != manager.LocalClientId)
-            {
-                Notify();
-            }
-        }
-
-        private void OnClientStopped(bool isHost)
-        {
-            if (!ShouldNotify())
-            {
-                return;
-            }
-
-            NetworkManager manager = NetworkManager.Singleton;
             if (manager == null)
             {
                 Notify();
                 return;
             }
 
-            if (!manager.IsServer || manager.ConnectedClientsIds.Count <= 1)
+            // ホスト:相手クライアント切断のみ通知
+            if (manager.IsServer)
+            {
+                if (clientId != manager.LocalClientId)
+                {
+                    Notify();
+                }
+
+                return;
+            }
+
+            // クライアント:自分またはサーバー切断
+            Notify();
+        }
+
+        private void OnClientStopped(bool wasHost)
+        {
+            if (!ShouldNotify())
+            {
+                return;
+            }
+
+            Notify();
+        }
+
+        private void OnServerStopped(bool _)
+        {
+            if (!ShouldNotify())
+            {
+                return;
+            }
+
+            Notify();
+        }
+
+        private void OnTransportFailure()
+        {
+            if (!ShouldNotify())
+            {
+                return;
+            }
+
+            Notify();
+        }
+
+        private void OnConnectionEvent(NetworkManager manager, ConnectionEventData eventData)
+        {
+            if (!ShouldNotify())
+            {
+                return;
+            }
+
+            if (eventData.EventType == ConnectionEvent.ClientDisconnected
+                || eventData.EventType == ConnectionEvent.PeerDisconnected)
             {
                 Notify();
             }

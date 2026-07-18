@@ -35,7 +35,7 @@ namespace Scene.BattlePVPScene
             {
                 Debug.LogError(
                     "[BattlePvpScene] ビルド済みLifetimeScopeがルートに残っています"
-                    + " Tools/ClayMonsters/Create BattlePVP Sceneを実行してください");
+                    + " シーン上の参照をHierarchyで確認してください");
                 return;
             }
 

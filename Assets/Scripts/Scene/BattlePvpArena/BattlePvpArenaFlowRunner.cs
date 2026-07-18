@@ -275,6 +275,9 @@ namespace Scene.BattlePvpArena
             }
 
             EnsureBattleComponents();
+            EnsureSceneReferences(transform);
+            disconnectView = EnsureDisconnectView(disconnectView);
+            disconnectHandler?.SetDisconnectView(disconnectView);
             BattleHitStopClock.Clear();
             flowCts?.Cancel();
             flowCts?.Dispose();
@@ -360,6 +363,7 @@ namespace Scene.BattlePvpArena
                     HitEffect = effectsRoot.GetComponent<BattleHitEffectView>(),
                     DamagePopup = effectsRoot.GetComponent<BattleDamagePopupView>(),
                     FinishPresentation = staging != null ? staging.FinishPresentation : null,
+                    PartBreakPresentation = staging != null ? staging.PartBreakPresentation : null,
                     VictoryDualReturnView = EnsureVictoryReturnView(),
                     LevelDesignSettings = levelDesignSettings
                 };
@@ -420,6 +424,16 @@ namespace Scene.BattlePvpArena
             }
 
             EnsureSceneReferences(transform);
+            if (pvpVictoryReturnView == null)
+            {
+                pvpVictoryReturnView = GetComponentInChildren<BattlePvpVictoryReturnView>(true);
+            }
+
+            if (pvpVictoryReturnView == null)
+            {
+                Debug.LogError("[BattlePvpArena] BattlePvpVictoryReturnViewが見つかりません");
+            }
+
             return pvpVictoryReturnView;
         }
 

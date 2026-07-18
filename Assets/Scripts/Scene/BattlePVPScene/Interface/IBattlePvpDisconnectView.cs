@@ -4,7 +4,7 @@ using System.Threading;
 namespace Scene.BattlePVPScene.Interface
 {
     /// <summary>
-    /// 通信切断時にメッセージとタイトル戻りボタンを表示する
+    /// 通信切断時にメッセージと閉じるボタンを表示する
     /// </summary>
     public interface IBattlePvpDisconnectView
     {
@@ -15,7 +15,7 @@ namespace Scene.BattlePVPScene.Interface
         void SetVisible(bool visible);
 
         /// <summary>
-        /// タイトルへ戻るボタン押下を待つ
+        /// 閉じるボタン押下を待つ
         /// </summary>
         /// <param name="cancellationToken">キャンセルトークン</param>
         UniTask WaitReturnToTitleAsync(CancellationToken cancellationToken);

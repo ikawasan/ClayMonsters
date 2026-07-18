@@ -13,6 +13,8 @@ namespace Scene.BattlePVPScene.View
     /// </summary>
     public sealed class BattlePvpVictoryReturnView : MonoBehaviour, IBattleDualVictoryReturnView
     {
+        private const int VisibleSortingOrder = 1100;
+
         [Tooltip("ONのときフォールバックUIを実行時生成しない")]
         [SerializeField] private bool useSceneCanvasLayout = true;
 
@@ -20,12 +22,18 @@ namespace Scene.BattlePVPScene.View
         [SerializeField] private LHButton titleReturnButton;
         [SerializeField] private LHButton rematchButton;
 
+        private int cachedSortingOrder = 320;
+        private bool hasCachedSortingOrder;
+
         private void Awake()
         {
             ValidateSceneLayout();
             rematchButton?.EnsureUiSoundFeedback();
             titleReturnButton?.EnsureUiSoundFeedback();
-            SetDualButtonsVisible(false);
+            CacheSortingOrderIfNeeded();
+
+            // GOを落とさずCanvasのみオフ(初回表示でAwake再入して消えるのを防ぐ)
+            CanvasVisibilityUtility.SetCanvasEnabled(rootCanvas, false);
         }
 
         /// <inheritdoc/>
@@ -33,20 +41,37 @@ namespace Scene.BattlePVPScene.View
         {
             if (rootCanvas != null)
             {
-                rootCanvas.enabled = visible;
+                CacheSortingOrderIfNeeded();
+                if (visible)
+                {
+                    rootCanvas.overrideSorting = true;
+                    rootCanvas.sortingOrder = VisibleSortingOrder;
+                }
+                else
+                {
+                    rootCanvas.sortingOrder = cachedSortingOrder;
+                }
             }
 
-            if (titleReturnButton != null)
+            CanvasVisibilityUtility.SetCanvasEnabled(rootCanvas, visible);
+            EnsureButtonReady(titleReturnButton, visible);
+            EnsureButtonReady(rematchButton, visible);
+        }
+
+        private void CacheSortingOrderIfNeeded()
+        {
+            if (hasCachedSortingOrder || rootCanvas == null)
             {
-                titleReturnButton.gameObject.SetActive(visible);
-                titleReturnButton.interactable = visible;
+                return;
             }
 
-            if (rematchButton != null)
+            // 表示用に一時的に上げる前の値だけを覚える
+            if (rootCanvas.sortingOrder != VisibleSortingOrder)
             {
-                rematchButton.gameObject.SetActive(visible);
-                rematchButton.interactable = visible;
+                cachedSortingOrder = rootCanvas.sortingOrder;
             }
+
+            hasCachedSortingOrder = true;
         }
 
         /// <inheritdoc/>
@@ -54,6 +79,7 @@ namespace Scene.BattlePVPScene.View
         {
             if (titleReturnButton == null && rematchButton == null)
             {
+                Debug.LogError("[BattlePvpVictoryReturnView] 再戦/タイトル戻りボタン参照がありません", this);
                 await UniTask.WaitUntilCanceled(cancellationToken);
                 return BattleVictoryReturnChoice.Title;
             }
@@ -102,6 +128,22 @@ namespace Scene.BattlePVPScene.View
             }
         }
 
+        private static void EnsureButtonReady(LHButton button, bool visible)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            // 親Canvas配下は常時有効にし表示はCanvas.enabledで制御する
+            if (!button.gameObject.activeSelf)
+            {
+                button.gameObject.SetActive(true);
+            }
+
+            button.interactable = visible;
+        }
+
         private void ValidateSceneLayout()
         {
             if (!useSceneCanvasLayout)
@@ -112,7 +154,7 @@ namespace Scene.BattlePVPScene.View
             if (rootCanvas == null || titleReturnButton == null || rematchButton == null)
             {
                 Debug.LogError(
-                    "[BattlePvpVictoryReturnView] シーン上のUI参照が未設定です。Tools/ClayMonsters/Migrate BattlePVP Auxiliary UIを実行してください",
+                    "[BattlePvpVictoryReturnView] シーン上のUI参照が未設定です。HierarchyでUI参照を確認してください",
                     this);
             }
         }

@@ -79,11 +79,49 @@ namespace Scene.BattlePVPScene.Network
             NetworkVariableReadPermission.Everyone,
             NetworkVariableWritePermission.Owner);
 
+        private readonly NetworkVariable<int> ownerCounterSequence = new NetworkVariable<int>(
+            0,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Owner);
+
+        private readonly NetworkVariable<int> ownerCounteredAttackSequence = new NetworkVariable<int>(
+            0,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Owner);
+
+        private readonly NetworkVariable<int> ownerMatchGeneration = new NetworkVariable<int>(
+            0,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Owner);
+
+        private readonly NetworkVariable<int> ownerKnockbackSequence = new NetworkVariable<int>(
+            0,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Owner);
+
+        private readonly NetworkVariable<float> ownerKnockbackDistance = new NetworkVariable<float>(
+            0f,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Owner);
+
+        private readonly NetworkVariable<int> ownerDistanceSequence = new NetworkVariable<int>(
+            0,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Owner);
+
+        private readonly NetworkVariable<float> ownerAuthoritativeDistance = new NetworkVariable<float>(
+            0f,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Owner);
+
         private BattleKeyboardMovementInput localInput;
         private BattlePvpInputRelay opponentRelay;
         private int pendingRemoteAttackMoveIndex = -1;
         private int pendingRemoteAttackSequence;
         private int consumedRemoteAttackStartSequence;
+        private int pendingRemoteKnockbackSequence;
+        private float pendingRemoteKnockbackDistance;
+        private int consumedRemoteKnockbackSequence;
 
         /// <summary>
         /// 相手の攻撃開始通知を消費する
@@ -107,6 +145,26 @@ namespace Scene.BattlePVPScene.Network
             pendingRemoteAttackSequence = 0;
             pendingRemoteAttackMoveIndex = -1;
             return moveIndex >= 0;
+        }
+
+        /// <summary>
+        /// 相手のふっとばし通知を消費する
+        /// </summary>
+        /// <param name="resultingDistance">同期後の間合い</param>
+        /// <returns>通知があればtrue</returns>
+        public bool TryConsumeRemoteKnockback(out float resultingDistance)
+        {
+            resultingDistance = 0f;
+            if (pendingRemoteKnockbackSequence <= 0
+                || pendingRemoteKnockbackSequence <= consumedRemoteKnockbackSequence)
+            {
+                return false;
+            }
+
+            resultingDistance = pendingRemoteKnockbackDistance;
+            consumedRemoteKnockbackSequence = pendingRemoteKnockbackSequence;
+            pendingRemoteKnockbackSequence = 0;
+            return true;
         }
 
         /// <summary>
@@ -173,9 +231,54 @@ namespace Scene.BattlePVPScene.Network
         public int StrikeSequence => ownerStrikeSequence.Value;
 
         /// <summary>
+        /// ローカルの攻撃開始同期番号
+        /// </summary>
+        public int LocalAttackSequence => ownerAttackSequence.Value;
+
+        /// <summary>
+        /// ローカル側が間合い同期の権威を持つか
+        /// </summary>
+        public bool IsDistanceAuthority => IsOwner && IsHost;
+
+        /// <summary>
+        /// 現在の対戦世代番号
+        /// </summary>
+        public int MatchGeneration => ownerMatchGeneration.Value;
+
+        /// <summary>
+        /// 公開中のカウンター同期番号
+        /// </summary>
+        public int CounterSequence => ownerCounterSequence.Value;
+
+        /// <summary>
+        /// 最新のカウンターで無効化した攻撃開始同期番号
+        /// </summary>
+        public int CurrentCounteredAttackSequence => ownerCounteredAttackSequence.Value;
+
+        /// <summary>
         /// 公開中の部位修復同期番号
         /// </summary>
         public int PartRestoreSequence => ownerPartRestoreSequence.Value;
+
+        /// <summary>
+        /// 公開中のふっとばし同期番号
+        /// </summary>
+        public int KnockbackSequence => ownerKnockbackSequence.Value;
+
+        /// <summary>
+        /// 現在公開中のふっとばし後間合い
+        /// </summary>
+        public float CurrentKnockbackDistance => ownerKnockbackDistance.Value;
+
+        /// <summary>
+        /// 公開中の権威間合同期番号
+        /// </summary>
+        public int DistanceSequence => ownerDistanceSequence.Value;
+
+        /// <summary>
+        /// 現在公開中の権威間合い
+        /// </summary>
+        public float CurrentAuthoritativeDistance => ownerAuthoritativeDistance.Value;
 
         /// <summary>
         /// 現在公開中の部位修復リム番号
@@ -190,7 +293,8 @@ namespace Scene.BattlePVPScene.Network
             return new BattleRemoteStepPayload(
                 ownerStepDirection.Value,
                 ownerStepTargetDistance.Value,
-                ownerStepSequence.Value);
+                ownerStepSequence.Value,
+                ownerMatchGeneration.Value);
         }
 
         /// <summary>
@@ -212,6 +316,11 @@ namespace Scene.BattlePVPScene.Network
         /// 部位修復完了同期イベントが公開された
         /// </summary>
         public event Action<BattleRemotePartRestorePayload> RemotePartRestorePublished;
+
+        /// <summary>
+        /// カウンター同期イベントが公開された
+        /// </summary>
+        public event Action<int, int> RemoteCounterPublished;
 
         /// <summary>
         /// 両者のスロット選択が揃ったか
@@ -272,6 +381,13 @@ namespace Scene.BattlePVPScene.Network
             ownerInput.Value = default;
             ownerPartRestoreSequence.Value = 0;
             ownerPartRestoreLimbIndex.Value = -1;
+            ownerCounterSequence.Value = 0;
+            ownerCounteredAttackSequence.Value = 0;
+            ownerKnockbackSequence.Value = 0;
+            ownerKnockbackDistance.Value = 0f;
+            ownerDistanceSequence.Value = 0;
+            ownerAuthoritativeDistance.Value = 0f;
+            ownerMatchGeneration.Value++;
         }
 
         /// <summary>
@@ -289,10 +405,6 @@ namespace Scene.BattlePVPScene.Network
         {
             EndBattleInput();
             localInput = input;
-            if (localInput != null)
-            {
-                localInput.AttackPressed += OnLocalAttackPressed;
-            }
         }
 
         /// <summary>
@@ -300,12 +412,26 @@ namespace Scene.BattlePVPScene.Network
         /// </summary>
         public void EndBattleInput()
         {
-            if (localInput != null)
+            localInput = null;
+        }
+
+        /// <summary>
+        /// ローカル攻撃開始を通知し同期番号を返す
+        /// </summary>
+        /// <param name="moveIndex">攻撃技番号</param>
+        /// <returns>攻撃開始同期番号・未送信時0</returns>
+        public int SubmitAttackStart(int moveIndex)
+        {
+            if (!IsOwner || moveIndex < 0)
             {
-                localInput.AttackPressed -= OnLocalAttackPressed;
+                return 0;
             }
 
-            localInput = null;
+            ownerAttackMoveIndex.Value = moveIndex;
+            ownerAttackSequence.Value++;
+            int sequence = ownerAttackSequence.Value;
+            PublishAttackStartRpc(moveIndex, sequence, ownerMatchGeneration.Value);
+            return sequence;
         }
 
         /// <summary>
@@ -349,13 +475,28 @@ namespace Scene.BattlePVPScene.Network
             ownerStepStartDistance.Value = 0f;
             ownerStepTargetDistance.Value = targetDistance;
             ownerStepSequence.Value++;
-            PublishStepRpc(stepIntent, targetDistance, ownerStepSequence.Value);
+            PublishStepRpc(stepIntent, targetDistance, ownerStepSequence.Value, ownerMatchGeneration.Value);
+        }
+
+        /// <summary>
+        /// ホスト権威の現在間合いを通知する
+        /// </summary>
+        /// <param name="distance">現在間合い</param>
+        public void SubmitAuthoritativeDistance(float distance)
+        {
+            if (!IsDistanceAuthority)
+            {
+                return;
+            }
+
+            ownerAuthoritativeDistance.Value = distance;
+            ownerDistanceSequence.Value++;
         }
 
         /// <summary>
         /// ローカルプレイヤーの攻撃結果を通知する
         /// </summary>
-        public void SubmitStrikeResult(MoveUsedResult result, int moveIndex)
+        public void SubmitStrikeResult(MoveUsedResult result, int moveIndex, int attackSequence)
         {
             if (!IsOwner || result.Attacker == null)
             {
@@ -385,10 +526,49 @@ namespace Scene.BattlePVPScene.Network
                 PartLost = result.PartLost,
                 LostPart = (int)result.LostPart,
                 LostLimbIndex = result.LostLimbIndex,
-                IsKnockout = result.IsKnockout
+                IsKnockout = result.IsKnockout,
+                AttackSequence = attackSequence,
+                MatchGeneration = ownerMatchGeneration.Value
             };
             ownerStrikeSequence.Value = sequence;
             SubmitStrikeServerRpc(ownerStrikeResult.Value);
+        }
+
+        /// <summary>
+        /// ローカルふっとばしを通知する
+        /// </summary>
+        /// <param name="resultingDistance">適用後の間合い</param>
+        public void SubmitKnockback(float resultingDistance)
+        {
+            if (!IsOwner)
+            {
+                return;
+            }
+
+            ownerKnockbackDistance.Value = resultingDistance;
+            ownerKnockbackSequence.Value++;
+            PublishKnockbackRpc(
+                resultingDistance,
+                ownerKnockbackSequence.Value,
+                ownerMatchGeneration.Value);
+        }
+
+        /// <summary>
+        /// 相手攻撃をカウンターで無効化したことを通知する
+        /// </summary>
+        public void SubmitCounter(int counteredAttackSequence)
+        {
+            if (!IsOwner || counteredAttackSequence <= 0)
+            {
+                return;
+            }
+
+            ownerCounteredAttackSequence.Value = counteredAttackSequence;
+            ownerCounterSequence.Value++;
+            PublishCounterRpc(
+                counteredAttackSequence,
+                ownerCounterSequence.Value,
+                ownerMatchGeneration.Value);
         }
 
         [Rpc(SendTo.Server)]
@@ -426,13 +606,40 @@ namespace Scene.BattlePVPScene.Network
             int sequence = ownerPartRestoreSequence.Value + 1;
             ownerPartRestoreLimbIndex.Value = limbIndex;
             ownerPartRestoreSequence.Value = sequence;
-            PublishPartRestoreRpc(limbIndex, sequence);
+            PublishPartRestoreRpc(limbIndex, sequence, ownerMatchGeneration.Value);
         }
 
         [Rpc(SendTo.NotOwner)]
-        private void PublishAttackStartRpc(int moveIndex, int sequence)
+        private void PublishKnockbackRpc(float resultingDistance, int sequence, int matchGeneration)
+        {
+            if (sequence <= 0)
+            {
+                return;
+            }
+
+            if (matchGeneration < ownerMatchGeneration.Value)
+            {
+                return;
+            }
+
+            if (sequence <= consumedRemoteKnockbackSequence)
+            {
+                return;
+            }
+
+            pendingRemoteKnockbackDistance = resultingDistance;
+            pendingRemoteKnockbackSequence = sequence;
+        }
+
+        [Rpc(SendTo.NotOwner)]
+        private void PublishAttackStartRpc(int moveIndex, int sequence, int matchGeneration)
         {
             if (sequence <= 0 || moveIndex < 0)
+            {
+                return;
+            }
+
+            if (matchGeneration < ownerMatchGeneration.Value)
             {
                 return;
             }
@@ -447,25 +654,38 @@ namespace Scene.BattlePVPScene.Network
         }
 
         [Rpc(SendTo.NotOwner)]
-        public void PublishStepRpc(int stepIntent, float targetDistance, int sequence)
+        public void PublishStepRpc(int stepIntent, float targetDistance, int sequence, int matchGeneration)
         {
             if (sequence <= 0 || stepIntent == 0)
             {
                 return;
             }
 
-            RemoteStepPublished?.Invoke(new BattleRemoteStepPayload(stepIntent, targetDistance, sequence));
+            RemoteStepPublished?.Invoke(
+                new BattleRemoteStepPayload(stepIntent, targetDistance, sequence, matchGeneration));
         }
 
         [Rpc(SendTo.NotOwner)]
-        public void PublishPartRestoreRpc(int limbIndex, int sequence)
+        public void PublishPartRestoreRpc(int limbIndex, int sequence, int matchGeneration)
         {
             if (sequence <= 0 || limbIndex < 0)
             {
                 return;
             }
 
-            RemotePartRestorePublished?.Invoke(new BattleRemotePartRestorePayload(limbIndex, sequence));
+            RemotePartRestorePublished?.Invoke(
+                new BattleRemotePartRestorePayload(limbIndex, sequence, matchGeneration));
+        }
+
+        [Rpc(SendTo.NotOwner)]
+        private void PublishCounterRpc(int counteredAttackSequence, int sequence, int matchGeneration)
+        {
+            if (sequence <= 0 || counteredAttackSequence <= 0)
+            {
+                return;
+            }
+
+            RemoteCounterPublished?.Invoke(counteredAttackSequence, matchGeneration);
         }
 
         /// <summary>
@@ -522,6 +742,8 @@ namespace Scene.BattlePVPScene.Network
             ownerAttackSequence.OnValueChanged += OnOwnerAttackSequenceChanged;
             ownerStrikeSequence.OnValueChanged += OnOwnerStrikeSequenceChanged;
             ownerPartRestoreSequence.OnValueChanged += OnOwnerPartRestoreSequenceChanged;
+            ownerCounterSequence.OnValueChanged += OnOwnerCounterSequenceChanged;
+            ownerKnockbackSequence.OnValueChanged += OnOwnerKnockbackSequenceChanged;
         }
 
         public override void OnNetworkDespawn()
@@ -529,6 +751,8 @@ namespace Scene.BattlePVPScene.Network
             ownerAttackSequence.OnValueChanged -= OnOwnerAttackSequenceChanged;
             ownerStrikeSequence.OnValueChanged -= OnOwnerStrikeSequenceChanged;
             ownerPartRestoreSequence.OnValueChanged -= OnOwnerPartRestoreSequenceChanged;
+            ownerCounterSequence.OnValueChanged -= OnOwnerCounterSequenceChanged;
+            ownerKnockbackSequence.OnValueChanged -= OnOwnerKnockbackSequenceChanged;
             base.OnNetworkDespawn();
         }
 
@@ -542,6 +766,24 @@ namespace Scene.BattlePVPScene.Network
             consumedRemoteAttackStartSequence = 0;
             pendingRemoteAttackSequence = 0;
             pendingRemoteAttackMoveIndex = -1;
+        }
+
+        private void OnOwnerKnockbackSequenceChanged(int previousValue, int newValue)
+        {
+            if (newValue <= 0)
+            {
+                consumedRemoteKnockbackSequence = 0;
+                pendingRemoteKnockbackSequence = 0;
+                return;
+            }
+
+            if (newValue == previousValue || newValue <= consumedRemoteKnockbackSequence)
+            {
+                return;
+            }
+
+            pendingRemoteKnockbackDistance = ownerKnockbackDistance.Value;
+            pendingRemoteKnockbackSequence = newValue;
         }
 
         private void OnOwnerStrikeSequenceChanged(int previousValue, int newValue)
@@ -573,19 +815,26 @@ namespace Scene.BattlePVPScene.Network
                 return;
             }
 
-            RemotePartRestorePublished?.Invoke(new BattleRemotePartRestorePayload(limbIndex, newValue));
+            RemotePartRestorePublished?.Invoke(new BattleRemotePartRestorePayload(
+                limbIndex,
+                newValue,
+                ownerMatchGeneration.Value));
         }
 
-        private void OnLocalAttackPressed(int moveIndex)
+        private void OnOwnerCounterSequenceChanged(int previousValue, int newValue)
         {
-            if (!IsOwner || moveIndex < 0)
+            if (newValue <= 0 || newValue == previousValue)
             {
                 return;
             }
 
-            ownerAttackMoveIndex.Value = moveIndex;
-            ownerAttackSequence.Value++;
-            PublishAttackStartRpc(moveIndex, ownerAttackSequence.Value);
+            int counteredAttackSequence = ownerCounteredAttackSequence.Value;
+            if (counteredAttackSequence <= 0)
+            {
+                return;
+            }
+
+            RemoteCounterPublished?.Invoke(counteredAttackSequence, ownerMatchGeneration.Value);
         }
 
         private void Update()

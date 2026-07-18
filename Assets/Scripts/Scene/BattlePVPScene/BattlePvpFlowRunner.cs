@@ -515,6 +515,7 @@ namespace Scene.BattlePVPScene
                     HitEffect = GetComponent<BattleHitEffectView>(),
                     DamagePopup = GetComponent<BattleDamagePopupView>(),
                     FinishPresentation = staging != null ? staging.FinishPresentation : null,
+                    PartBreakPresentation = staging != null ? staging.PartBreakPresentation : null,
                     VictoryDualReturnView = EnsureVictoryReturnView(),
                     LevelDesignSettings = levelDesignSettings
                 };

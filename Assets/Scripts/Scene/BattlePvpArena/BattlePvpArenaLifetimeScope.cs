@@ -35,6 +35,7 @@ namespace Scene.BattlePvpArena
 
         [Header("Post Process")]
         [SerializeField] private BattleNpcPostProcessView postProcessView;
+        [SerializeField] private BattleClassroomLighting classroomLighting;
 
         [Header("UI Views")]
         [SerializeField] private LoadSlotView loadSlotView;
@@ -62,6 +63,7 @@ namespace Scene.BattlePvpArena
             builder.Register<ClayEditCameraPresenter>(Lifetime.Singleton).AsImplementedInterfaces();
             builder.Register<ClayEditCameraModel>(Lifetime.Singleton).AsImplementedInterfaces();
             RegisterComponentAsInterfaces(builder, postProcessView);
+            RegisterComponent(builder, classroomLighting);
             builder.Register<BattleCanvasTransition>(Lifetime.Singleton).As<IBattleCanvasTransition>();
             builder.Register<MonsterSelectionSession>(Lifetime.Singleton).AsImplementedInterfaces();
             builder.RegisterComponentInHierarchy<BattleStartOverlayView>();
@@ -106,6 +108,16 @@ namespace Scene.BattlePvpArena
             if (postProcessView == null)
             {
                 postProcessView = GetComponentInChildren<BattleNpcPostProcessView>(true);
+            }
+
+            if (classroomLighting == null)
+            {
+                classroomLighting = FindFirstObjectByType<BattleClassroomLighting>(FindObjectsInactive.Include);
+            }
+
+            if (classroomLighting == null)
+            {
+                classroomLighting = gameObject.AddComponent<BattleClassroomLighting>();
             }
 
             if (loadSlotView == null)

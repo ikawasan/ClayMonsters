@@ -1,6 +1,7 @@
 using Cysharp.Threading.Tasks;
 using Lighthouse.Scene;
 using Lighthouse.Scene.SceneCamera;
+using Scene.BattleNpcScene;
 using Scene.BattleNpcScene.Interface;
 using Scene.Core;
 using System.Threading;
@@ -17,6 +18,7 @@ namespace Scene.BattlePvpArena
     {
         BattlePvpArenaFlowRunner arenaFlowRunner;
         IBattleNpcPostProcess battleNpcPostProcess;
+        BattleClassroomLighting classroomLighting;
 
         public override MainSceneId MainSceneId => ClayMonstersMainSceneId.BattlePvpArena;
 
@@ -36,10 +38,12 @@ namespace Scene.BattlePvpArena
         [Inject]
         public void Construct(
             BattlePvpArenaFlowRunner arenaFlowRunner,
-            IBattleNpcPostProcess battleNpcPostProcess)
+            IBattleNpcPostProcess battleNpcPostProcess,
+            BattleClassroomLighting classroomLighting)
         {
             this.arenaFlowRunner = arenaFlowRunner;
             this.battleNpcPostProcess = battleNpcPostProcess;
+            this.classroomLighting = classroomLighting;
         }
 
         /// <summary>
@@ -74,7 +78,10 @@ namespace Scene.BattlePvpArena
 
         protected override UniTask OnEnterCore(ISceneTransitionContext context, CancellationToken cancelToken)
         {
+            classroomLighting?.Apply();
             battleNpcPostProcess.Enable();
+            // シーン上Fieldは初期非アクティブのため入場時に表示する
+            BattleClassroomFieldLayout.SetFieldVisible(true);
             BattlePvpArenaFlowRunner runner = ResolveFlowRunner();
             runner?.EnsureSceneReferences(transform);
             runner?.PrepareSelectionLayout();
@@ -104,6 +111,7 @@ namespace Scene.BattlePvpArena
         {
             ResolveFlowRunner()?.StopFlow();
             battleNpcPostProcess.Disable();
+            classroomLighting?.DisableLighting();
             ModelSaveSlotScrollListView.ExitFullscreenSelectionLayout();
             return base.OnLeave(context, cancelToken);
         }

@@ -47,6 +47,16 @@ namespace Scene.BattlePVPScene.Network
         /// </summary>
         public int LostLimbIndex;
 
+        /// <summary>
+        /// 攻撃開始同期番号・カウンター無効化判定用
+        /// </summary>
+        public int AttackSequence;
+
+        /// <summary>
+        /// 対戦世代番号・再戦後の遅延パケット破棄用
+        /// </summary>
+        public int MatchGeneration;
+
         /// <inheritdoc/>
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
@@ -58,6 +68,8 @@ namespace Scene.BattlePVPScene.Network
             serializer.SerializeValue(ref LostPart);
             serializer.SerializeValue(ref IsKnockout);
             serializer.SerializeValue(ref LostLimbIndex);
+            serializer.SerializeValue(ref AttackSequence);
+            serializer.SerializeValue(ref MatchGeneration);
         }
     }
 }

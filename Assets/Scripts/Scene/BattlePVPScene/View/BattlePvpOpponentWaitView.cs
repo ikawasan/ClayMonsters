@@ -44,7 +44,7 @@ namespace Scene.BattlePVPScene.View
             if (rootCanvas == null || bannerBackground == null || messageText == null)
             {
                 Debug.LogError(
-                    "[BattlePvpOpponentWaitView] シーン上のUI参照が未設定です。Tools/ClayMonsters/Migrate BattlePVP Auxiliary UIを実行してください",
+                    "[BattlePvpOpponentWaitView] シーン上のUI参照が未設定です。HierarchyでUI参照を確認してください",
                     this);
             }
         }
