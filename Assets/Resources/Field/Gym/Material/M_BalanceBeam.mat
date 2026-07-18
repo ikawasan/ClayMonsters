@@ -11,8 +11,10 @@ Material:
   m_Shader: {fileID: 4800000, guid: cbd90815f343da144b443557b4a13aef, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
-  m_InvalidKeywords: []
+  m_ValidKeywords:
+  - _SHOW_BACK_FACES_ONLY
+  m_InvalidKeywords:
+  - _SHOWBACKFACESONLY_ON
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -29,7 +31,9 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _Cull: 1
     - _RimPower: 3
+    - _ShowBackFacesOnly: 1
     - _SpecularSmoothness: 0.01
     - _SpecularThreshold: 0.95
     - _ToonSmoothness: 0.1
