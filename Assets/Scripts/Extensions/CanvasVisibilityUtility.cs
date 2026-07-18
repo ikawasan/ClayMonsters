@@ -10,6 +10,8 @@ namespace Extensions
     /// </summary>
     public static class CanvasVisibilityUtility
     {
+        private const string InputBlockerObjectName = "Blocker";
+
         /// <summary>
         /// Canvasの有効状態を設定する
         /// </summary>
@@ -20,6 +22,12 @@ namespace Extensions
             if (canvas == null)
             {
                 return;
+            }
+
+            // 非アクティブGOではCanvas.enabledだけでは表示されない
+            if (visible && !canvas.gameObject.activeSelf)
+            {
+                canvas.gameObject.SetActive(true);
             }
 
             canvas.enabled = visible;
@@ -56,6 +64,18 @@ namespace Extensions
         {
             if (target == null)
             {
+                return;
+            }
+
+            // 初期非アクティブのパネルを表示できるようにする
+            if (visible && !target.activeSelf)
+            {
+                target.SetActive(true);
+            }
+
+            if (IsInputBlocker(target))
+            {
+                SetInputBlockerVisible(target, visible);
                 return;
             }
 
@@ -113,6 +133,24 @@ namespace Extensions
             }
 
             SetUiVisible(panelComponent.gameObject, visible);
+        }
+
+        private static bool IsInputBlocker(GameObject target)
+        {
+            return target != null && target.name == InputBlockerObjectName;
+        }
+
+        private static void SetInputBlockerVisible(GameObject target, bool blocksRaycasts)
+        {
+            if (!target.TryGetComponent(out Graphic graphic))
+            {
+                return;
+            }
+
+            Color color = graphic.color;
+            color.a = 0f;
+            graphic.color = color;
+            graphic.raycastTarget = blocksRaycasts;
         }
     }
 }
