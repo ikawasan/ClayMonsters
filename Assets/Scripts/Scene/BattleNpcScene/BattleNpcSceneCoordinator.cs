@@ -13,6 +13,7 @@ namespace Scene.BattleNpcScene
     public sealed class BattleNpcSceneCoordinator : IBattleNpcSceneCoordinator
     {
         private readonly IBattleNpcPostProcess postProcess;
+        private readonly BattleClassroomLighting classroomLighting;
         private readonly IMonsterSelectionSession selectionSession;
         private readonly IBattleFlowRunner flowRunner;
 
@@ -22,10 +23,12 @@ namespace Scene.BattleNpcScene
         [Inject]
         public BattleNpcSceneCoordinator(
             IBattleNpcPostProcess postProcess,
+            BattleClassroomLighting classroomLighting,
             IMonsterSelectionSession selectionSession,
             IBattleFlowRunner flowRunner)
         {
             this.postProcess = postProcess;
+            this.classroomLighting = classroomLighting;
             this.selectionSession = selectionSession;
             this.flowRunner = flowRunner;
         }
@@ -33,7 +36,10 @@ namespace Scene.BattleNpcScene
         /// <inheritdoc />
         public void PrepareEnter()
         {
+            classroomLighting?.Apply();
             postProcess?.Enable();
+            // シーン上Fieldは初期非アクティブのため選択前に表示する
+            BattleClassroomFieldLayout.SetFieldVisible(true);
             selectionSession?.PrepareEntry();
         }
 
@@ -49,6 +55,7 @@ namespace Scene.BattleNpcScene
         {
             flowRunner?.Stop();
             postProcess?.Disable();
+            classroomLighting?.DisableLighting();
             ModelSaveSlotScrollListView.ExitFullscreenSelectionLayout();
         }
     }

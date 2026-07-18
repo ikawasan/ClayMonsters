@@ -8,6 +8,7 @@ namespace Scene.BattleNpcScene.View
 {
     /// <summary>
     /// BattleNpc教室シーン向けの暖色ポストプロセスとSSAOを適用する
+    /// Bloomはintensity0で上書きしグローバルVolume分も含めて完全に切る
     /// 3Dフィールドのみに効かせUIはOverlay表示でポストプロセス対象外にする
     /// </summary>
     [DisallowMultipleComponent]
@@ -59,6 +60,8 @@ namespace Scene.BattleNpcScene.View
             }
 
             EnsureVolume();
+            DisableBloomCompletely();
+
             isPostProcessEnabled = true;
             remainingUiExclusionFrames = UiExclusionFrameCount;
             ApplyUiExclusion();
@@ -129,13 +132,44 @@ namespace Scene.BattleNpcScene.View
                 {
                     volume = gameObject.AddComponent<Volume>();
                 }
+            }
 
-                volume.isGlobal = true;
-                volume.priority = volumePriority;
-                volume.profile = classroomVolumeProfile;
+            volume.isGlobal = true;
+            volume.priority = volumePriority;
+            if (classroomVolumeProfile != null)
+            {
+                volume.sharedProfile = classroomVolumeProfile;
             }
 
             volume.enabled = false;
+        }
+
+        /// <summary>
+        /// グローバルVolumeのBloomを優先度付きでintensity0上書きする
+        /// activeを落とすだけでは他VolumeのBloomが残る
+        /// </summary>
+        private void DisableBloomCompletely()
+        {
+            VolumeProfile profile = ResolveRuntimeProfile();
+            if (profile == null || !profile.TryGet(out Bloom bloom))
+            {
+                return;
+            }
+
+            bloom.active = true;
+            bloom.intensity.Override(0f);
+            bloom.threshold.Override(1f);
+        }
+
+        private VolumeProfile ResolveRuntimeProfile()
+        {
+            if (volume != null)
+            {
+                // profile取得で実行時インスタンスを使い共有アセットを汚さない
+                return volume.profile;
+            }
+
+            return classroomVolumeProfile;
         }
 
         private void ApplyUiExclusion()

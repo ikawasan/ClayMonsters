@@ -78,13 +78,13 @@ namespace Scene.BattleNpcScene.View
             ParticleSystem.MainModule main = particleSystem.main;
             main.playOnAwake = false;
             main.loop = true;
-            main.duration = 5f;
-            main.startLifetime = new ParticleSystem.MinMaxCurve(5.5f, 8.5f);
-            main.startSpeed = new ParticleSystem.MinMaxCurve(0.05f, 0.25f);
+            main.duration = 6f;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(8f, 13f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(0.02f, 0.12f);
             main.startSize3D = true;
-            main.startSizeX = new ParticleSystem.MinMaxCurve(0.28f, 0.55f);
-            main.startSizeY = new ParticleSystem.MinMaxCurve(0.1f, 0.2f);
-            main.startSizeZ = new ParticleSystem.MinMaxCurve(0.28f, 0.55f);
+            main.startSizeX = new ParticleSystem.MinMaxCurve(0.3f, 0.6f);
+            main.startSizeY = new ParticleSystem.MinMaxCurve(0.08f, 0.18f);
+            main.startSizeZ = new ParticleSystem.MinMaxCurve(0.3f, 0.6f);
             main.startRotation3D = true;
             main.startRotationX = new ParticleSystem.MinMaxCurve(0f, Mathf.PI * 2f);
             main.startRotationY = new ParticleSystem.MinMaxCurve(0f, Mathf.PI * 2f);
@@ -94,35 +94,60 @@ namespace Scene.BattleNpcScene.View
                 mode = ParticleSystemGradientMode.RandomColor
             };
             main.startColor = startColor;
-            main.gravityModifier = new ParticleSystem.MinMaxCurve(0.12f, 0.22f);
+            main.gravityModifier = new ParticleSystem.MinMaxCurve(0.035f, 0.08f);
             main.simulationSpace = ParticleSystemSimulationSpace.World;
             main.scalingMode = ParticleSystemScalingMode.Hierarchy;
-            main.maxParticles = 280;
+            main.maxParticles = 320;
             main.useUnscaledTime = true;
             main.cullingMode = ParticleSystemCullingMode.AlwaysSimulate;
 
             ParticleSystem.EmissionModule emission = particleSystem.emission;
             emission.enabled = true;
-            emission.rateOverTime = new ParticleSystem.MinMaxCurve(35f);
+            emission.rateOverTime = new ParticleSystem.MinMaxCurve(24f);
 
             ParticleSystem.ShapeModule shape = particleSystem.shape;
             shape.enabled = true;
             shape.shapeType = ParticleSystemShapeType.Box;
             shape.scale = new Vector3(EmitterWidth, 0.2f, EmitterDepth);
-            shape.randomDirectionAmount = 0.08f;
+            shape.randomDirectionAmount = 0.12f;
 
             ParticleSystem.VelocityOverLifetimeModule velocity = particleSystem.velocityOverLifetime;
             velocity.enabled = true;
             velocity.space = ParticleSystemSimulationSpace.World;
-            velocity.x = new ParticleSystem.MinMaxCurve(-0.25f, 0.25f);
-            velocity.z = new ParticleSystem.MinMaxCurve(-0.15f, 0.15f);
+            // XYZは同一CurveMode必須(TwoConstants)
+            velocity.x = new ParticleSystem.MinMaxCurve(-0.45f, 0.45f);
+            velocity.y = new ParticleSystem.MinMaxCurve(-0.12f, 0.08f);
+            velocity.z = new ParticleSystem.MinMaxCurve(-0.35f, 0.35f);
+
+            ParticleSystem.LimitVelocityOverLifetimeModule limitVelocity = particleSystem.limitVelocityOverLifetime;
+            limitVelocity.enabled = true;
+            limitVelocity.separateAxes = false;
+            limitVelocity.limit = 1.1f;
+            limitVelocity.dampen = 0.35f;
+            limitVelocity.drag = 0.15f;
+
+            ParticleSystem.NoiseModule noise = particleSystem.noise;
+            noise.enabled = true;
+            noise.separateAxes = true;
+            noise.strengthX = new ParticleSystem.MinMaxCurve(0.35f);
+            noise.strengthY = new ParticleSystem.MinMaxCurve(0.12f);
+            noise.strengthZ = new ParticleSystem.MinMaxCurve(0.28f);
+            noise.frequency = 0.35f;
+            noise.scrollSpeed = 0.2f;
+            noise.damping = true;
+            noise.octaveCount = 2;
+            noise.octaveMultiplier = 0.45f;
+            noise.octaveScale = 1.8f;
+            noise.quality = ParticleSystemNoiseQuality.Medium;
+            noise.positionAmount = 1f;
+            noise.rotationAmount = 0.25f;
 
             ParticleSystem.RotationOverLifetimeModule rotation = particleSystem.rotationOverLifetime;
             rotation.enabled = true;
             rotation.separateAxes = true;
-            rotation.x = new ParticleSystem.MinMaxCurve(-1.2f, 1.2f);
-            rotation.y = new ParticleSystem.MinMaxCurve(-1.2f, 1.2f);
-            rotation.z = new ParticleSystem.MinMaxCurve(-1.8f, 1.8f);
+            rotation.x = new ParticleSystem.MinMaxCurve(-0.55f, 0.55f);
+            rotation.y = new ParticleSystem.MinMaxCurve(-0.55f, 0.55f);
+            rotation.z = new ParticleSystem.MinMaxCurve(-0.85f, 0.85f);
 
             ParticleSystem.ColorOverLifetimeModule colorOverLifetime = particleSystem.colorOverLifetime;
             colorOverLifetime.enabled = true;

@@ -43,6 +43,7 @@ namespace Scene.BattleNpcScene
                 HitEffect = runner.HitEffect,
                 DamagePopup = runner.DamagePopup,
                 FinishPresentation = runner.Staging != null ? runner.Staging.FinishPresentation : null,
+                PartBreakPresentation = runner.Staging != null ? runner.Staging.PartBreakPresentation : null,
                 VictoryReturnView = runner.VictoryReturnView,
                 LevelDesignSettings = runner.LevelDesignSettings,
                 AutoStartMatchup = false,

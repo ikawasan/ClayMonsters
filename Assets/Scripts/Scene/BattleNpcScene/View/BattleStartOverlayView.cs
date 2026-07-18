@@ -1,6 +1,7 @@
 using Battle.Interface;
 using Cysharp.Threading.Tasks;
 using Extensions;
+using System;
 using System.Threading;
 using TMPro;
 using UI.ClayEditor.View;
@@ -13,10 +14,13 @@ namespace Scene.BattleNpcScene.View
 {
     /// <summary>
     /// 対戦紹介のVS表示とReady/FightカウントダウンUI
-    /// とどめ命中時のFinish演出も担当する
+    /// とどめ命中時のFinish演出と部位破壊時のBreak演出も担当する
     /// </summary>
-    public sealed class BattleStartOverlayView : MonoBehaviour, IBattleFinishPresentation
+    public sealed class BattleStartOverlayView : MonoBehaviour, IBattleFinishPresentation, IBattlePartBreakPresentation
     {
+        private const string FinishLabel = "Finish";
+        private const string BreakLabel = "Break!";
+
         [Header("参照")]
         [SerializeField] private Canvas overlayCanvas;
         [SerializeField] private TMP_Text vsText;
@@ -44,6 +48,12 @@ namespace Scene.BattleNpcScene.View
         [SerializeField] private float finishFadeSeconds = 0.35f;
         [SerializeField] private float finishFlashSeconds = 0.18f;
 
+        [Header("Break")]
+        [SerializeField] private float breakPopSeconds = 0.35f;
+        [SerializeField] private float breakHoldSeconds = 0.45f;
+        [SerializeField] private float breakFadeSeconds = 0.25f;
+        [SerializeField] private float breakFlashSeconds = 0.14f;
+
         [Header("Victory")]
         [SerializeField] private float victoryPopSeconds = 0.45f;
         [SerializeField] private float victoryHoldSeconds = 0.35f;
@@ -56,6 +66,8 @@ namespace Scene.BattleNpcScene.View
         private IBattleCanvasTransition canvasTransition;
         private bool isVsIdleAnimating;
         private bool isVictoryPresentationActive;
+        private bool isFinishPresentationActive;
+        private CancellationTokenSource partBreakCts;
         private readonly BattleVictoryConfettiEffect victoryConfetti = new BattleVictoryConfettiEffect();
 
         [Inject]
@@ -213,8 +225,7 @@ namespace Scene.BattleNpcScene.View
             EnsureMatchupUiReady();
             canvasTransition?.ReleasePresentationInput();
             DisableDecorativeRaycasts();
-            ApplyMatchupNamePlateLayout(playerNameText, true);
-            ApplyMatchupNamePlateLayout(enemyNameText, false);
+            ApplyMatchupVisualStyle();
             HidePhaseTexts();
             SetElementAlpha(vsText, 0f);
             SetNamePlate(playerNameText, playerName, 0f);
@@ -463,9 +474,13 @@ namespace Scene.BattleNpcScene.View
         /// <inheritdoc/>
         public async UniTask PlayFinishAsync(CancellationToken cancellationToken)
         {
+            isFinishPresentationActive = true;
+            CancelPartBreakPresentation();
+            HidePartBreakImmediate();
             ValidateSceneUi();
             HideVsUi();
             HidePhaseTexts();
+            RestoreFinishLabel();
 
             if (overlayCanvas != null)
             {
@@ -566,8 +581,180 @@ namespace Scene.BattleNpcScene.View
         }
 
         /// <inheritdoc/>
+        public async UniTask PlayPartBreakAsync(CancellationToken cancellationToken)
+        {
+            if (isFinishPresentationActive || isVictoryPresentationActive)
+            {
+                return;
+            }
+
+            CancelPartBreakPresentation();
+            partBreakCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            CancellationTokenSource localCts = partBreakCts;
+            CancellationToken token = localCts.Token;
+
+            try
+            {
+                if (isFinishPresentationActive || isVictoryPresentationActive)
+                {
+                    return;
+                }
+
+                ValidateSceneUi();
+                HideVsUi();
+                HidePhaseTexts();
+
+                if (overlayCanvas != null)
+                {
+                    overlayCanvas.sortingOrder = 300;
+                }
+
+                SetCanvasVisible(true);
+                SetOverlayRaycastEnabled(false);
+
+                if (finishText != null)
+                {
+                    finishText.text = BreakLabel;
+                    finishText.rectTransform.localScale = Vector3.one * 2.2f;
+                    finishText.color = new Color(1f, 0.35f, 0.12f, 0f);
+                }
+
+                if (finishFlashImage != null)
+                {
+                    finishFlashImage.color = new Color(1f, 0.25f, 0.15f, 0f);
+                }
+
+                float flashElapsed = 0f;
+                while (flashElapsed < breakFlashSeconds)
+                {
+                    await UniTask.Yield(PlayerLoopTiming.Update, token);
+                    if (isFinishPresentationActive)
+                    {
+                        return;
+                    }
+
+                    flashElapsed += Time.unscaledDeltaTime;
+                    float t = Mathf.Clamp01(flashElapsed / breakFlashSeconds);
+                    float flashAlpha = t < 0.35f
+                        ? Mathf.Lerp(0f, 0.4f, t / 0.35f)
+                        : Mathf.Lerp(0.4f, 0f, (t - 0.35f) / 0.65f);
+
+                    if (finishFlashImage != null)
+                    {
+                        Color flashColor = finishFlashImage.color;
+                        flashColor.a = flashAlpha;
+                        finishFlashImage.color = flashColor;
+                    }
+                }
+
+                if (isFinishPresentationActive)
+                {
+                    return;
+                }
+
+                if (finishFlashImage != null)
+                {
+                    Color flashColor = finishFlashImage.color;
+                    flashColor.a = 0f;
+                    finishFlashImage.color = flashColor;
+                }
+
+                float popElapsed = 0f;
+                while (popElapsed < breakPopSeconds)
+                {
+                    await UniTask.Yield(PlayerLoopTiming.Update, token);
+                    if (isFinishPresentationActive)
+                    {
+                        return;
+                    }
+
+                    popElapsed += Time.unscaledDeltaTime;
+                    float t = Mathf.Clamp01(popElapsed / breakPopSeconds);
+                    float eased = 1f - Mathf.Pow(1f - t, 3f);
+                    SetElementAlpha(finishText, eased);
+
+                    if (finishText != null)
+                    {
+                        float scale = Mathf.Lerp(2.2f, 1f, eased);
+                        finishText.rectTransform.localScale = Vector3.one * scale;
+                        finishText.color = Color.Lerp(
+                            new Color(1f, 0.35f, 0.12f, eased),
+                            new Color(1f, 0.82f, 0.2f, eased),
+                            eased * 0.35f);
+                    }
+                }
+
+                if (isFinishPresentationActive)
+                {
+                    return;
+                }
+
+                SetElementAlpha(finishText, 1f);
+                if (finishText != null)
+                {
+                    finishText.color = new Color(1f, 0.82f, 0.2f, 1f);
+                }
+
+                float holdElapsed = 0f;
+                while (holdElapsed < breakHoldSeconds)
+                {
+                    await UniTask.Yield(PlayerLoopTiming.Update, token);
+                    if (isFinishPresentationActive)
+                    {
+                        return;
+                    }
+
+                    holdElapsed += Time.unscaledDeltaTime;
+                }
+
+                float fadeElapsed = 0f;
+                while (fadeElapsed < breakFadeSeconds)
+                {
+                    await UniTask.Yield(PlayerLoopTiming.Update, token);
+                    if (isFinishPresentationActive)
+                    {
+                        return;
+                    }
+
+                    fadeElapsed += Time.unscaledDeltaTime;
+                    float t = Mathf.Clamp01(fadeElapsed / breakFadeSeconds);
+                    SetElementAlpha(finishText, 1f - t);
+                }
+
+                if (!isFinishPresentationActive)
+                {
+                    HidePartBreakImmediate();
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                if (!isFinishPresentationActive)
+                {
+                    RestoreFinishLabel();
+                    SetElementAlpha(finishText, 0f);
+                    if (finishFlashImage != null)
+                    {
+                        Color flashColor = finishFlashImage.color;
+                        flashColor.a = 0f;
+                        finishFlashImage.color = flashColor;
+                    }
+                }
+            }
+            finally
+            {
+                if (ReferenceEquals(partBreakCts, localCts))
+                {
+                    partBreakCts.Dispose();
+                    partBreakCts = null;
+                }
+            }
+        }
+
+        /// <inheritdoc/>
         public void HideFinishImmediate()
         {
+            isFinishPresentationActive = false;
+            RestoreFinishLabel();
             SetElementAlpha(finishText, 0f);
 
             if (finishFlashImage != null)
@@ -580,6 +767,50 @@ namespace Scene.BattleNpcScene.View
             if (overlayCanvas != null)
             {
                 overlayCanvas.enabled = false;
+            }
+        }
+
+        /// <inheritdoc/>
+        public void HidePartBreakImmediate()
+        {
+            RestoreFinishLabel();
+            SetElementAlpha(finishText, 0f);
+
+            if (finishFlashImage != null)
+            {
+                Color flashColor = finishFlashImage.color;
+                flashColor.a = 0f;
+                finishFlashImage.color = flashColor;
+            }
+
+            if (isFinishPresentationActive)
+            {
+                return;
+            }
+
+            if (overlayCanvas != null)
+            {
+                overlayCanvas.enabled = false;
+            }
+        }
+
+        private void CancelPartBreakPresentation()
+        {
+            if (partBreakCts == null)
+            {
+                return;
+            }
+
+            partBreakCts.Cancel();
+            partBreakCts.Dispose();
+            partBreakCts = null;
+        }
+
+        private void RestoreFinishLabel()
+        {
+            if (finishText != null)
+            {
+                finishText.text = FinishLabel;
             }
         }
 
@@ -609,6 +840,7 @@ namespace Scene.BattleNpcScene.View
             if (isVictoryPresentationActive)
             {
                 // 勝利表示中はWinnerとモンスター名を維持する
+                CancelPartBreakPresentation();
                 SetStartButtonVisible(false);
                 SetVsNamePlatesVisible(false);
                 HidePhaseTexts();
@@ -619,6 +851,7 @@ namespace Scene.BattleNpcScene.View
 
             isVictoryPresentationActive = false;
             victoryConfetti.Stop();
+            CancelPartBreakPresentation();
             SetStartButtonVisible(false);
             SetVsNamePlatesVisible(false);
             HidePhaseTexts();
@@ -630,6 +863,7 @@ namespace Scene.BattleNpcScene.View
 
         private void OnDestroy()
         {
+            CancelPartBreakPresentation();
             victoryConfetti.Dispose();
         }
 
@@ -642,121 +876,6 @@ namespace Scene.BattleNpcScene.View
             TitleClayUiVisualUtility.ApplyMatchupNameLabel(enemyNameText, false);
             TitleClayUiVisualUtility.EnsureTextFontOnly(victoryTitleText);
             TitleClayUiVisualUtility.EnsureTextFontOnly(victoryNameText);
-
-            if (startButton != null)
-            {
-                TitleClayUiVisualUtility.ApplyMenuButton(startButton, TextAlignmentOptions.Center);
-            }
-
-            ApplyMatchupStartButtonLayout(startButton);
-            ApplyMatchupNamePlateLayout(playerNameText, true);
-            ApplyMatchupNamePlateLayout(enemyNameText, false);
-            EnsureNamePlateBackdrop(playerNameText, true);
-            EnsureNamePlateBackdrop(enemyNameText, false);
-        }
-
-        private const float NamePlateBottomOffset = 72f;
-        private const float StartButtonBottomOffset = 168f;
-
-        private static void ApplyMatchupStartButtonLayout(Button button)
-        {
-            if (button == null)
-            {
-                return;
-            }
-
-            RectTransform rect = button.GetComponent<RectTransform>();
-            rect.anchorMin = new Vector2(0.5f, 0f);
-            rect.anchorMax = new Vector2(0.5f, 0f);
-            rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.anchoredPosition = new Vector2(0f, StartButtonBottomOffset);
-        }
-
-        private static void ApplyMatchupNamePlateLayout(TMP_Text label, bool isLeft)
-        {
-            if (label == null)
-            {
-                return;
-            }
-
-            RectTransform rect = label.rectTransform;
-            rect.anchorMin = new Vector2(isLeft ? 0.04f : 0.56f, 0f);
-            rect.anchorMax = new Vector2(isLeft ? 0.46f : 0.96f, 0f);
-            rect.pivot = new Vector2(0.5f, 0f);
-            rect.anchoredPosition = new Vector2(0f, NamePlateBottomOffset);
-            rect.sizeDelta = new Vector2(0f, 72f);
-        }
-
-        private void EnsureNamePlateBackdrop(TMP_Text label, bool isPlayer)
-        {
-            if (label == null)
-            {
-                return;
-            }
-
-            Transform parent = label.transform.parent;
-            if (parent == null)
-            {
-                return;
-            }
-
-            string backdropName = label.name + "Backdrop";
-            Transform existing = parent.Find(backdropName);
-            Image backdrop;
-            if (existing != null)
-            {
-                backdrop = existing.GetComponent<Image>();
-            }
-            else
-            {
-                var host = new GameObject(backdropName, typeof(RectTransform), typeof(Image), typeof(CanvasGroup));
-                host.transform.SetParent(parent, false);
-                host.transform.SetSiblingIndex(label.transform.GetSiblingIndex());
-                backdrop = host.GetComponent<Image>();
-            }
-
-            if (!backdrop.TryGetComponent(out CanvasGroup backdropGroup))
-            {
-                backdropGroup = backdrop.gameObject.AddComponent<CanvasGroup>();
-            }
-
-            backdropGroup.alpha = 0f;
-
-            RectTransform backdropRect = backdrop.rectTransform;
-            RectTransform labelRect = label.rectTransform;
-            backdropRect.anchorMin = labelRect.anchorMin;
-            backdropRect.anchorMax = labelRect.anchorMax;
-            backdropRect.pivot = labelRect.pivot;
-            backdropRect.anchoredPosition = labelRect.anchoredPosition;
-            backdropRect.sizeDelta = labelRect.sizeDelta + new Vector2(48f, 20f);
-            TitleClayUiVisualUtility.ApplyMatchupNamePlatePanel(backdrop, isPlayer);
-            backdrop.raycastTarget = false;
-            backdrop.gameObject.SetActive(false);
-        }
-
-        private static void SetNamePlateBackdropVisible(TMP_Text label, float alpha)
-        {
-            if (label == null)
-            {
-                return;
-            }
-
-            Transform parent = label.transform.parent;
-            if (parent == null)
-            {
-                return;
-            }
-
-            Transform backdrop = parent.Find(label.name + "Backdrop");
-            if (backdrop != null)
-            {
-                bool isVisible = alpha > 0.001f && !string.IsNullOrWhiteSpace(label.text);
-                backdrop.gameObject.SetActive(isVisible);
-                if (backdrop.TryGetComponent(out CanvasGroup backdropGroup))
-                {
-                    backdropGroup.alpha = alpha;
-                }
-            }
         }
 
         private async UniTask WaitForMatchupStartAsync(CancellationToken cancellationToken)
@@ -946,8 +1065,6 @@ namespace Scene.BattleNpcScene.View
             text.text = string.IsNullOrWhiteSpace(displayName) ? string.Empty : displayName;
             text.alpha = alpha;
             text.gameObject.SetActive(alpha > 0.001f && !string.IsNullOrWhiteSpace(displayName));
-
-            SetNamePlateBackdropVisible(text, alpha);
         }
 
         private void SetVsNamePlatesVisible(bool isVisible)
@@ -956,15 +1073,6 @@ namespace Scene.BattleNpcScene.View
             {
                 vsNamePlateRoot.SetActive(isVisible);
             }
-        }
-
-        private static void StretchFull(RectTransform rect)
-        {
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.offsetMin = Vector2.zero;
-            rect.offsetMax = Vector2.zero;
-            rect.pivot = new Vector2(0.5f, 0.5f);
         }
 
         private void FixOverlayCanvasLayout()
@@ -986,8 +1094,6 @@ namespace Scene.BattleNpcScene.View
             {
                 canvasRect.localScale = Vector3.one;
             }
-
-            StretchFull(canvasRect);
 
             overlayCanvas.overrideSorting = true;
             if (overlayCanvas.sortingOrder < 1000)
@@ -1037,7 +1143,7 @@ namespace Scene.BattleNpcScene.View
                 || victoryNameText == null)
             {
                 Debug.LogError(
-                    "[BattleStartOverlayView] シーン上のUI参照が未設定です。Tools/ClayMonsters/Migrate Dynamic UI To Scenesを実行してください",
+                    "[BattleStartOverlayView] シーン上のUI参照が未設定です。HierarchyでUI参照を確認してください",
                     this);
             }
         }

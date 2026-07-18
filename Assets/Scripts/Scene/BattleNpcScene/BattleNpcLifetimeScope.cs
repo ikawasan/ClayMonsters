@@ -58,6 +58,8 @@ namespace Scene.BattleNpcScene
 
         [SerializeField] BattleNpcPostProcessView postProcessView;
 
+        [SerializeField] BattleClassroomLighting classroomLighting;
+
 
 
         [Header("UI Views")]
@@ -70,7 +72,9 @@ namespace Scene.BattleNpcScene
 
         {
 
-            loadSlotView?.ConfigureSavePool(ModelSavePool.TrainedPlayer, "???");
+            EnsureSerializedReferences();
+
+            loadSlotView?.ConfigureSavePool(ModelSavePool.TrainedPlayer, "未育成");
 
 
 
@@ -96,6 +100,8 @@ namespace Scene.BattleNpcScene
 
             builder.RegisterComponent(postProcessView).AsImplementedInterfaces();
 
+            builder.RegisterComponent(classroomLighting);
+
             builder.Register<BattleCanvasTransition>(Lifetime.Singleton).As<IBattleCanvasTransition>();
 
             builder.RegisterComponentInHierarchy<BattleStartOverlayView>();
@@ -110,6 +116,19 @@ namespace Scene.BattleNpcScene
 
             builder.RegisterComponent(loadSlotView);
 
+        }
+
+        private void EnsureSerializedReferences()
+        {
+            if (classroomLighting == null)
+            {
+                classroomLighting = FindFirstObjectByType<BattleClassroomLighting>(FindObjectsInactive.Include);
+            }
+
+            if (classroomLighting == null)
+            {
+                classroomLighting = gameObject.AddComponent<BattleClassroomLighting>();
+            }
         }
 
     }

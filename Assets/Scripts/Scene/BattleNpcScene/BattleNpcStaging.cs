@@ -27,6 +27,11 @@ namespace Scene.BattleNpcScene
         /// </summary>
         public IBattleFinishPresentation FinishPresentation => overlayView;
 
+        /// <summary>
+        /// 部位破壊時のBreak演出
+        /// </summary>
+        public IBattlePartBreakPresentation PartBreakPresentation => overlayView;
+
         [Header("対戦紹介")]
         [SerializeField] private float matchupSideGapPadding = 0.55f;
         [SerializeField] private float matchupMinSideSeparation = 1.5f;
@@ -89,6 +94,7 @@ namespace Scene.BattleNpcScene
         /// </summary>
         public void PrepareSelectionEntry()
         {
+            matchupBackground?.ShowClassroom();
         }
 
         /// <inheritdoc />
@@ -217,7 +223,6 @@ namespace Scene.BattleNpcScene
                     winner,
                     battleHorizontalAngle,
                     matchupModelTowardCameraDegrees);
-                winner.PlayMotion(MotionType.Idle);
             }
             else
             {
@@ -321,7 +326,19 @@ namespace Scene.BattleNpcScene
 
         private void OnDisable()
         {
-            matchupBackground?.ShowClassroom();
+            if (matchupBackground == null)
+            {
+                return;
+            }
+
+            Transform sceneRoot = transform.root;
+            if (sceneRoot != null && !sceneRoot.gameObject.activeSelf)
+            {
+                return;
+            }
+
+            // 炎終了だけでなくFieldも戻す(Unload時は上のearly-outで触らない)
+            matchupBackground.ShowClassroom();
         }
 
         private static float ResolveMatchupGroundY(BattleStagingContext context)

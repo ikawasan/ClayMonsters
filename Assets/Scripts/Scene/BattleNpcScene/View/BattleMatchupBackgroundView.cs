@@ -11,8 +11,6 @@ namespace Scene.BattleNpcScene.View
     [DisallowMultipleComponent]
     public sealed class BattleMatchupBackgroundView : MonoBehaviour
     {
-        private const string FieldObjectName = "Field";
-
         [Header("参照")]
         [SerializeField] private GameObject classroomRoot;
         [SerializeField] private UnityEngine.Camera targetCamera;
@@ -100,11 +98,7 @@ namespace Scene.BattleNpcScene.View
         public void HideClassroom()
         {
             EnsureClassroomReference();
-
-            if (classroomRoot != null)
-            {
-                classroomRoot.SetActive(false);
-            }
+            BattleClassroomFieldLayout.SetFieldVisible(false);
         }
 
         /// <summary>
@@ -137,9 +131,9 @@ namespace Scene.BattleNpcScene.View
         }
 
         /// <summary>
-        /// 教室背景へ戻す
+        /// 炎演出のみ終了するFieldは表示しない
         /// </summary>
-        public void ShowClassroom()
+        public void EndFlamePresentation()
         {
             isFlameActive = false;
             RestoreCameraBackground();
@@ -153,8 +147,18 @@ namespace Scene.BattleNpcScene.View
             enemyFlameEffect?.Stop();
             clashFlameEffect?.Stop();
             SetLightsEnabled(false);
+        }
 
-            if (classroomRoot != null)
+        /// <summary>
+        /// 教室背景へ戻す
+        /// </summary>
+        public void ShowClassroom()
+        {
+            EndFlamePresentation();
+
+            EnsureClassroomReference();
+            BattleClassroomFieldLayout.SetFieldVisible(true);
+            if (classroomRoot != null && !classroomRoot.activeSelf)
             {
                 classroomRoot.SetActive(true);
             }
@@ -403,15 +407,24 @@ namespace Scene.BattleNpcScene.View
 
         private void EnsureClassroomReference()
         {
-            if (classroomRoot != null)
+            if (classroomRoot != null
+                && classroomRoot.name == BattleClassroomFieldLayout.FieldObjectName
+                && classroomRoot.scene == gameObject.scene)
             {
                 return;
             }
 
-            Transform field = transform.root.Find(FieldObjectName);
+            Transform nestedField = transform.root.Find(BattleClassroomFieldLayout.FieldObjectName);
+            if (nestedField != null)
+            {
+                classroomRoot = nestedField.gameObject;
+                return;
+            }
+
+            GameObject field = BattleClassroomFieldLayout.FindFieldObject();
             if (field != null)
             {
-                classroomRoot = field.gameObject;
+                classroomRoot = field;
             }
         }
 
