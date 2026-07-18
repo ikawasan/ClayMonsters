@@ -25,25 +25,25 @@ Material:
     m_TexEnvs: []
     m_Ints: []
     m_Floats:
-    - _AmbientIntensity: 0.48
+    - _AmbientIntensity: 0.54
     - _CavityStrength: 0.42
     - _ClayNoiseScale: 4.8
     - _ClayNoiseStrength: 0.08
-    - _DiffuseSoftness: 0.82
+    - _DiffuseSoftness: 0.88
     - _FingerprintScale: 16
     - _FingerprintStrength: 0.1
     - _NormalPerturb: 0.18
-    - _OutlineDarkness: 0.32
-    - _OutlineWidth: 0.018
+    - _OutlineDarkness: 0.26
+    - _OutlineWidth: 0.014
     - _RimPower: 3.2
-    - _RimStrength: 0.36
-    - _ShadowDepth: 0.38
+    - _RimStrength: 0.34
+    - _ShadowDepth: 0.34
     - _SpecularSmoothness: 0.72
-    - _SpecularStrength: 0.22
+    - _SpecularStrength: 0.2
     - _SubsurfacePower: 1.6
-    - _SubsurfaceStrength: 0.65
+    - _SubsurfaceStrength: 0.7
     - _VertexColorStrength: 1
-    - _Wrap: 0.62
+    - _Wrap: 0.68
     m_Colors:
     - _BaseColor: {r: 0.94, g: 0.86, b: 0.74, a: 1}
     - _RimColor: {r: 1, g: 0.92, b: 0.82, a: 1}
