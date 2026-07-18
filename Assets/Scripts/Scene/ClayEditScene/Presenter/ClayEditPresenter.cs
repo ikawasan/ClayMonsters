@@ -124,7 +124,13 @@ namespace Scene.ClayEditScene.Presenter
             sessionContext.Reset();
             editorUiGate.SetEditorVisible(false);
             remakeLoadSlotView.Hide();
+            entryView.Hide();
             SetEditorInteractable(false);
+        }
+
+        /// <inheritdoc/>
+        void IClayEditPresenter.OnEnterAfterFadeIn()
+        {
             entryView.Show();
         }
 
@@ -167,10 +173,15 @@ namespace Scene.ClayEditScene.Presenter
             clayEditView.CheckToModeSelectSceneWindow.enabled = false;
         }
 
-        // セーブ完了時: シーン遷移する
+        // セーブ完了時: 暗転してから前シーンへ戻り明転する
         void OnModelSaved()
         {
-            sceneManager.BackScene().Forget();
+            ReturnAfterSaveAsync().Forget();
+        }
+
+        private async UniTaskVoid ReturnAfterSaveAsync()
+        {
+            await sceneManager.BackScene();
         }
 
         // 編集(モデル操作・カメラ操作)の受付を切り替える

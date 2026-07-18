@@ -1,12 +1,13 @@
 namespace Scene.ClayEditScene.Interface
 {
     /// <summary>
-    /// ClayEditシーンのポストプロセスと黒背景を制御する
+    /// ClayEditシーンの黒背景を制御する
+    /// メッシュ色味維持のためポストプロセスは掛けない
     /// </summary>
     public interface IClayEditPostProcess
     {
         /// <summary>
-        /// Bloomと黒背景を有効化する
+        /// 黒背景を有効化しカメラのポストプロセスを切る
         /// </summary>
         void Enable();
 

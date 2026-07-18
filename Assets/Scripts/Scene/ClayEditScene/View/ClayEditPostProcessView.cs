@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Scene.ClayEditScene.Interface;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -6,22 +7,37 @@ using UnityEngine.Rendering.Universal;
 namespace Scene.ClayEditScene.View
 {
     /// <summary>
-    /// ClayEditシーン向けのBloomポストプロセスと黒背景を適用する
-    /// 造形範囲グリッドの発光表現を強調する
+    /// ClayEditシーン向けの黒背景を適用する
+    /// メッシュ色味を他シーンと揃えるためポストプロセスは掛けない
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class ClayEditPostProcessView : MonoBehaviour, IClayEditPostProcess
     {
-        [SerializeField] private VolumeProfile clayEditVolumeProfile;
-        [SerializeField] private float volumePriority = 10f;
+        private const int UiExclusionFrameCount = 3;
+
         [SerializeField] private Color backgroundColor = Color.black;
 
-        private Volume volume;
         private UniversalAdditionalCameraData cameraData;
         private CameraClearFlags previousClearFlags;
         private Color previousBackgroundColor;
         private bool previousPostProcessingEnabled;
         private bool isEnabled;
+        private int remainingUiExclusionFrames;
+        private readonly List<CanvasRenderState> savedCanvasStates = new();
+
+        private readonly struct CanvasRenderState
+        {
+            public CanvasRenderState(Canvas canvas, RenderMode renderMode, UnityEngine.Camera worldCamera)
+            {
+                Canvas = canvas;
+                RenderMode = renderMode;
+                WorldCamera = worldCamera;
+            }
+
+            public Canvas Canvas { get; }
+            public RenderMode RenderMode { get; }
+            public UnityEngine.Camera WorldCamera { get; }
+        }
 
         /// <inheritdoc/>
         public void Enable()
@@ -31,16 +47,12 @@ namespace Scene.ClayEditScene.View
                 gameObject.SetActive(true);
             }
 
-            EnsureVolume();
-
-            if (volume != null)
-            {
-                volume.enabled = true;
-            }
-
-            ApplyBlackBackground();
-            ApplyPostProcessing();
             isEnabled = true;
+            remainingUiExclusionFrames = UiExclusionFrameCount;
+            ApplyUiExclusion();
+            DisableSceneVolumes();
+            ApplyBlackBackground();
+            DisableCameraPostProcessing();
         }
 
         /// <inheritdoc/>
@@ -52,13 +64,20 @@ namespace Scene.ClayEditScene.View
             }
 
             isEnabled = false;
+            remainingUiExclusionFrames = 0;
+            RestoreCameraSettings();
+            RestoreUiCanvases();
+        }
 
-            if (volume != null)
+        private void LateUpdate()
+        {
+            if (!isEnabled || remainingUiExclusionFrames <= 0)
             {
-                volume.enabled = false;
+                return;
             }
 
-            RestoreCameraSettings();
+            ApplyUiExclusion();
+            remainingUiExclusionFrames--;
         }
 
         private void ApplyBlackBackground()
@@ -71,12 +90,11 @@ namespace Scene.ClayEditScene.View
 
             previousClearFlags = camera.clearFlags;
             previousBackgroundColor = camera.backgroundColor;
-
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = backgroundColor;
         }
 
-        private void ApplyPostProcessing()
+        private void DisableCameraPostProcessing()
         {
             UnityEngine.Camera camera = UnityEngine.Camera.main;
             if (camera == null || !camera.TryGetComponent(out UniversalAdditionalCameraData additionalCameraData))
@@ -86,7 +104,18 @@ namespace Scene.ClayEditScene.View
 
             cameraData = additionalCameraData;
             previousPostProcessingEnabled = cameraData.renderPostProcessing;
-            cameraData.renderPostProcessing = true;
+            cameraData.renderPostProcessing = false;
+        }
+
+        private static void DisableSceneVolumes()
+        {
+            Volume[] volumes = Object.FindObjectsByType<Volume>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < volumes.Length; i++)
+            {
+                volumes[i].enabled = false;
+            }
         }
 
         private void RestoreCameraSettings()
@@ -105,23 +134,58 @@ namespace Scene.ClayEditScene.View
             }
         }
 
-        private void EnsureVolume()
+        private void ApplyUiExclusion()
         {
-            if (volume != null)
+            Canvas[] canvases = Object.FindObjectsByType<Canvas>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            foreach (Canvas canvas in canvases)
             {
-                return;
+                if (canvas.renderMode == RenderMode.ScreenSpaceOverlay)
+                {
+                    continue;
+                }
+
+                if (!ContainsCanvas(canvas))
+                {
+                    savedCanvasStates.Add(new CanvasRenderState(
+                        canvas,
+                        canvas.renderMode,
+                        canvas.worldCamera));
+                }
+
+                canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                canvas.worldCamera = null;
+            }
+        }
+
+        private bool ContainsCanvas(Canvas canvas)
+        {
+            foreach (CanvasRenderState state in savedCanvasStates)
+            {
+                if (state.Canvas == canvas)
+                {
+                    return true;
+                }
             }
 
-            volume = GetComponent<Volume>();
-            if (volume == null)
+            return false;
+        }
+
+        private void RestoreUiCanvases()
+        {
+            foreach (CanvasRenderState state in savedCanvasStates)
             {
-                volume = gameObject.AddComponent<Volume>();
+                if (state.Canvas == null)
+                {
+                    continue;
+                }
+
+                state.Canvas.renderMode = state.RenderMode;
+                state.Canvas.worldCamera = state.WorldCamera;
             }
 
-            volume.isGlobal = true;
-            volume.priority = volumePriority;
-            volume.profile = clayEditVolumeProfile;
-            volume.enabled = false;
+            savedCanvasStates.Clear();
         }
     }
 }

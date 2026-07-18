@@ -27,6 +27,11 @@ namespace Scene.ClayEditScene.View
         /// <inheritdoc />
         public Observable<Unit> OnRemakeClicked => remakeSubject;
 
+        private void Awake()
+        {
+            Hide();
+        }
+
         private void Start()
         {
             if (newCreateButton != null)
@@ -72,7 +77,7 @@ namespace Scene.ClayEditScene.View
             if (entryCanvas == null || newCreateButton == null || remakeButton == null)
             {
                 Debug.LogError(
-                    "[ClayEditEntryView] シーン上のUI参照が未設定です。Tools/ClayMonsters/Migrate ClayEdit Scene UIを実行してください",
+                    "[ClayEditEntryView] シーン上のUI参照が未設定です。HierarchyでUI参照を確認してください",
                     this);
             }
         }

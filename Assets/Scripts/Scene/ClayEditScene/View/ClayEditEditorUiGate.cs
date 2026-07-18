@@ -11,6 +11,11 @@ namespace Scene.ClayEditScene.View
         [Tooltip("入場フロー完了まで非表示にする編集UIルート")]
         [SerializeField] private GameObject[] editorUiRoots;
 
+        private void Awake()
+        {
+            SetEditorVisible(false);
+        }
+
         /// <inheritdoc />
         public void SetEditorVisible(bool isVisible)
         {
