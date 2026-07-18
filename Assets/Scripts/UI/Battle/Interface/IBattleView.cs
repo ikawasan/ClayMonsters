@@ -8,7 +8,16 @@ namespace UI.Battle.Interface
     /// </summary>
     public readonly struct MoveDisplay
     {
-        public MoveDisplay(string name, bool usable, float rangeMin, float rangeMax, float gutsCost, float power, string hitRateLabel, MoveIconId iconId, MoveTargetPartId targetPartId)
+        public MoveDisplay(
+            string name,
+            bool usable,
+            float rangeMin,
+            float rangeMax,
+            float gutsCost,
+            float power,
+            MoveIconId iconId,
+            MoveTargetPartId targetPartId,
+            MoveTargetPartId requiredPartId)
         {
             Name = name;
             Usable = usable;
@@ -16,9 +25,9 @@ namespace UI.Battle.Interface
             RangeMax = rangeMax;
             GutsCost = gutsCost;
             Power = power;
-            HitRateLabel = hitRateLabel;
             IconId = iconId;
             TargetPartId = targetPartId;
+            RequiredPartId = requiredPartId;
         }
 
         public string Name { get; }
@@ -27,9 +36,9 @@ namespace UI.Battle.Interface
         public float RangeMax { get; }
         public float GutsCost { get; }
         public float Power { get; }
-        public string HitRateLabel { get; }
         public MoveIconId IconId { get; }
         public MoveTargetPartId TargetPartId { get; }
+        public MoveTargetPartId RequiredPartId { get; }
     }
 
     /// <summary>

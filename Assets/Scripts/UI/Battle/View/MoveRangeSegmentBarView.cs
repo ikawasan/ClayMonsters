@@ -13,12 +13,12 @@ namespace UI.Battle.View
 
         public const int SegmentCount = 3;
         public const float DefaultMaxDistance = 10f;
-        public const float BattleBarWidth = 80f;
-        public const float BattleBarHeight = 80f;
-        public const float BattleSegmentWidth = 25f;
-        public const float BattleSegmentHeight = 5f;
-        public const float BattleSegmentSpacing = -5f;
-        public static readonly Vector2 BattleAnchoredPosition = new Vector2(0f, -41.3f);
+        public const float BattleBarWidth = 64f;
+        public const float BattleBarHeight = 10f;
+        public const float BattleSegmentWidth = 20f;
+        public const float BattleSegmentHeight = 6f;
+        public const float BattleSegmentSpacing = 2f;
+        public static readonly Vector2 BattleAnchoredPosition = new Vector2(0f, 8f);
         public const float CompactBarWidth = 78f;
         public const float CompactBarHeight = 12f;
         public const float CompactSegmentWidth = 22f;
@@ -242,10 +242,13 @@ namespace UI.Battle.View
             Sprite inactiveSprite,
             Color activeColor,
             Color inactiveColor,
-            Color outOfBandColor)
+            Color outOfBandColor,
+            bool preserveSegmentHierarchy = false)
         {
             _ = usable;
             _ = inactiveColor;
+            _ = activeSprite;
+            _ = inactiveSprite;
 
             Sprite segmentSprite = GetFallbackSegmentSprite();
             Color inColor = activeColor;
@@ -259,7 +262,16 @@ namespace UI.Battle.View
                     continue;
                 }
 
-                image.gameObject.SetActive(true);
+                if (preserveSegmentHierarchy && !image.gameObject.activeSelf)
+                {
+                    continue;
+                }
+
+                if (!preserveSegmentHierarchy)
+                {
+                    image.gameObject.SetActive(true);
+                }
+
                 image.enabled = true;
                 image.sprite = segmentSprite;
                 image.type = Image.Type.Simple;
@@ -275,7 +287,11 @@ namespace UI.Battle.View
         /// <summary>
         /// 未設定セグメントへ既定スプライトを割り当てる
         /// </summary>
-        public static void ApplyDefaultSprites(Image[] segments, ref Sprite activeSprite, ref Sprite inactiveSprite)
+        public static void ApplyDefaultSprites(
+            Image[] segments,
+            ref Sprite activeSprite,
+            ref Sprite inactiveSprite,
+            bool preserveSegmentHierarchy = false)
         {
             EnsureCatalogSprites(ref activeSprite, ref inactiveSprite);
 
@@ -292,8 +308,17 @@ namespace UI.Battle.View
                     continue;
                 }
 
+                if (preserveSegmentHierarchy && !image.gameObject.activeSelf)
+                {
+                    continue;
+                }
+
                 ConfigureSegmentImage(image, GetFallbackSegmentSprite());
-                image.gameObject.SetActive(true);
+                if (!preserveSegmentHierarchy)
+                {
+                    image.gameObject.SetActive(true);
+                }
+
                 image.enabled = true;
                 image.color = DefaultOutOfBandColor;
             }
@@ -302,7 +327,12 @@ namespace UI.Battle.View
         /// <summary>
         /// 射程に応じてセグメント色を更新する
         /// </summary>
-        public void Apply(float rangeMin, float rangeMax, float maxDistance, bool usable = true)
+        public void Apply(
+            float rangeMin,
+            float rangeMax,
+            float maxDistance,
+            bool usable = true,
+            bool preserveSegmentHierarchy = false)
         {
             ApplyStyled(
                 rangeMin,
@@ -311,7 +341,8 @@ namespace UI.Battle.View
                 usable,
                 DefaultActiveColor,
                 DefaultInactiveColor,
-                DefaultOutOfBandColor);
+                DefaultOutOfBandColor,
+                preserveSegmentHierarchy);
         }
 
         /// <summary>
@@ -324,7 +355,8 @@ namespace UI.Battle.View
             bool usable,
             Color activeColor,
             Color inactiveColor,
-            Color outOfBandColor)
+            Color outOfBandColor,
+            bool preserveSegmentHierarchy = false)
         {
             EnsureCatalogSprites(ref rangeActiveSprite, ref rangeInactiveSprite);
             ApplySegments(
@@ -337,22 +369,45 @@ namespace UI.Battle.View
                 rangeInactiveSprite,
                 activeColor,
                 inactiveColor,
-                outOfBandColor);
+                outOfBandColor,
+                preserveSegmentHierarchy);
         }
 
         /// <summary>
         /// 射程セグメント用スプライトを読み込む
         /// </summary>
-        public void EnsureSprites()
+        public void EnsureSprites(bool preserveSegmentHierarchy = false)
         {
             EnsureCatalogSprites(ref rangeActiveSprite, ref rangeInactiveSprite);
-            ApplyDefaultSprites(rangeSegments, ref rangeActiveSprite, ref rangeInactiveSprite);
+            ApplyDefaultSprites(
+                rangeSegments,
+                ref rangeActiveSprite,
+                ref rangeInactiveSprite,
+                preserveSegmentHierarchy);
         }
 
         private void Awake()
         {
             rangeSegments = NormalizeSegmentArray(rangeSegments, transform);
-            EnsureSprites();
+            EnsureSprites(preserveSegmentHierarchy: ShouldPreserveSegmentHierarchy());
+        }
+
+        private bool ShouldPreserveSegmentHierarchy()
+        {
+            Transform current = transform;
+            while (current != null)
+            {
+                if (current.name.Contains("ModelSaveConfirmView")
+                    || current.name == "ConfirmSlotRow"
+                    || current.name == "ConfirmContent")
+                {
+                    return true;
+                }
+
+                current = current.parent;
+            }
+
+            return false;
         }
 
         private static void EnsureCatalogSprites(ref Sprite activeSprite, ref Sprite inactiveSprite)

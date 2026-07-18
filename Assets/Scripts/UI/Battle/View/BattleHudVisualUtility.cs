@@ -15,14 +15,10 @@ namespace UI.Battle.View
         /// </summary>
         public static void ApplyLabelOutline(TMP_Text text, float width = 0.22f)
         {
-            if (text == null)
-            {
-                return;
-            }
-
-            text.fontSharedMaterial = text.fontMaterial;
-            text.outlineWidth = width;
-            text.outlineColor = new Color(0.06f, 0.08f, 0.12f, 0.92f);
+            AppTmpFontUtility.ApplyOutline(
+                text,
+                width,
+                new Color(0.06f, 0.08f, 0.12f, 0.92f));
         }
 
         /// <summary>
@@ -30,14 +26,10 @@ namespace UI.Battle.View
         /// </summary>
         public static void ApplyValueOutline(TMP_Text text, float width = 0.28f)
         {
-            if (text == null)
-            {
-                return;
-            }
-
-            text.fontSharedMaterial = text.fontMaterial;
-            text.outlineWidth = width;
-            text.outlineColor = new Color(0.04f, 0.05f, 0.08f, 0.95f);
+            AppTmpFontUtility.ApplyOutline(
+                text,
+                width,
+                new Color(0.04f, 0.05f, 0.08f, 0.95f));
         }
 
         /// <summary>
@@ -45,12 +37,10 @@ namespace UI.Battle.View
         /// </summary>
         public static void ApplyResultText(TMP_Text text, float width = 0.32f)
         {
-            if (text == null)
-            {
-                return;
-            }
-
-            AppTmpFontUtility.ApplyDefaultFont(text);
+            AppTmpFontUtility.ApplyOutline(
+                text,
+                width,
+                new Color(0.04f, 0.05f, 0.08f, 0.95f));
         }
 
         /// <summary>

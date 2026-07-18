@@ -64,6 +64,9 @@ namespace UI.Battle.View
                 case MoveTargetPartId.Back:
                     DrawBackIcon(pixels);
                     break;
+                case MoveTargetPartId.Body:
+                    DrawBodyIcon(pixels);
+                    break;
                 case MoveTargetPartId.Any:
                     DrawAnyIcon(pixels);
                     break;
@@ -148,6 +151,21 @@ namespace UI.Battle.View
             FillRect(pixels, 31, 19, 6, 3, tail);
             FillRect(pixels, 36, 20, 2, 9, outline);
             FillRect(pixels, 37, 21, 1, 7, tail);
+        }
+
+        private static void DrawBodyIcon(Color32[] pixels)
+        {
+            Color32 fill = new Color32(196, 148, 96, 255);
+            Color32 outline = new Color32(72, 48, 24, 255);
+            Color32 highlight = new Color32(232, 196, 148, 255);
+
+            FillCircle(pixels, 24, 28, 12, outline);
+            FillCircle(pixels, 24, 28, 11, fill);
+            FillCircle(pixels, 24, 14, 8, outline);
+            FillCircle(pixels, 24, 14, 7, fill);
+            FillRect(pixels, 14, 18, 20, 12, outline);
+            FillRect(pixels, 15, 19, 18, 10, fill);
+            FillRect(pixels, 18, 20, 8, 4, highlight);
         }
 
         private static void DrawAnyIcon(Color32[] pixels)

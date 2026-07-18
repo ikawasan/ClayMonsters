@@ -27,6 +27,7 @@ namespace UI.Battle.Interface
         Leg,
         Front,
         Back,
+        Body,
         Any
     }
 }

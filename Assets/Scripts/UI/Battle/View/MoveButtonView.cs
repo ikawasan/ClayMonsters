@@ -1,24 +1,39 @@
-using UI.Battle.Interface;
 using LighthouseExtends.UIComponent.Button;
 using TMPro;
+using UI.Battle.Interface;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace UI.Battle.View
 {
     /// <summary>
-    /// 1つの攻撃ボタンの表示部品威力・破壊部位画像・アイコン・必要ガッツ・有効距離セグメントを持つ
+    /// 1つの攻撃ボタンの表示部品
+    /// 攻撃名・技アイコン・必要部位・破壊部位・威力・コスト・射程を表示する
     /// </summary>
     public class MoveButtonView : MonoBehaviour
     {
+        private const string RangeLabel = "射程";
+
         [Tooltip("クリック購読に使うボタン本体")]
         [SerializeField] private LHButton button;
+
+        [Tooltip("攻撃名表示")]
+        [SerializeField] private TMP_Text moveNameText;
 
         [Tooltip("威力の数値表示")]
         [SerializeField] private TMP_Text powerText;
 
+        [Tooltip("必要部位の画像")]
+        [SerializeField] private Image requiredPartImage;
+
+        [Tooltip("必要部位のラベル表示")]
+        [SerializeField] private TMP_Text requiredPartLabelText;
+
         [Tooltip("破壊対象部位の画像")]
         [SerializeField] private Image attributeImage;
+
+        [Tooltip("破壊対象部位のラベル表示")]
+        [SerializeField] private TMP_Text targetPartLabelText;
 
         [Tooltip("技アイコンの画像")]
         [SerializeField] private Image iconImage;
@@ -26,17 +41,17 @@ namespace UI.Battle.View
         [Tooltip("必要ガッツの数値表示")]
         [SerializeField] private TMP_Text gutsText;
 
-        [Tooltip("命中率ラベル表示")]
-        [SerializeField] private TMP_Text hitRateText;
+        [Tooltip("射程ラベル表示")]
+        [SerializeField] private TMP_Text rangeLabelText;
 
         [Tooltip("有効距離を分割した距離セグメント画像(近・中・遠など)。射程に重なるものだけ有効化する)")]
         [SerializeField] private Image[] rangeSegments;
 
         [Header("見た目")]
         [SerializeField] private Image buttonBackground;
-        [SerializeField] private Color usableBackgroundColor = new Color(0.18f, 0.24f, 0.34f, 0.92f);
-        [SerializeField] private Color unusableBackgroundColor = new Color(0.12f, 0.13f, 0.16f, 0.72f);
-        [SerializeField] private Color highlightBackgroundColor = new Color(0.28f, 0.36f, 0.5f, 0.98f);
+        [SerializeField] private Color usableBackgroundColor = new Color(1f, 0.98f, 0.94f, 0.96f);
+        [SerializeField] private Color unusableBackgroundColor = new Color(0.82f, 0.8f, 0.78f, 0.72f);
+        [SerializeField] private Color highlightBackgroundColor = new Color(1f, 0.96f, 0.9f, 1f);
         [SerializeField] private Color rangeActiveColor = MoveRangeSegmentBarView.RangeInColor;
         [SerializeField] private Color rangeInactiveColor = MoveRangeSegmentBarView.RangeOutColor;
         [SerializeField] private Color rangeOutOfBandColor = MoveRangeSegmentBarView.RangeOutColor;
@@ -56,12 +71,14 @@ namespace UI.Battle.View
 
             DisableRaycastOnDecorations();
             EnsureRangeSegmentBarView();
-            MoveRangeSegmentBarView.ApplyDefaultSprites(rangeSegments, ref rangeActiveSprite, ref rangeInactiveSprite);
+            if (!HasConfiguredRangeSegments())
+            {
+                MoveRangeSegmentBarView.ApplyDefaultSprites(rangeSegments, ref rangeActiveSprite, ref rangeInactiveSprite);
+            }
         }
 
         /// <summary>
         /// 装飾用GraphicのRaycastを無効化しクリックをボタン本体へ通す
-        /// PowerやCostの文字がボタンより手前にありクリックを遮るのを防ぐ
         /// </summary>
         private void DisableRaycastOnDecorations()
         {
@@ -141,6 +158,11 @@ namespace UI.Battle.View
             Color targetPartColor,
             float maxDistance)
         {
+            if (moveNameText != null)
+            {
+                moveNameText.text = string.IsNullOrEmpty(move.Name) ? string.Empty : move.Name;
+            }
+
             if (powerText != null)
             {
                 powerText.text = Mathf.RoundToInt(move.Power * 100f).ToString();
@@ -151,12 +173,13 @@ namespace UI.Battle.View
                 gutsText.text = Mathf.RoundToInt(move.GutsCost).ToString();
             }
 
-            if (hitRateText != null)
+            if (rangeLabelText != null)
             {
-                hitRateText.text = string.IsNullOrEmpty(move.HitRateLabel) ? string.Empty : move.HitRateLabel;
+                rangeLabelText.text = RangeLabel;
             }
 
             SetSprite(iconImage, icon);
+            ApplyRequiredPartIcon(move.RequiredPartId);
             ApplyTargetPartIcon(targetPartIcon, targetPartColor, move.TargetPartId);
 
             if (button != null)
@@ -170,54 +193,158 @@ namespace UI.Battle.View
             RefreshBackgroundColor();
         }
 
+        private void ApplyRequiredPartIcon(MoveTargetPartId requiredPartId)
+        {
+            Image icon = ResolvePartIconImage(requiredPartImage);
+            if (icon == null)
+            {
+                return;
+            }
+
+            if (requiredPartId == MoveTargetPartId.None)
+            {
+                SetPartIconVisible(requiredPartImage, false);
+                SetPartLabelVisible(requiredPartLabelText, false);
+                return;
+            }
+
+            Sprite sprite = MoveCommandSpriteCatalog.LoadTargetPartIcon(requiredPartId);
+            if (sprite == null)
+            {
+                SetPartIconVisible(requiredPartImage, false);
+                SetPartLabelVisible(requiredPartLabelText, false);
+                return;
+            }
+
+            SetPartIconVisible(requiredPartImage, true);
+            SetPartLabelVisible(requiredPartLabelText, true);
+            if (requiredPartLabelText != null)
+            {
+                requiredPartLabelText.text = MoveTargetPartLabelUtility.FormatRequiredRowLabel(requiredPartId);
+            }
+            icon.sprite = sprite;
+            icon.color = Color.white;
+            icon.preserveAspect = true;
+            icon.type = Image.Type.Simple;
+        }
+
         private void ApplyTargetPartIcon(Sprite sprite, Color color, MoveTargetPartId targetPartId)
         {
-            if (attributeImage == null)
+            Image icon = ResolvePartIconImage(attributeImage);
+            if (icon == null)
             {
                 return;
             }
 
-            if (targetPartId == MoveTargetPartId.None || sprite == null)
+            if (targetPartId == MoveTargetPartId.None)
             {
-                attributeImage.gameObject.SetActive(false);
+                SetPartIconVisible(attributeImage, false);
+                SetPartLabelVisible(targetPartLabelText, false);
                 return;
             }
 
-            attributeImage.gameObject.SetActive(true);
-            attributeImage.sprite = sprite;
-            attributeImage.color = color;
-            attributeImage.preserveAspect = false;
-            attributeImage.type = Image.Type.Simple;
+            Sprite resolvedSprite = sprite ?? MoveCommandSpriteCatalog.LoadTargetPartIcon(targetPartId);
+            if (resolvedSprite == null)
+            {
+                SetPartIconVisible(attributeImage, false);
+                SetPartLabelVisible(targetPartLabelText, false);
+                return;
+            }
+
+            SetPartIconVisible(attributeImage, true);
+            SetPartLabelVisible(targetPartLabelText, true);
+            if (targetPartLabelText != null)
+            {
+                targetPartLabelText.text = MoveTargetPartLabelUtility.FormatTargetRowLabel(targetPartId);
+            }
+            icon.sprite = resolvedSprite;
+            icon.color = color;
+            icon.preserveAspect = true;
+            icon.type = Image.Type.Simple;
+        }
+
+        private static Image ResolvePartIconImage(Image rootImage)
+        {
+            if (rootImage == null)
+            {
+                return null;
+            }
+
+            if (rootImage.gameObject.name == "Icon")
+            {
+                return rootImage;
+            }
+
+            Transform iconTransform = rootImage.transform.Find("Icon");
+            if (iconTransform != null && iconTransform.TryGetComponent(out Image childIcon))
+            {
+                return childIcon;
+            }
+
+            return rootImage;
+        }
+
+        private static void SetPartIconVisible(Image rootImage, bool visible)
+        {
+            if (rootImage == null)
+            {
+                return;
+            }
+
+            Image icon = ResolvePartIconImage(rootImage);
+            if (icon != null)
+            {
+                icon.enabled = visible;
+                if (!visible)
+                {
+                    icon.sprite = null;
+                }
+            }
+
+            if (icon != rootImage)
+            {
+                rootImage.enabled = visible;
+            }
+
+            rootImage.gameObject.SetActive(visible);
+        }
+
+        private static void SetPartLabelVisible(TMP_Text labelText, bool visible)
+        {
+            if (labelText == null)
+            {
+                return;
+            }
+
+            labelText.gameObject.SetActive(visible);
         }
 
         private void SetVisualUsable(bool usable)
         {
             float alpha = usable ? 1f : 0.42f;
             SetImageAlpha(iconImage, alpha);
+            SetImageAlpha(requiredPartImage, alpha);
             SetImageAlpha(attributeImage, alpha);
+            SetTextAlpha(moveNameText, alpha);
+            SetTextAlpha(requiredPartLabelText, alpha);
+            SetTextAlpha(targetPartLabelText, alpha);
             SetTextAlpha(powerText, alpha);
             SetTextAlpha(gutsText, alpha);
-            SetTextAlpha(hitRateText, alpha);
-
-            if (powerText != null)
-            {
-                powerText.color = usable
-                    ? new Color(1f, 0.95f, 0.78f, alpha)
-                    : new Color(0.72f, 0.74f, 0.78f, alpha);
-            }
-
-            if (gutsText != null)
-            {
-                gutsText.color = usable
-                    ? new Color(0.72f, 0.9f, 1f, alpha)
-                    : new Color(0.55f, 0.6f, 0.66f, alpha);
-            }
+            SetTextAlpha(rangeLabelText, alpha);
         }
 
         private void RefreshBackgroundColor()
         {
             if (buttonBackground == null)
             {
+                return;
+            }
+
+            if (UsesFrameSpriteBackground())
+            {
+                buttonBackground.color = isUsable && isHighlighted
+                    ? highlightBackgroundColor
+                    : Color.white;
                 return;
             }
 
@@ -230,6 +357,33 @@ namespace UI.Battle.View
             buttonBackground.color = target;
         }
 
+        private bool UsesFrameSpriteBackground()
+        {
+            return buttonBackground != null
+                && buttonBackground.sprite != null
+                && button != null
+                && button.transition == Selectable.Transition.ColorTint;
+        }
+
+        private bool HasConfiguredRangeSegments()
+        {
+            if (rangeSegments == null || rangeSegments.Length < MoveRangeSegmentBarView.SegmentCount)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < MoveRangeSegmentBarView.SegmentCount; i++)
+            {
+                Image segment = rangeSegments[i];
+                if (segment == null || segment.sprite == null)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         private static void SetImageAlpha(Image image, float alpha)
         {
             if (image == null)
@@ -240,6 +394,14 @@ namespace UI.Battle.View
             Color color = image.color;
             color.a = alpha;
             image.color = color;
+
+            Transform iconTransform = image.transform.Find("Icon");
+            if (iconTransform != null && iconTransform.TryGetComponent(out Image childIcon))
+            {
+                Color childColor = childIcon.color;
+                childColor.a = alpha;
+                childIcon.color = childColor;
+            }
         }
 
         private static void SetTextAlpha(TMP_Text text, float alpha)

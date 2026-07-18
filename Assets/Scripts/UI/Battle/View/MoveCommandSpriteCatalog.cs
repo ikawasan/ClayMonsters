@@ -43,6 +43,7 @@ namespace UI.Battle.View
                 MoveTargetPartId.Leg => LoadSprite($"{Root}/TargetPart/Leg"),
                 MoveTargetPartId.Front => LoadSprite($"{Root}/TargetPart/Front"),
                 MoveTargetPartId.Back => LoadSprite($"{Root}/TargetPart/Back"),
+                MoveTargetPartId.Body => LoadSprite($"{Root}/TargetPart/Body"),
                 MoveTargetPartId.Any => LoadSprite($"{Root}/TargetPart/Any"),
                 _ => null
             };
@@ -61,6 +62,7 @@ namespace UI.Battle.View
                 MoveTargetPartId.Leg => LoadSprite($"{Root}/TargetPart/Leg") != null,
                 MoveTargetPartId.Front => LoadSprite($"{Root}/TargetPart/Front") != null,
                 MoveTargetPartId.Back => LoadSprite($"{Root}/TargetPart/Back") != null,
+                MoveTargetPartId.Body => LoadSprite($"{Root}/TargetPart/Body") != null,
                 MoveTargetPartId.Any => LoadSprite($"{Root}/TargetPart/Any") != null,
                 _ => false
             };
