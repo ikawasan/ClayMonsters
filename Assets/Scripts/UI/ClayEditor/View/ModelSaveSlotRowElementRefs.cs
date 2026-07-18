@@ -1,7 +1,10 @@
+using ClayEditor.Rigging;
+using GameData;
+using SaveData;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-
 namespace UI.ClayEditor.View
 {
     /// <summary>
@@ -22,11 +25,18 @@ namespace UI.ClayEditor.View
         [SerializeField] private RectTransform attacksContainer;
         [SerializeField] private float thumbnailColumnWidth = ModelSaveSlotRowUiBuilder.ScrollListThumbnailColumnWidth;
         [SerializeField] private bool useConfirmLayout = true;
+        [SerializeField] private bool preservePrefabLayout;
         [SerializeField] private ModelSaveSlotRowUiBuilder.ConfirmLayoutSize confirmLayoutSize =
             ModelSaveSlotRowUiBuilder.ConfirmLayoutSize.Standard;
 
         private void Awake()
         {
+            if (GetComponentInParent<ModelSaveConfirmView>(true) != null)
+            {
+                EnsureConfirmPrefabLayout();
+            }
+
+            HideAttributeRowDisplay();
             EnsureThumbnailVisuals();
         }
 
@@ -35,19 +45,6 @@ namespace UI.ClayEditor.View
         /// </summary>
         public void EnsureThumbnailVisuals()
         {
-            if (thumbnailFrame != null)
-            {
-                Image frameImage = thumbnailFrame.GetComponent<Image>();
-                if (frameImage != null && frameImage.sprite == null)
-                {
-                    TitleClayUiVisualUtility.ApplySlotThumbnailFrame(frameImage);
-                }
-            }
-
-            if (thumbnailImage != null && thumbnailImage.sprite == null)
-            {
-                TitleClayUiVisualUtility.ApplySlotEmptyImage(thumbnailImage);
-            }
         }
 
         /// <summary>
@@ -57,7 +54,17 @@ namespace UI.ClayEditor.View
         {
             thumbnailColumnWidth = ModelSaveSlotRowUiBuilder.ScrollListThumbnailColumnWidth;
             useConfirmLayout = false;
+            preservePrefabLayout = false;
             confirmLayoutSize = ModelSaveSlotRowUiBuilder.ConfirmLayoutSize.Standard;
+        }
+
+        /// <summary>
+        /// ModelSaveConfirmView向けにプレハブ手動配置を維持する
+        /// </summary>
+        public void EnsureConfirmPrefabLayout()
+        {
+            useConfirmLayout = true;
+            preservePrefabLayout = true;
         }
 
         /// <summary>
@@ -75,7 +82,103 @@ namespace UI.ClayEditor.View
         {
             thumbnailColumnWidth = ModelSaveSlotRowUiBuilder.ConfirmPreviewThumbnailColumnWidth;
             useConfirmLayout = true;
+            preservePrefabLayout = false;
             confirmLayoutSize = ModelSaveSlotRowUiBuilder.ConfirmLayoutSize.Preview;
+        }
+
+        /// <summary>
+        /// 保存確認画面向けにセーブ済みスロット内容だけ反映する
+        /// レイアウトはプレハブ配置を維持する
+        /// </summary>
+        public void BindConfirmFromSlot(ModelSaveSlot slot)
+        {
+            EnsureConfirmPrefabLayout();
+
+            if (slot == null || string.IsNullOrEmpty(slot.modelName))
+            {
+                BindConfirmEmpty();
+                return;
+            }
+
+            if (nameText != null)
+            {
+                nameText.text = slot.modelName;
+            }
+
+            if (paramsText != null)
+            {
+                paramsText.text = ModelSaveSummaryFormatter.FormatConfirmStatusParameters(slot.status);
+            }
+
+            HideAttributeRowDisplay();
+            ResolveAttacksPanel()?.ShowForConfirmPrefab(CollectAttackMotions(slot.attackMotions));
+        }
+
+        /// <summary>
+        /// 保存確認画面向けに保存前プレビュー内容だけ反映する
+        /// レイアウトはプレハブ配置を維持する
+        /// </summary>
+        public void BindConfirmPreview(
+            string modelName,
+            ModelStatus status,
+            IReadOnlyList<MotionType> registeredAttackMotions)
+        {
+            EnsureConfirmPrefabLayout();
+
+            if (nameText != null)
+            {
+                nameText.text = modelName ?? string.Empty;
+            }
+
+            if (paramsText != null)
+            {
+                paramsText.text = ModelSaveSummaryFormatter.FormatConfirmStatusParameters(status);
+            }
+
+            HideAttributeRowDisplay();
+            ResolveAttacksPanel()?.ShowForConfirmPrefab(CollectAttackMotions(registeredAttackMotions));
+        }
+
+        /// <summary>
+        /// 保存確認画面向けに表示内容をクリアする
+        /// レイアウトはプレハブ配置を維持する
+        /// </summary>
+        public void BindConfirmEmpty()
+        {
+            EnsureConfirmPrefabLayout();
+
+            if (nameText != null)
+            {
+                nameText.text = string.Empty;
+            }
+
+            if (paramsText != null)
+            {
+                paramsText.text = string.Empty;
+            }
+
+            HideAttributeRowDisplay();
+            ResolveAttacksPanel()?.ClearForConfirmPrefab();
+        }
+
+        /// <summary>
+        /// 保存確認画面向けにサムネイル画像を反映する
+        /// レイアウトはプレハブ配置を維持する
+        /// </summary>
+        public void ApplyConfirmThumbnail(Sprite sprite)
+        {
+            if (thumbnailImage == null)
+            {
+                return;
+            }
+
+            if (sprite == null)
+            {
+                thumbnailImage.sprite = null;
+                return;
+            }
+
+            thumbnailImage.sprite = sprite;
         }
 
         /// <summary>
@@ -102,7 +205,8 @@ namespace UI.ClayEditor.View
                 useSquareThumbnail: !useConfirmLayout,
                 useConfirmLayout: useConfirmLayout,
                 thumbnailColumn: thumbnailColumn,
-                confirmLayoutSize: confirmLayoutSize);
+                confirmLayoutSize: confirmLayoutSize,
+                preservePrefabLayout: preservePrefabLayout);
         }
 
         /// <summary>
@@ -123,6 +227,7 @@ namespace UI.ClayEditor.View
             thumbnailColumnWidth = rowElements.ThumbnailColumnWidth;
             useConfirmLayout = rowElements.UseConfirmLayout;
             confirmLayoutSize = rowElements.ConfirmLayoutSize;
+            preservePrefabLayout = rowElements.PreservePrefabLayout;
 #if UNITY_EDITOR
             UnityEditor.EditorUtility.SetDirty(this);
 #endif
@@ -133,11 +238,17 @@ namespace UI.ClayEditor.View
         /// </summary>
         public void CaptureFromHierarchy(Transform rowContentRoot)
         {
+            if (preservePrefabLayout && HasWiredReferences())
+            {
+                return;
+            }
+
             if (!ModelSaveSlotRowUiBuilder.TryBindRowElements(
                     rowContentRoot,
                     thumbnailColumnWidth,
                     useConfirmLayout,
                     confirmLayoutSize,
+                    preservePrefabLayout,
                     out ModelSaveSlotRowUiBuilder.RowElements rowElements))
             {
                 Debug.LogError($"[ModelSaveSlotRowElementRefs] bind failed: {name}", this);
@@ -145,6 +256,35 @@ namespace UI.ClayEditor.View
             }
 
             ApplyBuiltRowElements(rowElements);
+        }
+
+        private void HideAttributeRowDisplay()
+        {
+            ModelSaveSlotRowUiBuilder.HideAttributeRowDisplay(ToRowElements());
+        }
+
+        private TrainingResumeAttacksContentView ResolveAttacksPanel()
+        {
+            return attacksContainer != null
+                ? attacksContainer.GetComponent<TrainingResumeAttacksContentView>()
+                : null;
+        }
+
+        private static List<MotionType> CollectAttackMotions(IReadOnlyList<MotionType> motions)
+        {
+            var attacks = new List<MotionType>(ModelSaveSlotRowUiBuilder.ConfirmAttackSlotCount);
+            if (motions == null)
+            {
+                return attacks;
+            }
+
+            int count = Mathf.Min(motions.Count, ModelSaveSlotRowUiBuilder.ConfirmAttackSlotCount);
+            for (int i = 0; i < count; i++)
+            {
+                attacks.Add(motions[i]);
+            }
+
+            return attacks;
         }
     }
 }

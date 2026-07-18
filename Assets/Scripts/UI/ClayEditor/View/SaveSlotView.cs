@@ -792,19 +792,23 @@ namespace UI.ClayEditor.View
                 Debug.Log($"[SaveSlotView] {currentSavePool}スロット{selectedSlot}へ保存しました: {modelName}");
 
                 hasSavedOnConfirmCanvas = true;
-                byte[] savedThumbnailPng = thumbnailPng;
-
-                ModelSaveSlot savedSlot = saveService.GetSlot(currentSavePool, selectedSlot);
-                if (savedSlot != null && saveConfirmView != null)
-                {
-                    saveConfirmView.ShowSlot(savedSlot, savedThumbnailPng, selectedSlot);
-                }
-
                 ClearPendingSaveData();
                 RestoreSculptMeshAfterPreview();
-                SetConfirmCanvasButtonsVisible(previewVisible: false, closeVisible: true);
 
-                if (saveConfirmCanvas == null)
+                // 閉じるボタンがある場合は完了表示へ切り替えて閉じる操作を待つ
+                // 無い場合は確認UIを残したまま遷移し暗転で覆う
+                if (closeButton != null)
+                {
+                    byte[] savedThumbnailPng = thumbnailPng;
+                    ModelSaveSlot savedSlot = saveService.GetSlot(currentSavePool, selectedSlot);
+                    if (savedSlot != null && saveConfirmView != null)
+                    {
+                        saveConfirmView.ShowSlot(savedSlot, savedThumbnailPng, selectedSlot);
+                    }
+
+                    SetConfirmCanvasButtonsVisible(previewVisible: false, closeVisible: true);
+                }
+                else
                 {
                     CompleteAndTransition();
                 }
@@ -815,20 +819,17 @@ namespace UI.ClayEditor.View
             }
         }
 
-        // セーブ完了キャンバスの閉じるボタンが押されたとき: 閉じてシーン遷移する
+        // セーブ完了キャンバスの閉じるボタンが押されたとき: シーン遷移する
         private void OnCloseSaveComplete()
         {
-            CloseConfirmCanvas();
             CompleteAndTransition();
         }
 
         // シーン遷移を開始する。
-        // モデル(ボーン/メッシュ)の削除はここでは行わず、暗転完了後に走る
-        // ClayEditScene.OnLeave の ClayEditSceneResetter.Reset() に任せる。
-        // (ここで消すと閉じた瞬間にモデルが消えてしまうため)
+        // 確認UIは暗転開始まで残し遷移先の明転まで画面を覆う
+        // モデル削除はClayEditScene.OnLeaveのResetに任せる
         private void CompleteAndTransition()
         {
-            SetSaveUiOpenState(false);
             savedSubject.OnNext(new SaveCompletedInfo(currentSavePool, selectedSlot));
         }
 
@@ -942,7 +943,7 @@ namespace UI.ClayEditor.View
                 || slotActionDeletePromptView == null)
             {
                 Debug.LogError(
-                    "[SaveSlotView] シーン上のUI参照が未設定です。Tools/ClayMonsters/Migrate Dynamic UI To Scenesを実行してください",
+                    "[SaveSlotView] シーン上のUI参照が未設定です。HierarchyでUI参照を確認してください",
                     this);
             }
         }

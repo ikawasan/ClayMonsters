@@ -12,7 +12,6 @@ namespace UI.ClayEditor.View
     /// </summary>
     public static class MoveTargetPartIconView
     {
-        private static readonly Color FrameColor = new Color(0.1f, 0.13f, 0.18f, 0.94f);
         private static readonly Color FrameOutlineColor = new Color(0.58f, 0.66f, 0.78f, 0.55f);
 
         /// <summary>
@@ -20,7 +19,12 @@ namespace UI.ClayEditor.View
         /// </summary>
         public static RectTransform CreateRequired(Transform parent, float size, MotionType motion)
         {
-            return CreateInternal(parent, size, motion, "RequiredPartIcon", MoveTargetPartIconUtility.ApplyRequiredPartIcon);
+            return CreateInternal(
+                parent,
+                size,
+                motion,
+                "RequiredPartIcon",
+                static (image, attack) => MoveTargetPartIconUtility.ApplyRequiredPartIcon(image, attack));
         }
 
         /// <summary>
@@ -28,7 +32,12 @@ namespace UI.ClayEditor.View
         /// </summary>
         public static RectTransform CreateTarget(Transform parent, float size, MotionType motion)
         {
-            return CreateInternal(parent, size, motion, "TargetPartIcon", MoveTargetPartIconUtility.ApplyTargetPartIcon);
+            return CreateInternal(
+                parent,
+                size,
+                motion,
+                "TargetPartIcon",
+                static (image, attack) => MoveTargetPartIconUtility.ApplyTargetPartIcon(image, attack));
         }
 
         /// <summary>
@@ -62,7 +71,6 @@ namespace UI.ClayEditor.View
             rootLayout.flexibleHeight = 0f;
 
             Image frameImage = rootObject.GetComponent<Image>();
-            frameImage.color = FrameColor;
             frameImage.raycastTarget = false;
             frameImage.type = Image.Type.Simple;
             frameImage.sprite = CreateFrameSprite();
@@ -92,6 +100,22 @@ namespace UI.ClayEditor.View
         public static void Apply(Image image, MotionType motion)
         {
             MoveTargetPartIconUtility.ApplyTargetPartIcon(image, motion);
+        }
+
+        /// <summary>
+        /// 部位アイコン枠の見た目をEditorBakeで適用する
+        /// </summary>
+        public static void ApplyFrameVisual(Image frameImage)
+        {
+            if (frameImage == null)
+            {
+                return;
+            }
+
+            frameImage.raycastTarget = false;
+            frameImage.type = Image.Type.Simple;
+            frameImage.sprite = CreateFrameSprite();
+            frameImage.color = Color.white;
         }
 
         private static Sprite frameSprite;

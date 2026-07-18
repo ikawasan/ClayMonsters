@@ -333,6 +333,7 @@ namespace UI.ClayEditor.View
         {
             EnsureSlotScrollList();
             ApplySelectionCanvasSorting();
+            EnsureInputBlockerConfigured();
             Canvas canvas = GetComponent<Canvas>();
             if (canvas != null)
             {
@@ -416,6 +417,7 @@ namespace UI.ClayEditor.View
             }
 
             EnsureConfirmPanelInFront();
+            SetSelectionContentVisible(false);
             SetConfirmPanelActive(true);
             ModelSaveSlotScrollListView.EnsureSelectionBackground(
                 confirmPanelRoot != null ? confirmPanelRoot.transform : null);
@@ -447,6 +449,7 @@ namespace UI.ClayEditor.View
             selectedSlot = -1;
             loadConfirmView?.Clear();
             SetConfirmPanelActive(false);
+            SetSelectionContentVisible(true);
 
             if (canvasTransition != null)
             {
@@ -572,7 +575,7 @@ namespace UI.ClayEditor.View
             if (loadConfirmView == null)
             {
                 Debug.LogError(
-                    "[LoadSlotView] ModelSaveConfirmViewが未配置です。Tools/ClayMonsters/Migrate Dynamic UI To Scenesを実行してください",
+                    "[LoadSlotView] ModelSaveConfirmViewが未配置です。HierarchyでUI参照を確認してください",
                     this);
             }
         }
@@ -657,7 +660,23 @@ namespace UI.ClayEditor.View
                     continue;
                 }
 
+                if (child.name == TitleClayUiVisualUtility.InputBlockerObjectName
+                    && child.TryGetComponent(out Image blockerImage))
+                {
+                    TitleClayUiVisualUtility.ConfigureInputBlocker(blockerImage, visible);
+                    continue;
+                }
+
                 CanvasVisibilityUtility.SetUiVisible(child.gameObject, visible);
+            }
+        }
+
+        private void EnsureInputBlockerConfigured()
+        {
+            Transform blocker = transform.Find(TitleClayUiVisualUtility.InputBlockerObjectName);
+            if (blocker != null && blocker.TryGetComponent(out Image blockerImage))
+            {
+                TitleClayUiVisualUtility.ApplyBlocker(blockerImage);
             }
         }
 
@@ -677,20 +696,26 @@ namespace UI.ClayEditor.View
                 return;
             }
 
-            Canvas confirmCanvas = confirmPanelRoot.GetComponent<Canvas>();
-            if (confirmCanvas == null)
+            // 非アクティブのままだと表示できないため表示時に有効化する
+            if (visible && !confirmPanelRoot.activeSelf)
             {
-                Debug.LogError("[LoadSlotView] ConfirmPanelにCanvasがありません", confirmPanelRoot);
+                confirmPanelRoot.SetActive(true);
+            }
+
+            Canvas confirmCanvas = confirmPanelRoot.GetComponent<Canvas>();
+            if (confirmCanvas != null)
+            {
+                if (visible)
+                {
+                    confirmCanvas.overrideSorting = true;
+                    confirmCanvas.sortingOrder = ConfirmCanvasSortingOrder;
+                }
+
+                CanvasVisibilityUtility.SetCanvasEnabled(confirmCanvas, visible);
                 return;
             }
 
-            if (visible)
-            {
-                confirmCanvas.overrideSorting = true;
-                confirmCanvas.sortingOrder = ConfirmCanvasSortingOrder;
-            }
-
-            CanvasVisibilityUtility.SetCanvasEnabled(confirmCanvas, visible);
+            CanvasVisibilityUtility.SetUiVisible(confirmPanelRoot, visible);
         }
 
         private void EnsureConfirmPanelRoot()
@@ -809,10 +834,7 @@ namespace UI.ClayEditor.View
         private void EnsureRootCanvasEnabled()
         {
             EnsureSelectionCanvas();
-            if (selectionCanvas != null && !selectionCanvas.enabled)
-            {
-                selectionCanvas.enabled = true;
-            }
+            CanvasVisibilityUtility.SetCanvasEnabled(selectionCanvas, true);
         }
 
         // 生成済みのサムネイル(Texture2D / Sprite)を破棄する

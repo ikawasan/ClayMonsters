@@ -318,7 +318,7 @@ namespace UI.ClayEditor.View
         /// </summary>
         public static void ApplyThumbnailSlotHeight(RowElements row, int attackCount, float totalRowHeight = -1f)
         {
-            if (row?.ThumbnailFrame == null)
+            if (row?.ThumbnailFrame == null || row.PreservePrefabLayout)
             {
                 return;
             }
@@ -400,6 +400,11 @@ namespace UI.ClayEditor.View
             return Mathf.Max(72f, dataRegionHeight - nameRowHeight);
         }
 
+        private static bool ShouldMutateConfirmLayout(RowElements row)
+        {
+            return row != null && row.UseConfirmLayout && !row.PreservePrefabLayout;
+        }
+
         private static bool IsRestructuredLayout(RowElements row)
         {
             return row.ThumbnailColumn != null
@@ -425,7 +430,7 @@ namespace UI.ClayEditor.View
 
         private static void EnsureThreeColumnLayout(RowElements row)
         {
-            if (!row.UseConfirmLayout || row.ThumbnailColumn == null)
+            if (!ShouldMutateConfirmLayout(row) || row.ThumbnailColumn == null)
             {
                 return;
             }
@@ -687,7 +692,8 @@ namespace UI.ClayEditor.View
                 bool useSquareThumbnail,
                 bool useConfirmLayout = false,
                 RectTransform thumbnailColumn = null,
-                ConfirmLayoutSize confirmLayoutSize = ConfirmLayoutSize.Standard)
+                ConfirmLayoutSize confirmLayoutSize = ConfirmLayoutSize.Standard,
+                bool preservePrefabLayout = false)
             {
                 ThumbnailImage = thumbnailImage;
                 ThumbnailFrame = thumbnailFrame;
@@ -701,6 +707,7 @@ namespace UI.ClayEditor.View
                 ThumbnailColumnWidth = thumbnailColumnWidth;
                 UseSquareThumbnail = useSquareThumbnail;
                 UseConfirmLayout = useConfirmLayout;
+                PreservePrefabLayout = preservePrefabLayout;
                 ThumbnailColumn = thumbnailColumn;
                 ConfirmMetrics = useConfirmLayout
                     ? ConfirmLayoutMetrics.Resolve(confirmLayoutSize)
@@ -723,6 +730,8 @@ namespace UI.ClayEditor.View
             public bool UseSquareThumbnail { get; private set; }
 
             public bool UseConfirmLayout { get; private set; }
+
+            public bool PreservePrefabLayout { get; private set; }
 
             public Image ThumbnailImage { get; }
 
@@ -891,6 +900,7 @@ namespace UI.ClayEditor.View
             float thumbnailColumnWidth,
             bool useConfirmLayout,
             ConfirmLayoutSize layoutSize,
+            bool preservePrefabLayout,
             out RowElements rowElements)
         {
             rowElements = null;
@@ -903,9 +913,16 @@ namespace UI.ClayEditor.View
             RectTransform thumbnailFrameTransform = thumbnailColumnTransform != null
                 ? thumbnailColumnTransform.Find("ThumbnailFrame") as RectTransform
                 : FindSlotDescendant(rowContentRoot, "ThumbnailFrame") as RectTransform;
+            if (thumbnailColumnTransform == null && thumbnailFrameTransform != null)
+            {
+                thumbnailColumnTransform = thumbnailFrameTransform.parent as RectTransform;
+            }
+
             Image thumbnailImageComponent = thumbnailFrameTransform != null
                 ? thumbnailFrameTransform.Find("Thumbnail")?.GetComponent<Image>()
-                : FindSlotDescendant(rowContentRoot, "Thumbnail")?.GetComponent<Image>();
+                    ?? thumbnailFrameTransform.Find("ThumbnailImage")?.GetComponent<Image>()
+                : FindSlotDescendant(rowContentRoot, "Thumbnail")?.GetComponent<Image>()
+                    ?? FindSlotDescendant(rowContentRoot, "ThumbnailImage")?.GetComponent<Image>();
             RectTransform leftInfoColumnTransform = FindSlotDescendant(rowContentRoot, "LeftInfoColumn") as RectTransform;
             TMP_Text nameTextComponent = null;
             Transform nameHeaderTransform = rowContentRoot.Find(NameHeaderRowName);
@@ -973,7 +990,8 @@ namespace UI.ClayEditor.View
                 useSquareThumbnail: !useConfirmLayout,
                 useConfirmLayout: useConfirmLayout,
                 thumbnailColumn: thumbnailColumnTransform,
-                confirmLayoutSize: layoutSize);
+                confirmLayoutSize: layoutSize,
+                preservePrefabLayout: preservePrefabLayout);
 
             return true;
         }
@@ -1039,20 +1057,30 @@ namespace UI.ClayEditor.View
 
         /// <summary>
         /// スクロール一覧用に空スロット表示だけ反映する
-        /// レイアウトはプレハブ配置を使う
+        /// モデル名表示と同じTMPでスロット番号のみ表示しサムネイル枠・パラメーター・攻撃列は非表示にする
         /// </summary>
         public static void BindScrollListEmpty(RowElements row, string emptySlotLabel, int slotIndex)
         {
-            row.SetActiveAttackCount(ConfirmAttackSlotCount);
-            row.AttacksPanel?.Clear();
-            ApplySlotEmptyImage(row.ThumbnailImage);
+            _ = emptySlotLabel;
 
+            row.SetActiveAttackCount(0);
+            row.AttacksPanel?.Clear();
+
+            SetThumbnailColumnVisible(row, false);
             SetIndexRowVisible(row, false);
-            row.NameText.text = emptySlotLabel + "  スロット" + (slotIndex + 1);
-            row.NameText.gameObject.SetActive(true);
-            row.ParamsText.text = string.Empty;
-            row.ParamsText.gameObject.SetActive(false);
-            SetAttributeRowVisible(row, false);
+            if (row.IndexText != null)
+            {
+                row.IndexText.text = string.Empty;
+            }
+
+            if (row.NameText != null)
+            {
+                row.NameText.text = "スロット" + (slotIndex + 1);
+            }
+
+            SetNameTextVisible(row, true);
+            SetParamsTextVisible(row, false);
+            HideAttributeRowDisplay(row);
             if (row.SubText != null)
             {
                 row.SubText.text = string.Empty;
@@ -1078,6 +1106,7 @@ namespace UI.ClayEditor.View
             }
 
             BindScrollListHeader(row, slot.modelName);
+            SetThumbnailColumnVisible(row, true);
             row.ParamsText.text = ModelSaveSummaryFormatter.FormatStatusParameters(slot.status);
             row.ParamsText.gameObject.SetActive(true);
             SetAttributeRowVisible(row, false);
@@ -1098,6 +1127,22 @@ namespace UI.ClayEditor.View
         public static void BindConfirmEmpty(RowElements row, string emptySlotLabel, int slotIndex)
         {
             row.SetActiveAttackCount(0);
+            if (row.PreservePrefabLayout)
+            {
+                row.AttacksPanel?.Clear(preserveLayoutSpace: true);
+                if (row.NameText != null)
+                {
+                    row.NameText.text = emptySlotLabel + "  スロット" + (slotIndex + 1);
+                }
+
+                if (row.ParamsText != null)
+                {
+                    row.ParamsText.text = string.Empty;
+                }
+
+                return;
+            }
+
             row.AttacksPanel?.Clear();
             ApplySlotEmptyImage(row.ThumbnailImage);
 
@@ -1132,14 +1177,21 @@ namespace UI.ClayEditor.View
             }
 
             BindConfirmHeader(row, slot.modelName);
-            row.ParamsText.text = ModelSaveSummaryFormatter.FormatConfirmStatusParameters(slot.status);
-            row.ParamsText.gameObject.SetActive(true);
-            SetAttributeRowVisible(row, false);
+            if (row.ParamsText != null)
+            {
+                row.ParamsText.text = ModelSaveSummaryFormatter.FormatConfirmStatusParameters(slot.status);
+                if (!row.PreservePrefabLayout)
+                {
+                    row.ParamsText.gameObject.SetActive(true);
+                }
+            }
+
+            HideAttributeRowDisplay(row);
 
             row.SetActiveAttackCount(ConfirmAttackSlotCount);
             List<MotionType> attacks = CollectAttackMotions(slot.attackMotions);
             ApplyAttacks(row, attacks);
-            if (row.AttacksContainer != null)
+            if (row.AttacksContainer != null && !row.PreservePrefabLayout)
             {
                 row.AttacksContainer.gameObject.SetActive(true);
             }
@@ -1157,14 +1209,21 @@ namespace UI.ClayEditor.View
             IReadOnlyList<MotionType> registeredAttackMotions)
         {
             BindConfirmHeader(row, modelName);
-            row.ParamsText.text = ModelSaveSummaryFormatter.FormatConfirmStatusParameters(status);
-            row.ParamsText.gameObject.SetActive(true);
-            SetAttributeRowVisible(row, false);
+            if (row.ParamsText != null)
+            {
+                row.ParamsText.text = ModelSaveSummaryFormatter.FormatConfirmStatusParameters(status);
+                if (!row.PreservePrefabLayout)
+                {
+                    row.ParamsText.gameObject.SetActive(true);
+                }
+            }
+
+            HideAttributeRowDisplay(row);
 
             row.SetActiveAttackCount(ConfirmAttackSlotCount);
             List<MotionType> attacks = CollectAttackMotions(registeredAttackMotions);
             ApplyAttacks(row, attacks);
-            if (row.AttacksContainer != null)
+            if (row.AttacksContainer != null && !row.PreservePrefabLayout)
             {
                 row.AttacksContainer.gameObject.SetActive(true);
             }
@@ -1177,6 +1236,12 @@ namespace UI.ClayEditor.View
         {
             if (row.ThumbnailImage == null)
             {
+                return;
+            }
+
+            if (row.PreservePrefabLayout)
+            {
+                ApplyPrefabThumbnailSprite(row.ThumbnailImage, sprite);
                 return;
             }
 
@@ -1194,6 +1259,11 @@ namespace UI.ClayEditor.View
         /// </summary>
         public static void UpdateLayout(RowElements row, float rowWidth, int attackCount)
         {
+            if (row == null || row.PreservePrefabLayout)
+            {
+                return;
+            }
+
             UpdateLayout(row, rowWidth, attackCount, -1f);
         }
 
@@ -1226,6 +1296,11 @@ namespace UI.ClayEditor.View
         /// </summary>
         private static void ApplyConfirmTypography(RowElements row)
         {
+            if (row.PreservePrefabLayout)
+            {
+                return;
+            }
+
             ConfirmLayoutMetrics metrics = row.ConfirmMetrics;
             float nameRowHeight = ResolveConfirmNameRowHeight(metrics);
             if (row.NameText != null)
@@ -1293,6 +1368,16 @@ namespace UI.ClayEditor.View
         /// </summary>
         private static void BindConfirmHeader(RowElements row, string modelName)
         {
+            if (row.PreservePrefabLayout)
+            {
+                if (row.NameText != null)
+                {
+                    row.NameText.text = modelName ?? string.Empty;
+                }
+
+                return;
+            }
+
             if (row.SubText != null)
             {
                 row.SubText.gameObject.SetActive(false);
@@ -1306,21 +1391,111 @@ namespace UI.ClayEditor.View
             }
         }
 
-        private static void SetAttributeRowVisible(RowElements row, bool visible)
+        private static void ApplyPrefabThumbnailSprite(Image image, Sprite sprite)
         {
-            if (row?.ModelAttributeImage == null)
+            if (image == null)
             {
                 return;
             }
 
-            Transform attributeRow = row.ModelAttributeImage.transform.parent;
-            if (attributeRow != null && attributeRow.name == "AttributeRow")
+            if (sprite == null)
             {
-                attributeRow.gameObject.SetActive(visible);
+                image.sprite = null;
+                return;
             }
-            else
+
+            image.sprite = sprite;
+        }
+
+        /// <summary>
+        /// ステータス表示から属性行を非表示にする
+        /// </summary>
+        public static void HideAttributeRowDisplay(RowElements row)
+        {
+            SetAttributeRowVisible(row, false);
+        }
+
+        private static void SetAttributeRowVisible(RowElements row, bool visible)
+        {
+            if (row == null)
             {
-                row.ModelAttributeImage.gameObject.SetActive(visible);
+                return;
+            }
+
+            if (!visible && row.PreservePrefabLayout)
+            {
+                HideAttributeRowGraphics(row);
+                return;
+            }
+
+            if (row.LeftInfoColumn != null)
+            {
+                Transform attributeRow = row.LeftInfoColumn.Find("AttributeRow");
+                if (attributeRow != null)
+                {
+                    attributeRow.gameObject.SetActive(visible);
+                }
+
+                Transform nameRowAttribute = row.LeftInfoColumn.Find("NameRow/ModelAttribute");
+                if (nameRowAttribute != null)
+                {
+                    nameRowAttribute.gameObject.SetActive(visible);
+                }
+            }
+
+            if (row.ThumbnailColumn != null)
+            {
+                Transform thumbnailNameAttribute = row.ThumbnailColumn.Find("NameRow/ModelAttribute");
+                if (thumbnailNameAttribute != null)
+                {
+                    thumbnailNameAttribute.gameObject.SetActive(visible);
+                }
+            }
+
+            if (row.ModelAttributeImage == null)
+            {
+                return;
+            }
+
+            Transform attributeParent = row.ModelAttributeImage.transform.parent;
+            if (attributeParent != null && attributeParent.name == "AttributeRow")
+            {
+                return;
+            }
+
+            row.ModelAttributeImage.gameObject.SetActive(visible);
+        }
+
+        private static void HideAttributeRowGraphics(RowElements row)
+        {
+            if (row.LeftInfoColumn != null)
+            {
+                SetSubtreeGraphicsEnabled(row.LeftInfoColumn.Find("AttributeRow"), false);
+                SetSubtreeGraphicsEnabled(row.LeftInfoColumn.Find("NameRow/ModelAttribute"), false);
+            }
+
+            if (row.ThumbnailColumn != null)
+            {
+                SetSubtreeGraphicsEnabled(row.ThumbnailColumn.Find("NameRow/ModelAttribute"), false);
+            }
+
+            if (row.ModelAttributeImage != null)
+            {
+                row.ModelAttributeImage.enabled = false;
+            }
+        }
+
+        private static void SetSubtreeGraphicsEnabled(Transform root, bool enabled)
+        {
+            if (root == null)
+            {
+                return;
+            }
+
+            Graphic[] graphics = root.GetComponentsInChildren<Graphic>(true);
+            for (int i = 0; i < graphics.Length; i++)
+            {
+                graphics[i].enabled = enabled;
             }
         }
 
@@ -1342,6 +1517,56 @@ namespace UI.ClayEditor.View
             }
         }
 
+        private static void SetNameTextVisible(RowElements row, bool visible)
+        {
+            if (row?.NameText == null)
+            {
+                return;
+            }
+
+            if (!visible)
+            {
+                row.NameText.text = string.Empty;
+            }
+
+            row.NameText.gameObject.SetActive(visible);
+
+            Transform nameRow = row.NameText.transform.parent;
+            if (nameRow != null && nameRow.name == "NameRow")
+            {
+                nameRow.gameObject.SetActive(visible);
+            }
+        }
+
+        private static void SetParamsTextVisible(RowElements row, bool visible)
+        {
+            if (row?.ParamsText == null)
+            {
+                return;
+            }
+
+            if (!visible)
+            {
+                row.ParamsText.text = string.Empty;
+            }
+
+            row.ParamsText.gameObject.SetActive(visible);
+        }
+
+        private static void SetThumbnailColumnVisible(RowElements row, bool visible)
+        {
+            if (row?.ThumbnailColumn != null)
+            {
+                row.ThumbnailColumn.gameObject.SetActive(visible);
+                return;
+            }
+
+            if (row?.ThumbnailFrame != null)
+            {
+                row.ThumbnailFrame.gameObject.SetActive(visible);
+            }
+        }
+
         private static void ApplyAttacks(RowElements row, IReadOnlyList<MotionType> attacks)
         {
             if (row.AttacksPanel == null)
@@ -1351,7 +1576,21 @@ namespace UI.ClayEditor.View
 
             if (attacks == null || attacks.Count == 0)
             {
-                row.AttacksPanel.Clear();
+                if (row.PreservePrefabLayout)
+                {
+                    row.AttacksPanel.Clear(preserveLayoutSpace: true);
+                }
+                else
+                {
+                    row.AttacksPanel.Clear();
+                }
+
+                return;
+            }
+
+            if (row.PreservePrefabLayout)
+            {
+                row.AttacksPanel.ShowForConfirmPrefab(attacks);
                 return;
             }
 
@@ -2356,7 +2595,7 @@ namespace UI.ClayEditor.View
             text.fontSize = fontSize;
             text.fontStyle = fontStyle;
             text.alignment = TextAlignmentOptions.TopLeft;
-            text.color = color;
+            _ = color;
             text.raycastTarget = false;
             text.enableWordWrapping = false;
             text.margin = new Vector4(0f, 0f, 8f, 0f);

@@ -138,8 +138,6 @@ namespace UI.ClayEditor.View
 
 
 
-            TitleClayUiVisualUtility.ApplyPanel(backgroundImage);
-
             backgroundImage.raycastTarget = false;
         }
 

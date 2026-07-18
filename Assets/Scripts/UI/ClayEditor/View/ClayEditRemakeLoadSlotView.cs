@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using UnityEngine;
+using UnityEngine.UI;
 using VContainer;
 
 namespace UI.ClayEditor.View
@@ -89,7 +90,7 @@ namespace UI.ClayEditor.View
                 listBackButton.SubscribeOnClick(OnListBack);
             }
 
-            SetCanvasEnabled(confirmCanvas, false);
+            SetConfirmVisible(false);
             ValidateSceneLayout();
             isInitialized = true;
         }
@@ -111,7 +112,7 @@ namespace UI.ClayEditor.View
         public void Show()
         {
             selectedSlot = -1;
-            SetCanvasEnabled(confirmCanvas, false);
+            SetConfirmVisible(false);
             Canvas canvas = GetComponent<Canvas>();
             if (canvas != null)
             {
@@ -136,7 +137,7 @@ namespace UI.ClayEditor.View
             selectedSlot = -1;
             loadConfirmView?.Clear();
             deletePromptView?.Hide();
-            SetCanvasEnabled(confirmCanvas, false);
+            SetConfirmVisible(false);
             Canvas canvas = GetComponent<Canvas>();
             if (canvas != null)
             {
@@ -234,20 +235,15 @@ namespace UI.ClayEditor.View
             }
 
             selectedSlot = slotIndex;
-            SetCanvasEnabled(confirmCanvas, true, ConfirmCanvasSortingOrder);
-            ModelSaveSlotScrollListView.EnsureSelectionBackground(confirmCanvas);
+            SetConfirmVisible(true);
             RefreshLoadConfirm(slotIndex);
-            if (confirmCanvas != null)
-            {
-                confirmCanvas.transform.SetAsLastSibling();
-            }
         }
 
         private void OnConfirmBack()
         {
             selectedSlot = -1;
             loadConfirmView?.Clear();
-            SetCanvasEnabled(confirmCanvas, false);
+            SetConfirmVisible(false);
         }
 
         private void OnListBack()
@@ -298,7 +294,7 @@ namespace UI.ClayEditor.View
             saveService.DeleteSlot(ModelSavePool.Player, selectedSlot);
             selectedSlot = -1;
             loadConfirmView?.Clear();
-            SetCanvasEnabled(confirmCanvas, false);
+            SetConfirmVisible(false);
             RefreshSlots();
         }
 
@@ -321,7 +317,7 @@ namespace UI.ClayEditor.View
             isLoading = true;
             try
             {
-                SetCanvasEnabled(confirmCanvas, false);
+                SetConfirmVisible(false);
                 SetCanvasEnabled(GetComponent<Canvas>(), false);
 
                 (bool snapshotSuccess, string snapshotError) = await savedModelImporter.TryImportFromSnapshotAsync(
@@ -450,6 +446,57 @@ namespace UI.ClayEditor.View
             canvas.sortingOrder = SelectionCanvasSortingOrder;
         }
 
+        /// <summary>
+        /// 確認キャンバスの表示を切り替え選択側レイキャストを制御する
+        /// </summary>
+        private void SetConfirmVisible(bool visible)
+        {
+            if (visible)
+            {
+                SetSelectionRaycastsEnabled(false);
+                SetCanvasEnabled(confirmCanvas, true, ConfirmCanvasSortingOrder);
+                EnsureConfirmRaycastBlocker();
+                if (confirmCanvas != null)
+                {
+                    confirmCanvas.transform.SetAsLastSibling();
+                }
+                return;
+            }
+
+            SetCanvasEnabled(confirmCanvas, false);
+            SetSelectionRaycastsEnabled(true);
+        }
+
+        /// <summary>
+        /// 確認背景のレイキャストを有効にして背面クリックを遮断する
+        /// </summary>
+        private void EnsureConfirmRaycastBlocker()
+        {
+            if (confirmCanvas == null)
+            {
+                return;
+            }
+
+            ModelSaveSlotScrollListView.EnsureSelectionBackground(confirmCanvas);
+            Transform background = confirmCanvas.transform.Find("BackGround");
+            if (background != null && background.TryGetComponent(out Image image))
+            {
+                image.raycastTarget = true;
+            }
+        }
+
+        /// <summary>
+        /// 選択ルートCanvasのGraphicRaycasterを切り替える
+        /// </summary>
+        private void SetSelectionRaycastsEnabled(bool enabled)
+        {
+            Canvas selectionCanvas = GetComponent<Canvas>();
+            if (selectionCanvas != null && selectionCanvas.TryGetComponent(out GraphicRaycaster raycaster))
+            {
+                raycaster.enabled = enabled;
+            }
+        }
+
         private static void SetCanvasEnabled(Canvas canvas, bool isEnabled, int sortingOrder = 0)
         {
             if (canvas == null)
@@ -502,7 +549,7 @@ namespace UI.ClayEditor.View
                 || deletePromptView == null)
             {
                 Debug.LogError(
-                    "[ClayEditRemakeLoadSlotView] シーン上のUI参照が未設定です。Tools/ClayMonsters/Migrate ClayEdit Scene UIを実行してください",
+                    "[ClayEditRemakeLoadSlotView] シーン上のUI参照が未設定です。HierarchyでUI参照を確認してください",
                     this);
             }
         }

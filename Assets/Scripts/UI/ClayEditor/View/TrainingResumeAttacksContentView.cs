@@ -151,6 +151,66 @@ namespace UI.ClayEditor.View
         }
 
         /// <summary>
+        /// 確認画面プレハブ向けに技構成を表示する
+        /// 枠のHierarchyとRectTransformは維持する
+        /// </summary>
+        /// <param name="attacks">技一覧</param>
+        public void ShowForConfirmPrefab(IReadOnlyList<MotionType> attacks)
+        {
+            if (headerText != null)
+            {
+                headerText.enabled = false;
+            }
+
+            if (emptyText != null)
+            {
+                emptyText.enabled = false;
+            }
+
+            if (attacks == null || attacks.Count == 0)
+            {
+                ClearForConfirmPrefab();
+                return;
+            }
+
+            for (int i = 0; i < AttackSlotCount; i++)
+            {
+                TrainingAttackSlotView slotView = attackSlots != null && i < attackSlots.Length
+                    ? attackSlots[i]
+                    : null;
+                if (slotView == null)
+                {
+                    continue;
+                }
+
+                if (i < attacks.Count)
+                {
+                    slotView.ApplyForConfirmPrefab(i + 1, attacks[i]);
+                }
+                else
+                {
+                    slotView.ClearForConfirmPrefab();
+                }
+            }
+        }
+
+        /// <summary>
+        /// 確認画面プレハブ向けに表示内容をクリアする
+        /// </summary>
+        public void ClearForConfirmPrefab()
+        {
+            if (attackSlots == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < attackSlots.Length; i++)
+            {
+                attackSlots[i]?.ClearForConfirmPrefab();
+            }
+        }
+
+        /// <summary>
         /// 表示内容をクリアする
         /// </summary>
         /// <param name="preserveLayoutSpace">trueのときLayoutGroup向けに枠を残す</param>

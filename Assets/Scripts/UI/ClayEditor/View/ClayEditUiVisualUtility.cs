@@ -27,7 +27,6 @@ namespace UI.ClayEditor.View
         private static Sprite trainingStaminaFillSprite;
 
         private static readonly Color PanelColor = new Color(0.18f, 0.20f, 0.26f, 0.94f);
-        private static readonly Color BlockerColor = new Color(0.04f, 0.06f, 0.10f, 0.62f);
         private static readonly Color InputTextColor = new Color(0.16f, 0.18f, 0.22f, 1f);
         private static readonly Color PlaceholderColor = new Color(0.45f, 0.47f, 0.52f, 0.85f);
         private static readonly Color DropdownTextColor = new Color(0.20f, 0.22f, 0.28f, 1f);
@@ -56,7 +55,15 @@ namespace UI.ClayEditor.View
         /// </summary>
         public static void ApplyPanel(Image image)
         {
-            ApplySlicedImage(image, PanelColor);
+            ApplySlicedImage(image);
+        }
+
+        /// <summary>
+        /// Editor Bake向けにモーダル背景パネルへスタイルを適用する
+        /// </summary>
+        public static void ApplyPanelForEditorBake(Image image)
+        {
+            ApplySlicedImageForEditorBake(image, PanelColor);
         }
 
         /// <summary>
@@ -64,7 +71,7 @@ namespace UI.ClayEditor.View
         /// </summary>
         public static void ApplyTrainingHudHeaderPanel(Image image)
         {
-            TitleClayUiVisualUtility.ApplyPanel(image);
+            TitleClayUiVisualUtility.ApplyPanelForEditorBake(image);
         }
 
         /// <summary>
@@ -72,7 +79,7 @@ namespace UI.ClayEditor.View
         /// </summary>
         public static void ApplyTrainingStatusPanel(Image image)
         {
-            TitleClayUiVisualUtility.ApplyPanel(image);
+            TitleClayUiVisualUtility.ApplyPanelForEditorBake(image);
         }
 
         /// <summary>
@@ -80,7 +87,7 @@ namespace UI.ClayEditor.View
         /// </summary>
         public static void ApplyTrainingLogPanel(Image image)
         {
-            TitleClayUiVisualUtility.ApplyPanel(image);
+            TitleClayUiVisualUtility.ApplyPanelForEditorBake(image);
         }
 
         /// <summary>
@@ -88,7 +95,7 @@ namespace UI.ClayEditor.View
         /// </summary>
         public static void ApplyTrainingRestButton(LHButton button)
         {
-            TitleClayUiVisualUtility.ApplyMenuButton(button, TextAlignmentOptions.Center);
+            TitleClayUiVisualUtility.ApplyMenuButtonForEditorBake(button, TextAlignmentOptions.Center);
         }
 
         /// <summary>
@@ -101,7 +108,20 @@ namespace UI.ClayEditor.View
                 return;
             }
 
-            ApplySprite(image, LoadTrainingStaminaTrackSprite(), Color.white);
+            ApplySprite(image, LoadTrainingStaminaTrackSprite());
+        }
+
+        /// <summary>
+        /// Editor Bake向けにTrainingHUD体力バー背景へTraining用スプライトを適用する
+        /// </summary>
+        public static void ApplyTrainingStaminaTrackForEditorBake(Image image)
+        {
+            if (image == null)
+            {
+                return;
+            }
+
+            ApplySpriteForEditorBake(image, LoadTrainingStaminaTrackSprite(), Color.white);
         }
 
         /// <summary>
@@ -114,26 +134,48 @@ namespace UI.ClayEditor.View
                 return;
             }
 
-            ApplySprite(image, LoadTrainingStaminaFillSprite(), Color.white);
+            ApplySprite(image, LoadTrainingStaminaFillSprite());
             image.type = Image.Type.Filled;
             image.fillMethod = Image.FillMethod.Horizontal;
             image.fillOrigin = (int)Image.OriginHorizontal.Left;
         }
 
         /// <summary>
-        /// 入力ブロッカーへスタイルを適用する
+        /// Editor Bake向けにTrainingHUD体力バー充填へTraining用スプライトを適用する
         /// </summary>
-        public static void ApplyBlocker(Image image)
+        public static void ApplyTrainingStaminaFillForEditorBake(Image image)
         {
             if (image == null)
             {
                 return;
             }
 
-            image.sprite = null;
-            image.type = Image.Type.Simple;
-            image.color = BlockerColor;
-            image.raycastTarget = true;
+            ApplySpriteForEditorBake(image, LoadTrainingStaminaFillSprite(), Color.white);
+            image.type = Image.Type.Filled;
+            image.fillMethod = Image.FillMethod.Horizontal;
+            image.fillOrigin = (int)Image.OriginHorizontal.Left;
+        }
+
+        /// <summary>
+        /// 入力ブロッカーの入力受付のみ設定する
+        /// 色はシーン配置を維持する
+        /// </summary>
+        public static void ApplyBlocker(Image image)
+        {
+            TitleClayUiVisualUtility.ApplyBlocker(image);
+        }
+
+        public static void ConfigureInputBlocker(Image image, bool blocksRaycasts)
+        {
+            TitleClayUiVisualUtility.ConfigureInputBlocker(image, blocksRaycasts);
+        }
+
+        /// <summary>
+        /// Editor Bake向けにブロッカー見た目を設定する
+        /// </summary>
+        public static void ApplyBlockerForEditorBake(Image image)
+        {
+            TitleClayUiVisualUtility.ApplyBlockerForEditorBake(image);
         }
 
         /// <summary>
@@ -183,7 +225,6 @@ namespace UI.ClayEditor.View
             }
 
             image.sprite = sprite;
-            image.color = Color.white;
             image.preserveAspect = true;
             image.type = Image.Type.Simple;
         }
@@ -193,7 +234,7 @@ namespace UI.ClayEditor.View
         /// </summary>
         public static void ApplySlotThumbnailFrame(Image image)
         {
-            ApplySprite(image, LoadThumbnailFrameSprite(), Color.white);
+            ApplySprite(image, LoadThumbnailFrameSprite());
             if (image != null)
             {
                 image.raycastTarget = false;
@@ -212,7 +253,6 @@ namespace UI.ClayEditor.View
 
             image.sprite = null;
             image.preserveAspect = false;
-            ApplySprite(image, LoadSlotInnerSprite(), SlotInnerColor);
         }
 
         /// <summary>
@@ -226,15 +266,7 @@ namespace UI.ClayEditor.View
             }
 
             Image image = button.targetGraphic as Image;
-            ApplySprite(image, LoadSlotInnerSprite(), SlotInnerColor);
-
-            ColorBlock colors = button.colors;
-            colors.normalColor = Color.white;
-            colors.highlightedColor = new Color(1f, 1f, 1f, 0.92f);
-            colors.pressedColor = new Color(0.85f, 0.85f, 0.85f, 0.95f);
-            colors.disabledColor = DisabledColor;
-            colors.colorMultiplier = 1f;
-            button.colors = colors;
+            ApplySprite(image, LoadSlotInnerSprite());
 
             ApplyButtonLabel(button, true);
         }
@@ -268,7 +300,7 @@ namespace UI.ClayEditor.View
         /// </summary>
         public static void ApplyDropdownItemBackground(Image image)
         {
-            ApplySprite(image, LoadInputFieldSprite(), Color.white);
+            ApplySprite(image, LoadInputFieldSprite());
         }
 
         /// <summary>
@@ -282,7 +314,7 @@ namespace UI.ClayEditor.View
             }
 
             Image target = dropdown.targetGraphic as Image;
-            ApplySprite(target, LoadInputFieldSprite(), Color.white);
+            ApplySprite(target, LoadInputFieldSprite());
 
             if (dropdown.captionText != null)
             {
@@ -321,7 +353,7 @@ namespace UI.ClayEditor.View
             }
 
             Image background = inputField.GetComponent<Image>();
-            ApplySprite(background, LoadInputFieldSprite(), Color.white);
+            ApplySprite(background, LoadInputFieldSprite());
         }
 
         /// <summary>
@@ -362,13 +394,13 @@ namespace UI.ClayEditor.View
             if (slider.fillRect != null)
             {
                 Image fill = slider.fillRect.GetComponent<Image>();
-                ApplySprite(fill, LoadSliderFillSprite(), PrimaryNormal);
+                ApplySprite(fill, LoadSliderFillSprite());
             }
 
             if (slider.handleRect != null)
             {
                 Image handle = slider.handleRect.GetComponent<Image>();
-                ApplySprite(handle, LoadSliderHandleSprite(), Color.white);
+                ApplySprite(handle, LoadSliderHandleSprite());
             }
         }
 
@@ -400,16 +432,7 @@ namespace UI.ClayEditor.View
             }
 
             Image image = button.targetGraphic as Image;
-            ApplySlicedImage(image, normal);
-
-            ColorBlock colors = button.colors;
-            colors.normalColor = Color.white;
-            colors.highlightedColor = ColorForTint(highlighted, normal);
-            colors.pressedColor = ColorForTint(pressed, normal);
-            colors.selectedColor = colors.highlightedColor;
-            colors.disabledColor = DisabledColor;
-            colors.colorMultiplier = 1f;
-            button.colors = colors;
+            ApplySlicedImage(image);
         }
 
         private static void ApplyStandardButtonLabel(Button button)
@@ -436,16 +459,7 @@ namespace UI.ClayEditor.View
             }
 
             Image image = button.targetGraphic as Image;
-            ApplySlicedImage(image, normal);
-
-            ColorBlock colors = button.colors;
-            colors.normalColor = Color.white;
-            colors.highlightedColor = ColorForTint(highlighted, normal);
-            colors.pressedColor = ColorForTint(pressed, normal);
-            colors.selectedColor = colors.highlightedColor;
-            colors.disabledColor = DisabledColor;
-            colors.colorMultiplier = 1f;
-            button.colors = colors;
+            ApplySlicedImage(image);
         }
 
         private static Color ColorForTint(Color target, Color baseColor)
@@ -474,12 +488,17 @@ namespace UI.ClayEditor.View
             TitleClayUiVisualUtility.EnsureTextFontOnly(label);
         }
 
-        private static void ApplySlicedImage(Image image, Color color)
+        private static void ApplySlicedImage(Image image)
         {
-            ApplySprite(image, LoadFrameSprite(), color);
+            ApplySprite(image, LoadFrameSprite());
         }
 
-        private static void ApplySprite(Image image, Sprite sprite, Color color)
+        private static void ApplySlicedImageForEditorBake(Image image, Color color)
+        {
+            ApplySpriteForEditorBake(image, LoadFrameSprite(), color);
+        }
+
+        private static void ApplySprite(Image image, Sprite sprite)
         {
             if (image == null)
             {
@@ -490,13 +509,20 @@ namespace UI.ClayEditor.View
             if (resolvedSprite == null)
             {
                 image.type = Image.Type.Simple;
-                image.color = color;
                 return;
             }
 
             image.sprite = resolvedSprite;
             image.type = Image.Type.Sliced;
-            image.color = color;
+        }
+
+        private static void ApplySpriteForEditorBake(Image image, Sprite sprite, Color color)
+        {
+            ApplySprite(image, sprite);
+            if (image != null)
+            {
+                image.color = color;
+            }
         }
 
         private static Sprite LoadFrameSprite() => LoadSprite("GameUi_Frame", ref frameSprite);
@@ -561,19 +587,10 @@ namespace UI.ClayEditor.View
 
         private static void ApplyOutline(TMP_Text text, float width, Color? color = null)
         {
-            if (text.fontSharedMaterial == null && text.font != null)
-            {
-                text.fontSharedMaterial = text.font.material;
-            }
-
-            if (text.fontSharedMaterial == null)
-            {
-                return;
-            }
-
-            text.fontSharedMaterial = text.fontMaterial;
-            text.outlineWidth = width;
-            text.outlineColor = color ?? new Color(0.06f, 0.08f, 0.12f, 0.92f);
+            AppTmpFontUtility.ApplyOutline(
+                text,
+                width,
+                color ?? new Color(0.06f, 0.08f, 0.12f, 0.92f));
         }
     }
 }
