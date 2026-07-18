@@ -22,7 +22,6 @@ public static class BattleMoveButtonsPrefabUtility
     private static readonly string[] BattleMoveButtonsScenePaths =
     {
         "Assets/Scenes/BattleNpc.unity",
-        "Assets/Scenes/BattlePVP.unity",
         "Assets/Scenes/BattlePvpArena.unity",
         "Assets/Scenes/Training.unity",
     };
@@ -32,7 +31,7 @@ public static class BattleMoveButtonsPrefabUtility
     private const string MoveButtonsObjectName = "MoveButtons";
 
     /// <summary>
-    /// BattleNpcのPlayerUI配下MoveButtonsからプレハブを生成する
+    /// BattleNpcのPlayerUI配下MoveButtonsから見た目付きプレハブを生成する
     /// 初回レイアウト取り込み用で調整済みプレハブは上書きされる
     /// </summary>
     [MenuItem("Tools/ClayMonsters/Create Battle Move Buttons Prefab From BattleNpc")]
@@ -42,15 +41,23 @@ public static class BattleMoveButtonsPrefabUtility
             && !EditorUtility.DisplayDialog(
                 "Battle Move Buttons Prefab",
                 "BattleNpcのPlayerUI/MoveButtonsからプレハブを生成します\n"
+                    + "見た目を適用してからBattleMoveButtons.prefabへ保存します\n"
                     + "既存のBattleMoveButtons.prefabは上書きされます\n\n"
-                    + "レイアウト調整後は\n"
-                    + "Sync All Battle Scenes Move Buttons From Prefab を実行してください",
+                    + "生成後は Sync Battle Move Buttons To All Scenes で各シーンへ反映できます",
                 "生成する",
                 "キャンセル"))
         {
             return;
         }
 
+        CreatePrefabFromBattleNpcSilent();
+    }
+
+    /// <summary>
+    /// Unity.exe -batchmode -quit -projectPath ... -executeMethod BattleMoveButtonsPrefabUtility.CreatePrefabFromBattleNpcSilent
+    /// </summary>
+    public static void CreatePrefabFromBattleNpcSilent()
+    {
         UnityScene previousScene = EditorSceneManager.GetActiveScene();
         string previousScenePath = previousScene.IsValid() && !string.IsNullOrEmpty(previousScene.path)
             ? previousScene.path
@@ -64,18 +71,353 @@ public static class BattleMoveButtonsPrefabUtility
                 return;
             }
 
+            WireBattleMoveButtonsReferencesInScene(battleNpcScene);
+            EditorSceneManager.MarkSceneDirty(battleNpcScene);
+            EditorSceneManager.SaveScene(battleNpcScene);
             Debug.Log(
                 $"[BattleMoveButtonsPrefabUtility] プレハブを生成しました: {MoveButtonsPrefabPath}");
         }
         finally
         {
-            if (!string.IsNullOrEmpty(previousScenePath)
+            if (!Application.isBatchMode
+                && !string.IsNullOrEmpty(previousScenePath)
                 && previousScenePath != BattleNpcScenePath
                 && File.Exists(previousScenePath))
             {
                 EditorSceneManager.OpenScene(previousScenePath, OpenSceneMode.Single);
             }
         }
+    }
+
+    /// <summary>
+    /// 開いているシーンのMoveButtonsへ参照とスタイルだけを適用する
+    /// RectTransformは変更しない
+    /// </summary>
+    [MenuItem("Tools/ClayMonsters/Wire Battle Move Buttons To Open Scene")]
+    public static void WireOpenSceneBattleMoveButtons()
+    {
+        UnityScene scene = EditorSceneManager.GetActiveScene();
+        if (!scene.IsValid() || !scene.isLoaded)
+        {
+            Debug.LogWarning("[BattleMoveButtonsPrefabUtility] 有効なシーンが開かれていません");
+            return;
+        }
+
+        int wired = WireMoveButtonsInScene(scene);
+        if (wired > 0)
+        {
+            EditorSceneManager.MarkSceneDirty(scene);
+        }
+
+        Debug.Log(
+            $"[BattleMoveButtonsPrefabUtility] 配線完了 moveButtons={wired}: {scene.path}");
+    }
+
+    /// <summary>
+    /// プレハブへ参照だけを適用して全戦闘シーンへ同期する
+    /// プレハブのRectTransformと見た目は変更しない
+    /// </summary>
+    [MenuItem("Tools/ClayMonsters/Wire Battle Move Buttons And Sync")]
+    public static void WireBattleMoveButtonsPrefabAndSyncAllScenes()
+    {
+        if (!WireBattleMoveButtonsPrefabAsset())
+        {
+            return;
+        }
+
+        SyncAllBattleScenesMoveButtonsFromPrefabSilent();
+        Debug.Log("[BattleMoveButtonsPrefabUtility] 参照配線と全シーン同期が完了しました");
+    }
+
+    /// <summary>
+    /// BattleMoveButtons.prefabをPrefab Modeで開く
+    /// </summary>
+    [MenuItem("Tools/ClayMonsters/Open Battle Move Buttons Prefab For Editing")]
+    public static void OpenBattleMoveButtonsPrefabForEditing()
+    {
+        GameObject prefabAsset = AssetDatabase.LoadAssetAtPath<GameObject>(MoveButtonsPrefabPath);
+        if (prefabAsset == null)
+        {
+            Debug.LogError(
+                $"[BattleMoveButtonsPrefabUtility] プレハブが見つかりません: {MoveButtonsPrefabPath}");
+            return;
+        }
+
+        AssetDatabase.OpenAsset(prefabAsset);
+        Selection.activeObject = prefabAsset;
+    }
+
+    /// <summary>
+    /// 開いているシーンのMoveButtonsレイアウトを初回用に組み立て直す
+    /// </summary>
+    [MenuItem("Tools/ClayMonsters/Rebuild Battle Move Buttons Layout To Open Scene")]
+    public static void RebuildLayoutInOpenScene()
+    {
+        if (!Application.isBatchMode
+            && !EditorUtility.DisplayDialog(
+                "Rebuild Battle Move Buttons Layout",
+                "開いているシーンのMoveButtonsレイアウトを組み立て直します\n"
+                    + "RectTransformの手動調整は上書きされます",
+                "実行する",
+                "キャンセル"))
+        {
+            return;
+        }
+
+        UnityScene scene = EditorSceneManager.GetActiveScene();
+        if (!scene.IsValid() || !scene.isLoaded)
+        {
+            Debug.LogWarning("[BattleMoveButtonsPrefabUtility] 有効なシーンが開かれていません");
+            return;
+        }
+
+        int rebuilt = RebuildMoveButtonsInScene(scene);
+        if (rebuilt > 0)
+        {
+            EditorSceneManager.MarkSceneDirty(scene);
+        }
+
+        Debug.Log(
+            $"[BattleMoveButtonsPrefabUtility] レイアウト再構築完了 moveButtons={rebuilt}: {scene.path}");
+    }
+
+    /// <summary>
+    /// プレハブのレイアウトを組み立て直して全戦闘シーンへ同期する
+    /// </summary>
+    [MenuItem("Tools/ClayMonsters/Rebuild Battle Move Buttons Layout And Sync")]
+    public static void RebuildLayoutInPrefabAndSyncAllScenes()
+    {
+        if (!Application.isBatchMode
+            && !EditorUtility.DisplayDialog(
+                "Rebuild Battle Move Buttons Layout And Sync",
+                "BattleMoveButtons.prefabのレイアウトを組み立て直し\n"
+                    + "戦闘関連3シーンへ同期します\n"
+                    + "プレハブと各シーンのRectTransform差分は破棄されます",
+                "実行する",
+                "キャンセル"))
+        {
+            return;
+        }
+
+        if (!RebuildLayoutInPrefabAsset())
+        {
+            return;
+        }
+
+        SyncAllBattleScenesMoveButtonsFromPrefabSilent();
+        Debug.Log("[BattleMoveButtonsPrefabUtility] レイアウト再構築と全シーン同期が完了しました");
+    }
+
+    /// <summary>
+    /// Unity.exe -batchmode -quit -projectPath ... -executeMethod BattleMoveButtonsPrefabUtility.RebuildLayoutInPrefabAndSyncAllScenesSilent
+    /// </summary>
+    public static void RebuildLayoutInPrefabAndSyncAllScenesSilent()
+    {
+        if (!RebuildLayoutInPrefabAsset())
+        {
+            EditorApplication.Exit(1);
+            return;
+        }
+
+        SyncAllBattleScenesMoveButtonsFromPrefabSilent();
+        Debug.Log("[BattleMoveButtonsPrefabUtility] レイアウト再構築と全シーン同期が完了しました");
+    }
+
+    /// <summary>
+    /// 開いているシーンのMoveButtonsへスタイルだけを適用する
+    /// RectTransformは変更しない
+    /// </summary>
+    [MenuItem("Tools/ClayMonsters/Apply Battle Move Buttons Visuals To Open Scene")]
+    public static void ApplyVisualsToOpenScene()
+    {
+        UnityScene scene = EditorSceneManager.GetActiveScene();
+        if (!scene.IsValid() || !scene.isLoaded)
+        {
+            Debug.LogWarning("[BattleMoveButtonsPrefabUtility] 有効なシーンが開かれていません");
+            return;
+        }
+
+        int styled = ApplyMoveButtonsStylesInScene(scene);
+        if (styled > 0)
+        {
+            EditorSceneManager.MarkSceneDirty(scene);
+        }
+
+        Debug.Log(
+            $"[BattleMoveButtonsPrefabUtility] スタイル適用完了 moveButtons={styled}: {scene.path}");
+    }
+
+    /// <summary>
+    /// プレハブへスタイルだけを適用して全戦闘シーンへ同期する
+    /// RectTransformは変更しない
+    /// </summary>
+    [MenuItem("Tools/ClayMonsters/Apply Battle Move Buttons Visuals And Sync")]
+    public static void ApplyVisualsToPrefabAndSyncAllScenes()
+    {
+        if (!ApplyStylesToPrefabAsset())
+        {
+            return;
+        }
+
+        SyncAllBattleScenesMoveButtonsFromPrefabSilent();
+        Debug.Log("[BattleMoveButtonsPrefabUtility] スタイル適用と全シーン同期が完了しました");
+    }
+
+    /// <summary>
+    /// BattleMoveButtons.prefabへ参照だけを適用する
+    /// </summary>
+    public static bool WireBattleMoveButtonsPrefabAsset()
+    {
+        if (!File.Exists(MoveButtonsPrefabPath))
+        {
+            Debug.LogError(
+                $"[BattleMoveButtonsPrefabUtility] プレハブが見つかりません: {MoveButtonsPrefabPath}");
+            return false;
+        }
+
+        GameObject prefabContents = PrefabUtility.LoadPrefabContents(MoveButtonsPrefabPath);
+        try
+        {
+            BattleMoveButtonVisualUtility.WireMoveButtonsRootReferences(prefabContents.transform);
+            PrefabUtility.SaveAsPrefabAsset(prefabContents, MoveButtonsPrefabPath);
+            AssetDatabase.SaveAssets();
+            Debug.Log(
+                $"[BattleMoveButtonsPrefabUtility] プレハブへ参照配線を適用しました: {MoveButtonsPrefabPath}");
+            return true;
+        }
+        finally
+        {
+            PrefabUtility.UnloadPrefabContents(prefabContents);
+        }
+    }
+
+    /// <summary>
+    /// BattleMoveButtons.prefabへスタイルだけを適用する
+    /// </summary>
+    public static bool ApplyStylesToPrefabAsset()
+    {
+        if (!File.Exists(MoveButtonsPrefabPath))
+        {
+            Debug.LogError(
+                $"[BattleMoveButtonsPrefabUtility] プレハブが見つかりません: {MoveButtonsPrefabPath}");
+            return false;
+        }
+
+        GameObject prefabContents = PrefabUtility.LoadPrefabContents(MoveButtonsPrefabPath);
+        try
+        {
+            BattleMoveButtonVisualUtility.ApplyMoveButtonsStylesRoot(prefabContents.transform);
+            PrefabUtility.SaveAsPrefabAsset(prefabContents, MoveButtonsPrefabPath);
+            AssetDatabase.SaveAssets();
+            Debug.Log(
+                $"[BattleMoveButtonsPrefabUtility] プレハブへスタイルを適用しました: {MoveButtonsPrefabPath}");
+            return true;
+        }
+        finally
+        {
+            PrefabUtility.UnloadPrefabContents(prefabContents);
+        }
+    }
+
+    /// <summary>
+    /// BattleMoveButtons.prefabのレイアウトを組み立て直す
+    /// </summary>
+    public static bool RebuildLayoutInPrefabAsset()
+    {
+        if (!File.Exists(MoveButtonsPrefabPath))
+        {
+            Debug.LogError(
+                $"[BattleMoveButtonsPrefabUtility] プレハブが見つかりません: {MoveButtonsPrefabPath}");
+            return false;
+        }
+
+        GameObject prefabContents = PrefabUtility.LoadPrefabContents(MoveButtonsPrefabPath);
+        try
+        {
+            BattleMoveButtonVisualUtility.RebuildMoveButtonsRoot(prefabContents.transform);
+            PrefabUtility.SaveAsPrefabAsset(prefabContents, MoveButtonsPrefabPath);
+            AssetDatabase.SaveAssets();
+            Debug.Log(
+                $"[BattleMoveButtonsPrefabUtility] プレハブのレイアウトを再構築しました: {MoveButtonsPrefabPath}");
+            return true;
+        }
+        finally
+        {
+            PrefabUtility.UnloadPrefabContents(prefabContents);
+        }
+    }
+
+    /// <summary>
+    /// BattleMoveButtons.prefabのHierarchy重複を検査する
+    /// </summary>
+    [MenuItem("Tools/ClayMonsters/Validate Battle Move Buttons Hierarchy")]
+    public static void ValidateBattleMoveButtonsHierarchyMenu()
+    {
+        if (!File.Exists(MoveButtonsPrefabPath))
+        {
+            Debug.LogError(
+                $"[BattleMoveButtonsPrefabUtility] プレハブが見つかりません: {MoveButtonsPrefabPath}");
+            return;
+        }
+
+        GameObject prefabContents = PrefabUtility.LoadPrefabContents(MoveButtonsPrefabPath);
+        try
+        {
+            bool ok = BattleMoveButtonVisualUtility.TryValidateMoveButtonsRoot(
+                prefabContents.transform,
+                out string report);
+            if (ok)
+            {
+                Debug.Log($"[BattleMoveButtonsPrefabUtility] {report}");
+            }
+            else
+            {
+                Debug.LogWarning($"[BattleMoveButtonsPrefabUtility]\n{report}");
+            }
+        }
+        finally
+        {
+            PrefabUtility.UnloadPrefabContents(prefabContents);
+        }
+    }
+
+    /// <summary>
+    /// プレハブ生成後に戦闘関連3シーンへ同期する
+    /// </summary>
+    [MenuItem("Tools/ClayMonsters/Sync Battle Move Buttons To All Scenes")]
+    public static void SyncAllBattleScenesMoveButtonsFromPrefabMenu()
+    {
+        SyncAllBattleScenesMoveButtonsFromPrefab();
+    }
+
+    /// <summary>
+    /// 見た目適用→プレハブ生成→全シーン同期を一括実行する
+    /// </summary>
+    [MenuItem("Tools/ClayMonsters/Create And Sync Battle Move Buttons Prefab")]
+    public static void CreateAndSyncBattleMoveButtonsPrefab()
+    {
+        if (!Application.isBatchMode
+            && !EditorUtility.DisplayDialog(
+                "Create And Sync Battle Move Buttons",
+                "BattleNpcから見た目付きプレハブを生成し\n"
+                    + "戦闘関連3シーンへ同期します\n\n"
+                    + "各シーンのMoveButtons差分は破棄されます",
+                "実行する",
+                "キャンセル"))
+        {
+            return;
+        }
+
+        CreateAndSyncBattleMoveButtonsPrefabSilent();
+    }
+
+    /// <summary>
+    /// Unity.exe -batchmode -quit -projectPath ... -executeMethod BattleMoveButtonsPrefabUtility.CreateAndSyncBattleMoveButtonsPrefabSilent
+    /// </summary>
+    public static void CreateAndSyncBattleMoveButtonsPrefabSilent()
+    {
+        CreatePrefabFromBattleNpcSilent();
+        SyncAllBattleScenesMoveButtonsFromPrefabSilent();
     }
 
     /// <summary>
@@ -105,7 +447,6 @@ public static class BattleMoveButtonsPrefabUtility
     /// 開いているシーンのMoveButtonsをプレハブインスタンスへ置き換える
     /// 初回移行時はシーン上のRectTransformを維持する
     /// </summary>
-    [MenuItem("Tools/ClayMonsters/Apply Battle Move Buttons Prefab To Open Scene")]
     public static void ApplyPrefabToOpenScene()
     {
         GameObject prefabAsset = LoadMoveButtonsPrefabAsset();
@@ -135,7 +476,6 @@ public static class BattleMoveButtonsPrefabUtility
     /// 戦闘関連シーンのMoveButtonsをプレハブから再配置する
     /// プレハブ側のレイアウトを各シーンへ反映する
     /// </summary>
-    [MenuItem("Tools/ClayMonsters/Sync All Battle Scenes Move Buttons From Prefab")]
     public static void SyncAllBattleScenesMoveButtonsFromPrefab()
     {
         GameObject prefabAsset = LoadMoveButtonsPrefabAsset();
@@ -147,11 +487,10 @@ public static class BattleMoveButtonsPrefabUtility
         if (!Application.isBatchMode
             && !EditorUtility.DisplayDialog(
                 "Sync Battle Move Buttons",
-                "戦闘関連4シーンのMoveButtonsをプレハブから再配置します\n"
+                "戦闘関連3シーンのMoveButtonsをプレハブから再配置します\n"
                     + "シーン上のMoveButtons差分は破棄されます\n\n"
                     + "対象:\n"
                     + "- BattleNpc\n"
-                    + "- BattlePVP\n"
                     + "- BattlePvpArena\n"
                     + "- Training",
                 "同期する",
@@ -238,6 +577,7 @@ public static class BattleMoveButtonsPrefabUtility
 
         GameObject clone = UnityEngine.Object.Instantiate(source.gameObject);
         clone.name = MoveButtonsObjectName;
+        BattleMoveButtonVisualUtility.RebuildMoveButtonsRoot(clone.transform);
         try
         {
             PrefabUtility.SaveAsPrefabAsset(clone, MoveButtonsPrefabPath);
@@ -456,6 +796,60 @@ public static class BattleMoveButtonsPrefabUtility
 
         GameObject hudRoot = hudRootsProperty.GetArrayElementAtIndex(hudRootIndex).objectReferenceValue as GameObject;
         return hudRoot != null ? hudRoot.transform.Find(MoveButtonsObjectName) : null;
+    }
+
+    private static int WireMoveButtonsInScene(UnityScene scene)
+    {
+        return ProcessMoveButtonsInScene(scene, BattleMoveButtonVisualUtility.WireMoveButtonsRootReferences);
+    }
+
+    private static int ApplyMoveButtonsStylesInScene(UnityScene scene)
+    {
+        return ProcessMoveButtonsInScene(scene, BattleMoveButtonVisualUtility.ApplyMoveButtonsStylesRoot);
+    }
+
+    private static int RebuildMoveButtonsInScene(UnityScene scene)
+    {
+        return ProcessMoveButtonsInScene(scene, BattleMoveButtonVisualUtility.RebuildMoveButtonsRoot);
+    }
+
+    private static int ProcessMoveButtonsInScene(UnityScene scene, System.Action<Transform> processRoot)
+    {
+        if (!scene.IsValid() || !scene.isLoaded || processRoot == null)
+        {
+            return 0;
+        }
+
+        int processedCount = 0;
+        BattleView[] battleViews = UnityEngine.Object.FindObjectsByType<BattleView>(
+            FindObjectsInactive.Include,
+            FindObjectsSortMode.None);
+
+        for (int i = 0; i < battleViews.Length; i++)
+        {
+            BattleView battleView = battleViews[i];
+            if (battleView == null || battleView.gameObject.scene != scene)
+            {
+                continue;
+            }
+
+            Transform playerMoveButtons = FindMoveButtonsUnderHudRoot(battleView, PlayerHudRootIndex);
+            if (playerMoveButtons != null)
+            {
+                processRoot(playerMoveButtons);
+                processedCount++;
+            }
+
+            Transform enemyMoveButtons = FindMoveButtonsUnderHudRoot(battleView, EnemyHudRootIndex);
+            if (enemyMoveButtons != null)
+            {
+                processRoot(enemyMoveButtons);
+                processedCount++;
+            }
+        }
+
+        WireBattleMoveButtonsReferencesInScene(scene);
+        return processedCount;
     }
 
     private static void EnsurePrefabDirectory()

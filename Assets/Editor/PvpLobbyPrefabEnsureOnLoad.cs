@@ -3,7 +3,7 @@ using System.IO;
 using UnityEditor;
 
 /// <summary>
-/// PvpLobbyプレハブが無い場合にEditor起動時へ自動生成する
+/// PvpLobbyプレハブ欠落時に警告を出す
 /// </summary>
 [InitializeOnLoad]
 public static class PvpLobbyPrefabEnsureOnLoad
@@ -13,10 +13,10 @@ public static class PvpLobbyPrefabEnsureOnLoad
 
     static PvpLobbyPrefabEnsureOnLoad()
     {
-        EditorApplication.delayCall += EnsurePrefabIfMissing;
+        EditorApplication.delayCall += WarnIfPrefabMissing;
     }
 
-    private static void EnsurePrefabIfMissing()
+    private static void WarnIfPrefabMissing()
     {
         if (EditorApplication.isPlayingOrWillChangePlaymode)
         {
@@ -28,13 +28,11 @@ public static class PvpLobbyPrefabEnsureOnLoad
             return;
         }
 
-        if (!File.Exists("Assets/Scenes/BattlePVP.unity"))
-        {
-            return;
-        }
-
-        UnityEngine.Debug.Log("[PvpLobby] PvpLobbyプレハブ未配置のため自動生成します");
-        PvpMvpSetupEditor.CreateLobbyPrefabOnly();
+        UnityEngine.Debug.LogWarning(
+            "[PvpLobby] PvpLobbyHostまたはBattlePvpNetworkHostプレハブが見つかりません"
+            + $" lobbyExists={File.Exists(LobbyPrefabPath)}"
+            + $" networkExists={File.Exists(NetworkHostPrefabPath)}"
+            + " Resources/Pvp配下のプレハブを確認してください");
     }
 }
 #endif

@@ -20,7 +20,6 @@ public static class TrainingAutoResultWindowPrefabUtility
     /// シーン上のTrainingAutoResultWindowをプレハブへ抽出しインスタンスとして接続する
     /// 既にプレハブインスタンスの場合はプレハブアセットを選択して知らせる
     /// </summary>
-    [MenuItem("Tools/ClayMonsters/Extract Training Auto Result Window Prefab")]
     public static void ExtractTrainingAutoResultWindowPrefab()
     {
         TrainingAutoResultView windowView = FindAutoResultWindowView();

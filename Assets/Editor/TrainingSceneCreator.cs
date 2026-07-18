@@ -32,7 +32,6 @@ public static class TrainingSceneCreator
 
     private static bool bootstrapNewSceneFile;
 
-    [MenuItem("Tools/ClayMonsters/Repair Training Scene (Wire + Save)")]
     public static void RepairTrainingSceneAndSave()
     {
         ConfigureTrainingSceneSilent(saveScene: true);
@@ -66,8 +65,7 @@ public static class TrainingSceneCreator
                 "Training Scene",
                 confirmMissing
                     ? "Trainingシーンの参照配線を更新しました\n"
-                        + "LoadSlotCanvas/ConfirmPanelが未生成です\n"
-                        + "Rebuild Training Scene UI を実行してください\n"
+                        + "ConfirmPanel参照が未設定ですHierarchyで確認してください\n"
                         + "シーンは未保存です。Ctrl+Sで保存してください"
                     : "Trainingシーンの参照配線を更新しました\n"
                         + "UIレイアウトは一切変更していません\n"
@@ -79,7 +77,6 @@ public static class TrainingSceneCreator
         }
     }
 
-    [MenuItem("Tools/ClayMonsters/Rebuild Training Scene UI")]
     public static void RebuildTrainingSceneUi()
     {
         if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
@@ -108,7 +105,6 @@ public static class TrainingSceneCreator
         ConfigureTrainingTrainedSave(SceneUpdateMode.RebuildLayout);
         ConfigureLifetimeScope();
         NormalizeTrainingSceneCanvasLayout(SceneUpdateMode.RebuildLayout);
-        SyncTrainingSaveSlotUiFromPrefab();
         ConfigureLoadSlotSelection(SceneUpdateMode.RebuildLayout, loadSlotPersistedRefs);
         ValidateLoadSlotConfirmUiWired();
         SceneUiEditorSavePolicy.MarkDirty(scene);
@@ -196,7 +192,6 @@ public static class TrainingSceneCreator
         MigrateTrainingNestedCanvasesToGroups();
         NormalizeTrainingSceneCanvasLayout(updateMode);
         EnsureBattleStartOverlayReferences();
-        SyncTrainingSaveSlotUiFromPrefab();
         ConfigureLoadSlotSelection(updateMode, CaptureLoadSlotPersistedRefs());
         ValidateLoadSlotConfirmUiWired();
     }
@@ -250,13 +245,25 @@ public static class TrainingSceneCreator
         {
             Debug.LogError(
                 "[TrainingSceneCreator] LoadSlotViewのConfirmPanelまたはLoadConfirmButtonが未配線です"
-                + " Rebuild Training Scene UI を実行するかHierarchyを確認してください",
+                + " Hierarchyを確認して手動で配線してください",
                 loadSlotView);
         }
     }
 
     private static void EnsureBattleStartOverlayReferences()
     {
+        if (System.IO.File.Exists(BattleStartOverlayPrefabUtility.PrefabPath))
+        {
+            BattleStartOverlayView overlayView =
+                Object.FindFirstObjectByType<BattleStartOverlayView>(FindObjectsInactive.Include);
+            if (overlayView != null)
+            {
+                BattleStartOverlayPrefabUtility.EnsurePrefabInstanceUnderHost(overlayView.transform);
+                BattleStartOverlayPrefabUtility.WireOverlayReferences(overlayView);
+                return;
+            }
+        }
+
         SceneUiPlacementMigrator.EnsureBattleStartOverlayReferencesInActiveScene();
     }
 
@@ -1448,13 +1455,13 @@ public static class TrainingSceneCreator
         switch (objectName)
         {
             case "StaminaTrack":
-                ClayEditUiVisualUtility.ApplyTrainingStaminaTrack(image);
+                ClayEditUiVisualUtility.ApplyTrainingStaminaTrackForEditorBake(image);
                 break;
             case "StaminaFill":
-                ClayEditUiVisualUtility.ApplyTrainingStaminaFill(image);
+                ClayEditUiVisualUtility.ApplyTrainingStaminaFillForEditorBake(image);
                 break;
             default:
-                TitleClayUiVisualUtility.ApplyPanel(image);
+                TitleClayUiVisualUtility.ApplyPanelForEditorBake(image);
                 break;
         }
     }
@@ -2378,7 +2385,7 @@ public static class TrainingSceneCreator
         rect.offsetMin = Vector2.zero;
         rect.offsetMax = Vector2.zero;
         Image image = imageObject.GetComponent<Image>();
-        TitleClayUiVisualUtility.ApplyBlocker(image);
+        TitleClayUiVisualUtility.ApplyBlockerForEditorBake(image);
         return image;
     }
 
@@ -2598,7 +2605,7 @@ public static class TrainingSceneCreator
         {
             panelImage = panelObject.AddComponent<Image>();
             panelImage.raycastTarget = false;
-            TitleClayUiVisualUtility.ApplyPanel(panelImage);
+            TitleClayUiVisualUtility.ApplyPanelForEditorBake(panelImage);
         }
 
         if (!panelObject.activeSelf)
@@ -2644,7 +2651,7 @@ public static class TrainingSceneCreator
 
         Image panelImage = panelObject.GetComponent<Image>();
         panelImage.raycastTarget = false;
-        TitleClayUiVisualUtility.ApplyPanel(panelImage);
+        TitleClayUiVisualUtility.ApplyPanelForEditorBake(panelImage);
         EnsurePanelGroup(panelImage);
 
         TMP_Text learnedHeaderText = CreateResumeLabel(
@@ -3471,12 +3478,18 @@ public static class TrainingSceneCreator
 
     private static void WireTrainingSaveSlotUiReferences()
     {
-        ModelSaveSlotUiPrefabUtility.SyncOpenSceneSaveSlotUiFromPrefabs();
+        ModelSaveSlotScrollListView[] scrollLists =
+            Object.FindObjectsByType<ModelSaveSlotScrollListView>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        for (int i = 0; i < scrollLists.Length; i++)
+        {
+            ModelSaveSlotUiPrefabUtility.WireScrollListReferencesOnly(scrollLists[i]);
+        }
     }
 
     private static void SyncTrainingSaveSlotUiFromPrefab()
     {
-        ModelSaveSlotUiPrefabUtility.SyncOpenSceneSaveSlotUiFromPrefabs();
+        // セーブスロットUIのプレハブ再配置は禁止する
+        WireTrainingSaveSlotUiReferences();
     }
 
     private static void WireLifetimeScopeReferences()
@@ -4210,7 +4223,7 @@ public static class TrainingSceneCreator
 
         Image frameImage = frameObject.GetComponent<Image>();
         frameImage.raycastTarget = false;
-        TitleClayUiVisualUtility.ApplyPanel(frameImage);
+        TitleClayUiVisualUtility.ApplyPanelForEditorBake(frameImage);
         return frameImage;
     }
 

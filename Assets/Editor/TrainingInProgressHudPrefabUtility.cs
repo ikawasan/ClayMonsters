@@ -32,7 +32,6 @@ public static class TrainingInProgressHudPrefabUtility
     /// TrainingHudViewのSerializeField参照だけ配線する
     /// RectTransformとHierarchyは変更しない
     /// </summary>
-    [MenuItem("Tools/ClayMonsters/Fix Training In Progress HUD Panel Texts")]
     public static void FixTrainingInProgressHudPanelTexts()
     {
         TrainingHudView hudView = FindTrainingHudView();
@@ -51,7 +50,6 @@ public static class TrainingInProgressHudPrefabUtility
     /// <summary>
     /// シーン上の育成中HUDコンテンツをプレハブへ抽出しインスタンスとして接続する
     /// </summary>
-    [MenuItem("Tools/ClayMonsters/Extract Training In Progress HUD Prefab")]
     public static void ExtractTrainingInProgressHudPrefab()
     {
         TrainingHudView hudView = FindTrainingHudView();
@@ -153,7 +151,6 @@ public static class TrainingInProgressHudPrefabUtility
     /// <summary>
     /// Canvas全体プレハブ化の旧構成をシーンCanvas+コンテンツ子プレハブへ移行する
     /// </summary>
-    [MenuItem("Tools/ClayMonsters/Migrate Training Hud Canvas Split")]
     public static void MigrateTrainingHudCanvasSplitMenu()
     {
         TrainingHudView hudView = FindTrainingHudView();
@@ -179,7 +176,7 @@ public static class TrainingInProgressHudPrefabUtility
             ShowDialog(
                 "移行対象の旧構成は見つかりませんでした\n"
                     + "TrainingHudCanvas配下にTrainingInProgressHudがある場合は\n"
-                    + "Extract Training In Progress HUD Prefab を実行してください");
+                    + "Hierarchyで構成を確認してください");
             return;
         }
 
@@ -187,9 +184,7 @@ public static class TrainingInProgressHudPrefabUtility
         ShowDialog(
             "TrainingHudCanvasをシーン配置へ移行しました\n"
                 + "育成中UIはTrainingInProgressHud配下に集約しました\n\n"
-                + "続けて以下を実行してください\n"
-                + "1. Wire Training Scene References\n"
-                + "2. Extract Training In Progress HUD Prefab");
+                + "続けてHierarchyで参照とプレハブ構成を確認してください");
     }
 
     /// <summary>

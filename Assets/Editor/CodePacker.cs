@@ -9,7 +9,6 @@ public class CodePacker : EditorWindow
     private string googleDrivePath = "D:\\SyncDriveScript\\ClayMonsters/";
     private string targetFolder = "Assets/";
 
-    [MenuItem("Tools/Code Packer to Drive")]
     public static void ShowWindow()
     {
         GetWindow<CodePacker>("Code Packer");

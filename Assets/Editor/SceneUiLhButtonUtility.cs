@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System;
 using System.Reflection;
+using TMPro;
 using UnityEngine;
 
 /// <summary>
@@ -64,6 +65,15 @@ internal static class SceneUiLhButtonUtility
     public static void ApplyMenuButton(Component button) =>
         InvokeVisualUtility("ApplyMenuButton", button);
 
+    public static void ApplyMenuButtonForEditorBake(
+        Component button,
+        TextAlignmentOptions labelAlignment = TextAlignmentOptions.Center) =>
+        InvokeVisualUtility(
+            "ApplyMenuButtonForEditorBake",
+            button,
+            new object[] { button, labelAlignment },
+            new[] { LhButtonType, typeof(TextAlignmentOptions) });
+
     private static Type ResolveLhButtonType()
     {
         foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
@@ -86,6 +96,20 @@ internal static class SceneUiLhButtonUtility
             return;
         }
 
+        InvokeVisualUtility(methodName, button, new object[] { button }, new[] { LhButtonType });
+    }
+
+    private static void InvokeVisualUtility(
+        string methodName,
+        Component button,
+        object[] args,
+        Type[] parameterTypes)
+    {
+        if (button == null || LhButtonType == null)
+        {
+            return;
+        }
+
         Type utilityType = ResolveVisualUtilityType();
         if (utilityType == null)
         {
@@ -96,9 +120,9 @@ internal static class SceneUiLhButtonUtility
             methodName,
             BindingFlags.Static | BindingFlags.Public,
             binder: null,
-            types: new[] { LhButtonType },
+            types: parameterTypes,
             modifiers: null);
-        method?.Invoke(null, new object[] { button });
+        method?.Invoke(null, args);
     }
 
     private static Type ResolveVisualUtilityType()

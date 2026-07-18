@@ -3,19 +3,14 @@ using ClayEditor.Rigging;
 using Scene.BattleNpcScene;
 using Scene.BattleNpcScene.View;
 using Scene.BattlePvpArena;
-using Scene.BattlePVPScene.Network;
-using Scene.BattlePVPScene.View;
 using Scene.Core;
 using Scene.PvpLobby;
 using System.IO;
-using TMPro;
 using UI.Battle.View;
 using UI.ClayEditor.View;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 using UnityScene = UnityEngine.SceneManagement.Scene;
 
 /// <summary>
@@ -25,10 +20,8 @@ public static class PvpMvpSetupEditor
 {
     private const string BattleNpcScenePath = "Assets/Scenes/BattleNpc.unity";
     private const string ArenaScenePath = "Assets/Scenes/BattlePvpArena.unity";
-    private const string BattlePvpScenePath = "Assets/Scenes/BattlePVP.unity";
     private const string LobbyPrefabPath = "Assets/Resources/Pvp/PvpLobbyHost.prefab";
     private const string NetworkHostPrefabPath = "Assets/Resources/Pvp/BattlePvpNetworkHost.prefab";
-    private const string PlayerPrefabPath = "Assets/Resources/BattlePvp/BattlePvpPlayerRelay.prefab";
 
     private const string BattleNpcSceneTypeName = "Scene.BattleNpcScene.BattleNpcScene, Scene";
     private const string BattleNpcLifetimeScopeTypeName = "Scene.BattleNpcScene.BattleNpcLifetimeScope, Scene";
@@ -62,7 +55,6 @@ public static class PvpMvpSetupEditor
 
     private static void RunSetup(bool showDialog)
     {
-        BattlePvpSceneCreator.CreateOrUpdateScene();
         CreateArenaScene();
         RunLobbyPrefabSetup(showDialog: false);
         UpdateBuildSettings();
@@ -92,25 +84,10 @@ public static class PvpMvpSetupEditor
             EditorUtility.DisplayDialog(
                 "PvpLobby Prefab",
                 lobbyExists && networkExists
-                    ? "PvpLobbyHost.prefab と BattlePvpNetworkHost.prefab を生成しました"
-                    : "PvpLobbyプレハブの生成に失敗しました\nConsoleを確認してください",
+                    ? "既存のPvpLobbyHost.prefabとBattlePvpNetworkHost.prefabを確認し割り当てました"
+                    : "PvpLobbyプレハブが見つかりません\nResources/Pvp配下を確認してください",
                 "OK");
         }
-    }
-
-    private static void CreateNetworkHostPrefab(GameObject networkObject)
-    {
-        string directory = Path.GetDirectoryName(NetworkHostPrefabPath);
-        if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-        {
-            Directory.CreateDirectory(directory);
-        }
-
-        GameObject networkCopy = Object.Instantiate(networkObject);
-        networkCopy.name = "BattlePvpNetworkManager";
-        PrefabUtility.SaveAsPrefabAsset(networkCopy, NetworkHostPrefabPath);
-        Object.DestroyImmediate(networkCopy);
-        Debug.Log($"[PvpMvpSetup] BattlePvpNetworkHost prefab saved path={NetworkHostPrefabPath}");
     }
 
     private static void CreateArenaScene()
@@ -125,7 +102,7 @@ public static class PvpMvpSetupEditor
         AssetDatabase.ImportAsset(ArenaScenePath);
 
         UnityScene scene = EditorSceneManager.OpenScene(ArenaScenePath, OpenSceneMode.Single);
-        GameObject root = GameObject.Find("BattleNpcScene") ?? GameObject.Find("BattlePVPScene");
+        GameObject root = GameObject.Find("BattleNpcScene") ?? GameObject.Find("BattlePvpArenaScene");
         if (root == null)
         {
             Debug.LogError("[PvpMvpSetup] arena scene root not found");
@@ -226,65 +203,21 @@ public static class PvpMvpSetupEditor
 
     private static void CreateLobbyPrefab()
     {
-        string directory = Path.GetDirectoryName(LobbyPrefabPath);
-        if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-        {
-            Directory.CreateDirectory(directory);
-        }
-
-        UnityScene referenceScene = EditorSceneManager.OpenScene(BattlePvpScenePath, OpenSceneMode.Additive);
-        Canvas matchmakingCanvas = FindCanvasInScene(referenceScene, "MatchmakingCanvas");
-        GameObject networkObject = FindRootInScene(referenceScene, "BattlePvpNetworkManager");
-        if (matchmakingCanvas == null || networkObject == null)
+        if (!File.Exists(LobbyPrefabPath) || !File.Exists(NetworkHostPrefabPath))
         {
             Debug.LogError(
-                "[PvpMvpSetup] BattlePVPシーンからロビーUIまたはNetworkManagerが見つかりません"
-                + $" canvas={(matchmakingCanvas != null)}"
-                + $" network={(networkObject != null)}");
-            EditorSceneManager.CloseScene(referenceScene, true);
+                "[PvpMvpSetup] PvpLobbyHostまたはBattlePvpNetworkHostプレハブが見つかりません"
+                + $" lobbyExists={File.Exists(LobbyPrefabPath)}"
+                + $" networkExists={File.Exists(NetworkHostPrefabPath)}"
+                + " Resources/Pvp配下のプレハブを復元してください");
             return;
         }
 
-        CreateNetworkHostPrefab(networkObject);
-
-        var host = new GameObject("PvpLobbyHost");
-        host.AddComponent<PvpLobby>();
-
-        GameObject canvasCopy = Object.Instantiate(matchmakingCanvas.gameObject, host.transform);
-        canvasCopy.name = "MatchmakingCanvas";
-        RectTransform canvasRect = canvasCopy.GetComponent<RectTransform>();
-        if (canvasRect != null)
-        {
-            canvasRect.anchorMin = Vector2.zero;
-            canvasRect.anchorMax = Vector2.one;
-            canvasRect.offsetMin = Vector2.zero;
-            canvasRect.offsetMax = Vector2.zero;
-            canvasRect.localScale = Vector3.one;
-        }
-
-        GameObject diObject = new GameObject("PvpLobbyDi");
-        diObject.transform.SetParent(host.transform, false);
-        PvpLobbyLifetimeScope scope = diObject.AddComponent<PvpLobbyLifetimeScope>();
-
-        SerializedObject serializedScope = new SerializedObject(scope);
-        serializedScope.FindProperty("pvpLobby").objectReferenceValue = host.GetComponent<PvpLobby>();
-        serializedScope.FindProperty("lobbyView").objectReferenceValue =
-            canvasCopy.GetComponentInChildren<BattlePVPView>(true);
-        serializedScope.FindProperty("networkManager").objectReferenceValue = null;
-        serializedScope.FindProperty("sessionSpawner").objectReferenceValue = null;
-        serializedScope.ApplyModifiedPropertiesWithoutUndo();
-
-        SerializedObject serializedLobby = new SerializedObject(host.GetComponent<PvpLobby>());
-        serializedLobby.FindProperty("uiRoot").objectReferenceValue = canvasCopy;
-        serializedLobby.ApplyModifiedPropertiesWithoutUndo();
-
-        FixTmpMaterials(host);
-        host.SetActive(false);
-        PrefabUtility.SaveAsPrefabAsset(host, LobbyPrefabPath);
-        Object.DestroyImmediate(host);
-        EditorSceneManager.CloseScene(referenceScene, true);
         AssignLobbyPrefabToLifetimeScope();
-        Debug.Log($"[PvpMvpSetup] PvpLobbyHost prefab saved path={LobbyPrefabPath}");
+        Debug.Log(
+            "[PvpMvpSetup] 既存PvpLobbyプレハブを確認しLifetimeScopeへ割り当てました"
+            + $" lobby={LobbyPrefabPath}"
+            + $" network={NetworkHostPrefabPath}");
     }
 
     private static void AssignLobbyPrefabToLifetimeScope()
@@ -308,62 +241,6 @@ public static class PvpMvpSetupEditor
         serializedScope.ApplyModifiedPropertiesWithoutUndo();
         EditorUtility.SetDirty(scopePrefab);
         PrefabUtility.SavePrefabAsset(scopePrefab);
-    }
-
-    private static void FixTmpMaterials(GameObject root)
-    {
-        TMP_Text[] texts = root.GetComponentsInChildren<TMP_Text>(true);
-        for (int i = 0; i < texts.Length; i++)
-        {
-            TMP_Text text = texts[i];
-            if (text.font == null || text.fontSharedMaterial != null)
-            {
-                continue;
-            }
-
-            text.fontSharedMaterial = text.font.material;
-        }
-    }
-
-    private static Canvas FindCanvasInScene(UnityScene scene, string canvasName)
-    {
-        GameObject[] roots = scene.GetRootGameObjects();
-        for (int i = 0; i < roots.Length; i++)
-        {
-            Canvas[] canvases = roots[i].GetComponentsInChildren<Canvas>(true);
-            for (int j = 0; j < canvases.Length; j++)
-            {
-                if (canvases[j].name == canvasName)
-                {
-                    return canvases[j];
-                }
-            }
-        }
-
-        return null;
-    }
-
-    private static GameObject FindRootInScene(UnityScene scene, string objectName)
-    {
-        GameObject[] roots = scene.GetRootGameObjects();
-        for (int i = 0; i < roots.Length; i++)
-        {
-            if (roots[i].name == objectName)
-            {
-                return roots[i];
-            }
-
-            Transform[] transforms = roots[i].GetComponentsInChildren<Transform>(true);
-            for (int j = 0; j < transforms.Length; j++)
-            {
-                if (transforms[j].name == objectName)
-                {
-                    return transforms[j].gameObject;
-                }
-            }
-        }
-
-        return null;
     }
 
     private static void UpdateBuildSettings()

@@ -8,6 +8,7 @@ using Scene.ClayEditScene.View;
 using Scene.TitleScene;
 using Scene.TitleScene.View;
 using System.Collections.Generic;
+using System.IO;
 using TMPro;
 using UI.ClayEditor.View;
 using UI.Option.View;
@@ -28,7 +29,7 @@ public static class SceneUiPlacementMigrator
     private const string ClayEditScenePath = "Assets/Scenes/ClayEdit.unity";
     private const string BattleNpcScenePath = "Assets/Scenes/BattleNpc.unity";
     private const string OptionPrefabPath = "Assets/Scripts/StaticResources/ClayMonstersLifetimeScope.prefab";
-    private const string LogoSpritePath = "Assets/Resources/Image/Title/ClayMonsters_Logo_Clean.png";
+    private const string LogoSpritePath = "Assets/Resources/Image/Title/ClayMonsters_Logo_Title.png";
     private const string PanelSpritePath = "Assets/Resources/Image/Title/TitleOptionPanel.png";
     private const string ButtonNormalSpritePath = "Assets/Resources/Image/Title/TitleMenuButton_Normal.png";
     private const string ButtonHighlightedSpritePath = "Assets/Resources/Image/Title/TitleMenuButton_Highlighted.png";
@@ -54,7 +55,6 @@ public static class SceneUiPlacementMigrator
             || PrefabHasNullPanelImage(OptionPrefabPath);
     }
 
-    [MenuItem("Tools/ClayMonsters/Migrate Dynamic UI To Scenes")]
     public static void MigrateAll()
     {
         if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
@@ -80,7 +80,6 @@ public static class SceneUiPlacementMigrator
             "OK");
     }
 
-    [MenuItem("Tools/ClayMonsters/Migrate Title Scene UI")]
     public static void MigrateTitleScene()
     {
         UnityScene scene = EditorSceneManager.OpenScene(TitleScenePath, OpenSceneMode.Single);
@@ -129,7 +128,6 @@ public static class SceneUiPlacementMigrator
         AssetDatabase.SaveAssets();
     }
 
-    [MenuItem("Tools/ClayMonsters/Migrate Option Prefab UI")]
     public static void MigrateOptionPrefab()
     {
         GameObject prefabRoot = PrefabUtility.LoadPrefabContents(OptionPrefabPath);
@@ -182,7 +180,6 @@ public static class SceneUiPlacementMigrator
         PrefabUtility.UnloadPrefabContents(prefabRoot);
     }
 
-    [MenuItem("Tools/ClayMonsters/Migrate ClayEdit Scene UI")]
     public static void MigrateClayEditScene()
     {
         ModelSaveSlotUiPrefabUtility.EnsurePrefabAssetsExist();
@@ -222,7 +219,6 @@ public static class SceneUiPlacementMigrator
         AssetDatabase.SaveAssets();
     }
 
-    [MenuItem("Tools/ClayMonsters/Migrate BattleNpc Scene UI")]
     public static void MigrateBattleNpcScene()
     {
         UnityScene scene = EditorSceneManager.OpenScene(BattleNpcScenePath, OpenSceneMode.Single);
@@ -538,17 +534,38 @@ public static class SceneUiPlacementMigrator
         image.type = Image.Type.Simple;
         image.preserveAspect = true;
         image.raycastTarget = false;
-        image.color = Color.white;
+        image.color = new Color(1f, 0.965f, 0.92f, 1f);
+
+        Shadow shadow = logoObject.GetComponent<Shadow>();
+        if (shadow == null)
+        {
+            shadow = logoObject.AddComponent<Shadow>();
+        }
+
+        shadow.effectColor = new Color(0.16f, 0.1f, 0.06f, 0.52f);
+        shadow.effectDistance = new Vector2(10f, -14f);
+        shadow.useGraphicAlpha = true;
+
+        Outline outline = logoObject.GetComponent<Outline>();
+        if (outline == null)
+        {
+            outline = logoObject.AddComponent<Outline>();
+        }
+
+        outline.effectColor = new Color(0.2f, 0.13f, 0.08f, 0.28f);
+        outline.effectDistance = new Vector2(1.5f, -1.5f);
+        outline.useGraphicAlpha = true;
 
         RectTransform rect = image.rectTransform;
         rect.anchorMin = new Vector2(0f, 1f);
         rect.anchorMax = new Vector2(0f, 1f);
         rect.pivot = new Vector2(0f, 1f);
-        rect.anchoredPosition = new Vector2(48f, -40f);
+        rect.anchoredPosition = new Vector2(40f, -28f);
         float aspect = logoSprite != null && logoSprite.rect.height > 0f
             ? logoSprite.rect.width / logoSprite.rect.height
-            : 3.5f;
-        rect.sizeDelta = new Vector2(600f, 600f / aspect);
+            : 3.28f;
+        float width = 760f;
+        rect.sizeDelta = new Vector2(width, width / aspect);
         return image;
     }
 
@@ -1068,8 +1085,11 @@ public static class SceneUiPlacementMigrator
             rowRefs = rowTransform.gameObject.AddComponent<ModelSaveSlotRowElementRefs>();
         }
 
-        rowRefs.CaptureFromHierarchy(rowTransform);
-        rowRefs.EnsureClayEditPreviewLayout();
+        rowRefs.EnsureConfirmPrefabLayout();
+        if (!rowRefs.HasWiredReferences())
+        {
+            rowRefs.CaptureFromHierarchy(rowTransform);
+        }
 
         SerializedObject serializedConfirm = new SerializedObject(confirmView);
         serializedConfirm.FindProperty("contentRoot").objectReferenceValue = contentRoot as RectTransform;
@@ -1201,7 +1221,7 @@ public static class SceneUiPlacementMigrator
             panelRect.anchorMax = new Vector2(0.5f, 0.5f);
             panelRect.pivot = new Vector2(0.5f, 0.5f);
             panelRect.sizeDelta = new Vector2(760f, 280f);
-            TitleClayUiVisualUtility.ApplyPanel(panelObject.GetComponent<Image>());
+            TitleClayUiVisualUtility.ApplyPanelForEditorBake(panelObject.GetComponent<Image>());
         }
         else
         {
@@ -1266,7 +1286,7 @@ public static class SceneUiPlacementMigrator
         Image panelImage = panelRect.GetComponent<Image>();
         if (panelImage != null)
         {
-            TitleClayUiVisualUtility.ApplyPanel(panelImage);
+            TitleClayUiVisualUtility.ApplyPanelForEditorBake(panelImage);
         }
 
         if (messageText != null)
@@ -1744,7 +1764,7 @@ public static class SceneUiPlacementMigrator
             blockerRect.anchorMax = Vector2.one;
             blockerRect.offsetMin = Vector2.zero;
             blockerRect.offsetMax = Vector2.zero;
-            TitleClayUiVisualUtility.ApplyBlocker(blockerObject.GetComponent<Image>());
+            TitleClayUiVisualUtility.ApplyBlockerForEditorBake(blockerObject.GetComponent<Image>());
             blockerRoot = blockerObject.transform;
         }
 
@@ -1759,7 +1779,7 @@ public static class SceneUiPlacementMigrator
             dialogRect.pivot = new Vector2(0.5f, 0.5f);
             dialogRect.sizeDelta = new Vector2(560f, 380f);
             dialogRect.anchoredPosition = Vector2.zero;
-            TitleClayUiVisualUtility.ApplyPanel(dialogObject.GetComponent<Image>());
+            TitleClayUiVisualUtility.ApplyPanelForEditorBake(dialogObject.GetComponent<Image>());
             panelRoot = dialogObject.transform;
         }
 
@@ -2067,7 +2087,6 @@ public static class SceneUiPlacementMigrator
         return labelText;
     }
 
-    [MenuItem("Tools/ClayMonsters/Migrate BattlePVP Auxiliary UI")]
     public static void MigrateBattlePvpAuxiliaryUi()
     {
         if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
@@ -2075,19 +2094,34 @@ public static class SceneUiPlacementMigrator
             return;
         }
 
-        MigrateBattlePvpAuxiliaryUiInScene("Assets/Scenes/BattlePVP.unity", "BattlePVPScene", "Scene.BattlePVPScene.BattlePVPLifetimeScope, Scene");
         MigrateBattlePvpAuxiliaryUiInScene("Assets/Scenes/BattlePvpArena.unity", "BattlePvpArenaScene", "Scene.BattlePvpArena.BattlePvpArenaLifetimeScope, Scene");
     }
 
     /// <summary>
     /// アクティブシーンのBattleStartOverlayViewへUI参照を配線する
-    /// 既存オブジェクトのRectTransformは変更しない
+    /// プレハブがある場合はインスタンスを優先し既存オブジェクトのRectTransformは変更しない
     /// </summary>
     public static void EnsureBattleStartOverlayReferencesInActiveScene()
+    {
+        EnsureBattleStartOverlayReferencesInActiveScene(preferPrefabInstance: true);
+    }
+
+    /// <summary>
+    /// アクティブシーンのBattleStartOverlayを整備する
+    /// </summary>
+    /// <param name="preferPrefabInstance">既存プレハブを優先して配置するか</param>
+    public static void EnsureBattleStartOverlayReferencesInActiveScene(bool preferPrefabInstance)
     {
         BattleStartOverlayView overlayView = Object.FindFirstObjectByType<BattleStartOverlayView>(FindObjectsInactive.Include);
         if (overlayView == null)
         {
+            return;
+        }
+
+        if (preferPrefabInstance && File.Exists(BattleStartOverlayPrefabUtility.PrefabPath))
+        {
+            BattleStartOverlayPrefabUtility.EnsurePrefabInstanceUnderHost(overlayView.transform);
+            BattleStartOverlayPrefabUtility.WireOverlayReferences(overlayView);
             return;
         }
 
@@ -2181,7 +2215,6 @@ public static class SceneUiPlacementMigrator
         string[] scenePaths =
         {
             BattleNpcScenePath,
-            "Assets/Scenes/BattlePVP.unity",
             "Assets/Scenes/BattlePvpArena.unity",
             "Assets/Scenes/Training.unity",
         };

@@ -7,7 +7,6 @@ using UnityEditor;
 /// </summary>
 public static class SceneUiPlacementAutoMigrator
 {
-    [MenuItem("Tools/ClayMonsters/Migrate Dynamic UI If Needed")]
     public static void MigrateIfNeeded()
     {
         if (!SceneUiPlacementMigrator.NeedsMigration())

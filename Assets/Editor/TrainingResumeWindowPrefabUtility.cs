@@ -99,7 +99,6 @@ public static class TrainingResumeWindowPrefabUtility
     /// シーン上のTrainingResumeWindowをプレハブへ抽出しインスタンスとして接続する
     /// 既にプレハブインスタンスの場合はプレハブアセットを選択して知らせる
     /// </summary>
-    [MenuItem("Tools/ClayMonsters/Extract Training Resume Window Prefab")]
     public static void ExtractTrainingResumeWindowPrefab()
     {
         TrainingResumeWindowView windowView = FindResumeWindowView();
@@ -174,7 +173,6 @@ public static class TrainingResumeWindowPrefabUtility
     /// シーン上のインラインTrainingResumeWindowをプレハブインスタンスへ差し替える
     /// プレハブを編集済みだがPlayに反映されない場合に使う
     /// </summary>
-    [MenuItem("Tools/ClayMonsters/Apply Training Resume Window Prefab To Scene")]
     public static void ApplyTrainingResumeWindowPrefabToScene()
     {
         TrainingResumeWindowView windowView = FindResumeWindowView();

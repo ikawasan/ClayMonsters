@@ -526,10 +526,10 @@ public class FieldModelMaterialConverter : EditorWindow
 
     private static void ApplyDefaultToonSettings(Material material)
     {
-        material.SetColor("_ShadowColor", new Color(0.75f, 0.6f, 0.5f, 1f));
+        material.SetColor("_ShadowColor", new Color(0.72f, 0.56f, 0.46f, 1f));
         material.SetColor("_RimColor", new Color(1f, 0.85f, 0.5f, 1f));
-        material.SetFloat("_ToonThreshold", 0f);
-        material.SetFloat("_ToonSmoothness", 0.1f);
+        material.SetFloat("_ToonThreshold", 0.5f);
+        material.SetFloat("_ToonSmoothness", 0.18f);
         material.SetFloat("_RimPower", 3f);
     }
 
