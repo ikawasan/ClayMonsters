@@ -8,6 +8,7 @@ namespace Battle.Presenter
     /// <summary>
     /// 戦闘中のカメラを両モデル間へ注視させつつ扇状オービットで構図を更新する
     /// 攻撃時は攻撃側の正面へ寄せて技モーションを見せる
+    /// 命中時は注視点を揺らして画面揺れを表現する
     /// </summary>
     public sealed class BattleFieldCameraPresenter : IDisposable
     {
@@ -29,6 +30,14 @@ namespace Battle.Presenter
         private Transform attackAttackerModel;
         private Transform attackTargetModel;
         private float attackCameraRemaining;
+        private float idleOrbitPhase;
+        private float smoothedVerticalAngle;
+
+        private float shakeRemaining;
+        private float shakeDuration;
+        private float shakeAmplitude;
+        private float shakeFrequency;
+        private Vector3 shakeSeed;
 
         /// <summary>
         /// 戦闘更新に追従してカメラを制御する
@@ -62,10 +71,11 @@ namespace Battle.Presenter
 
             smoothedFocus = ResolveFocusPoint();
             smoothedHorizontalAngle = this.profile.HorizontalAngle;
+            smoothedVerticalAngle = this.profile.VerticalAngle;
             smoothedOrbitDistance = ResolveTargetOrbitDistance();
 
             cameraView.SetCameraOperatable(false);
-            ApplyCamera(smoothedFocus, smoothedHorizontalAngle, smoothedOrbitDistance, profile.VerticalAngle);
+            ApplyCamera(smoothedFocus, smoothedHorizontalAngle, smoothedOrbitDistance, smoothedVerticalAngle);
 
             system.OnUpdated
                 .Subscribe(_ => Tick())
@@ -96,10 +106,17 @@ namespace Battle.Presenter
                 profile.AttackMinimumHoldSeconds,
                 result.Move.Recovery * profile.AttackHoldRecoveryMultiplier);
             BeginAttackCamera(result.Attacker, result.Target, holdDuration);
+
+            if (result.Hit)
+            {
+                BeginHitShake(result.PartLost || result.IsKnockout);
+            }
         }
 
         private void Tick()
         {
+            TickHitShake(Time.unscaledDeltaTime);
+
             if (attackCameraRemaining > 0f)
             {
                 attackCameraRemaining -= Time.deltaTime;
@@ -108,6 +125,54 @@ namespace Battle.Presenter
             }
 
             TickDefaultCamera();
+        }
+
+        private void BeginHitShake(bool intense)
+        {
+            if (intense)
+            {
+                shakeAmplitude = profile.PartBreakShakeAmplitude;
+                shakeDuration = Mathf.Max(0.01f, profile.PartBreakShakeDuration);
+                shakeFrequency = profile.PartBreakShakeFrequency;
+            }
+            else
+            {
+                shakeAmplitude = profile.HitShakeAmplitude;
+                shakeDuration = Mathf.Max(0.01f, profile.HitShakeDuration);
+                shakeFrequency = profile.HitShakeFrequency;
+            }
+
+            shakeRemaining = Mathf.Max(shakeRemaining, shakeDuration);
+            shakeSeed = new Vector3(
+                UnityEngine.Random.value * 64f,
+                UnityEngine.Random.value * 64f,
+                UnityEngine.Random.value * 64f);
+        }
+
+        private void TickHitShake(float unscaledDeltaTime)
+        {
+            if (shakeRemaining <= 0f)
+            {
+                return;
+            }
+
+            shakeRemaining = Mathf.Max(0f, shakeRemaining - unscaledDeltaTime);
+        }
+
+        private Vector3 ResolveShakeOffset()
+        {
+            if (shakeRemaining <= 0f || shakeDuration <= 0f || shakeAmplitude <= 0f)
+            {
+                return Vector3.zero;
+            }
+
+            float falloff = shakeRemaining / shakeDuration;
+            falloff *= falloff;
+            float sampleTime = Time.unscaledTime * shakeFrequency;
+            float offsetX = (Mathf.PerlinNoise(shakeSeed.x, sampleTime) * 2f - 1f) * shakeAmplitude * falloff;
+            float offsetY = (Mathf.PerlinNoise(shakeSeed.y, sampleTime + 17f) * 2f - 1f) * shakeAmplitude * falloff;
+            float offsetZ = (Mathf.PerlinNoise(shakeSeed.z, sampleTime + 31f) * 2f - 1f) * shakeAmplitude * 0.55f * falloff;
+            return new Vector3(offsetX, offsetY, offsetZ);
         }
 
         private void BeginAttackCamera(BattleUnit attacker, BattleUnit target, float holdDuration)
@@ -153,16 +218,18 @@ namespace Battle.Presenter
             Vector3 targetFocus = ResolveAttackFocusPoint();
             float targetDistance = profile.AttackOrbitDistance;
             float targetHorizontal = ResolveAttackHorizontalAngle();
+            float targetVertical = profile.AttackVerticalAngle;
 
             smoothedFocus = Vector3.Lerp(smoothedFocus, targetFocus, focusBlend);
             smoothedOrbitDistance = Mathf.Lerp(smoothedOrbitDistance, targetDistance, distanceBlend);
             smoothedHorizontalAngle = Mathf.LerpAngle(smoothedHorizontalAngle, targetHorizontal, angleBlend);
+            smoothedVerticalAngle = Mathf.LerpAngle(smoothedVerticalAngle, targetVertical, angleBlend);
 
             ApplyCamera(
                 smoothedFocus,
                 smoothedHorizontalAngle,
                 smoothedOrbitDistance,
-                profile.AttackVerticalAngle);
+                smoothedVerticalAngle);
         }
 
         private void TickDefaultCamera()
@@ -174,20 +241,43 @@ namespace Battle.Presenter
             float distanceBlend = 1f - Mathf.Exp(-profile.DistanceSmoothing * Time.deltaTime);
             float angleBlend = 1f - Mathf.Exp(-profile.HorizontalAngleSmoothing * Time.deltaTime);
 
+            AdvanceIdleOrbitPhase(Time.deltaTime);
             Vector3 targetFocus = ResolveFocusPoint();
             float targetDistance = ResolveTargetOrbitDistance();
-            float targetHorizontal = ResolveTargetHorizontalAngle();
+            float targetHorizontal = ResolveTargetHorizontalAngle() + ResolveIdleHorizontalSway();
+            float targetVertical = profile.VerticalAngle + ResolveIdleVerticalSway();
 
             smoothedFocus = Vector3.Lerp(smoothedFocus, targetFocus, focusBlend);
             smoothedOrbitDistance = Mathf.Lerp(smoothedOrbitDistance, targetDistance, distanceBlend);
             smoothedHorizontalAngle = Mathf.LerpAngle(smoothedHorizontalAngle, targetHorizontal, angleBlend);
+            smoothedVerticalAngle = Mathf.LerpAngle(smoothedVerticalAngle, targetVertical, angleBlend);
 
-            ApplyCamera(smoothedFocus, smoothedHorizontalAngle, smoothedOrbitDistance, profile.VerticalAngle);
+            ApplyCamera(smoothedFocus, smoothedHorizontalAngle, smoothedOrbitDistance, smoothedVerticalAngle);
+        }
+
+        private void AdvanceIdleOrbitPhase(float deltaTime)
+        {
+            float period = Mathf.Max(0.1f, profile.IdleOrbitPeriodSeconds);
+            idleOrbitPhase += deltaTime * (Mathf.PI * 2f / period);
+            if (idleOrbitPhase > Mathf.PI * 2f)
+            {
+                idleOrbitPhase -= Mathf.PI * 2f;
+            }
+        }
+
+        private float ResolveIdleHorizontalSway()
+        {
+            return Mathf.Sin(idleOrbitPhase) * profile.IdleOrbitAmplitudeDegrees;
+        }
+
+        private float ResolveIdleVerticalSway()
+        {
+            return Mathf.Sin(idleOrbitPhase * 0.5f) * profile.IdleVerticalAmplitudeDegrees;
         }
 
         private void ApplyCamera(Vector3 focusPoint, float horizontalAngle, float orbitDistance, float verticalAngle)
         {
-            cameraView.SetFocusPosition(focusPoint);
+            cameraView.SetFocusPosition(focusPoint + ResolveShakeOffset());
             cameraView.SetOrbitView(horizontalAngle, verticalAngle, orbitDistance);
         }
 
@@ -209,11 +299,12 @@ namespace Battle.Presenter
                 return smoothedHorizontalAngle;
             }
 
+            // 攻撃側正面(向きの反対側)を基準にわずかな横偏りで三四分構図にする
             float fightYaw = Mathf.Atan2(attackerForward.x, attackerForward.z) * Mathf.Rad2Deg;
-            float behindYaw = fightYaw + 180f;
-            float bias = profile.AttackSideBiasDegrees;
-            float candidatePositive = behindYaw + bias;
-            float candidateNegative = behindYaw - bias;
+            float frontYaw = fightYaw + 180f;
+            float bias = Mathf.Max(0f, profile.AttackSideBiasDegrees);
+            float candidatePositive = frontYaw + bias;
+            float candidateNegative = frontYaw - bias;
             float referenceAngle = ResolveTargetHorizontalAngle();
 
             return Mathf.Abs(Mathf.DeltaAngle(referenceAngle, candidatePositive))

@@ -36,13 +36,21 @@ namespace Battle
         [Tooltip("戦闘中心からの最大ずれ時に加える水平角(度)")]
         [SerializeField] private float maxFanAngleDegrees = 14f;
 
+        [Header("待機オービット")]
+        [Tooltip("移動していなくてもカメラが回り続ける水平振幅(度)")]
+        [SerializeField] private float idleOrbitAmplitudeDegrees = 6f;
+        [Tooltip("待機オービット1周期の秒数")]
+        [SerializeField] private float idleOrbitPeriodSeconds = 8f;
+        [Tooltip("待機中の垂直角の微小振幅(度)")]
+        [SerializeField] private float idleVerticalAmplitudeDegrees = 1.2f;
+
         [Header("攻撃演出")]
         [SerializeField] private float attackOrbitDistance = 3.8f;
         [SerializeField] private float attackVerticalAngle = 8f;
         [SerializeField] private float attackFocusHeightOffset = 0.85f;
         [SerializeField] [Range(0f, 1f)] private float attackFocusTowardTargetRatio = 0.32f;
-        [Tooltip("被攻撃側背後から横構図へ回り込む水平角(度)")]
-        [SerializeField] private float attackSideBiasDegrees = 76f;
+        [Tooltip("攻撃側正面からの横偏り角度(度・小さいほど正面寄り)")]
+        [SerializeField] private float attackSideBiasDegrees = 28f;
         [SerializeField] private float attackFocusSmoothing = 20f;
         [SerializeField] private float attackDistanceSmoothing = 18f;
         [SerializeField] private float attackAngleSmoothing = 16f;
@@ -50,6 +58,20 @@ namespace Battle
         [SerializeField] private float attackMinimumHoldSeconds = 0.35f;
         [SerializeField] private float enemyTelegraphDurationEstimate = 0.65f;
         [SerializeField] private float enemyTelegraphHoldPadding = 0.15f;
+
+        [Header("画面揺れ")]
+        [Tooltip("通常ヒット時の揺れ幅(ワールド単位)")]
+        [SerializeField] private float hitShakeAmplitude = 0.12f;
+        [Tooltip("通常ヒット時の揺れ秒数(実時間)")]
+        [SerializeField] private float hitShakeDuration = 0.18f;
+        [Tooltip("通常ヒット時の揺れ周波数")]
+        [SerializeField] private float hitShakeFrequency = 28f;
+        [Tooltip("部位破壊時の揺れ幅(ワールド単位)")]
+        [SerializeField] private float partBreakShakeAmplitude = 0.32f;
+        [Tooltip("部位破壊時の揺れ秒数(実時間)")]
+        [SerializeField] private float partBreakShakeDuration = 0.4f;
+        [Tooltip("部位破壊時の揺れ周波数")]
+        [SerializeField] private float partBreakShakeFrequency = 38f;
 
         /// <summary>
         /// 水平回転角
@@ -117,6 +139,21 @@ namespace Battle
         public float MaxFanAngleDegrees => maxFanAngleDegrees;
 
         /// <summary>
+        /// 待機オービットの水平振幅
+        /// </summary>
+        public float IdleOrbitAmplitudeDegrees => idleOrbitAmplitudeDegrees;
+
+        /// <summary>
+        /// 待機オービットの周期秒数
+        /// </summary>
+        public float IdleOrbitPeriodSeconds => idleOrbitPeriodSeconds;
+
+        /// <summary>
+        /// 待機オービットの垂直振幅
+        /// </summary>
+        public float IdleVerticalAmplitudeDegrees => idleVerticalAmplitudeDegrees;
+
+        /// <summary>
         /// 攻撃演出時のオービット距離
         /// </summary>
         public float AttackOrbitDistance => attackOrbitDistance;
@@ -175,6 +212,36 @@ namespace Battle
         /// 敵予告演出の余白秒数
         /// </summary>
         public float EnemyTelegraphHoldPadding => enemyTelegraphHoldPadding;
+
+        /// <summary>
+        /// 通常ヒット時の画面揺れ幅
+        /// </summary>
+        public float HitShakeAmplitude => hitShakeAmplitude;
+
+        /// <summary>
+        /// 通常ヒット時の画面揺れ秒数
+        /// </summary>
+        public float HitShakeDuration => hitShakeDuration;
+
+        /// <summary>
+        /// 通常ヒット時の画面揺れ周波数
+        /// </summary>
+        public float HitShakeFrequency => hitShakeFrequency;
+
+        /// <summary>
+        /// 部位破壊時の画面揺れ幅
+        /// </summary>
+        public float PartBreakShakeAmplitude => partBreakShakeAmplitude;
+
+        /// <summary>
+        /// 部位破壊時の画面揺れ秒数
+        /// </summary>
+        public float PartBreakShakeDuration => partBreakShakeDuration;
+
+        /// <summary>
+        /// 部位破壊時の画面揺れ周波数
+        /// </summary>
+        public float PartBreakShakeFrequency => partBreakShakeFrequency;
 
         /// <summary>
         /// 既定のプロファイルを返す
