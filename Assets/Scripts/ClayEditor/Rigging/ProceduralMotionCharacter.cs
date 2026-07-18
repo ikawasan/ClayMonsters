@@ -874,6 +874,20 @@ namespace ClayEditor.Rigging
         }
 
         /// <summary>
+        /// 勝利演出など配置前に攻撃状態を捨てIdle基準ポーズへ戻す
+        /// </summary>
+        public void PreparePresentationIdle()
+        {
+            attackStateSaved = false;
+            chargeRootSaved = false;
+            isFinishingTimedMotion = false;
+            ClearBattlePositionConstraint();
+            ResetPose();
+            currentMotion = MotionType.Idle;
+            time = 0f;
+        }
+
+        /// <summary>
         /// すべてのボーンを基準ポーズへ戻す
         /// </summary>
         public void ResetPose()

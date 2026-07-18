@@ -95,6 +95,7 @@ namespace ClayEditor.Rigging
         private Quaternion gradualRestoreBaseLocalRotation;
         private float gradualRestoreProgress;
         private float repairWobblePhase;
+        private readonly HashSet<int> gradualRestoreBoneIndices = new HashSet<int>();
 
         /// <summary>現在のモデルから検出した部位(リム)の一覧</summary>
         public IReadOnlyList<LimbInfo> Limbs => limbs;
@@ -379,7 +380,9 @@ namespace ClayEditor.Rigging
                 ? gradualRestoreRootBone.localRotation
                 : Quaternion.identity;
             repairWobblePhase = Random.Range(0f, 100f);
+            CacheGradualRestoreBoneIndices(limbIndex);
             ApplyPartialBattleLimbShow(limbIndex, 0f);
+            SyncBattleMeshVertexGlow();
             return true;
         }
 
@@ -397,6 +400,7 @@ namespace ClayEditor.Rigging
 
             gradualRestoreProgress = progress;
             ApplyPartialBattleLimbShow(limbIndex, progress);
+            SyncBattleMeshVertexGlow();
         }
 
         /// <summary>
@@ -412,6 +416,7 @@ namespace ClayEditor.Rigging
             int limbIndex = gradualRestoreLimbIndex;
             ApplyPartialBattleLimbShow(limbIndex, 0f);
             ClearGradualRestoreState();
+            SyncBattleMeshVertexGlow();
         }
 
         private void Update()
@@ -430,6 +435,22 @@ namespace ClayEditor.Rigging
             gradualRestoreLimbIndex = -1;
             gradualRestoreRootBone = null;
             gradualRestoreProgress = 0f;
+            gradualRestoreBoneIndices.Clear();
+        }
+
+        private void CacheGradualRestoreBoneIndices(int limbIndex)
+        {
+            gradualRestoreBoneIndices.Clear();
+            if (limbIndex < 0 || limbIndex >= limbBoneIndices.Count)
+            {
+                return;
+            }
+
+            List<int> boneIndices = limbBoneIndices[limbIndex];
+            for (int i = 0; i < boneIndices.Count; i++)
+            {
+                gradualRestoreBoneIndices.Add(boneIndices[i]);
+            }
         }
 
         private void ResetGradualRestoreRootTransform()
@@ -617,17 +638,70 @@ namespace ClayEditor.Rigging
 
             var colors = new Color[battleMeshBaseColors.Length];
             float glowThreshold = Mathf.Min(removeWeightThreshold, battleGlowSuppressThreshold);
+            float restoreVisibility = ResolveGradualRestoreVisibility();
 
             for (int v = 0; v < colors.Length; v++)
             {
                 colors[v] = battleMeshBaseColors[v];
-                if (ComputeRemovedWeight(weights[v]) > glowThreshold)
+                float removedWeight = ComputeRemovedWeight(weights[v]);
+                if (removedWeight <= glowThreshold)
                 {
-                    colors[v].a = 0f;
+                    continue;
                 }
+
+                float restoringWeight = ComputeGradualRestoreWeight(weights[v]);
+                if (restoringWeight > glowThreshold && restoreVisibility > 0f)
+                {
+                    colors[v].a = battleMeshBaseColors[v].a * restoreVisibility;
+                    continue;
+                }
+
+                colors[v].a = 0f;
             }
 
             battleColorMesh.colors = colors;
+        }
+
+        private float ResolveGradualRestoreVisibility()
+        {
+            if (gradualRestoreLimbIndex < 0)
+            {
+                return 0f;
+            }
+
+            float t = Mathf.Clamp01(gradualRestoreProgress);
+            return 1f - Mathf.Pow(1f - t, 2.4f);
+        }
+
+        private float ComputeGradualRestoreWeight(BoneWeight weight)
+        {
+            if (gradualRestoreBoneIndices.Count == 0)
+            {
+                return 0f;
+            }
+
+            float restoringWeight = 0f;
+            if (gradualRestoreBoneIndices.Contains(weight.boneIndex0))
+            {
+                restoringWeight += weight.weight0;
+            }
+
+            if (gradualRestoreBoneIndices.Contains(weight.boneIndex1))
+            {
+                restoringWeight += weight.weight1;
+            }
+
+            if (gradualRestoreBoneIndices.Contains(weight.boneIndex2))
+            {
+                restoringWeight += weight.weight2;
+            }
+
+            if (gradualRestoreBoneIndices.Contains(weight.boneIndex3))
+            {
+                restoringWeight += weight.weight3;
+            }
+
+            return restoringWeight;
         }
 
         private float ComputeRemovedWeight(BoneWeight weight)
@@ -690,13 +764,7 @@ namespace ClayEditor.Rigging
 
         private void ApplyPartialBattleLimbShow(int limbIndex, float progress)
         {
-            if (limbIndex < 0 || limbIndex >= limbs.Count)
-            {
-                return;
-            }
-
-            Transform bone = limbs[limbIndex].RootBone;
-            if (bone == null || !battleHiddenBoneScales.TryGetValue(bone, out Vector3 targetScale))
+            if (limbIndex < 0 || limbIndex >= limbBoneIndices.Count)
             {
                 return;
             }
@@ -707,23 +775,53 @@ namespace ClayEditor.Rigging
             float time = Time.time + repairWobblePhase;
             float speed = repairWobbleSpeed;
 
-            float scaleX = 1f + Mathf.Sin(time * speed) * repairWobbleScaleAmount * wobbleStrength;
-            float scaleY = 1f + Mathf.Sin(time * speed * 1.29f + 0.8f) * repairWobbleScaleAmount * wobbleStrength;
-            float scaleZ = 1f + Mathf.Sin(time * speed * 0.91f + 1.6f) * repairWobbleScaleAmount * wobbleStrength;
-            bone.localScale = Vector3.Scale(
-                targetScale,
-                new Vector3(grow * scaleX, grow * scaleY, grow * scaleZ));
+            List<int> boneIndices = limbBoneIndices[limbIndex];
+            for (int i = 0; i < boneIndices.Count; i++)
+            {
+                int boneIndex = boneIndices[i];
+                if (boneIndex < 0 || boneIndex >= bones.Length)
+                {
+                    continue;
+                }
+
+                Transform bone = bones[boneIndex];
+                if (bone == null || !battleHiddenBoneScales.TryGetValue(bone, out Vector3 targetScale))
+                {
+                    continue;
+                }
+
+                bool isRoot = gradualRestoreRootBone != null && bone == gradualRestoreRootBone;
+                if (isRoot && wobbleStrength > 0.001f)
+                {
+                    float scaleX = 1f + Mathf.Sin(time * speed) * repairWobbleScaleAmount * wobbleStrength;
+                    float scaleY = 1f + Mathf.Sin(time * speed * 1.29f + 0.8f) * repairWobbleScaleAmount * wobbleStrength;
+                    float scaleZ = 1f + Mathf.Sin(time * speed * 0.91f + 1.6f) * repairWobbleScaleAmount * wobbleStrength;
+                    bone.localScale = Vector3.Scale(
+                        targetScale,
+                        new Vector3(grow * scaleX, grow * scaleY, grow * scaleZ));
+                }
+                else
+                {
+                    bone.localScale = targetScale * grow;
+                }
+            }
+
+            if (gradualRestoreRootBone == null)
+            {
+                return;
+            }
 
             if (wobbleStrength <= 0.001f || repairWobbleRotationDegrees <= 0f)
             {
-                bone.localRotation = gradualRestoreBaseLocalRotation;
+                gradualRestoreRootBone.localRotation = gradualRestoreBaseLocalRotation;
                 return;
             }
 
             float rotX = Mathf.Sin(time * speed * 1.07f) * repairWobbleRotationDegrees * wobbleStrength;
             float rotY = Mathf.Sin(time * speed * 1.43f + 1.1f) * repairWobbleRotationDegrees * 0.75f * wobbleStrength;
             float rotZ = Mathf.Sin(time * speed * 0.88f + 2.3f) * repairWobbleRotationDegrees * 0.55f * wobbleStrength;
-            bone.localRotation = gradualRestoreBaseLocalRotation * Quaternion.Euler(rotX, rotY, rotZ);
+            gradualRestoreRootBone.localRotation =
+                gradualRestoreBaseLocalRotation * Quaternion.Euler(rotX, rotY, rotZ);
         }
 
         private bool IsLimbRemoved(int limbIndex)
