@@ -28,6 +28,7 @@ namespace Scene.TrainingScene.View
         /// <param name="currentAttack">現在の攻撃</param>
         public void Apply(int slotNumber, MotionType currentAttack)
         {
+            EnsureSelectButtonReference();
             gameObject.SetActive(true);
             currentAttackSlot?.Apply(slotNumber, currentAttack);
         }
@@ -44,6 +45,23 @@ namespace Scene.TrainingScene.View
         /// <summary>
         /// 選択ボタンを返す
         /// </summary>
-        public LHButton SelectButton => selectButton;
+        public LHButton SelectButton
+        {
+            get
+            {
+                EnsureSelectButtonReference();
+                return selectButton;
+            }
+        }
+
+        private void EnsureSelectButtonReference()
+        {
+            if (selectButton != null)
+            {
+                return;
+            }
+
+            selectButton = GetComponent<LHButton>();
+        }
     }
 }

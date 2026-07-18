@@ -7,6 +7,7 @@ using SaveData.Interface;
 using SaveData.Service;
 using Scene.BattleNpcScene;
 using Scene.BattleNpcScene.View;
+using Scene.Core;
 using Scene.TrainingScene.Interface;
 using Scene.TrainingScene.Presenter;
 using Scene.TrainingScene.View;
@@ -45,6 +46,7 @@ namespace Scene.TrainingScene
 
         [Header("Post Process")]
         [SerializeField] private BattleNpcPostProcessView postProcessView;
+        [SerializeField] private BattleClassroomLighting classroomLighting;
 
         [Header("UI")]
         [SerializeField] private LoadSlotView loadSlotView;
@@ -57,6 +59,7 @@ namespace Scene.TrainingScene
             TrainingScene primaryScene = ConsolidateTrainingSceneRoots();
             if (primaryScene == null)
             {
+                EnsureParentScope();
                 base.Awake();
                 return;
             }
@@ -69,6 +72,7 @@ namespace Scene.TrainingScene
             }
 
             WireSerializedReferencesFromPrimary(primaryScene);
+            EnsureParentScope();
             base.Awake();
         }
 
@@ -95,6 +99,7 @@ namespace Scene.TrainingScene
             builder.Register<ClayEditCameraModel>(Lifetime.Singleton).AsImplementedInterfaces();
 
             RegisterComponentAsInterfaces(builder, postProcessView);
+            RegisterComponent(builder, classroomLighting);
             builder.Register<BattleCanvasTransition>(Lifetime.Singleton).As<IBattleCanvasTransition>();
             builder.RegisterComponentInHierarchy<BattleStartOverlayView>();
 
@@ -215,6 +220,22 @@ namespace Scene.TrainingScene
             EnsureSerializedReferences();
         }
 
+        private void EnsureParentScope()
+        {
+            if (parentReference.Object != null)
+            {
+                return;
+            }
+
+            parentReference.Object = FindFirstObjectByType<ClayMonstersLifetimeScope>();
+            if (parentReference.Object == null)
+            {
+                Debug.LogError(
+                    "[TrainingLifetimeScope] ClayMonstersLifetimeScopeが見つかりません。"
+                        + "Bootstrapシーンから起動してください");
+            }
+        }
+
         private void EnsureSerializedReferences()
         {
             if (trainingScene == null)
@@ -277,6 +298,16 @@ namespace Scene.TrainingScene
             if (postProcessView == null)
             {
                 postProcessView = FindFirstObjectByType<BattleNpcPostProcessView>(FindObjectsInactive.Include);
+            }
+
+            if (classroomLighting == null)
+            {
+                classroomLighting = FindFirstObjectByType<BattleClassroomLighting>(FindObjectsInactive.Include);
+            }
+
+            if (classroomLighting == null)
+            {
+                classroomLighting = gameObject.AddComponent<BattleClassroomLighting>();
             }
 
             if (loadSlotView == null)

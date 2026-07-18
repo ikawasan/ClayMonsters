@@ -5,6 +5,7 @@ using Scene.TrainingScene.Domain;
 using Scene.TrainingScene.Interface;
 using System.Threading;
 using TMPro;
+using UI.ClayEditor.View;
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
@@ -84,7 +85,6 @@ namespace Scene.TrainingScene.View
         {
             hasChoice = false;
             await UniTask.WaitUntil(() => hasChoice, cancellationToken: cancellationToken);
-            Hide();
             return selectedMode;
         }
 
@@ -201,7 +201,7 @@ namespace Scene.TrainingScene.View
 
             if (blocker != null)
             {
-                blocker.raycastTarget = visible;
+                TitleClayUiVisualUtility.ConfigureInputBlocker(blocker, visible);
             }
         }
 

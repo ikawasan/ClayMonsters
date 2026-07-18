@@ -321,7 +321,7 @@ namespace Scene.TrainingScene.View
 
             if (blocker != null)
             {
-                blocker.raycastTarget = visible;
+                TitleClayUiVisualUtility.ConfigureInputBlocker(blocker, visible);
             }
         }
 

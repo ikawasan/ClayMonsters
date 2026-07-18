@@ -128,7 +128,7 @@ namespace Scene.TrainingScene.View
 
             if (blocker != null)
             {
-                blocker.raycastTarget = visible;
+                TitleClayUiVisualUtility.ConfigureInputBlocker(blocker, visible);
             }
         }
 
@@ -143,8 +143,9 @@ namespace Scene.TrainingScene.View
             hasChoice = false;
             continueSelected = false;
             await UniTask.WaitUntil(() => hasChoice, cancellationToken: cancellationToken);
+            bool resume = continueSelected;
             Hide();
-            return continueSelected;
+            return resume;
         }
 
         private void EnsureUiBound()

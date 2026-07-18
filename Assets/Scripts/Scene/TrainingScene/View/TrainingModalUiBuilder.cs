@@ -44,7 +44,7 @@ namespace Scene.TrainingScene.View
             blockerObject.transform.SetParent(parent, false);
             Stretch(blockerObject.GetComponent<RectTransform>());
             Image image = blockerObject.GetComponent<Image>();
-            TitleClayUiVisualUtility.ApplyBlocker(image);
+            TitleClayUiVisualUtility.ApplyBlockerForEditorBake(image);
             return image;
         }
 
@@ -63,7 +63,7 @@ namespace Scene.TrainingScene.View
             rect.sizeDelta = size;
 
             Image image = panelObject.GetComponent<Image>();
-            TitleClayUiVisualUtility.ApplyPanel(image);
+            TitleClayUiVisualUtility.ApplyPanelForEditorBake(image);
             image.raycastTarget = true;
             return rect;
         }
@@ -132,7 +132,7 @@ namespace Scene.TrainingScene.View
                 Vector2.zero);
             Stretch(text.rectTransform);
             text.text = label;
-            TitleClayUiVisualUtility.ApplyMenuButton(button, TextAlignmentOptions.Center);
+            TitleClayUiVisualUtility.ApplyMenuButtonForEditorBake(button, TextAlignmentOptions.Center);
             button.EnsureUiSoundFeedback();
             return button;
         }
@@ -164,7 +164,7 @@ namespace Scene.TrainingScene.View
 
             Image frameImage = frameObject.GetComponent<Image>();
             frameImage.raycastTarget = false;
-            TitleClayUiVisualUtility.ApplySlotThumbnailFrame(frameImage);
+            TitleClayUiVisualUtility.ApplySlotThumbnailFrameForEditorBake(frameImage);
 
             var thumbnailObject = new GameObject("ThumbnailImage", typeof(RectTransform), typeof(Image));
             thumbnailObject.transform.SetParent(frameObject.transform, false);

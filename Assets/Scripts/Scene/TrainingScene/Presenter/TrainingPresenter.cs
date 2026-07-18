@@ -72,20 +72,10 @@ namespace Scene.TrainingScene.Presenter
         private void RestoreVisibleRoots()
         {
             SetRootActive(trainingDisplay, true);
-            EnsureTrainingFieldVisible();
             if (backgroundView is MonoBehaviour backgroundBehaviour
                 && backgroundBehaviour != null)
             {
                 backgroundBehaviour.gameObject.SetActive(true);
-            }
-        }
-
-        private static void EnsureTrainingFieldVisible()
-        {
-            GameObject field = GameObject.Find("Field");
-            if (field != null && !field.activeSelf)
-            {
-                field.SetActive(true);
             }
         }
 

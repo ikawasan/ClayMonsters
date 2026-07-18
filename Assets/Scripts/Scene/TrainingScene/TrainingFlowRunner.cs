@@ -388,7 +388,6 @@ namespace Scene.TrainingScene
             }
 
             ApplyDefaultDestinationPresentation();
-            EnsureTrainingEnvironmentVisible();
             autoResultView?.Hide();
             hudView.ShowOverlayHost();
             modeSelectView.Show(modelName);
@@ -400,23 +399,20 @@ namespace Scene.TrainingScene
                 await canvasTransition.FadeInAsync(cancellationToken);
             }
 
-            return await modeSelectView.WaitChoiceAsync(cancellationToken);
+            TrainingPlayMode playMode = await modeSelectView.WaitChoiceAsync(cancellationToken);
+            if (canvasTransition != null)
+            {
+                await canvasTransition.FadeOutAsync(cancellationToken);
+            }
+
+            modeSelectView?.Hide();
+            return playMode;
         }
 
         private void PreparePostSelectionPresentation()
         {
             EnsureTrainingDisplayActive();
-            EnsureTrainingEnvironmentVisible();
             ApplyDefaultDestinationPresentation();
-        }
-
-        private static void EnsureTrainingEnvironmentVisible()
-        {
-            GameObject field = GameObject.Find("Field");
-            if (field != null && !field.activeSelf)
-            {
-                field.SetActive(true);
-            }
         }
 
         private async UniTask RunAutoTrainingAsync(
@@ -430,11 +426,14 @@ namespace Scene.TrainingScene
             }
 
             activeSession = session;
-            modeSelectView?.Hide();
             ApplyDefaultDestinationPresentation();
 
             float progressStartedAt = Time.unscaledTime;
             hudView.ShowOverlayMessage("自動育成を実行中...");
+            if (canvasTransition != null)
+            {
+                await canvasTransition.FadeInAsync(cancellationToken);
+            }
             await UniTask.Yield(cancellationToken);
 
             TrainingAutoSimulator.Run(
@@ -600,6 +599,11 @@ namespace Scene.TrainingScene
             activeSession = session;
             hudView.Show();
             hudView.SetInterruptButtonVisible(true);
+            if (canvasTransition != null)
+            {
+                await canvasTransition.FadeInAsync(cancellationToken);
+            }
+
             using (hudView.SubscribeInterruptClick(OnInterruptRequested))
             {
                 await RunTrainingDaysAsync(session, modelName, cancellationToken);
@@ -660,8 +664,12 @@ namespace Scene.TrainingScene
             int slotIndex = loadSlotView.SelectedSlotIndex;
             GameObject selectedModel = loadSlotView.DetachLoadedModel() ?? model;
 
+            if (canvasTransition != null)
+            {
+                await canvasTransition.FadeOutAsync(cancellationToken);
+            }
+
             SetSelectionUiVisible(false);
-            PreparePostSelectionPresentation();
 
             return (slotIndex, selectedModel);
         }
@@ -752,7 +760,7 @@ namespace Scene.TrainingScene
             if (selectionBackToTitleButton == null)
             {
                 Debug.LogError(
-                    "[TrainingFlowRunner] selectionBackToTitleButtonが未設定です。Tools/ClayMonsters/Repair Training Scene (Wire + Save)を実行してください");
+                    "[TrainingFlowRunner] selectionBackToTitleButtonが未設定です。Hierarchyで参照を配線してください");
             }
 
             SetSelectionBackToTitleButtonVisible(true);
@@ -837,10 +845,9 @@ namespace Scene.TrainingScene
                 boneRoot,
                 cancellationToken);
 
-            int slotNumber = trainedSlotIndex + 1;
             if (saved)
             {
-                return (true, $"育成済みスロット{slotNumber}へ保存しました\n戦闘モードで使用できます");
+                return (true, string.Empty);
             }
 
             Debug.LogError(
@@ -961,6 +968,11 @@ namespace Scene.TrainingScene
                 return;
             }
 
+            if (canvasTransition != null)
+            {
+                await canvasTransition.FadeOutAsync(cancellationToken);
+            }
+
             SetSelectionUiVisible(false);
             if (loadSlotView != null)
             {
@@ -996,6 +1008,8 @@ namespace Scene.TrainingScene
                 await hudView.WaitContinueAsync(cancellationToken);
                 return;
             }
+
+            ApplyDefaultDestinationPresentation();
 
             if (battleResult.PlayerWon)
             {

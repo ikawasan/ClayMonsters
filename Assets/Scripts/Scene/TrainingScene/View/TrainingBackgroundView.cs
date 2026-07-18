@@ -64,6 +64,16 @@ namespace Scene.TrainingScene.View
         /// <inheritdoc/>
         public void HideForLeave()
         {
+            if (backgroundRoot != null)
+            {
+                for (int i = 0; i < backgroundRoot.childCount; i++)
+                {
+                    backgroundRoot.GetChild(i).gameObject.SetActive(false);
+                }
+
+                return;
+            }
+
             foreach (GameObject background in EnumerateBackgrounds())
             {
                 if (background != null)

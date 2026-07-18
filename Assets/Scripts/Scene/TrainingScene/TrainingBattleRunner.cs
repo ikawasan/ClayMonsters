@@ -34,6 +34,8 @@ using Scene.Core.Interface;
 
 using Scene.TrainingScene.Domain;
 
+using Scene.TrainingScene.Interface;
+
 using System.Threading;
 
 using UI.Battle.View;
@@ -109,7 +111,11 @@ namespace Scene.TrainingScene
 
         private TrainingDisplay trainingDisplay;
 
+        private ITrainingHudView hudView;
 
+        private ITrainingBackgroundView trainingBackgroundView;
+
+        private ITrainingLocationCameraView locationCameraView;
 
         private GameObject lastEnemyModel;
 
@@ -145,7 +151,13 @@ namespace Scene.TrainingScene
 
             ISeService seService,
 
-            TrainingDisplay trainingDisplay)
+            TrainingDisplay trainingDisplay,
+
+            ITrainingHudView hudView,
+
+            ITrainingBackgroundView trainingBackgroundView,
+
+            ITrainingLocationCameraView locationCameraView)
 
         {
 
@@ -162,6 +174,12 @@ namespace Scene.TrainingScene
             this.seService = seService;
 
             this.trainingDisplay = trainingDisplay;
+
+            this.hudView = hudView;
+
+            this.trainingBackgroundView = trainingBackgroundView;
+
+            this.locationCameraView = locationCameraView;
 
         }
 
@@ -241,18 +259,6 @@ namespace Scene.TrainingScene
 
             GameplayTime.Reset();
 
-
-
-            if (sceneFade != null)
-
-            {
-
-                await sceneFade.FadeInAsync(cancellationToken);
-
-            }
-
-
-
             BattleSystem system = null;
 
             BattleKeyboardMovementInput movementInput = null;
@@ -266,6 +272,8 @@ namespace Scene.TrainingScene
             BattleCombatFeedbackPresenter combatFeedbackPresenter = null;
 
             BattleFinishPresenter finishPresenter = null;
+
+            BattlePartBreakPresenter partBreakPresenter = null;
 
 
 
@@ -315,9 +323,16 @@ namespace Scene.TrainingScene
 
                 lastEnemyModel = enemy.Model;
 
+                PrepareBattleEnvironment();
+
                 if (player.Model != null)
                 {
-                    player.Model.SetActive(true);
+                    player.Model.SetActive(false);
+                }
+
+                if (enemy.Model != null)
+                {
+                    enemy.Model.SetActive(false);
                 }
 
                 if (overlayView != null)
@@ -363,6 +378,7 @@ namespace Scene.TrainingScene
                     await sceneFade.FadeInAsync(cancellationToken);
                 }
 
+                EnsureBattleFieldVisible();
                 SetBattleSceneActive(true);
                 battleView?.PrepareForBattleInput();
 
@@ -473,6 +489,8 @@ namespace Scene.TrainingScene
 
                     finishPresenter = new BattleFinishPresenter(overlayView, system, cancellationToken);
 
+                    partBreakPresenter = new BattlePartBreakPresenter(overlayView, system, cancellationToken);
+
                 }
 
 
@@ -513,6 +531,20 @@ namespace Scene.TrainingScene
 
                 bool playerWon = winner != null && winner == player.Unit;
 
+                if (playerWon && staging != null)
+                {
+                    DisposeBattlePresenters(
+                        ref presenter,
+                        ref combatFeedbackPresenter,
+                        ref finishPresenter,
+                        ref partBreakPresenter,
+                        ref fieldPresenter,
+                        ref cameraPresenter);
+
+                    stagingContext.VictoryReturnView = new TrainingBattleVictoryAdapter(hudView);
+                    await staging.PlayVictoryAsync(stagingContext, winner, cancellationToken);
+                }
+
                 return new TrainingBattleResult(true, playerWon, enemyName);
 
             }
@@ -526,6 +558,8 @@ namespace Scene.TrainingScene
                 combatFeedbackPresenter?.Dispose();
 
                 finishPresenter?.Dispose();
+
+                partBreakPresenter?.Dispose();
 
                 fieldPresenter?.Dispose();
 
@@ -541,19 +575,34 @@ namespace Scene.TrainingScene
 
 
 
-                DestroyEnemyModel();
-
                 if (cancellationToken.IsCancellationRequested)
                 {
+                    DestroyEnemyModel();
                     HideForLeave();
                 }
                 else
                 {
-                    await RestoreTrainingViewAsync(playerModel, cancellationToken);
+                    await FadeOutForTrainingRestoreAsync(cancellationToken);
+                    DestroyEnemyModel();
+                    await RestoreTrainingViewAsync(playerModel, cancellationToken, skipInitialFade: true);
                     SetBattleSceneActive(false);
                 }
             }
 
+        }
+
+        private async UniTask FadeOutForTrainingRestoreAsync(CancellationToken cancellationToken)
+        {
+            if (canvasTransition != null)
+            {
+                await canvasTransition.FadeOutAsync(cancellationToken);
+                return;
+            }
+
+            if (sceneFade != null)
+            {
+                await sceneFade.FadeOutAsync(cancellationToken);
+            }
         }
 
 
@@ -580,47 +629,111 @@ namespace Scene.TrainingScene
         }
 
         private void SetBattleSceneActive(bool active)
-
         {
+            EnsureBattleUiReferences();
 
-            if (battleCanvasRoot != null)
-
+            if (battleCanvasRoot != null && !battleCanvasRoot.activeSelf)
             {
-
-                battleCanvasRoot.SetActive(active);
-
+                // Canvas.enabled切替前提のため非アクティブなら有効化する
+                battleCanvasRoot.SetActive(true);
             }
-
-            else if (battleUiCanvas != null)
-
-            {
-
-                battleUiCanvas.gameObject.SetActive(active);
-
-            }
-
-
 
             if (battleUiCanvas != null)
-
             {
-
-                battleUiCanvas.enabled = active;
-
+                CanvasVisibilityUtility.SetCanvasEnabled(battleUiCanvas, active);
+                return;
             }
 
+            if (battleCanvasRoot != null)
+            {
+                CanvasVisibilityUtility.SetUiVisible(battleCanvasRoot, active);
+            }
+        }
+
+        private void PrepareBattleEnvironment()
+        {
+            trainingBackgroundView?.HideForLeave();
+
+            BattleMatchupBackgroundView matchupBackground =
+                FindFirstObjectByType<BattleMatchupBackgroundView>(FindObjectsInactive.Include);
+            if (matchupBackground != null)
+            {
+                matchupBackground.enabled = true;
+            }
+
+            if (staging != null)
+            {
+                staging.enabled = true;
+            }
+
+            EnsureBattleFieldVisible();
+        }
+
+        /// <summary>
+        /// 戦闘用Fieldを表示し育成背景を隠した状態へ揃える
+        /// </summary>
+        private void EnsureBattleFieldVisible()
+        {
+            trainingBackgroundView?.HideForLeave();
+
+            BattleMatchupBackgroundView matchupBackground =
+                FindFirstObjectByType<BattleMatchupBackgroundView>(FindObjectsInactive.Include);
+            if (matchupBackground != null)
+            {
+                matchupBackground.enabled = true;
+                matchupBackground.ShowClassroom();
+                return;
+            }
+
+            BattleClassroomFieldLayout.SetFieldVisible(true);
+        }
+
+        /// <summary>
+        /// 戦闘UI参照が未配線でもBattleViewから復元する
+        /// </summary>
+        private void EnsureBattleUiReferences()
+        {
+            if (battleView == null)
+            {
+                return;
+            }
+
+            if (battleCanvasRoot == null)
+            {
+                battleCanvasRoot = battleView.gameObject;
+            }
+
+            if (battleUiCanvas == null && battleCanvasRoot != null)
+            {
+                battleUiCanvas = battleCanvasRoot.GetComponent<Canvas>();
+            }
         }
 
 
 
-        private async UniTask RestoreTrainingViewAsync(GameObject playerModel, CancellationToken cancellationToken)
+        private async UniTask RestoreTrainingViewAsync(
+            GameObject playerModel,
+            CancellationToken cancellationToken,
+            bool skipInitialFade = false)
         {
+            if (!skipInitialFade)
+            {
+                await FadeOutForTrainingRestoreAsync(cancellationToken);
+            }
+
             overlayView?.HideImmediate();
             overlayView?.HideVsUi();
 
+            if (staging != null)
+            {
+                staging.enabled = false;
+            }
+
             BattleMatchupBackgroundView matchupBackground =
                 FindFirstObjectByType<BattleMatchupBackgroundView>(FindObjectsInactive.Include);
-            matchupBackground?.ShowClassroom();
+            matchupBackground?.HideClassroom();
+            BattleClassroomFieldLayout.SetFieldVisible(false);
+            trainingBackgroundView?.ShowDefaultBackground();
 
             if (playerModel != null)
             {
@@ -634,13 +747,22 @@ namespace Scene.TrainingScene
                 await trainingDisplay.RestoreAfterBattleAsync(cancellationToken);
             }
 
+            ApplyTrainingCameraView();
+            await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate, cancellationToken);
+
             if (battleCamera != null)
             {
                 battleCamera.SetCameraEnable(true);
                 battleCamera.SetCameraOperatable(false);
             }
 
-            if (sceneFade != null)
+            hudView?.Show();
+
+            if (canvasTransition != null)
+            {
+                await canvasTransition.FadeInAsync(cancellationToken);
+            }
+            else if (sceneFade != null)
             {
                 await sceneFade.FadeInAsync(cancellationToken);
             }
@@ -651,6 +773,14 @@ namespace Scene.TrainingScene
             }
 
             await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate, cancellationToken);
+        }
+
+        /// <summary>
+        /// 勝利演出後のカメラを育成構図へ戻す
+        /// </summary>
+        private void ApplyTrainingCameraView()
+        {
+            locationCameraView?.ApplyDefaultView();
         }
 
 
@@ -719,6 +849,28 @@ namespace Scene.TrainingScene
 
             return component;
 
+        }
+
+        private static void DisposeBattlePresenters(
+            ref BattlePresenter presenter,
+            ref BattleCombatFeedbackPresenter combatFeedbackPresenter,
+            ref BattleFinishPresenter finishPresenter,
+            ref BattlePartBreakPresenter partBreakPresenter,
+            ref BattleFieldPresenter fieldPresenter,
+            ref BattleFieldCameraPresenter cameraPresenter)
+        {
+            presenter?.Dispose();
+            presenter = null;
+            combatFeedbackPresenter?.Dispose();
+            combatFeedbackPresenter = null;
+            finishPresenter?.Dispose();
+            finishPresenter = null;
+            partBreakPresenter?.Dispose();
+            partBreakPresenter = null;
+            fieldPresenter?.Dispose();
+            fieldPresenter = null;
+            cameraPresenter?.Dispose();
+            cameraPresenter = null;
         }
 
     }

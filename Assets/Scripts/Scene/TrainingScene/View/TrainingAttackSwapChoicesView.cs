@@ -36,6 +36,8 @@ namespace Scene.TrainingScene.View
             IReadOnlyList<MotionType> currentAttacks,
             Action<int> onSelected)
         {
+            EnsureSwapSlotsResolved();
+
             if (learnedHeaderText != null)
             {
                 learnedHeaderText.gameObject.SetActive(true);
@@ -93,6 +95,8 @@ namespace Scene.TrainingScene.View
         /// </summary>
         public void Clear()
         {
+            EnsureSwapSlotsResolved();
+
             if (learnedHeaderText != null)
             {
                 learnedHeaderText.gameObject.SetActive(false);
@@ -120,6 +124,51 @@ namespace Scene.TrainingScene.View
             {
                 skipButton.onClick.RemoveAllListeners();
                 skipButton.gameObject.SetActive(false);
+            }
+        }
+
+        private void EnsureSwapSlotsResolved()
+        {
+            if (swapSlots != null && swapSlots.Length >= SwapSlotCount)
+            {
+                bool hasMissing = false;
+                for (int i = 0; i < SwapSlotCount; i++)
+                {
+                    if (swapSlots[i] == null)
+                    {
+                        hasMissing = true;
+                        break;
+                    }
+                }
+
+                if (!hasMissing)
+                {
+                    return;
+                }
+            }
+
+            TrainingAttackSwapSlotView[] found =
+                GetComponentsInChildren<TrainingAttackSwapSlotView>(true);
+            if (found.Length == 0)
+            {
+                return;
+            }
+
+            System.Array.Sort(
+                found,
+                (a, b) => a.transform.GetSiblingIndex().CompareTo(b.transform.GetSiblingIndex()));
+
+            if (swapSlots == null || swapSlots.Length != SwapSlotCount)
+            {
+                swapSlots = new TrainingAttackSwapSlotView[SwapSlotCount];
+            }
+
+            for (int i = 0; i < SwapSlotCount && i < found.Length; i++)
+            {
+                if (swapSlots[i] == null)
+                {
+                    swapSlots[i] = found[i];
+                }
             }
         }
 

@@ -1,6 +1,7 @@
 using Camera.Interface;
 using Cysharp.Threading.Tasks;
 using Lighthouse.Scene;
+using Scene.BattleNpcScene;
 using Scene.BattleNpcScene.Interface;
 using Scene.Core;
 using Scene.TrainingScene.Interface;
@@ -16,6 +17,7 @@ namespace Scene.TrainingScene
     {
         private ITrainingPresenter presenter;
         private IBattleNpcPostProcess postProcess;
+        private BattleClassroomLighting classroomLighting;
         private IClayEditCameraPresenter cameraPresenter;
         private TrainingFlowRunner flowRunner;
 
@@ -35,11 +37,13 @@ namespace Scene.TrainingScene
         public void Construct(
             ITrainingPresenter presenter,
             IBattleNpcPostProcess postProcess,
+            BattleClassroomLighting classroomLighting,
             IClayEditCameraPresenter cameraPresenter,
             TrainingFlowRunner flowRunner)
         {
             this.presenter = presenter;
             this.postProcess = postProcess;
+            this.classroomLighting = classroomLighting;
             this.cameraPresenter = cameraPresenter;
             this.flowRunner = flowRunner;
         }
@@ -53,6 +57,7 @@ namespace Scene.TrainingScene
 
         protected override UniTask OnEnterCore(ISceneTransitionContext context, CancellationToken cancelToken)
         {
+            classroomLighting?.Apply();
             postProcess.Enable();
             cameraPresenter.OnEnter();
             flowRunner.PrepareSelectionLayout();
@@ -71,6 +76,7 @@ namespace Scene.TrainingScene
             flowRunner.StopFlow();
             cameraPresenter.OnExit();
             postProcess.Disable();
+            classroomLighting?.DisableLighting();
             presenter.OnLeave();
             return base.OnLeave(context, cancelToken);
         }

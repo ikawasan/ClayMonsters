@@ -7,6 +7,7 @@ namespace Scene.TrainingScene
 {
     /// <summary>
     /// 育成中の放課後戦闘で勝利演出後の続行入力を受け取る
+    /// 続行時はオーバーレイホストのみ表示し曜日や状態パネルは出さない
     /// </summary>
     public sealed class TrainingBattleVictoryAdapter : IBattleVictoryReturnView
     {
@@ -31,7 +32,11 @@ namespace Scene.TrainingScene
 
             if (visible)
             {
-                hudView.Show();
+                hudView.ShowOverlayHost();
+            }
+            else
+            {
+                hudView.Hide();
             }
         }
 

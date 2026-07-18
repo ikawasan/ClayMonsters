@@ -142,15 +142,7 @@ namespace Scene.TrainingScene.View
 
 
 
-            if (headerText != null)
-
-            {
-
-                headerText.text = "育成完了\n育成済みデータの保存先スロットを選んでください";
-
-            }
-
-
+            HideHeaderText();
 
             RefreshSlotList();
 
@@ -448,9 +440,47 @@ namespace Scene.TrainingScene.View
 
 
 
+                if (headerText != null && child == headerText.transform)
+
+                {
+
+                    continue;
+
+                }
+
+
+
                 child.gameObject.SetActive(visible);
 
             }
+
+
+
+            HideHeaderText();
+
+        }
+
+
+
+        private void HideHeaderText()
+
+        {
+
+            if (headerText == null)
+
+            {
+
+                return;
+
+            }
+
+
+
+            headerText.text = string.Empty;
+
+            headerText.enabled = false;
+
+            headerText.gameObject.SetActive(false);
 
         }
 
@@ -475,6 +505,8 @@ namespace Scene.TrainingScene.View
             EnsureConfirmPanel();
 
             WireBackToTitleButtonReference();
+
+            HideHeaderText();
 
             slotScrollList = ModelSaveSlotScrollListRuntimeUtility.EnsureHostUnderTransform(
                 transform,
@@ -576,7 +608,7 @@ namespace Scene.TrainingScene.View
 
                 Debug.LogError(
 
-                    "[TrainingTrainedSaveView] backToTitleButtonが未設定です。Tools/ClayMonsters/Wire Training Scene Referencesを実行してください",
+                    "[TrainingTrainedSaveView] backToTitleButtonが未設定です。Hierarchyで参照を配線してください",
 
                     this);
 
