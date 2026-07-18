@@ -27,8 +27,6 @@ namespace UI.Option.View
         private const string ToggleOffResourcePath = "Image/Title/TitleOptionToggle_Off";
         private const string ToggleOnResourcePath = "Image/Title/TitleOptionToggle_On";
 
-        private static readonly Color BlockerColor = new Color(0.12f, 0.08f, 0.06f, 0.72f);
-
         [SerializeField] private Canvas canvas;
         [SerializeField] private LHButton closeButton;
         [SerializeField] private Toggle fullScreenToggle;
@@ -119,7 +117,6 @@ namespace UI.Option.View
                 return;
             }
 
-            image.color = BlockerColor;
             image.raycastTarget = true;
         }
 
@@ -152,7 +149,6 @@ namespace UI.Option.View
 
             panelImage.sprite = panelSprite;
             panelImage.type = Image.Type.Sliced;
-            panelImage.color = Color.white;
             panelImage.raycastTarget = false;
             panelImage.pixelsPerUnitMultiplier = 1f;
         }
@@ -207,7 +203,6 @@ namespace UI.Option.View
             {
                 background.sprite = trackSprite;
                 background.type = Image.Type.Sliced;
-                background.color = Color.white;
             }
 
             Transform fillArea = slider.fillRect != null ? slider.fillRect.parent : slider.transform.Find("Fill Area");
@@ -216,7 +211,6 @@ namespace UI.Option.View
             {
                 fill.sprite = fillSprite;
                 fill.type = Image.Type.Sliced;
-                fill.color = Color.white;
             }
 
             Image handle = slider.handleRect != null
@@ -226,7 +220,6 @@ namespace UI.Option.View
             {
                 handle.sprite = handleSprite;
                 handle.type = Image.Type.Simple;
-                handle.color = Color.white;
                 handle.SetNativeSize();
             }
 
@@ -254,7 +247,6 @@ namespace UI.Option.View
             {
                 background.sprite = offSprite;
                 background.type = Image.Type.Simple;
-                background.color = Color.white;
                 background.SetNativeSize();
                 toggle.targetGraphic = background;
             }
@@ -269,19 +261,9 @@ namespace UI.Option.View
             {
                 checkmark.sprite = onSprite;
                 checkmark.type = Image.Type.Simple;
-                checkmark.color = Color.white;
                 checkmark.SetNativeSize();
                 toggle.graphic = checkmark;
             }
-
-            ColorBlock colors = toggle.colors;
-            colors.normalColor = Color.white;
-            colors.highlightedColor = new Color(1f, 0.96f, 0.92f, 1f);
-            colors.pressedColor = new Color(0.92f, 0.86f, 0.78f, 1f);
-            colors.selectedColor = Color.white;
-            colors.disabledColor = new Color(1f, 1f, 1f, 0.45f);
-            colors.fadeDuration = 0.08f;
-            toggle.colors = colors;
         }
 
         private static void ApplyButtonStyle(
@@ -301,7 +283,6 @@ namespace UI.Option.View
             {
                 image.sprite = normalSprite;
                 image.type = Image.Type.Sliced;
-                image.color = Color.white;
                 image.pixelsPerUnitMultiplier = 1f;
             }
 
@@ -312,15 +293,6 @@ namespace UI.Option.View
             spriteState.selectedSprite = highlightedSprite;
             spriteState.disabledSprite = normalSprite;
             button.spriteState = spriteState;
-
-            ColorBlock colors = button.colors;
-            colors.normalColor = Color.white;
-            colors.highlightedColor = Color.white;
-            colors.pressedColor = Color.white;
-            colors.selectedColor = Color.white;
-            colors.disabledColor = new Color(1f, 1f, 1f, 0.55f);
-            colors.fadeDuration = 0.08f;
-            button.colors = colors;
 
             TMP_Text labelText = button.GetComponentInChildren<TMP_Text>(true);
             if (labelText != null)

@@ -16,6 +16,9 @@ namespace UI.Option.Service
         private readonly IUiSoundService uiSoundService;
         private readonly ISeService seService;
 
+        private const int WindowedWidth = 1600;
+        private const int WindowedHeight = 900;
+
         [Inject]
         public OptionService(
             IBgmService bgmService,
@@ -80,7 +83,27 @@ namespace UI.Option.Service
 
         private static void ApplyFullScreen(bool isFullScreen)
         {
-            Screen.fullScreen = isFullScreen;
+#if UNITY_EDITOR
+            // EditorのGameViewではOS解像度切替が起きないため反映しない
+            return;
+#else
+            Resolution desktop = Screen.currentResolution;
+            if (isFullScreen)
+            {
+                // 排他フルスクリーンを避けデスクトップ解像度のボーダレスにする
+                Screen.SetResolution(
+                    desktop.width,
+                    desktop.height,
+                    FullScreenMode.FullScreenWindow,
+                    desktop.refreshRateRatio);
+                return;
+            }
+
+            Screen.SetResolution(
+                WindowedWidth,
+                WindowedHeight,
+                FullScreenMode.Windowed);
+#endif
         }
 
         private static void ApplyVSync(bool isVSync)
