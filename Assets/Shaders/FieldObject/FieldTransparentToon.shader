@@ -7,9 +7,9 @@ Shader "Custom/FieldTransparentToon"
         
         [Space(10)]
         [Header(Toon Shading)]
-        _ShadowColor("Shadow Color", Color) = (0.4, 0.6, 0.7, 0.5)
+        _ShadowColor("Shadow Color", Color) = (0.45, 0.58, 0.62, 0.5)
         _ToonThreshold("Toon Threshold", Range(-1.0, 1.0)) = 0.5
-        _ToonSmoothness("Toon Smoothness", Range(0.0, 1.0)) = 0.05
+        _ToonSmoothness("Toon Smoothness", Range(0.0, 1.0)) = 0.12
         
         [Space(10)]
         [Header(Glass Highlight (Specular))]
@@ -48,6 +48,7 @@ Shader "Custom/FieldTransparentToon"
 
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
             #pragma multi_compile _ _SHADOWS_SOFT
+            #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
             #pragma multi_compile_fog
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
@@ -85,6 +86,22 @@ Shader "Custom/FieldTransparentToon"
                 half4 _RimColor;
                 float _RimPower;
             CBUFFER_END
+
+            half3 FieldTransparentSoftAdditionalDiffuse(float3 positionWS, float3 normalWS, half3 albedo)
+            {
+                half3 additionalDiffuse = 0;
+#if defined(_ADDITIONAL_LIGHTS)
+                uint lightCount = GetAdditionalLightsCount();
+                for (uint lightIndex = 0u; lightIndex < lightCount; lightIndex++)
+                {
+                    Light light = GetAdditionalLight(lightIndex, positionWS);
+                    half halfLambert = saturate(dot(normalWS, light.direction) * 0.5h + 0.5h);
+                    half attenuation = light.distanceAttenuation * light.shadowAttenuation;
+                    additionalDiffuse += albedo * light.color * attenuation * halfLambert * 0.22h;
+                }
+#endif
+                return min(additionalDiffuse, albedo * 0.35h);
+            }
 
             Varyings vert(Attributes IN)
             {
@@ -127,6 +144,7 @@ Shader "Custom/FieldTransparentToon"
                 half3 shadowTint = albedo * _ShadowColor.rgb * lightColor;
                 half3 diffuseColor = lerp(shadowTint, litColor, toonStep);
                 diffuseColor = lerp(shadowTint, diffuseColor, shadowAttenuation);
+                diffuseColor += FieldTransparentSoftAdditionalDiffuse(IN.positionWS, normalWS, albedo);
 
                 // ガラスのハイライト（スペキュラ）の計算
                 // アニメ調のパキッとしたハイライトを作るため、ハーフベクトルを使用

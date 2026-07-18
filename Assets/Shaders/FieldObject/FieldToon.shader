@@ -7,9 +7,9 @@ Shader "Custom/FieldToon"
         
         [Space(10)]
         [Header(Toon Shading)]
-        _ShadowColor("Shadow Color (Warm Tone)", Color) = (0.75, 0.6, 0.5, 1)
+        _ShadowColor("Shadow Color (Warm Tone)", Color) = (0.72, 0.56, 0.46, 1)
         _ToonThreshold("Toon Threshold", Range(-1.0, 1.0)) = 0.5
-        _ToonSmoothness("Toon Smoothness", Range(0.0, 1.0)) = 0.1
+        _ToonSmoothness("Toon Smoothness", Range(0.0, 1.0)) = 0.18
         
         [Space(10)]
         [Header(Metal Highlight)]
@@ -22,7 +22,14 @@ Shader "Custom/FieldToon"
         [Header(Rim Light (Nostalgic Sun))]
         [HDR]         _RimColor("Rim Light Color", Color) = (1.0, 0.85, 0.5, 1)
         _RimPower("Rim Power (Spread)", Range(0.1, 10.0)) = 3.0
+
+        [Space(10)]
+        [Header(Rendering)]
+        [Toggle(_SHOW_BACK_FACES_ONLY)] _ShowBackFacesOnly("Show Back Faces Only", Float) = 0
+        [HideInInspector] _Cull("Cull", Float) = 2
     }
+    
+    CustomEditor "FieldToonShaderGUI"
     
     SubShader
     {
@@ -38,13 +45,17 @@ Shader "Custom/FieldToon"
             Name "ForwardLit"
             Tags { "LightMode" = "UniversalForward" }
 
+            Cull [_Cull]
+
             HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
 
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
             #pragma multi_compile _ _SHADOWS_SOFT
+            #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
             #pragma multi_compile_fog
+            #pragma shader_feature_local _ _SHOW_BACK_FACES_ONLY
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -80,12 +91,33 @@ Shader "Custom/FieldToon"
                 float _RimPower;
             CBUFFER_END
 
+            half3 FieldToonSoftAdditionalDiffuse(float3 positionWS, float3 normalWS, half3 albedo)
+            {
+                half3 additionalDiffuse = 0;
+#if defined(_ADDITIONAL_LIGHTS)
+                uint lightCount = GetAdditionalLightsCount();
+                for (uint lightIndex = 0u; lightIndex < lightCount; lightIndex++)
+                {
+                    Light light = GetAdditionalLight(lightIndex, positionWS);
+                    // 追加ライトはトゥーン帯を使わず柔らかい半ランバートのみにする
+                    // ポイントライトのトゥーン帯は金属テカリに見えやすい
+                    half halfLambert = saturate(dot(normalWS, light.direction) * 0.5h + 0.5h);
+                    half attenuation = light.distanceAttenuation * light.shadowAttenuation;
+                    additionalDiffuse += albedo * light.color * attenuation * halfLambert * 0.22h;
+                }
+#endif
+                return min(additionalDiffuse, albedo * 0.35h);
+            }
+
             Varyings vert(Attributes IN)
             {
                 Varyings OUT;
                 OUT.positionWS = TransformObjectToWorld(IN.positionOS.xyz);
                 OUT.positionHCS = TransformWorldToHClip(OUT.positionWS);
                 OUT.normalWS = TransformObjectToWorldNormal(IN.normalOS);
+#if defined(_SHOW_BACK_FACES_ONLY)
+                OUT.normalWS = -OUT.normalWS;
+#endif
                 OUT.uv = IN.uv;
                 OUT.fogCoord = ComputeFogFactor(OUT.positionHCS.z);
                 return OUT;
@@ -118,21 +150,30 @@ Shader "Custom/FieldToon"
                 half3 shadowTint = albedo * _ShadowColor.rgb * lightColor;
                 half3 diffuseColor = lerp(shadowTint, litColor, toonStep);
                 diffuseColor = lerp(shadowTint, diffuseColor, shadowAttenuation);
+                diffuseColor += FieldToonSoftAdditionalDiffuse(IN.positionWS, normalWS, albedo);
 
-                // 金属のハイライト計算
-                float3 halfVector = normalize(lightDirWS + viewDirWS);
-                float NdotH = max(0, dot(normalWS, halfVector));
-                
-                float specIntensity = smoothstep(_SpecularThreshold - _SpecularSmoothness, _SpecularThreshold + _SpecularSmoothness, NdotH);
-                specIntensity *= smoothstep(0.0, 0.1, toonStep); // 影の部分にはハイライトを乗せない
-                
-                half3 specularColor = specIntensity * _SpecularColor.rgb * lightColor;
+                // 金属ハイライトはSpecularColorが実質有効なときだけ適用する
+                half3 specularColor = 0;
+                half specularStrength = max(_SpecularColor.r, max(_SpecularColor.g, _SpecularColor.b));
+                if (specularStrength > 0.001h)
+                {
+                    float3 halfVector = normalize(lightDirWS + viewDirWS);
+                    float NdotH = max(0, dot(normalWS, halfVector));
+                    float specIntensity = smoothstep(
+                        _SpecularThreshold - _SpecularSmoothness,
+                        _SpecularThreshold + _SpecularSmoothness,
+                        NdotH);
+                    specIntensity *= smoothstep(0.0, 0.1, toonStep);
+                    specularColor = specIntensity * _SpecularColor.rgb * lightColor * shadowAttenuation;
+                }
 
-                // リムライト計算
+                // リムはアルベドに乗せる柔らかい輪郭光にしてテカリを抑える
                 float NdotV = max(0, dot(normalWS, viewDirWS));
                 float rim = 1.0 - NdotV;
-                float rimIntensity = smoothstep(0.5, 1.0, pow(rim, _RimPower)) * smoothstep(0.0, 0.1, toonStep);
-                half3 rimLight = rimIntensity * _RimColor.rgb;
+                float rimIntensity = pow(saturate(rim), _RimPower + 1.5);
+                rimIntensity *= smoothstep(0.15, 0.55, toonStep);
+                rimIntensity *= shadowAttenuation;
+                half3 rimLight = rimIntensity * albedo * saturate(_RimColor.rgb) * 0.18h;
 
                 half3 finalColor = diffuseColor + specularColor + rimLight + ambient;
 
@@ -148,6 +189,8 @@ Shader "Custom/FieldToon"
             Name "ShadowCaster"
             Tags { "LightMode" = "ShadowCaster" }
 
+            Cull [_Cull]
+
             HLSLPROGRAM
             #pragma vertex ShadowPassVertex
             #pragma fragment ShadowPassFragment
@@ -160,6 +203,8 @@ Shader "Custom/FieldToon"
         {
             Name "DepthOnly"
             Tags { "LightMode" = "DepthOnly" }
+
+            Cull [_Cull]
 
             HLSLPROGRAM
             #pragma vertex DepthOnlyVertex
