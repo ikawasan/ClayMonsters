@@ -41,6 +41,10 @@ namespace Scene.Core.View
         private readonly SemaphoreSlim fadeGate = new SemaphoreSlim(1, 1);
         private int fadeGeneration;
 
+        /// <inheritdoc />
+        public bool IsOpaque =>
+            canvasGroup != null && canvasGroup.alpha > ClearAlphaThreshold;
+
         private void Awake()
         {
             EnsureFadeCanvasLayout();
@@ -60,7 +64,28 @@ namespace Scene.Core.View
             await fadeGate.WaitAsync(cancellationToken);
             try
             {
+                EnsureFadeCanvasLayout();
+                if (canvas != null)
+                {
+                    canvas.enabled = true;
+                }
+
+                ApplyInputBlocking(true);
+
+                if (canvasGroup == null)
+                {
+                    return;
+                }
+
+                // 明転状態から暗転を始める前にCanvasを1フレーム描画可能にする
+                if (canvasGroup.alpha <= ClearAlphaThreshold)
+                {
+                    canvasGroup.alpha = 0f;
+                    await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate, cancellationToken);
+                }
+
                 await FadeToAsync(1f, cancellationToken);
+                EnsureOpaque();
             }
             finally
             {
@@ -80,6 +105,18 @@ namespace Scene.Core.View
             {
                 fadeGate.Release();
             }
+        }
+
+        /// <inheritdoc />
+        public void EnsureOpaque()
+        {
+            EnsureFadeCanvasLayout();
+            if (canvasGroup != null)
+            {
+                canvasGroup.alpha = 1f;
+            }
+
+            ApplyPresentationState(true);
         }
 
         /// <summary>

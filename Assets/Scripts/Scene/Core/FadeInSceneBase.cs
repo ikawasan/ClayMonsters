@@ -42,6 +42,12 @@ namespace Scene.Core
         {
             using (CinemachineSceneBlendScope.EnterCutBlend())
             {
+                // ‘JˆÚŒ³‚ÌˆÃ“]‚ª”²‚¯‚Ä‚¢‚Ä‚à“üêˆ—‘O‚É‰æ–Ê‚ğ•¢‚¤
+                if (sceneFade != null && PerformEntryFadeIn)
+                {
+                    sceneFade.EnsureOpaque();
+                }
+
                 await OnEnterCore(context, cancelToken);
                 await base.OnEnter(context, cancelToken);
                 await StabilizeSceneCameraForFadeInAsync(cancelToken);

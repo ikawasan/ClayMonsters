@@ -74,6 +74,12 @@ namespace SampleProduct.Core
                     SceneCameraEntryCoordinator.DeactivateAllCameras();
                     await sceneManager.BackScene(transitionType);
                 }
+
+                // 戻り先が入場明転を行わず暗転のまま残った場合のみ明転する
+                if (sceneFade != null && sceneFade.IsOpaque)
+                {
+                    await sceneFade.FadeInAsync();
+                }
             }
             catch (OperationCanceledException)
             {
@@ -96,6 +102,9 @@ namespace SampleProduct.Core
 
             UniTask bgmFadeTask = CreateBgmFadeOutTask(nextMainSceneId, isBackNavigation);
             await UniTask.WhenAll(screenFadeTask, bgmFadeTask);
+
+            // シーン切替直前に暗転を確定し入場先での中身露出を防ぐ
+            sceneFade?.EnsureOpaque();
         }
 
         private UniTask CreateBgmFadeOutTask(MainSceneId nextMainSceneId, bool isBackNavigation)

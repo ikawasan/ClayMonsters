@@ -9,6 +9,11 @@ namespace Scene.Core.Interface
     public interface ISceneFade
     {
         /// <summary>
+        /// 画面が暗転で覆われているか
+        /// </summary>
+        bool IsOpaque { get; }
+
+        /// <summary>
         /// 画面を指定色で覆う(暗転)。完了まで待機する
         /// </summary>
         UniTask FadeOutAsync(CancellationToken cancellationToken = default);
@@ -17,5 +22,10 @@ namespace Scene.Core.Interface
         /// 画面の覆いを消す(明転)。完了まで待機する
         /// </summary>
         UniTask FadeInAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// 暗転状態を即時確定する
+        /// </summary>
+        void EnsureOpaque();
     }
 }
