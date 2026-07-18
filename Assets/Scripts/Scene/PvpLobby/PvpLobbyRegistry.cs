@@ -27,7 +27,7 @@ namespace Scene.PvpLobby
             {
                 Debug.LogError(
                     "[PvpLobby] ロビーが未生成です"
-                    + " Tools/ClayMonsters/Create PvpLobby Prefab Onlyを実行してください");
+                    + " PvpLobbyプレハブ配置を確認してください");
                 return;
             }
 
