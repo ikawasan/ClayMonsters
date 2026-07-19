@@ -214,15 +214,15 @@ namespace Battle.Presenter
                 case MotionType.Elbow: return MoveIconId.Elbow;
                 case MotionType.Stomp: return MoveIconId.Stomp;
                 case MotionType.BodySlam: return MoveIconId.BodySlam;
-                case MotionType.Uppercut: return MoveIconId.Punch;
-                case MotionType.Knee: return MoveIconId.Kick;
-                case MotionType.ShoulderRam: return MoveIconId.Tackle;
-                case MotionType.BellyFlop: return MoveIconId.BodySlam;
-                case MotionType.HipCheck: return MoveIconId.Tackle;
-                case MotionType.GroundPound: return MoveIconId.Stomp;
-                case MotionType.Slap: return MoveIconId.Punch;
-                case MotionType.LowSweep: return MoveIconId.Kick;
-                case MotionType.Bite: return MoveIconId.Headbutt;
+                case MotionType.Uppercut: return MoveIconId.Uppercut;
+                case MotionType.Knee: return MoveIconId.Knee;
+                case MotionType.ShoulderRam: return MoveIconId.ShoulderRam;
+                case MotionType.BellyFlop: return MoveIconId.BellyFlop;
+                case MotionType.HipCheck: return MoveIconId.HipCheck;
+                case MotionType.GroundPound: return MoveIconId.GroundPound;
+                case MotionType.Slap: return MoveIconId.Slap;
+                case MotionType.LowSweep: return MoveIconId.LowSweep;
+                case MotionType.Bite: return MoveIconId.Bite;
                 default: return MoveIconId.None;
             }
         }

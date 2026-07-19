@@ -15,21 +15,12 @@ namespace UI.Battle.View
         /// </summary>
         public static Sprite LoadMoveIcon(MoveIconId iconId)
         {
-            switch (iconId)
+            if (iconId == MoveIconId.None)
             {
-                case MoveIconId.Tackle:
-                    return LoadSprite($"{Root}/Move/Tackle");
-                case MoveIconId.Punch:
-                    return LoadSprite($"{Root}/Move/Punch");
-                case MoveIconId.Kick:
-                    return LoadSprite($"{Root}/Move/Kick");
-                case MoveIconId.SpinTackle:
-                    return LoadSprite($"{Root}/Move/SpinTackle");
-                case MoveIconId.TailWhip:
-                    return LoadSprite($"{Root}/Move/TailWhip");
-                default:
-                    return null;
+                return null;
             }
+
+            return LoadSprite($"{Root}/Move/{iconId}");
         }
 
         /// <summary>

@@ -14,7 +14,16 @@ namespace UI.Battle.Interface
         Headbutt,
         Elbow,
         Stomp,
-        BodySlam
+        BodySlam,
+        Uppercut,
+        Knee,
+        ShoulderRam,
+        BellyFlop,
+        HipCheck,
+        GroundPound,
+        Slap,
+        LowSweep,
+        Bite
     }
 
     /// <summary>
