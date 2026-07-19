@@ -73,7 +73,7 @@ namespace Scene.TrainingScene
         protected override UniTask OnLeave(ISceneTransitionContext context, CancellationToken cancelToken)
         {
             flowRunner.SaveActiveProgressIfNeeded();
-            flowRunner.StopFlow();
+            flowRunner.CleanupForLeave();
             cameraPresenter.OnExit();
             postProcess.Disable();
             classroomLighting?.DisableLighting();

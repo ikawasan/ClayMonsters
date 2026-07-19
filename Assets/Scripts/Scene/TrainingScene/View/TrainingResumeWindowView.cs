@@ -156,19 +156,35 @@ namespace Scene.TrainingScene.View
             }
 
             uiBound = true;
+            ValidateSerializedReferences();
             BindUi();
+        }
+
+        private void ValidateSerializedReferences()
+        {
+            if (windowRoot == null)
+            {
+                windowRoot = gameObject;
+            }
+
+            if (thumbnailImage == null
+                || attacksPanel == null
+                || continueButton == null
+                || restartButton == null)
+            {
+                Debug.LogError(
+                    "[TrainingResumeWindowView] SerializeFieldが未配線ですTools/ClayMonsters/Wire Training Scene Referencesを実行してください",
+                    this);
+            }
         }
 
         private void BindUi()
         {
-            EnsureSerializedReferences();
-
             if (continueButton != null)
             {
                 continueButton.onClick.RemoveListener(OnContinueClicked);
                 continueButton.onClick.AddListener(OnContinueClicked);
                 continueButton.EnsureUiSoundFeedback();
-                SetButtonLabel(continueButton, "続きから育成");
             }
 
             if (restartButton != null)
@@ -176,16 +192,6 @@ namespace Scene.TrainingScene.View
                 restartButton.onClick.RemoveListener(OnRestartClicked);
                 restartButton.onClick.AddListener(OnRestartClicked);
                 restartButton.EnsureUiSoundFeedback();
-                SetButtonLabel(restartButton, "最初から育成");
-            }
-        }
-
-        private static void SetButtonLabel(LHButton button, string label)
-        {
-            TMP_Text text = button.GetComponentInChildren<TMP_Text>(true);
-            if (text != null)
-            {
-                text.text = label;
             }
         }
 
@@ -201,111 +207,8 @@ namespace Scene.TrainingScene.View
             hasChoice = true;
         }
 
-        private void EnsureSerializedReferences()
-        {
-            Transform root = transform;
-
-            if (windowRoot == null)
-            {
-                windowRoot = gameObject;
-            }
-
-            if (blocker == null)
-            {
-                blocker = TrainingUiReferenceUtility.FindImage(root, "Blocker");
-            }
-
-            if (titleText == null)
-            {
-                titleText = TrainingUiReferenceUtility.FindWindowPanelChild(root, "TitleText")
-                    ?.GetComponent<TMP_Text>();
-            }
-
-            if (modelNameText == null)
-            {
-                modelNameText = TrainingUiReferenceUtility.FindWindowPanelChild(root, "ModelNameText")
-                    ?.GetComponent<TMP_Text>();
-            }
-
-            if (progressText == null)
-            {
-                progressText = TrainingUiReferenceUtility.FindWindowPanelChild(root, "ProgressText")
-                    ?.GetComponent<TMP_Text>();
-            }
-
-            if (staminaText == null)
-            {
-                staminaText = TrainingUiReferenceUtility.FindWindowPanelChild(root, "StaminaText")
-                    ?.GetComponent<TMP_Text>();
-            }
-
-            if (statsText == null)
-            {
-                statsText = TrainingUiReferenceUtility.FindWindowPanelChild(root, "StatsText")
-                    ?.GetComponent<TMP_Text>();
-            }
-
-            if (continueButton == null)
-            {
-                continueButton = TrainingUiReferenceUtility.FindButton(root, "ResumeContinueButton");
-            }
-
-            if (restartButton == null)
-            {
-                restartButton = TrainingUiReferenceUtility.FindButton(root, "ResumeRestartButton");
-            }
-
-            EnsureThumbnailReference();
-            EnsureAttacksPanelReference();
-        }
-
-        private void EnsureThumbnailReference()
-        {
-            if (thumbnailImage != null)
-            {
-                return;
-            }
-
-            Transform thumbnailTransform =
-                TrainingUiReferenceUtility.FindWindowPanelChild(transform, "ThumbnailImage");
-            if (thumbnailTransform == null)
-            {
-                Transform frame = TrainingUiReferenceUtility.FindWindowPanelChild(transform, "ThumbnailFrame");
-                thumbnailTransform = frame != null
-                    ? TrainingUiReferenceUtility.FindDeepChild(frame, "ThumbnailImage")
-                    : null;
-            }
-
-            thumbnailImage = thumbnailTransform?.GetComponent<Image>();
-
-            if (thumbnailImage == null)
-            {
-                Debug.LogError(
-                    "[TrainingResumeWindowView] ThumbnailImageが見つかりません。TrainingResumeWindow配下を確認してください",
-                    this);
-            }
-        }
-
-        private void EnsureAttacksPanelReference()
-        {
-            if (attacksPanel != null)
-            {
-                return;
-            }
-
-            Transform attacksTransform = TrainingUiReferenceUtility.FindWindowPanelChild(transform, "AttacksPanel");
-            attacksPanel = attacksTransform?.GetComponent<TrainingResumeAttacksContentView>();
-            if (attacksPanel == null)
-            {
-                Debug.LogError(
-                    "[TrainingResumeWindowView] AttacksPanelが見つかりません。TrainingResumeWindow配下を確認してください",
-                    this);
-            }
-        }
-
         private void ApplyThumbnail(byte[] thumbnailPng)
         {
-            EnsureThumbnailReference();
             ClearThumbnail();
 
             if (thumbnailImage == null)
@@ -313,24 +216,15 @@ namespace Scene.TrainingScene.View
                 return;
             }
 
-            if (thumbnailPng == null || thumbnailPng.Length == 0)
+            if (!RuntimeThumbnailUtility.TryCreate(
+                    thumbnailPng,
+                    out runtimeThumbnailTexture,
+                    out runtimeThumbnailSprite))
             {
                 thumbnailImage.enabled = false;
                 return;
             }
 
-            runtimeThumbnailTexture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
-            if (!runtimeThumbnailTexture.LoadImage(thumbnailPng))
-            {
-                ClearThumbnail();
-                thumbnailImage.enabled = false;
-                return;
-            }
-
-            runtimeThumbnailSprite = Sprite.Create(
-                runtimeThumbnailTexture,
-                new Rect(0f, 0f, runtimeThumbnailTexture.width, runtimeThumbnailTexture.height),
-                new Vector2(0.5f, 0.5f));
             TitleClayUiVisualUtility.ApplySlotThumbnailImage(thumbnailImage, runtimeThumbnailSprite);
             thumbnailImage.enabled = true;
         }
@@ -343,17 +237,7 @@ namespace Scene.TrainingScene.View
                 thumbnailImage.enabled = false;
             }
 
-            if (runtimeThumbnailSprite != null)
-            {
-                Destroy(runtimeThumbnailSprite);
-                runtimeThumbnailSprite = null;
-            }
-
-            if (runtimeThumbnailTexture != null)
-            {
-                Destroy(runtimeThumbnailTexture);
-                runtimeThumbnailTexture = null;
-            }
+            RuntimeThumbnailUtility.Destroy(ref runtimeThumbnailSprite, ref runtimeThumbnailTexture);
         }
 
         private void OnDestroy()

@@ -168,7 +168,7 @@ namespace Scene.TrainingScene.Domain
                 $"体力 {progress.stamina} / {TrainingSettings.MaxStamina}",
                 statsText,
                 progress.attackMotions,
-                LoadThumbnailPng(slot));
+                ModelSaveStorage.ReadThumbnailPng(slot));
         }
 
         /// <summary>
@@ -210,16 +210,6 @@ namespace Scene.TrainingScene.Domain
             }
 
             return $"{slot.modelName}\n{body}";
-        }
-
-        private static byte[] LoadThumbnailPng(ModelSaveSlot slot)
-        {
-            if (slot == null || string.IsNullOrEmpty(slot.thumbnailFileName))
-            {
-                return null;
-            }
-
-            return ModelSaveStorage.ReadAllBytes(slot.thumbnailFileName);
         }
 
         /// <summary>

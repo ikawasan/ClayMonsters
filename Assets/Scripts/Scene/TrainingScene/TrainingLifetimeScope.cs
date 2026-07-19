@@ -2,13 +2,13 @@ using Battle.Interface;
 using Camera.Model;
 using Camera.Presenter;
 using Camera.View;
+using Extensions;
 using SaveData;
 using SaveData.Interface;
 using SaveData.Service;
 using Scene.BattleNpcScene;
 using Scene.BattleNpcScene.View;
 using Scene.Core;
-using Scene.TrainingScene.Interface;
 using Scene.TrainingScene.Presenter;
 using Scene.TrainingScene.View;
 using UI.ClayEditor.View;
@@ -25,6 +25,8 @@ namespace Scene.TrainingScene
     /// </summary>
     public sealed class TrainingLifetimeScope : LifetimeScope
     {
+        private const string ScopeTag = "TrainingLifetimeScope";
+
         [Header("Scene")]
         [SerializeField] private TrainingScene trainingScene;
 
@@ -80,26 +82,26 @@ namespace Scene.TrainingScene
         {
             EnsureSerializedReferences();
 
-            RegisterComponent(builder, trainingScene);
+            VContainerComponentRegistration.RegisterComponent(builder, trainingScene, ScopeTag);
             builder.Register<TrainingPresenter>(Lifetime.Singleton).AsImplementedInterfaces();
 
-            RegisterComponentAsInterfaces(builder, hudView);
-            RegisterComponentAsInterfaces(builder, trainedSaveView);
-            RegisterComponentAsInterfaces(builder, modeSelectView);
-            RegisterComponentAsInterfaces(builder, autoResultView);
-            RegisterComponent(builder, flowRunner);
-            RegisterComponent(builder, battleRunner);
-            RegisterComponent(builder, trainingDisplay);
-            RegisterComponentAsInterfaces(builder, backgroundView);
-            RegisterComponentAsInterfaces(builder, locationCameraView);
-            RegisterComponent(builder, loadSlotView);
+            VContainerComponentRegistration.RegisterComponentAsInterfaces(builder, hudView, ScopeTag);
+            VContainerComponentRegistration.RegisterComponentAsInterfaces(builder, trainedSaveView, ScopeTag);
+            VContainerComponentRegistration.RegisterComponentAsInterfaces(builder, modeSelectView, ScopeTag);
+            VContainerComponentRegistration.RegisterComponentAsInterfaces(builder, autoResultView, ScopeTag);
+            VContainerComponentRegistration.RegisterComponent(builder, flowRunner, ScopeTag);
+            VContainerComponentRegistration.RegisterComponent(builder, battleRunner, ScopeTag);
+            VContainerComponentRegistration.RegisterComponent(builder, trainingDisplay, ScopeTag);
+            VContainerComponentRegistration.RegisterComponentAsInterfaces(builder, backgroundView, ScopeTag);
+            VContainerComponentRegistration.RegisterComponentAsInterfaces(builder, locationCameraView, ScopeTag);
+            VContainerComponentRegistration.RegisterComponent(builder, loadSlotView, ScopeTag);
 
-            RegisterComponentAsInterfaces(builder, cameraView);
+            VContainerComponentRegistration.RegisterComponentAsInterfaces(builder, cameraView, ScopeTag);
             builder.Register<ClayEditCameraPresenter>(Lifetime.Singleton).AsImplementedInterfaces();
             builder.Register<ClayEditCameraModel>(Lifetime.Singleton).AsImplementedInterfaces();
 
-            RegisterComponentAsInterfaces(builder, postProcessView);
-            RegisterComponent(builder, classroomLighting);
+            VContainerComponentRegistration.RegisterComponentAsInterfaces(builder, postProcessView, ScopeTag);
+            VContainerComponentRegistration.RegisterComponent(builder, classroomLighting, ScopeTag);
             builder.Register<BattleCanvasTransition>(Lifetime.Singleton).As<IBattleCanvasTransition>();
             builder.RegisterComponentInHierarchy<BattleStartOverlayView>();
 
@@ -321,30 +323,6 @@ namespace Scene.TrainingScene
             {
                 selectionCanvas = loadSlotView.SelectionCanvas;
             }
-        }
-
-        private static void RegisterComponent<T>(IContainerBuilder builder, T component) where T : Component
-        {
-            if (component == null)
-            {
-                Debug.LogError(
-                    $"[TrainingLifetimeScope] {typeof(T).Name} が見つかりません。TrainingシーンのHierarchy配置を確認してください");
-                return;
-            }
-
-            builder.RegisterComponent(component);
-        }
-
-        private static void RegisterComponentAsInterfaces<T>(IContainerBuilder builder, T component) where T : Component
-        {
-            if (component == null)
-            {
-                Debug.LogError(
-                    $"[TrainingLifetimeScope] {typeof(T).Name} が見つかりません。TrainingシーンのHierarchy配置を確認してください");
-                return;
-            }
-
-            builder.RegisterComponent(component).AsImplementedInterfaces();
         }
     }
 }

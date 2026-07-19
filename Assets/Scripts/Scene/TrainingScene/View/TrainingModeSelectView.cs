@@ -96,64 +96,31 @@ namespace Scene.TrainingScene.View
             }
 
             uiBound = true;
-            EnsureSerializedReferences();
+            ValidateSerializedReferences();
             BindUi();
         }
 
-        private void EnsureSerializedReferences()
+        private void ValidateSerializedReferences()
         {
-            Transform root = transform;
-
             if (windowRoot == null)
             {
                 windowRoot = gameObject;
             }
 
-            if (blocker == null)
+            if (manualButton == null || autoButton == null)
             {
-                blocker = TrainingUiReferenceUtility.FindImage(root, "Blocker");
-            }
-
-            Transform panel = root.Find("WindowPanel");
-            Transform textRoot = panel != null ? panel : root;
-
-            if (titleText == null)
-            {
-                titleText = TrainingUiReferenceUtility.FindText(textRoot, "TitleText");
-            }
-
-            if (modelNameText == null)
-            {
-                modelNameText = TrainingUiReferenceUtility.FindText(textRoot, "ModelNameText");
-            }
-
-            if (descriptionText == null)
-            {
-                descriptionText = TrainingUiReferenceUtility.FindText(textRoot, "DescriptionText");
-            }
-
-            if (manualButton == null)
-            {
-                manualButton = TrainingUiReferenceUtility.FindButton(root, "ManualTrainingButton");
-            }
-
-            if (autoButton == null)
-            {
-                autoButton = TrainingUiReferenceUtility.FindButton(root, "AutoTrainingButton");
+                Debug.LogError(
+                    "[TrainingModeSelectView] ボタン参照が未配線ですTools/ClayMonsters/Wire Training Scene Referencesを実行してください",
+                    this);
             }
         }
 
         private void BindUi()
         {
-            if (windowRoot == null)
-            {
-                windowRoot = gameObject;
-            }
-
             if (GetWindowRoot() == null)
             {
                 Debug.LogError(
-                    "[TrainingModeSelectView] windowRootが見つかりません。TrainingModeSelectWindowが配置されているか確認してください",
+                    "[TrainingModeSelectView] windowRootが未設定です",
                     this);
             }
 
@@ -162,7 +129,6 @@ namespace Scene.TrainingScene.View
                 manualButton.onClick.RemoveListener(OnManualClicked);
                 manualButton.onClick.AddListener(OnManualClicked);
                 manualButton.EnsureUiSoundFeedback();
-                SetButtonLabel(manualButton, "じっくり育成");
             }
 
             if (autoButton != null)
@@ -170,16 +136,6 @@ namespace Scene.TrainingScene.View
                 autoButton.onClick.RemoveListener(OnAutoClicked);
                 autoButton.onClick.AddListener(OnAutoClicked);
                 autoButton.EnsureUiSoundFeedback();
-                SetButtonLabel(autoButton, "自動育成");
-            }
-        }
-
-        private static void SetButtonLabel(LHButton button, string label)
-        {
-            TMP_Text text = button.GetComponentInChildren<TMP_Text>(true);
-            if (text != null)
-            {
-                text.text = label;
             }
         }
 

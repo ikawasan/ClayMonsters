@@ -44,16 +44,10 @@ namespace Scene.TrainingScene
         {
             if (fieldRoot == null)
             {
-                GameObject field = GameObject.Find("Field");
-                if (field != null)
-                {
-                    fieldRoot = field.transform;
-                }
-            }
-
-            if (fieldRoot != null && !fieldRoot.gameObject.activeSelf)
-            {
-                fieldRoot.gameObject.SetActive(true);
+                Debug.LogError(
+                    "[TrainingDisplay] fieldRootが未配線です"
+                    + " このシーンのFieldを割り当ててください",
+                    this);
             }
 
             EnsureDisplayAnchor();

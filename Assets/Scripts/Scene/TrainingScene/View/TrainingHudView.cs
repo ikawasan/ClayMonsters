@@ -55,11 +55,23 @@ namespace Scene.TrainingScene.View
         [Tooltip("育成再開確認用の大型ウィンドウ")]
         [SerializeField] private TrainingResumeWindowView resumeWindowView;
 
+        [Header("Auto Result")]
+        [Tooltip("育成完了リザルトウィンドウ")]
+        [SerializeField] private TrainingAutoResultView autoResultView;
+
         [Header("Location Choice")]
         [Tooltip("行き先3択ボタン。インデックス0〜2に選択肢を割り当てる")]
         [SerializeField] private LHButton[] locationButtons;
+        [Tooltip("行き先ボタンのラベル")]
+        [SerializeField] private TMP_Text[] locationButtonLabels;
         [Tooltip("休憩を選ぶボタン。体力回復用")]
         [SerializeField] private LHButton restButton;
+        [Tooltip("休憩ボタンのラベル")]
+        [SerializeField] private TMP_Text restButtonLabel;
+
+        [Header("Button Labels")]
+        [SerializeField] private TMP_Text continueButtonLabel;
+        [SerializeField] private TMP_Text backToTitleButtonLabel;
 
         [Header("Attack Swap")]
         [Tooltip("攻撃入れ替えパネル")]
@@ -94,8 +106,6 @@ namespace Scene.TrainingScene.View
         private bool continuePressed;
         private int pendingSwapChoice = -1;
         private bool hasSwapChoice;
-        private TrainingResumeWindowView resolvedResumeWindowView;
-        private TrainingAutoResultView resolvedAutoResultView;
 
         private enum TrainingHudLayoutMode
         {
@@ -128,6 +138,7 @@ namespace Scene.TrainingScene.View
             HideAttackSwapChoices();
             HideResumeChoices();
             HideAutoResultWindow();
+            SetInterruptButtonVisible(false);
             if (continueButton != null)
             {
                 continueButton.gameObject.SetActive(false);
@@ -147,6 +158,7 @@ namespace Scene.TrainingScene.View
             HideAttackSwapChoices();
             HideResumeChoices();
             ClearOverlayMessage();
+            SetInterruptButtonVisible(false);
             if (continueButton != null)
             {
                 continueButton.gameObject.SetActive(false);
@@ -272,10 +284,11 @@ namespace Scene.TrainingScene.View
                 }
 
                 TrainingLocation location = choices[i];
-                TMP_Text label = button.GetComponentInChildren<TMP_Text>(true);
-                if (label != null)
+                if (locationButtonLabels != null
+                    && i < locationButtonLabels.Length
+                    && locationButtonLabels[i] != null)
                 {
-                    label.text = TrainingLocationCatalog.GetDisplayName(location);
+                    locationButtonLabels[i].text = TrainingLocationCatalog.GetDisplayName(location);
                 }
 
                 int captured = i;
@@ -299,11 +312,7 @@ namespace Scene.TrainingScene.View
             }
 
             restButton.gameObject.SetActive(true);
-            TMP_Text label = restButton.GetComponentInChildren<TMP_Text>(true);
-            if (label != null)
-            {
-                label.text = "休憩";
-            }
+            LhButtonLabelUtility.SetLabel(restButtonLabel, "休憩");
 
             restButton.onClick.RemoveAllListeners();
             restButton.onClick.AddListener(OnRestClicked);
@@ -467,16 +476,7 @@ namespace Scene.TrainingScene.View
 
         private TrainingAutoResultView GetAutoResultView()
         {
-            EnsureAutoResultViewReference();
-            return resolvedAutoResultView;
-        }
-
-        private void EnsureAutoResultViewReference()
-        {
-            if (resolvedAutoResultView == null)
-            {
-                resolvedAutoResultView = GetComponentInChildren<TrainingAutoResultView>(true);
-            }
+            return autoResultView;
         }
 
         /// <inheritdoc/>
@@ -594,21 +594,13 @@ namespace Scene.TrainingScene.View
             {
                 continueButton.onClick.RemoveListener(OnContinueClicked);
                 continueButton.onClick.AddListener(OnContinueClicked);
-                TMP_Text label = continueButton.GetComponentInChildren<TMP_Text>(true);
-                if (label != null)
-                {
-                    label.text = "続ける";
-                }
+                LhButtonLabelUtility.SetLabel(continueButtonLabel, "続ける");
             }
 
             if (backToTitleButton != null)
             {
                 backToTitleButton.EnsureUiSoundFeedback();
-                TMP_Text label = backToTitleButton.GetComponentInChildren<TMP_Text>(true);
-                if (label != null)
-                {
-                    label.text = "タイトルへ戻る";
-                }
+                LhButtonLabelUtility.SetLabel(backToTitleButtonLabel, "タイトルへ戻る");
 
                 backToTitleButton.gameObject.SetActive(false);
             }
@@ -651,6 +643,7 @@ namespace Scene.TrainingScene.View
             SetPanelVisible(statusPanel, true);
             attackSwapChoicesView?.Clear();
             SetPanelVisible(attackSwapPanel, false);
+            SetInterruptButtonVisible(true);
             UpdateLogPanelVisibility();
         }
 
@@ -662,6 +655,7 @@ namespace Scene.TrainingScene.View
             SetPanelVisible(statusPanel, true);
             SetPanelVisible(locationChoicePanelRoot, false);
             SetPanelVisible(logPanel, false);
+            SetInterruptButtonVisible(false);
         }
 
         private void ApplyResumeLayout()
@@ -674,33 +668,12 @@ namespace Scene.TrainingScene.View
             attackSwapChoicesView?.Clear();
             SetPanelVisible(attackSwapPanel, false);
             SetPanelVisible(logPanel, false);
+            SetInterruptButtonVisible(false);
         }
 
         private TrainingResumeWindowView GetResumeWindowView()
         {
-            EnsureResumeWindowReference();
-            return resolvedResumeWindowView;
-        }
-
-        private void EnsureResumeWindowReference()
-        {
-            if (resumeWindowView != null)
-            {
-                resolvedResumeWindowView = resumeWindowView;
-                return;
-            }
-
-            if (resolvedResumeWindowView == null)
-            {
-                resolvedResumeWindowView = GetComponentInChildren<TrainingResumeWindowView>(true);
-            }
-
-            if (resolvedResumeWindowView == null)
-            {
-                Debug.LogError(
-                    "[TrainingHudView] TrainingResumeWindowViewが見つかりません。TrainingHudCanvas配下に配置されているか確認してください",
-                    this);
-            }
+            return resumeWindowView;
         }
 
         private void SetLegacyResumeButtonsVisible(bool visible)
@@ -733,160 +706,34 @@ namespace Scene.TrainingScene.View
         {
             EnsureRootCanvasReference();
 
-            Transform contentRoot = TrainingUiReferenceUtility.ResolveInProgressHudContentRoot(transform);
-            if (contentRoot == null)
+            if (dayText == null
+                || periodText == null
+                || turnText == null
+                || staminaText == null
+                || statsText == null
+                || continueButton == null
+                || locationButtons == null
+                || locationButtons.Length < 3
+                || restButton == null)
             {
-                return;
+                Debug.LogError(
+                    "[TrainingHudView] SerializeFieldが未配線ですTools/ClayMonsters/Wire Training Scene Referencesを実行してください",
+                    this);
             }
 
-            if (dayText == null)
+            if (resumeWindowView == null)
             {
-                dayText = TrainingUiReferenceUtility.FindText(contentRoot, "DayText");
+                Debug.LogError(
+                    "[TrainingHudView] resumeWindowViewが未配線です",
+                    this);
             }
 
-            if (periodText == null)
+            if (autoResultView == null)
             {
-                periodText = TrainingUiReferenceUtility.FindText(contentRoot, "PeriodText");
+                Debug.LogError(
+                    "[TrainingHudView] autoResultViewが未配線です",
+                    this);
             }
-
-            if (turnText == null)
-            {
-                turnText = TrainingUiReferenceUtility.FindText(contentRoot, "TurnText");
-            }
-
-            if (staminaText == null)
-            {
-                staminaText = TrainingUiReferenceUtility.FindText(contentRoot, "StaminaText");
-            }
-
-            if (statsText == null)
-            {
-                statsText = TrainingUiReferenceUtility.FindText(contentRoot, "StatsText");
-            }
-
-            if (logText == null)
-            {
-                logText = TrainingUiReferenceUtility.FindText(contentRoot, "LogText");
-            }
-
-            if (continueButton == null)
-            {
-                continueButton = TrainingUiReferenceUtility.FindButton(contentRoot, "ContinueButton");
-            }
-
-            if (backToTitleButton == null)
-            {
-                backToTitleButton = TrainingUiReferenceUtility.FindButton(contentRoot, "BackToTitleButton");
-            }
-
-            if (interruptButton == null)
-            {
-                interruptButton = TrainingUiReferenceUtility.FindButton(contentRoot, "InterruptButton");
-            }
-
-            if (restButton == null)
-            {
-                restButton = TrainingUiReferenceUtility.FindButton(contentRoot, "RestButton");
-            }
-
-            EnsureLocationButtonReferences(contentRoot);
-
-            if (staminaFill == null)
-            {
-                staminaFill = TrainingUiReferenceUtility.FindImage(contentRoot, "StaminaFill");
-            }
-
-            if (locationChoicePanelRoot == null)
-            {
-                Transform locationChoicePanel =
-                    TrainingUiReferenceUtility.FindDeepChild(contentRoot, "LocationChoicePanel");
-                locationChoicePanelRoot = locationChoicePanel != null ? locationChoicePanel.gameObject : null;
-            }
-
-            if (attackSwapChoicesView == null)
-            {
-                Transform attackSwapPanelTransform =
-                    TrainingUiReferenceUtility.FindDeepChild(contentRoot, "AttackSwapPanel");
-                attackSwapChoicesView =
-                    attackSwapPanelTransform?.GetComponent<TrainingAttackSwapChoicesView>();
-            }
-
-            EnsurePanelReferences(contentRoot);
-            EnsureResumeWindowReference();
-        }
-
-        private void EnsureLocationButtonReferences(Transform contentRoot)
-        {
-            if (locationButtons == null || locationButtons.Length < 3)
-            {
-                locationButtons = new LHButton[3];
-            }
-
-            for (int i = 0; i < locationButtons.Length; i++)
-            {
-                if (locationButtons[i] != null)
-                {
-                    continue;
-                }
-
-                locationButtons[i] = TrainingUiReferenceUtility.FindButton(contentRoot, "LocationButton" + i);
-            }
-        }
-
-        private void EnsurePanelReferences(Transform contentRoot)
-        {
-            if (hudHeaderPanel == null)
-            {
-                hudHeaderPanel = FindPanelRoot(contentRoot, "HudHeaderPanel", dayText != null ? dayText.transform : null);
-            }
-
-            if (movePowerPanel == null)
-            {
-                movePowerPanel = FindPanelRoot(contentRoot, "MovePowerPanel", staminaText != null ? staminaText.transform : null);
-            }
-
-            if (statusPanel == null)
-            {
-                statusPanel = FindPanelRoot(contentRoot, "StatusPanel", statsText != null ? statsText.transform : null);
-            }
-
-            if (logPanel == null)
-            {
-                logPanel = FindPanelRoot(contentRoot, "LogPanel", logText != null ? logText.transform : null);
-            }
-
-            if (attackSwapPanel == null)
-            {
-                attackSwapPanel = FindPanelRoot(
-                    contentRoot,
-                    "AttackSwapPanel",
-                    attackSwapChoicesView != null ? attackSwapChoicesView.transform : null);
-            }
-        }
-
-        private static GameObject FindPanelRoot(Transform searchRoot, string panelName, Transform childHint)
-        {
-            if (searchRoot == null)
-            {
-                return null;
-            }
-
-            if (childHint != null)
-            {
-                Transform current = childHint.parent;
-                while (current != null && current != searchRoot.parent)
-                {
-                    if (current.name == panelName)
-                    {
-                        return current.gameObject;
-                    }
-
-                    current = current.parent;
-                }
-            }
-
-            Transform panel = TrainingUiReferenceUtility.FindDeepChild(searchRoot, panelName);
-            return panel != null ? panel.gameObject : null;
         }
 
         private bool UsesGroupedLocationChoicePanel()

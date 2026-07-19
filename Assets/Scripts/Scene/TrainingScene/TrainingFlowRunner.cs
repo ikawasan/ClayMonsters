@@ -16,7 +16,6 @@ using System.Threading;
 using UI.ClayEditor.View;
 using UnityEngine;
 using UnityEngine.Serialization;
-using UnityEngine.UI;
 using VContainer;
 
 namespace Scene.TrainingScene
@@ -126,8 +125,29 @@ namespace Scene.TrainingScene
         /// </summary>
         public void PrepareSelectionLayout()
         {
+            loadSlotView?.HideForLeave();
             loadSlotView?.PrepareLayout();
             SetSelectionUiVisible(false);
+            hudView?.Hide();
+            modeSelectView?.Hide();
+            autoResultView?.Hide();
+            trainedSaveView?.HideForLeave();
+        }
+
+        /// <summary>
+        /// シーン退場時に選択UIと育成UIを整理する
+        /// </summary>
+        public void CleanupForLeave()
+        {
+            StopFlow();
+            loadSlotView?.HideForLeave();
+            SetSelectionUiVisible(false);
+            SetSelectionBackToTitleButtonVisible(false);
+            hudView?.Hide();
+            modeSelectView?.Hide();
+            autoResultView?.Hide();
+            trainedSaveView?.HideForLeave();
+            ModelSaveSlotScrollListView.ExitFullscreenSelectionLayout();
         }
 
         /// <summary>
@@ -158,21 +178,7 @@ namespace Scene.TrainingScene
             loadSlotView?.DetachSelectionUiToSceneRoot(transform);
             loadSlotView?.PrepareLayout();
             loadSlotView?.EnsureSelectionReady();
-
-            ModelSaveSlotScrollListView scrollList = loadSlotView != null
-                ? loadSlotView.GetComponentInChildren<ModelSaveSlotScrollListView>(true)
-                : null;
-            scrollList?.ForceSelectionLayout();
             loadSlotView?.Refresh();
-
-            if (selectionCanvas != null)
-            {
-                RectTransform canvasRect = selectionCanvas.GetComponent<RectTransform>();
-                if (canvasRect != null)
-                {
-                    LayoutRebuilder.ForceRebuildLayoutImmediate(canvasRect);
-                }
-            }
 
             await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate, cancellationToken);
             Canvas.ForceUpdateCanvases();
@@ -184,29 +190,6 @@ namespace Scene.TrainingScene
             if (selectionCanvas == null)
             {
                 Debug.LogWarning($"[TrainingFlowRunner] {phase} selectionCanvas未設定");
-                return;
-            }
-
-            ModelSaveSlotScrollListView scrollList = loadSlotView != null
-                ? loadSlotView.GetComponentInChildren<ModelSaveSlotScrollListView>(true)
-                : null;
-            if (scrollList != null)
-            {
-                scrollList.GetLayoutMetrics(
-                    out int builtRows,
-                    out float hostWidth,
-                    out float hostHeight,
-                    out float viewportHeight,
-                    out float contentHeight);
-                Debug.Log(
-                    $"[TrainingFlowRunner] {phase}"
-                    + $" canvasEnabled={selectionCanvas.enabled}"
-                    + $" active={selectionCanvas.gameObject.activeInHierarchy}"
-                    + $" scale={selectionCanvas.transform.lossyScale}"
-                    + $" builtRows={builtRows}"
-                    + $" host=({hostWidth:F0},{hostHeight:F0})"
-                    + $" viewportH={viewportHeight:F0}"
-                    + $" contentH={contentHeight:F0}");
                 return;
             }
 
@@ -474,7 +457,9 @@ namespace Scene.TrainingScene
             hudView.SetInterruptButtonVisible(false);
             hudView.Hide();
 
-            byte[] thumbnailPng = LoadPlayerThumbnailPng(session.PlayerSlotIndex);
+            byte[] thumbnailPng = ModelSaveStorage.ReadThumbnailPng(
+                saveService.GetSlot(ModelSavePool.Player, session.PlayerSlotIndex));
+
 
             if (autoResultView == null)
             {
@@ -573,17 +558,6 @@ namespace Scene.TrainingScene
             session.MarkCompleted();
             activeSession = null;
             await WaitBackToTitleAsync(cancellationToken);
-        }
-
-        private byte[] LoadPlayerThumbnailPng(int playerSlotIndex)
-        {
-            ModelSaveSlot slot = saveService.GetSlot(ModelSavePool.Player, playerSlotIndex);
-            if (slot == null || string.IsNullOrEmpty(slot.thumbnailFileName))
-            {
-                return null;
-            }
-
-            return ModelSaveStorage.ReadAllBytes(slot.thumbnailFileName);
         }
 
         private async UniTask RunActiveTrainingAsync(
@@ -727,20 +701,6 @@ namespace Scene.TrainingScene
             }
         }
 
-        private void WireSelectionBackToTitleButtonReference()
-        {
-            if (selectionBackToTitleButton != null || loadSlotView == null)
-            {
-                return;
-            }
-
-            Transform existing = loadSlotView.transform.Find("SelectionBackToTitleButton");
-            if (existing != null)
-            {
-                selectionBackToTitleButton = existing.GetComponent<LHButton>();
-            }
-        }
-
         private void SetSelectionUiVisible(bool visible)
         {
             if (selectionCanvas == null && loadSlotView != null)
@@ -756,11 +716,10 @@ namespace Scene.TrainingScene
                 return;
             }
 
-            WireSelectionBackToTitleButtonReference();
             if (selectionBackToTitleButton == null)
             {
                 Debug.LogError(
-                    "[TrainingFlowRunner] selectionBackToTitleButtonが未設定です。Hierarchyで参照を配線してください");
+                    "[TrainingFlowRunner] selectionBackToTitleButtonが未設定です。Editor Wireツールで参照を配線してください");
             }
 
             SetSelectionBackToTitleButtonVisible(true);
@@ -790,6 +749,14 @@ namespace Scene.TrainingScene
                 await RunSingleDayAsync(session, modelName, cancellationToken);
                 if (session.IsCompleted || cancellationToken.IsCancellationRequested)
                 {
+                    break;
+                }
+
+                // 金曜終了後は次の日開始メッセージを出さず完了フローへ進む
+                if ((int)session.CurrentDay >= TrainingSettings.TotalDays)
+                {
+                    session.AdvanceDay();
+                    CheckpointSave(session);
                     break;
                 }
 

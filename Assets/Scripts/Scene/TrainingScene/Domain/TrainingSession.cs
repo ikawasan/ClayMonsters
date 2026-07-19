@@ -2,6 +2,7 @@ using ClayEditor.Rigging;
 using SaveData;
 using System.Collections.Generic;
 using UnityEngine;
+
 namespace Scene.TrainingScene.Domain
 {
     /// <summary>
@@ -130,8 +131,8 @@ namespace Scene.TrainingScene.Domain
             CurrentDay = TrainingDayOfWeek.Monday;
             TurnIndexInDay = 0;
             Stamina = TrainingSettings.MaxStamina;
-            CurrentStatus = CloneStatus(baseStatus);
-            AttackMotions = CloneAttacks(attackMotions);
+            CurrentStatus = ModelStatus.CloneOrDefault(baseStatus);
+            AttackMotions = ModelAttackMotionUtility.Normalize(attackMotions, TrainingSettings.AttackSlotCount);
         }
 
         /// <summary>
@@ -241,41 +242,5 @@ namespace Scene.TrainingScene.Domain
             CurrentStatus.speed += gain.Speed;
         }
 
-        private static ModelStatus CloneStatus(ModelStatus source)
-        {
-            if (source == null)
-            {
-                return new ModelStatus();
-            }
-
-            return new ModelStatus
-            {
-                hp = source.hp,
-                attack = source.attack,
-                defense = source.defense,
-                speed = source.speed
-            };
-        }
-
-        private static List<MotionType> CloneAttacks(IReadOnlyList<MotionType> source)
-        {
-            var attacks = new List<MotionType>();
-            if (source == null)
-            {
-                return attacks;
-            }
-
-            for (int i = 0; i < source.Count && attacks.Count < TrainingSettings.AttackSlotCount; i++)
-            {
-                attacks.Add(source[i]);
-            }
-
-            while (attacks.Count < TrainingSettings.AttackSlotCount)
-            {
-                attacks.Add(MotionType.Punch);
-            }
-
-            return attacks;
-        }
     }
 }

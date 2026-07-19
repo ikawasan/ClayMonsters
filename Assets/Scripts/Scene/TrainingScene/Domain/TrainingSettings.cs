@@ -23,7 +23,7 @@ namespace Scene.TrainingScene.Domain
         /// <summary>
         /// 攻撃スロット数
         /// </summary>
-        public const int AttackSlotCount = 4;
+        public const int AttackSlotCount = SaveData.ModelAttackMotionUtility.SlotCount;
 
         /// <summary>
         /// 行動体力の最大値

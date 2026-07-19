@@ -40,6 +40,7 @@ namespace Scene.TrainingScene.View
 
         [Header("Buttons")]
         [SerializeField] private LHButton backToTitleButton;
+        [SerializeField] private TMP_Text backToTitleButtonLabel;
 
         private bool uiBound;
         private Texture2D runtimeThumbnailTexture;
@@ -89,7 +90,7 @@ namespace Scene.TrainingScene.View
                 string buttonLabel = string.IsNullOrEmpty(presentation.ContinueButtonLabel)
                     ? "保存先を選ぶ"
                     : presentation.ContinueButtonLabel;
-                SetButtonLabel(backToTitleButton, buttonLabel);
+                LhButtonLabelUtility.SetLabel(backToTitleButtonLabel, buttonLabel);
             }
 
             SetWindowVisible(true);
@@ -115,7 +116,7 @@ namespace Scene.TrainingScene.View
             if (backToTitleButton == null)
             {
                 Debug.LogError(
-                    "[TrainingAutoResultView] BackToTitleButtonが見つかりません。TrainingAutoResultWindow配下を確認してください",
+                    "[TrainingAutoResultView] BackToTitleButtonが未配線です",
                     this);
                 return;
             }
@@ -148,114 +149,39 @@ namespace Scene.TrainingScene.View
             }
 
             uiBound = true;
+            ValidateSerializedReferences();
             BindUi();
         }
 
-        private void BindUi()
+        private void ValidateSerializedReferences()
         {
-            EnsureSerializedReferences();
-
-            EnsureThumbnailReference();
-            EnsureAttacksPanelReference();
-
-            if (backToTitleButton != null)
-            {
-                backToTitleButton.EnsureUiSoundFeedback();
-                SetButtonLabel(backToTitleButton, "保存先を選ぶ");
-            }
-        }
-
-        private void EnsureSerializedReferences()
-        {
-            Transform root = transform;
-
             if (windowRoot == null)
             {
                 windowRoot = gameObject;
             }
 
-            if (blocker == null)
-            {
-                blocker = TrainingUiReferenceUtility.FindImage(root, "Blocker");
-            }
-
-            if (titleText == null)
-            {
-                titleText = TrainingUiReferenceUtility.FindWindowPanelChild(root, "TitleText")
-                    ?.GetComponent<TMP_Text>();
-            }
-
-            if (modelNameText == null)
-            {
-                modelNameText = TrainingUiReferenceUtility.FindWindowPanelChild(root, "ModelNameText")
-                    ?.GetComponent<TMP_Text>();
-            }
-
-            if (statsText == null)
-            {
-                statsText = TrainingUiReferenceUtility.FindWindowPanelChild(root, "StatsText")
-                    ?.GetComponent<TMP_Text>();
-            }
-
-            if (saveResultText == null)
-            {
-                saveResultText = TrainingUiReferenceUtility.FindWindowPanelChild(root, "SaveResultText")
-                    ?.GetComponent<TMP_Text>();
-            }
-
-            if (backToTitleButton == null)
-            {
-                backToTitleButton = TrainingUiReferenceUtility.FindButton(root, "BackToTitleButton");
-            }
-        }
-
-        private void EnsureThumbnailReference()
-        {
-            if (thumbnailImage != null)
-            {
-                return;
-            }
-
-            Transform thumbnailTransform =
-                TrainingUiReferenceUtility.FindWindowPanelChild(transform, "ThumbnailImage");
-            if (thumbnailTransform == null)
-            {
-                Transform frame = TrainingUiReferenceUtility.FindWindowPanelChild(transform, "ThumbnailFrame");
-                thumbnailTransform = frame != null
-                    ? TrainingUiReferenceUtility.FindDeepChild(frame, "ThumbnailImage")
-                    : null;
-            }
-
-            thumbnailImage = thumbnailTransform?.GetComponent<Image>();
-
-            if (thumbnailImage == null)
+            if (thumbnailImage == null
+                || attacksPanel == null
+                || backToTitleButton == null
+                || backToTitleButtonLabel == null)
             {
                 Debug.LogError(
-                    "[TrainingAutoResultView] ThumbnailImageが見つかりません。TrainingAutoResultWindow配下を確認してください",
+                    "[TrainingAutoResultView] SerializeFieldが未配線ですTools/ClayMonsters/Wire Training Scene Referencesを実行してください",
                     this);
             }
         }
 
-        private void EnsureAttacksPanelReference()
+        private void BindUi()
         {
-            if (attacksPanel != null)
+            if (backToTitleButton != null)
             {
-                return;
-            }
-
-            Transform attacksTransform = TrainingUiReferenceUtility.FindWindowPanelChild(transform, "AttacksPanel");
-            attacksPanel = attacksTransform?.GetComponent<TrainingResumeAttacksContentView>();
-            if (attacksPanel == null)
-            {
-                Debug.LogError(
-                    "[TrainingAutoResultView] AttacksPanelが見つかりません。TrainingAutoResultWindow配下を確認してください",
-                    this);
+                backToTitleButton.EnsureUiSoundFeedback();
+                LhButtonLabelUtility.SetLabel(backToTitleButtonLabel, "保存先を選ぶ");
             }
         }
 
         private void ApplyThumbnail(byte[] thumbnailPng)
         {
-            EnsureThumbnailReference();
             ClearThumbnail();
 
             if (thumbnailImage == null)
@@ -263,24 +189,15 @@ namespace Scene.TrainingScene.View
                 return;
             }
 
-            if (thumbnailPng == null || thumbnailPng.Length == 0)
+            if (!RuntimeThumbnailUtility.TryCreate(
+                    thumbnailPng,
+                    out runtimeThumbnailTexture,
+                    out runtimeThumbnailSprite))
             {
                 thumbnailImage.gameObject.SetActive(false);
                 return;
             }
 
-            runtimeThumbnailTexture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
-            if (!runtimeThumbnailTexture.LoadImage(thumbnailPng))
-            {
-                ClearThumbnail();
-                thumbnailImage.gameObject.SetActive(false);
-                return;
-            }
-
-            runtimeThumbnailSprite = Sprite.Create(
-                runtimeThumbnailTexture,
-                new Rect(0f, 0f, runtimeThumbnailTexture.width, runtimeThumbnailTexture.height),
-                new Vector2(0.5f, 0.5f));
             TitleClayUiVisualUtility.ApplySlotThumbnailImage(thumbnailImage, runtimeThumbnailSprite);
             thumbnailImage.gameObject.SetActive(true);
         }
@@ -293,26 +210,7 @@ namespace Scene.TrainingScene.View
                 thumbnailImage.gameObject.SetActive(false);
             }
 
-            if (runtimeThumbnailSprite != null)
-            {
-                Destroy(runtimeThumbnailSprite);
-                runtimeThumbnailSprite = null;
-            }
-
-            if (runtimeThumbnailTexture != null)
-            {
-                Destroy(runtimeThumbnailTexture);
-                runtimeThumbnailTexture = null;
-            }
-        }
-
-        private static void SetButtonLabel(LHButton button, string label)
-        {
-            TMP_Text text = button.GetComponentInChildren<TMP_Text>(true);
-            if (text != null)
-            {
-                text.text = label;
-            }
+            RuntimeThumbnailUtility.Destroy(ref runtimeThumbnailSprite, ref runtimeThumbnailTexture);
         }
 
         private void SetWindowVisible(bool visible)

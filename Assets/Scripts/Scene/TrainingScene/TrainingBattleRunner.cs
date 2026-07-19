@@ -68,6 +68,8 @@ namespace Scene.TrainingScene
 
         [SerializeField] private GameObject battleCanvasRoot;
 
+        [SerializeField] private BattleTipsView tipsView;
+
 
 
         [Header("配置")]
@@ -117,6 +119,8 @@ namespace Scene.TrainingScene
 
         private ITrainingLocationCameraView locationCameraView;
 
+        private BattleClassroomLighting classroomLighting;
+
         private GameObject lastEnemyModel;
 
         /// <summary>
@@ -133,6 +137,7 @@ namespace Scene.TrainingScene
             overlayView?.HideVsUi();
             SetBattleSceneActive(false);
             DestroyEnemyModel();
+            HideBattleFieldForTraining();
         }
 
         [Inject]
@@ -157,7 +162,9 @@ namespace Scene.TrainingScene
 
             ITrainingBackgroundView trainingBackgroundView,
 
-            ITrainingLocationCameraView locationCameraView)
+            ITrainingLocationCameraView locationCameraView,
+
+            BattleClassroomLighting classroomLighting)
 
         {
 
@@ -180,6 +187,8 @@ namespace Scene.TrainingScene
             this.trainingBackgroundView = trainingBackgroundView;
 
             this.locationCameraView = locationCameraView;
+
+            this.classroomLighting = classroomLighting;
 
         }
 
@@ -388,6 +397,9 @@ namespace Scene.TrainingScene
                     battleCamera.SetCameraOperatable(false);
                 }
 
+                // カメラ切替後にもFieldを再確認する
+                EnsureBattleFieldVisible();
+
                 BattleFieldLayout fieldLayout = new BattleFieldLayout(
                     player.Model.transform,
                     enemy.Model.transform,
@@ -499,6 +511,32 @@ namespace Scene.TrainingScene
 
                 BattleUiInputScope inputScope = BattleUiInputScope.Suppress();
 
+                System.IDisposable tipsSession = null;
+
+                if (tipsView == null && battleView != null)
+
+                {
+
+                    Transform hudRoot = battleView.transform.parent;
+
+                    if (hudRoot != null)
+
+                    {
+
+                        tipsView = hudRoot.GetComponentInChildren<BattleTipsView>(true);
+
+                    }
+
+                }
+
+                if (tipsView != null)
+
+                {
+
+                    tipsSession = tipsView.BeginCombatSession();
+
+                }
+
                 try
 
                 {
@@ -516,6 +554,8 @@ namespace Scene.TrainingScene
                 finally
 
                 {
+
+                    tipsSession?.Dispose();
 
                     inputScope.Dispose();
 
@@ -653,13 +693,7 @@ namespace Scene.TrainingScene
         private void PrepareBattleEnvironment()
         {
             trainingBackgroundView?.HideForLeave();
-
-            BattleMatchupBackgroundView matchupBackground =
-                FindFirstObjectByType<BattleMatchupBackgroundView>(FindObjectsInactive.Include);
-            if (matchupBackground != null)
-            {
-                matchupBackground.enabled = true;
-            }
+            classroomLighting?.Apply();
 
             if (staging != null)
             {
@@ -675,17 +709,25 @@ namespace Scene.TrainingScene
         private void EnsureBattleFieldVisible()
         {
             trainingBackgroundView?.HideForLeave();
+            classroomLighting?.Apply();
 
-            BattleMatchupBackgroundView matchupBackground =
-                FindFirstObjectByType<BattleMatchupBackgroundView>(FindObjectsInactive.Include);
-            if (matchupBackground != null)
+            if (staging == null)
             {
-                matchupBackground.enabled = true;
-                matchupBackground.ShowClassroom();
+                Debug.LogError("[TrainingBattleRunner] stagingが未配線です", this);
                 return;
             }
 
-            BattleClassroomFieldLayout.SetFieldVisible(true);
+            staging.EnsureClassroomVisible();
+        }
+
+        /// <summary>
+        /// 育成復帰用に戦闘Fieldと対戦炎演出を隠す
+        /// DefaultBackgroundは育成背景のためここでは触らない
+        /// </summary>
+        private void HideBattleFieldForTraining()
+        {
+            staging?.EndMatchupPresentation();
+            staging?.HideClassroom();
         }
 
         /// <summary>
@@ -724,15 +766,15 @@ namespace Scene.TrainingScene
             overlayView?.HideImmediate();
             overlayView?.HideVsUi();
 
+            HideBattleFieldForTraining();
+
             if (staging != null)
             {
                 staging.enabled = false;
             }
 
-            BattleMatchupBackgroundView matchupBackground =
-                FindFirstObjectByType<BattleMatchupBackgroundView>(FindObjectsInactive.Include);
-            matchupBackground?.HideClassroom();
-            BattleClassroomFieldLayout.SetFieldVisible(false);
+            // Staging無効化後にもう一度隠しOnDisable副作用を潰す
+            HideBattleFieldForTraining();
             trainingBackgroundView?.ShowDefaultBackground();
 
             if (playerModel != null)
