@@ -1,3 +1,4 @@
+using Extensions;
 using Scene.BattlePVPScene.Interface;
 using Scene.BattlePVPScene.Network;
 using Scene.BattlePVPScene.Service;
@@ -20,6 +21,7 @@ namespace Scene.PvpLobby
     public sealed class PvpLobbyLifetimeScope : LifetimeScope
     {
         private const string DedicatedScopeObjectName = "PvpLobbyDi";
+        private const string ScopeTag = "PvpLobbyLifetimeScope";
 
         private static PendingRuntimeConfiguration pendingRuntimeConfiguration;
         private static LifetimeScope pendingParentScope;
@@ -94,12 +96,12 @@ namespace Scene.PvpLobby
             ApplyPendingRuntimeConfiguration();
             EnsureSerializedReferences();
 
-            RegisterComponent(builder, pvpLobby);
-            RegisterComponentAsInterfaces(builder, lobbyView);
+            VContainerComponentRegistration.RegisterComponent(builder, pvpLobby, ScopeTag);
+            VContainerComponentRegistration.RegisterComponentAsInterfaces(builder, lobbyView, ScopeTag);
             builder.Register<PvpLobbyPresenter>(Lifetime.Singleton).AsImplementedInterfaces();
 
-            RegisterComponent(builder, networkManager);
-            RegisterComponent(builder, sessionSpawner);
+            VContainerComponentRegistration.RegisterComponent(builder, networkManager, ScopeTag);
+            VContainerComponentRegistration.RegisterComponent(builder, sessionSpawner, ScopeTag);
             builder.Register<NetcodeBattlePvpMatchmakingService>(Lifetime.Singleton).AsImplementedInterfaces();
         }
 
@@ -169,28 +171,6 @@ namespace Scene.PvpLobby
             public BattlePVPView View;
             public NetworkManager NetworkManager;
             public BattlePvpSessionSpawner SessionSpawner;
-        }
-
-        private static void RegisterComponent<T>(IContainerBuilder builder, T component) where T : Component
-        {
-            if (component == null)
-            {
-                Debug.LogError($"[PvpLobbyLifetimeScope] {typeof(T).Name} が未設定です");
-                return;
-            }
-
-            builder.RegisterComponent(component);
-        }
-
-        private static void RegisterComponentAsInterfaces<T>(IContainerBuilder builder, T component) where T : Component
-        {
-            if (component == null)
-            {
-                Debug.LogError($"[PvpLobbyLifetimeScope] {typeof(T).Name} が未設定です");
-                return;
-            }
-
-            builder.RegisterComponent(component).AsImplementedInterfaces();
         }
     }
 }

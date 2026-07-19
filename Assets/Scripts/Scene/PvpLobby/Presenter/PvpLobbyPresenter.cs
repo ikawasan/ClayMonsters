@@ -73,6 +73,8 @@ namespace Scene.PvpLobby.Presenter
         /// <inheritdoc/>
         public void OnHide()
         {
+            // 成功遷移時のHideでNetworkを落とさない
+            // 中断は戻る/キャンセルボタン側のCancelMatchingで行う
             ResetMatchingUi();
         }
 
@@ -208,6 +210,11 @@ namespace Scene.PvpLobby.Presenter
                     return;
                 }
 
+                // Hide前に接続を保持したままマッチング状態だけ解放する
+                matchmakingService.FinishMatchmakingKeepNetwork();
+                matchCts?.Dispose();
+                matchCts = null;
+                isMatching = false;
                 pvpLobby.Hide();
                 await sceneManager.TransitionScene(
                     new BattlePvpArenaScene.BattlePvpArenaTransitionData());
