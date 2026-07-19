@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Scene.ClayEditScene.Interface;
+using Scene.Rendering;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -14,6 +15,7 @@ namespace Scene.ClayEditScene.View
     public sealed class ClayEditPostProcessView : MonoBehaviour, IClayEditPostProcess
     {
         private const int UiExclusionFrameCount = 3;
+        private const int DefaultRendererIndex = -1;
 
         [SerializeField] private Color backgroundColor = Color.black;
 
@@ -21,8 +23,12 @@ namespace Scene.ClayEditScene.View
         private CameraClearFlags previousClearFlags;
         private Color previousBackgroundColor;
         private bool previousPostProcessingEnabled;
+        private int previousRendererIndex = DefaultRendererIndex;
+        private CameraOverrideOption previousDepthOption = CameraOverrideOption.UsePipelineSettings;
+        private bool hasStoredCameraState;
         private bool isEnabled;
         private int remainingUiExclusionFrames;
+        private readonly List<Volume> disabledVolumes = new();
         private readonly List<CanvasRenderState> savedCanvasStates = new();
 
         private readonly struct CanvasRenderState
@@ -42,6 +48,11 @@ namespace Scene.ClayEditScene.View
         /// <inheritdoc/>
         public void Enable()
         {
+            if (isEnabled)
+            {
+                return;
+            }
+
             if (!gameObject.activeSelf)
             {
                 gameObject.SetActive(true);
@@ -51,6 +62,7 @@ namespace Scene.ClayEditScene.View
             remainingUiExclusionFrames = UiExclusionFrameCount;
             ApplyUiExclusion();
             DisableSceneVolumes();
+            BackgroundOutlineActivation.SuppressForClayEdit();
             ApplyBlackBackground();
             DisableCameraPostProcessing();
         }
@@ -65,6 +77,8 @@ namespace Scene.ClayEditScene.View
 
             isEnabled = false;
             remainingUiExclusionFrames = 0;
+            BackgroundOutlineActivation.ClearClayEditSuppression();
+            RestoreSceneVolumes();
             RestoreCameraSettings();
             RestoreUiCanvases();
         }
@@ -104,18 +118,48 @@ namespace Scene.ClayEditScene.View
 
             cameraData = additionalCameraData;
             previousPostProcessingEnabled = cameraData.renderPostProcessing;
+            previousDepthOption = cameraData.requiresDepthOption;
+            // 前シーンのRenderer(SSAO等)が残ると色味が変わるためデフォルトへ戻す
+            previousRendererIndex = DefaultRendererIndex;
+            hasStoredCameraState = true;
+
             cameraData.renderPostProcessing = false;
+            cameraData.requiresDepthOption = CameraOverrideOption.UsePipelineSettings;
+            cameraData.SetRenderer(DefaultRendererIndex);
         }
 
-        private static void DisableSceneVolumes()
+        private void DisableSceneVolumes()
         {
+            RestoreSceneVolumes();
+
             Volume[] volumes = Object.FindObjectsByType<Volume>(
                 FindObjectsInactive.Include,
                 FindObjectsSortMode.None);
             for (int i = 0; i < volumes.Length; i++)
             {
-                volumes[i].enabled = false;
+                Volume volume = volumes[i];
+                if (volume == null || !volume.enabled)
+                {
+                    continue;
+                }
+
+                disabledVolumes.Add(volume);
+                volume.enabled = false;
             }
+        }
+
+        private void RestoreSceneVolumes()
+        {
+            for (int i = 0; i < disabledVolumes.Count; i++)
+            {
+                Volume volume = disabledVolumes[i];
+                if (volume != null)
+                {
+                    volume.enabled = true;
+                }
+            }
+
+            disabledVolumes.Clear();
         }
 
         private void RestoreCameraSettings()
@@ -127,10 +171,13 @@ namespace Scene.ClayEditScene.View
                 camera.backgroundColor = previousBackgroundColor;
             }
 
-            if (cameraData != null)
+            if (hasStoredCameraState && cameraData != null)
             {
                 cameraData.renderPostProcessing = previousPostProcessingEnabled;
+                cameraData.requiresDepthOption = previousDepthOption;
+                cameraData.SetRenderer(previousRendererIndex);
                 cameraData = null;
+                hasStoredCameraState = false;
             }
         }
 
