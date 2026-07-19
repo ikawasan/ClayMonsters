@@ -246,6 +246,40 @@ namespace UI.ClayEditor.View
             SetConfirmCanvasButtonsVisible(previewVisible: false, closeVisible: false);
         }
 
+        /// <summary>
+        /// シーン退場再入場向けに保存フローUIだけ初期化する
+        /// 編集オーバーレイと保存ボタンの表示はeditorUiGate側に任せる
+        /// </summary>
+        public void HideForLeave()
+        {
+            isSaving = false;
+            selectedSlot = -1;
+            slotActionConfirmView?.Clear();
+            slotActionDeletePromptView?.Hide();
+            CloseConfirmCanvas();
+            SetCanvasEnabled(slotCanvas, false);
+            SetCanvasEnabled(nameInputCanvas, false);
+            SetCanvasEnabled(slotActionCanvas, false);
+            SetCanvasEnabled(saveConfirmCanvas, false);
+            SetConfirmCanvasButtonsVisible(previewVisible: false, closeVisible: false);
+            isSaveUiOpen.Value = false;
+            ModelSaveSlotScrollListView.ExitFullscreenSelectionLayout();
+        }
+
+        /// <summary>
+        /// 編集開始時に保存ボタンと編集オーバーレイを再表示する
+        /// </summary>
+        public void ShowEditorChrome()
+        {
+            if (isSaveUiOpen.Value)
+            {
+                return;
+            }
+
+            SetEditorOverlaysVisible(true);
+            SetOpenSaveUiVisible(true);
+        }
+
         // Unityエディタ以外では敵保存UIを隠す
         private void ApplyEnemySaveUiVisibility()
         {
@@ -471,7 +505,7 @@ namespace UI.ClayEditor.View
             SetCanvasEnabled(nameInputCanvas, false);
             SetCanvasEnabled(slotActionCanvas, true);
             SetSaveUiOpenState(true);
-            slotActionConfirmView?.ShowSlot(slot, LoadSlotThumbnailPng(slot), slotIndex);
+            slotActionConfirmView?.ShowSlot(slot, ModelSaveStorage.ReadThumbnailPng(slot), slotIndex);
         }
 
         private void OnSlotActionOverwrite()
@@ -533,22 +567,6 @@ namespace UI.ClayEditor.View
             SetCanvasEnabled(slotCanvas, true);
             SetSaveUiOpenState(true);
             RefreshSlots();
-        }
-
-        private static byte[] LoadSlotThumbnailPng(ModelSaveSlot slot)
-        {
-            if (slot == null || string.IsNullOrEmpty(slot.thumbnailFileName))
-            {
-                return null;
-            }
-
-            string path = Path.Combine(Application.persistentDataPath, slot.thumbnailFileName);
-            if (!File.Exists(path))
-            {
-                return null;
-            }
-
-            return File.ReadAllBytes(path);
         }
 
         // 名前入力の戻るボタンが押されたとき: スロット選択へ戻る
@@ -671,10 +689,9 @@ namespace UI.ClayEditor.View
                 SetCanvasEnabled(slotCanvas, false);
                 saveConfirmView?.ShowPreview(
                     pendingModelName,
-                    pendingThumbnailPng,
-                    selectedSlot,
                     pendingStatus,
-                    pendingRegisteredAttackMotions);
+                    pendingRegisteredAttackMotions,
+                    pendingThumbnailPng);
                 SetConfirmCanvasButtonsVisible(previewVisible: true, closeVisible: false);
                 SetCanvasEnabled(saveConfirmCanvas, true);
                 SetSaveUiOpenState(true);
@@ -989,17 +1006,7 @@ namespace UI.ClayEditor.View
         // Canvasのenabledを安全に切り替える
         private static void SetCanvasEnabled(Canvas canvas, bool isEnabled)
         {
-            if (canvas == null)
-            {
-                return;
-            }
-
-            canvas.enabled = isEnabled;
-            if (isEnabled)
-            {
-                canvas.overrideSorting = true;
-                canvas.sortingOrder = SaveCanvasSortingOrder;
-            }
+            CanvasVisibilityUtility.SetCanvasEnabled(canvas, isEnabled, SaveCanvasSortingOrder);
         }
 
         // 生成済みのサムネイル(Texture2D / Sprite)を破棄する

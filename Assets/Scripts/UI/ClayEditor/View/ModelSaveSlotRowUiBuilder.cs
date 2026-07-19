@@ -24,7 +24,7 @@ namespace UI.ClayEditor.View
         public const float DefaultThumbnailColumnWidth = 104f;
         public const float ConfirmThumbnailColumnWidth = 258f;
         public const float ScrollListThumbnailColumnWidth = 280f;
-        public const int ConfirmAttackSlotCount = 4;
+        public const int ConfirmAttackSlotCount = ModelAttackMotionUtility.SlotCount;
         public const float ConfirmPreviewRowWidth = 1320f;
         public const float ConfirmPreviewThumbnailColumnWidth = 520f;
 

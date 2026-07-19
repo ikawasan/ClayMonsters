@@ -1,11 +1,7 @@
-using ClayEditor.Rigging;
-
-using GameData;
-
-using SaveData;
-
 using System.Collections.Generic;
-
+using ClayEditor.Rigging;
+using Extensions;
+using SaveData;
 using UnityEngine;
 
 namespace UI.ClayEditor.View
@@ -23,33 +19,20 @@ namespace UI.ClayEditor.View
 
         private Texture2D runtimeThumbnailTexture;
         private Sprite runtimeThumbnailSprite;
-
-        private void Awake()
-        {
-            FreezeManualLayout();
-            BindSceneUi();
-        }
-
-        private void FreezeManualLayout()
-        {
-            Transform layoutRoot = contentRoot != null ? contentRoot : transform.Find("ConfirmContent");
-            ModelSaveConfirmLayoutUtility.FreezeManualLayoutDrivers(layoutRoot);
-        }
+        private bool validated;
 
         /// <summary>
-        /// 保存前プレビューを表示する
+        /// 新規保存前のプレビューを表示する
         /// </summary>
         public void ShowPreview(
             string modelName,
-            byte[] thumbnailPng,
-            int slotIndex,
             ModelStatus status,
-            IReadOnlyList<MotionType> registeredAttackMotions)
+            IReadOnlyList<MotionType> attackMotions,
+            byte[] thumbnailPng)
         {
-            _ = slotIndex;
-            BindSceneUi();
+            ValidateSerializedReferences();
             SetLegacyMessageVisible(false);
-            rowElementRefs?.BindConfirmPreview(modelName, status, registeredAttackMotions);
+            rowElementRefs?.BindConfirmPreview(modelName, status, attackMotions);
             ApplyThumbnail(thumbnailPng);
         }
 
@@ -59,7 +42,7 @@ namespace UI.ClayEditor.View
         public void ShowSlot(ModelSaveSlot slot, byte[] thumbnailPng, int slotIndex)
         {
             _ = slotIndex;
-            BindSceneUi();
+            ValidateSerializedReferences();
             SetLegacyMessageVisible(false);
             rowElementRefs?.BindConfirmFromSlot(slot);
             ApplyThumbnail(thumbnailPng);
@@ -80,29 +63,20 @@ namespace UI.ClayEditor.View
             ClearThumbnail();
         }
 
-        private void BindSceneUi()
+        private void ValidateSerializedReferences()
         {
-            TryResolveLegacyMessageRoot();
-
-            if (contentRoot == null)
+            if (validated)
             {
-                Transform existing = transform.Find("ConfirmContent");
-                if (existing is RectTransform rectTransform)
-                {
-                    contentRoot = rectTransform;
-                }
+                return;
             }
 
-            if (rowElementRefs == null && contentRoot != null)
+            validated = true;
+            if (rowElementRefs == null)
             {
-                Transform rowTransform = contentRoot.Find("ConfirmSlotRow");
-                if (rowTransform != null)
-                {
-                    rowElementRefs = rowTransform.GetComponent<ModelSaveSlotRowElementRefs>();
-                }
+                Debug.LogError(
+                    "[ModelSaveConfirmView] rowElementRefsが未配線ですEditorのWireでConfirmSlotRowを接続してください",
+                    this);
             }
-
-            rowElementRefs?.EnsureConfirmPrefabLayout();
         }
 
         private void ApplyThumbnail(byte[] thumbnailPng)
@@ -114,24 +88,14 @@ namespace UI.ClayEditor.View
                 return;
             }
 
-            if (thumbnailPng == null || thumbnailPng.Length == 0)
+            if (!RuntimeThumbnailUtility.TryCreate(
+                    thumbnailPng,
+                    out runtimeThumbnailTexture,
+                    out runtimeThumbnailSprite))
             {
                 rowElementRefs.ApplyConfirmThumbnail(null);
                 return;
             }
-
-            runtimeThumbnailTexture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
-            if (!runtimeThumbnailTexture.LoadImage(thumbnailPng))
-            {
-                ClearThumbnail();
-                rowElementRefs.ApplyConfirmThumbnail(null);
-                return;
-            }
-
-            runtimeThumbnailSprite = Sprite.Create(
-                runtimeThumbnailTexture,
-                new Rect(0f, 0f, runtimeThumbnailTexture.width, runtimeThumbnailTexture.height),
-                new Vector2(0.5f, 0.5f));
 
             rowElementRefs.ApplyConfirmThumbnail(runtimeThumbnailSprite);
         }
@@ -139,18 +103,7 @@ namespace UI.ClayEditor.View
         private void ClearThumbnail()
         {
             rowElementRefs?.ApplyConfirmThumbnail(null);
-
-            if (runtimeThumbnailSprite != null)
-            {
-                Destroy(runtimeThumbnailSprite);
-                runtimeThumbnailSprite = null;
-            }
-
-            if (runtimeThumbnailTexture != null)
-            {
-                Destroy(runtimeThumbnailTexture);
-                runtimeThumbnailTexture = null;
-            }
+            RuntimeThumbnailUtility.Destroy(ref runtimeThumbnailSprite, ref runtimeThumbnailTexture);
         }
 
         private void SetLegacyMessageVisible(bool visible)
@@ -158,32 +111,6 @@ namespace UI.ClayEditor.View
             if (legacyMessageRoot != null)
             {
                 legacyMessageRoot.SetActive(visible);
-            }
-        }
-
-        private void TryResolveLegacyMessageRoot()
-        {
-            if (legacyMessageRoot != null)
-            {
-                return;
-            }
-
-            Transform parent = transform.parent;
-            if (parent == null)
-            {
-                return;
-            }
-
-            for (int i = 0; i < parent.childCount; i++)
-            {
-                Transform child = parent.GetChild(i);
-                if (child == transform || child.name != "Text (TMP)")
-                {
-                    continue;
-                }
-
-                legacyMessageRoot = child.gameObject;
-                return;
             }
         }
     }

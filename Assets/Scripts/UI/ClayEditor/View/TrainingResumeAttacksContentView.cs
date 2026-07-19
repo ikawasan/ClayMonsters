@@ -1,4 +1,5 @@
 using ClayEditor.Rigging;
+using SaveData;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -11,7 +12,7 @@ namespace UI.ClayEditor.View
     /// </summary>
     public sealed class TrainingResumeAttacksContentView : MonoBehaviour
     {
-        public const int AttackSlotCount = 4;
+        public const int AttackSlotCount = ModelAttackMotionUtility.SlotCount;
 
         [SerializeField] private TMP_Text headerText;
         [SerializeField] private TMP_Text emptyText;

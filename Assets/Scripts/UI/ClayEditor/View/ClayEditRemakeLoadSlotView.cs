@@ -36,6 +36,8 @@ namespace UI.ClayEditor.View
 
         [Header("確認キャンバス")]
         [SerializeField] private Canvas confirmCanvas;
+        [Tooltip("確認背景Image。未設定ならレイキャスト調整をスキップする")]
+        [SerializeField] private Image confirmBackgroundImage;
         [SerializeField] private ModelSaveConfirmView loadConfirmView;
         [SerializeField] private LHButton selectButton;
         [SerializeField] private LHButton deleteButton;
@@ -135,14 +137,13 @@ namespace UI.ClayEditor.View
         public void Hide()
         {
             selectedSlot = -1;
+            isLoading = false;
             loadConfirmView?.Clear();
             deletePromptView?.Hide();
             SetConfirmVisible(false);
             Canvas canvas = GetComponent<Canvas>();
-            if (canvas != null)
-            {
-                canvas.enabled = false;
-            }
+            CanvasVisibilityUtility.SetCanvasEnabled(canvas, false);
+            ModelSaveSlotScrollListView.ExitFullscreenSelectionLayout();
         }
 
         private void RefreshSlots()
@@ -415,35 +416,12 @@ namespace UI.ClayEditor.View
                 return;
             }
 
-            loadConfirmView.ShowSlot(slot, LoadThumbnailPng(slot), slotIndex);
-        }
-
-        private static byte[] LoadThumbnailPng(ModelSaveSlot slot)
-        {
-            if (slot == null || string.IsNullOrEmpty(slot.thumbnailFileName))
-            {
-                return null;
-            }
-
-            string path = Path.Combine(Application.persistentDataPath, slot.thumbnailFileName);
-            if (!File.Exists(path))
-            {
-                return null;
-            }
-
-            return File.ReadAllBytes(path);
+            loadConfirmView.ShowSlot(slot, ModelSaveStorage.ReadThumbnailPng(slot), slotIndex);
         }
 
         private void ApplySelectionCanvasSorting()
         {
-            Canvas canvas = GetComponent<Canvas>();
-            if (canvas == null)
-            {
-                return;
-            }
-
-            canvas.overrideSorting = true;
-            canvas.sortingOrder = SelectionCanvasSortingOrder;
+            CanvasVisibilityUtility.ApplyOverrideSorting(GetComponent<Canvas>(), SelectionCanvasSortingOrder);
         }
 
         /// <summary>
@@ -478,11 +456,12 @@ namespace UI.ClayEditor.View
             }
 
             ModelSaveSlotScrollListView.EnsureSelectionBackground(confirmCanvas);
-            Transform background = confirmCanvas.transform.Find("BackGround");
-            if (background != null && background.TryGetComponent(out Image image))
+            if (confirmBackgroundImage == null)
             {
-                image.raycastTarget = true;
+                return;
             }
+
+            confirmBackgroundImage.raycastTarget = true;
         }
 
         /// <summary>
@@ -499,17 +478,13 @@ namespace UI.ClayEditor.View
 
         private static void SetCanvasEnabled(Canvas canvas, bool isEnabled, int sortingOrder = 0)
         {
-            if (canvas == null)
+            if (isEnabled && sortingOrder > 0)
             {
+                CanvasVisibilityUtility.SetCanvasEnabled(canvas, true, sortingOrder);
                 return;
             }
 
-            canvas.enabled = isEnabled;
-            if (isEnabled && sortingOrder > 0)
-            {
-                canvas.overrideSorting = true;
-                canvas.sortingOrder = sortingOrder;
-            }
+            CanvasVisibilityUtility.SetCanvasEnabled(canvas, isEnabled);
         }
 
         private void ClearRuntimeThumbnails()
@@ -527,9 +502,14 @@ namespace UI.ClayEditor.View
 
         private void EnsureSlotScrollList()
         {
-            slotScrollList = ModelSaveSlotScrollListRuntimeUtility.EnsureHostUnderTransform(
-                transform,
-                slotScrollList);
+            if (slotScrollList != null)
+            {
+                return;
+            }
+
+            Debug.LogError(
+                "[ClayEditRemakeLoadSlotView] slotScrollListが未設定です。Editor Wireツールで参照を配線してください",
+                this);
         }
 
         private void ValidateSceneLayout()

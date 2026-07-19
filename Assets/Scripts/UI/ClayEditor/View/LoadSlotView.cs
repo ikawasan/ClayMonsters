@@ -30,8 +30,11 @@ namespace UI.ClayEditor.View
         [Inject] private readonly IBattleCanvasTransition canvasTransition;
 
         [Header("セーブスロット選択")]
-        [Tooltip("横長のスクロールスロット一覧。未設定ならModelSaveSlotScrollListから取得する")]
+        [Tooltip("横長のスクロールスロット一覧")]
         [SerializeField] private ModelSaveSlotScrollListView slotScrollList;
+
+        [Tooltip("全画面入力ブロッカー背景。未設定ならブロッカー設定をスキップする")]
+        [SerializeField] private Image inputBlocker;
 
         [Tooltip("データが無い(空き)スロットに表示する文言")]
         [SerializeField] private string emptySlotLabel = "空き";
@@ -94,6 +97,7 @@ namespace UI.ClayEditor.View
         /// <inheritdoc />
         public void RestoreAfterParticipantFailure()
         {
+            ClearLoadedModelReference();
             ShowSelectionUi();
             Refresh();
         }
@@ -107,6 +111,30 @@ namespace UI.ClayEditor.View
             LoadedModel = null;
             LoadedSlotIndex = -1;
             return model;
+        }
+
+        /// <summary>
+        /// シーン退場や再入場前に選択UIと保持モデルを破棄する
+        /// </summary>
+        public void HideForLeave()
+        {
+            DestroyOwnedLoadedModel();
+            selectedSlot = -1;
+            isLoading = false;
+            loadConfirmView?.Clear();
+            SetConfirmPanelActive(false);
+            HideSelectionUi();
+        }
+
+        /// <summary>
+        /// 新しい選択待ちに入る前に前回ロード結果を破棄する
+        /// </summary>
+        public void ClearLoadedModelForNewSelection()
+        {
+            DestroyOwnedLoadedModel();
+            selectedSlot = -1;
+            isLoading = false;
+            loadConfirmView?.Clear();
         }
 
         // 表示用に生成したサムネイル(Texture2D / Sprite)。再表示・破棄時にまとめてDestroyする
@@ -164,6 +192,8 @@ namespace UI.ClayEditor.View
                 selection.transform.SetAsLastSibling();
             }
 
+            // Battle系はConfirmSaveSlotCanvasが兄弟配置のため選択と同じ親へ移す
+            DetachSiblingConfirmPanelTo(sceneRoot);
             EnsureRootCanvasEnabled();
         }
 
@@ -289,9 +319,7 @@ namespace UI.ClayEditor.View
         /// <inheritdoc />
         public void PrepareForSelectionWait()
         {
-            selectedSlot = -1;
-            isLoading = false;
-            loadConfirmView?.Clear();
+            ClearLoadedModelForNewSelection();
             SetConfirmPanelActive(false);
             SetSelectionContentVisible(true);
             PrepareLayout();
@@ -318,12 +346,27 @@ namespace UI.ClayEditor.View
         /// </summary>
         private void RestoreSelectionInteractable()
         {
+            ClearLoadedModelReference();
             selectedSlot = -1;
             isLoading = false;
             loadConfirmView?.Clear();
+            ShowSelectionUi();
+        }
+
+        private void DestroyOwnedLoadedModel()
+        {
+            if (LoadedModel != null)
+            {
+                Destroy(LoadedModel);
+            }
+
+            ClearLoadedModelReference();
+        }
+
+        private void ClearLoadedModelReference()
+        {
             LoadedModel = null;
             LoadedSlotIndex = -1;
-            ShowSelectionUi();
         }
 
         /// <summary>
@@ -565,19 +608,14 @@ namespace UI.ClayEditor.View
 
         private void EnsureLoadConfirmView()
         {
-            EnsureConfirmPanelRoot();
-            if (loadConfirmView != null || confirmPanelRoot == null)
+            if (loadConfirmView != null)
             {
                 return;
             }
 
-            loadConfirmView = confirmPanelRoot.GetComponentInChildren<ModelSaveConfirmView>(true);
-            if (loadConfirmView == null)
-            {
-                Debug.LogError(
-                    "[LoadSlotView] ModelSaveConfirmViewが未配置です。HierarchyでUI参照を確認してください",
-                    this);
-            }
+            Debug.LogError(
+                "[LoadSlotView] loadConfirmViewが未設定です。Editor Wireツールで参照を配線してください",
+                this);
         }
 
         private void RefreshLoadConfirm(int slotIndex)
@@ -594,46 +632,30 @@ namespace UI.ClayEditor.View
                 return;
             }
 
-            loadConfirmView.ShowSlot(slot, LoadThumbnailPng(slot), slotIndex);
-        }
-
-        private static byte[] LoadThumbnailPng(ModelSaveSlot slot)
-        {
-            if (slot == null || string.IsNullOrEmpty(slot.thumbnailFileName))
-            {
-                return null;
-            }
-
-            string path = Path.Combine(Application.persistentDataPath, slot.thumbnailFileName);
-            if (!File.Exists(path))
-            {
-                return null;
-            }
-
-            return File.ReadAllBytes(path);
+            loadConfirmView.ShowSlot(slot, ModelSaveStorage.ReadThumbnailPng(slot), slotIndex);
         }
 
         private void EnsureSlotScrollList()
         {
-            slotScrollList = ModelSaveSlotScrollListRuntimeUtility.EnsureHostUnderTransform(
-                transform,
-                slotScrollList);
-        }
-
-        private void ApplySelectionCanvasSorting()
-        {
-            Canvas canvas = GetComponent<Canvas>();
-            if (canvas == null)
+            if (slotScrollList != null)
             {
                 return;
             }
 
-            canvas.overrideSorting = true;
-            canvas.sortingOrder = SelectionCanvasSortingOrder;
+            Debug.LogError(
+                "[LoadSlotView] slotScrollListが未設定です。Editor Wireツールで参照を配線してください",
+                this);
+        }
+
+        private void ApplySelectionCanvasSorting()
+        {
+            CanvasVisibilityUtility.ApplyOverrideSorting(GetComponent<Canvas>(), SelectionCanvasSortingOrder);
         }
 
         /// <summary>
         /// 確認パネルを選択UIより前面に配置する
+        /// TrainingはLoadSlotView直下ConfirmPanel
+        /// Battle系は兄弟ConfirmSaveSlotCanvasを選択と同じ親へ揃える
         /// </summary>
         private void EnsureConfirmPanelInFront()
         {
@@ -643,10 +665,51 @@ namespace UI.ClayEditor.View
                 return;
             }
 
-            if (confirmPanelRoot.transform.parent != transform)
+            Transform confirmTransform = confirmPanelRoot.transform;
+            if (confirmTransform.parent == transform)
             {
-                confirmPanelRoot.transform.SetParent(transform, false);
+                confirmTransform.SetAsLastSibling();
+                return;
             }
+
+            Transform targetParent = transform.parent != null ? transform.parent : transform.root;
+            DetachSiblingConfirmPanelTo(targetParent);
+            confirmTransform.SetAsLastSibling();
+        }
+
+        /// <summary>
+        /// LoadSlotViewの子でない確認Canvasを表示可能な親へ移す
+        /// </summary>
+        private void DetachSiblingConfirmPanelTo(Transform targetParent)
+        {
+            EnsureConfirmPanelRoot();
+            if (confirmPanelRoot == null || targetParent == null)
+            {
+                return;
+            }
+
+            Transform confirmTransform = confirmPanelRoot.transform;
+            if (confirmTransform.parent == transform)
+            {
+                return;
+            }
+
+            if (confirmTransform.parent != targetParent)
+            {
+                confirmTransform.SetParent(targetParent, false);
+            }
+
+            Canvas confirmCanvas = confirmPanelRoot.GetComponent<Canvas>();
+            if (confirmCanvas == null)
+            {
+                return;
+            }
+
+            confirmCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            confirmCanvas.worldCamera = null;
+            confirmCanvas.overrideSorting = true;
+            confirmCanvas.sortingOrder = ConfirmCanvasSortingOrder;
+            ModelSaveSlotScrollListView.FixCanvasScaleHierarchy(confirmCanvas);
         }
 
         private void SetSelectionContentVisible(bool visible)
@@ -660,10 +723,9 @@ namespace UI.ClayEditor.View
                     continue;
                 }
 
-                if (child.name == TitleClayUiVisualUtility.InputBlockerObjectName
-                    && child.TryGetComponent(out Image blockerImage))
+                if (inputBlocker != null && child == inputBlocker.transform)
                 {
-                    TitleClayUiVisualUtility.ConfigureInputBlocker(blockerImage, visible);
+                    TitleClayUiVisualUtility.ConfigureInputBlocker(inputBlocker, visible);
                     continue;
                 }
 
@@ -673,11 +735,12 @@ namespace UI.ClayEditor.View
 
         private void EnsureInputBlockerConfigured()
         {
-            Transform blocker = transform.Find(TitleClayUiVisualUtility.InputBlockerObjectName);
-            if (blocker != null && blocker.TryGetComponent(out Image blockerImage))
+            if (inputBlocker == null)
             {
-                TitleClayUiVisualUtility.ApplyBlocker(blockerImage);
+                return;
             }
+
+            TitleClayUiVisualUtility.ApplyBlocker(inputBlocker);
         }
 
         private void EnsureSelectionCanvas()
@@ -720,77 +783,14 @@ namespace UI.ClayEditor.View
 
         private void EnsureConfirmPanelRoot()
         {
-            if (confirmPanelRoot)
+            if (confirmPanelRoot != null)
             {
                 return;
             }
 
-            confirmPanelRoot = null;
-            Transform confirmRoot = FindConfirmPanelTransform();
-            if (confirmRoot == null)
-            {
-                return;
-            }
-
-            confirmPanelRoot = confirmRoot.gameObject;
-        }
-
-        private Transform FindConfirmPanelTransform()
-        {
-            Transform confirmRoot = transform.Find("ConfirmPanel")
-                ?? transform.Find("ConfirmSaveSlotCanvas");
-            if (confirmRoot != null)
-            {
-                return confirmRoot;
-            }
-
-            Transform parent = transform.parent;
-            if (parent != null)
-            {
-                confirmRoot = parent.Find("ConfirmPanel")
-                    ?? parent.Find("ConfirmSaveSlotCanvas");
-                if (confirmRoot != null)
-                {
-                    return confirmRoot;
-                }
-
-                for (int i = 0; i < parent.childCount; i++)
-                {
-                    Transform sibling = parent.GetChild(i);
-                    if (sibling.name == "ConfirmPanel" || sibling.name == "ConfirmSaveSlotCanvas")
-                    {
-                        return sibling;
-                    }
-                }
-            }
-
-            Transform sceneRoot = transform.root;
-            return FindDeepChildByName(sceneRoot, "ConfirmPanel")
-                ?? FindDeepChildByName(sceneRoot, "ConfirmSaveSlotCanvas");
-        }
-
-        private static Transform FindDeepChildByName(Transform root, string objectName)
-        {
-            if (root == null || string.IsNullOrEmpty(objectName))
-            {
-                return null;
-            }
-
-            if (root.name == objectName)
-            {
-                return root;
-            }
-
-            for (int i = 0; i < root.childCount; i++)
-            {
-                Transform found = FindDeepChildByName(root.GetChild(i), objectName);
-                if (found != null)
-                {
-                    return found;
-                }
-            }
-
-            return null;
+            Debug.LogError(
+                "[LoadSlotView] confirmPanelRootが未設定です。Editor Wireツールで参照を配線してください",
+                this);
         }
 
         private void EnsureLoadConfirmButtons()
@@ -803,25 +803,17 @@ namespace UI.ClayEditor.View
 
             if (loadButton == null)
             {
-                loadButton = FindConfirmButton("LoadConfirmButton");
+                Debug.LogError(
+                    "[LoadSlotView] loadButtonが未設定です。Editor Wireツールで参照を配線してください",
+                    this);
             }
 
             if (backButton == null)
             {
-                backButton = FindConfirmButton("LoadConfirmBackButton");
+                Debug.LogError(
+                    "[LoadSlotView] backButtonが未設定です。Editor Wireツールで参照を配線してください",
+                    this);
             }
-        }
-
-        private LHButton FindConfirmButton(string buttonName)
-        {
-            Transform searchRoot = confirmPanelRoot != null ? confirmPanelRoot.transform : transform;
-            Transform found = searchRoot.Find(buttonName);
-            if (found == null)
-            {
-                found = transform.Find("ConfirmPanel/" + buttonName);
-            }
-
-            return found != null ? found.GetComponent<LHButton>() : null;
         }
 
         private bool IsConfirmUiReady()
