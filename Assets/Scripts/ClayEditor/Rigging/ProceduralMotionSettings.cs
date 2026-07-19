@@ -36,10 +36,16 @@ namespace ClayEditor.Rigging
         [SerializeField] private float attackDuration = 0.72f;
         [Tooltip("攻撃の振り角(度、先端ほど大きく振る)")]
         [SerializeField] private float attackAmplitude = 90f;
-        [Tooltip("打撃開始前に間を空ける割合(0..1)")]
-        [SerializeField] private float attackAnticipationRatio = 0.14f;
+        [Tooltip("打撃開始前に間を空ける割合(0..1)溜め無し時のみ")]
+        [SerializeField] private float attackAnticipationRatio = 0.08f;
         [Tooltip("間の後に一気に振り出す割合(0..1)")]
-        [SerializeField] private float attackStrikePortion = 0.32f;
+        [SerializeField] private float attackStrikePortion = 0.28f;
+        [Tooltip("振り切り時のオーバーシュート量(0..0.45)")]
+        [SerializeField] private float attackStrikeOvershoot = 0.18f;
+        [Tooltip("溜め姿勢を攻撃へ持ち越す強さ(0..1)")]
+        [SerializeField] private float chargeCarryWeight = 0.9f;
+        [Tooltip("ルート移動無効時でも見た目だけ踏み込む距離倍率")]
+        [SerializeField] private float visualLungeScale = 0.35f;
         [Tooltip("前方とみなすワールド方向(造形時の正面)")]
         [SerializeField] private Vector3 forwardDirection = Vector3.forward;
 
@@ -123,11 +129,13 @@ namespace ClayEditor.Rigging
         [Tooltip("被弾モーション1回の長さ(秒)")]
         [SerializeField] private float hitDuration = 0.3f;
         [Tooltip("被弾時の後仰ぎ角(度)")]
-        [SerializeField] private float hitSpineAmplitude = 35f;
+        [SerializeField] private float hitSpineAmplitude = 42f;
         [Tooltip("被弾時の手足のはじき角(度)")]
-        [SerializeField] private float hitLimbAmplitude = 25f;
+        [SerializeField] private float hitLimbAmplitude = 32f;
         [Tooltip("被弾時のわずかな後退距離")]
-        [SerializeField] private float hitKnockbackDistance = 0.22f;
+        [SerializeField] private float hitKnockbackDistance = 0.28f;
+        [Tooltip("被弾の鋭いピークまでの時間割合(0..1)")]
+        [SerializeField] private float hitSnapRatio = 0.22f;
 
         [Header("Idle")]
         [Tooltip("待機の周波数")]
@@ -180,6 +188,9 @@ namespace ClayEditor.Rigging
         public float AttackAmplitude => attackAmplitude;
         public float AttackAnticipationRatio => attackAnticipationRatio;
         public float AttackStrikePortion => attackStrikePortion;
+        public float AttackStrikeOvershoot => attackStrikeOvershoot;
+        public float ChargeCarryWeight => chargeCarryWeight;
+        public float VisualLungeScale => visualLungeScale;
         public Vector3 ForwardDirection => forwardDirection;
         public float TackleDistance => tackleDistance;
         public float TackleLeanAngle => tackleLeanAngle;
@@ -216,6 +227,7 @@ namespace ClayEditor.Rigging
         public float HitSpineAmplitude => hitSpineAmplitude;
         public float HitLimbAmplitude => hitLimbAmplitude;
         public float HitKnockbackDistance => hitKnockbackDistance;
+        public float HitSnapRatio => hitSnapRatio;
         public float IdleFrequency => idleFrequency;
         public float IdleAmplitude => idleAmplitude;
         public Vector3 SpineBendAxis => spineBendAxis;

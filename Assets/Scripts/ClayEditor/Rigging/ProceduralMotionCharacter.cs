@@ -178,6 +178,10 @@ namespace ClayEditor.Rigging
         private float chargeDuration;
         private Vector3 chargeBasePosition;
         private bool chargeRootSaved;
+        private float lastChargeIntensity;
+        private float strikeChargeCarry;
+        private Vector3 rootBoneBaseLocalPosition;
+        private bool rootBoneLocalPositionSaved;
 
         // 攻撃中の位置とルート回転の復元用に開始時の状態を記録する
         private Vector3 attackStartPosition;
@@ -211,6 +215,16 @@ namespace ClayEditor.Rigging
         /// 現在再生中のモーション
         /// </summary>
         public MotionType CurrentMotion => currentMotion;
+
+        /// <summary>
+        /// 攻撃溜め中の力の強さ(0-1)
+        /// </summary>
+        public float ChargeIntensity => lastChargeIntensity;
+
+        /// <summary>
+        /// 攻撃溜めモーション中か
+        /// </summary>
+        public bool IsCharging => currentMotion == MotionType.AttackCharge;
 
         /// <summary>
         /// 脚部位を持つか
@@ -713,6 +727,11 @@ namespace ClayEditor.Rigging
 
             if (IsAttackMotion(type) || IsStepMotion(type) || IsHitMotion(type))
             {
+                bool comingFromCharge = currentMotion == MotionType.AttackCharge && IsAttackMotion(type);
+                strikeChargeCarry = comingFromCharge
+                    ? Mathf.Clamp01(lastChargeIntensity * MotionSettings.ChargeCarryWeight)
+                    : 0f;
+
                 previousMotion = ResolvePreviousMotionBeforeTimedMotion();
                 attackStartTime = time;
                 activeMotionDuration = ResolveTimedMotionDuration(type, duration);
@@ -721,6 +740,16 @@ namespace ClayEditor.Rigging
                 attackStartPosition = transform.position;
                 attackStartWorldRotation = transform.rotation;
                 rootBoneBaseRotation = rootBone != null ? rootBone.localRotation : Quaternion.identity;
+                if (rootBone != null && (!comingFromCharge || !rootBoneLocalPositionSaved))
+                {
+                    rootBoneBaseLocalPosition = rootBone.localPosition;
+                    rootBoneLocalPositionSaved = true;
+                }
+                else if (rootBone == null)
+                {
+                    rootBoneLocalPositionSaved = false;
+                }
+
                 attackStateSaved = true;
                 chargeRootSaved = false;
             }
@@ -745,6 +774,13 @@ namespace ClayEditor.Rigging
             chargeStartTime = time;
             chargeBasePosition = transform.position;
             chargeRootSaved = true;
+            lastChargeIntensity = 0f;
+            strikeChargeCarry = 0f;
+            if (rootBone != null)
+            {
+                rootBoneBaseLocalPosition = rootBone.localPosition;
+                rootBoneLocalPositionSaved = true;
+            }
 
             if (currentMotion != MotionType.AttackCharge)
             {
@@ -1153,9 +1189,9 @@ namespace ClayEditor.Rigging
 
             // 0->1->0 の山なりで前進して戻る
             float strike = EvaluateStrikeEnvelope(u);
-            ApplyForwardMove(strike * MotionSettings.TackleDistance);
+            ApplyForwardMove(Mathf.Max(0f, strike) * MotionSettings.TackleDistance);
 
-            // 全身を前傾させる
+            // 全身を前傾させる(負のときは溜めの後傾)
             float lean = strike * MotionSettings.TackleLeanAngle;
             for (int i = 0; i < infos.Count; i++)
             {
@@ -1183,7 +1219,7 @@ namespace ClayEditor.Rigging
             }
 
             float strike = EvaluateStrikeEnvelope(u);
-            ApplyForwardMove(strike * MotionSettings.PunchDistance);
+            ApplyForwardMove(Mathf.Max(0f, strike) * MotionSettings.PunchDistance);
 
             for (int i = 0; i < infos.Count; i++)
             {
@@ -1193,15 +1229,32 @@ namespace ClayEditor.Rigging
                     continue;
                 }
 
+                float tip = 0.55f + (maxDepth > 0 ? (float)info.depth / maxDepth : 1f) * 0.45f;
                 if (info.isArm)
                 {
-                    info.transform.localRotation = info.baseLocalRotation * Quaternion.AngleAxis(strike * MotionSettings.PunchAmplitude, ResolveBendAxis(MotionSettings.AttackBendAxis));
+                    float armAngle = ResolveSwingAngle(
+                        strike,
+                        MotionSettings.ChargeLimbPullbackAngle * 1.2f,
+                        MotionSettings.PunchAmplitude);
+                    // 先端ほど大きくひねりを足す
+                    Quaternion swing = Quaternion.AngleAxis(armAngle * tip, ResolveBendAxis(MotionSettings.AttackBendAxis));
+                    Quaternion twist = Quaternion.AngleAxis(
+                        Mathf.Max(0f, strike) * 18f * info.lateralSign * tip,
+                        Vector3.up);
+                    info.transform.localRotation = info.baseLocalRotation * swing * twist;
+                }
+                else if (info.isLeg)
+                {
+                    float brace = Mathf.Max(0f, strike) * MotionSettings.ChargeLimbPullbackAngle * 0.2f;
+                    info.transform.localRotation = info.baseLocalRotation
+                        * Quaternion.AngleAxis(brace * tip, ResolveBendAxis(MotionSettings.LegRunSwingAxis));
                 }
                 else
                 {
                     float depthFactor = maxDepth > 0 ? (float)info.depth / maxDepth : 1f;
                     float bodyTwist = -strike * MotionSettings.ChargePullbackAngle * 0.55f * depthFactor;
-                    info.transform.localRotation = info.baseLocalRotation * Quaternion.AngleAxis(bodyTwist, ResolveBendAxis(MotionSettings.SpineBendAxis));
+                    info.transform.localRotation = info.baseLocalRotation
+                        * Quaternion.AngleAxis(bodyTwist, ResolveBendAxis(MotionSettings.SpineBendAxis));
                 }
             }
         }
@@ -1219,7 +1272,7 @@ namespace ClayEditor.Rigging
             }
 
             float strike = EvaluateStrikeEnvelope(u);
-            ApplyForwardMove(strike * MotionSettings.KickDistance);
+            ApplyForwardMove(Mathf.Max(0f, strike) * MotionSettings.KickDistance);
 
             for (int i = 0; i < infos.Count; i++)
             {
@@ -1229,15 +1282,28 @@ namespace ClayEditor.Rigging
                     continue;
                 }
 
+                float tip = 0.55f + (maxDepth > 0 ? (float)info.depth / maxDepth : 1f) * 0.45f;
                 if (info.isLeg)
                 {
-                    info.transform.localRotation = info.baseLocalRotation * Quaternion.AngleAxis(strike * MotionSettings.KickAmplitude, ResolveBendAxis(MotionSettings.AttackBendAxis));
+                    float legAngle = ResolveSwingAngle(
+                        strike,
+                        MotionSettings.ChargeLimbPullbackAngle * 1.35f,
+                        MotionSettings.KickAmplitude);
+                    info.transform.localRotation = info.baseLocalRotation
+                        * Quaternion.AngleAxis(legAngle * tip, ResolveBendAxis(MotionSettings.AttackBendAxis));
+                }
+                else if (info.isArm)
+                {
+                    float counter = Mathf.Max(0f, strike) * MotionSettings.ChargeLimbPullbackAngle * 0.35f;
+                    info.transform.localRotation = info.baseLocalRotation
+                        * Quaternion.AngleAxis(counter * tip, ResolveBendAxis(MotionSettings.LimbSwingAxis));
                 }
                 else
                 {
                     float depthFactor = maxDepth > 0 ? (float)info.depth / maxDepth : 1f;
                     float bodyLean = -strike * MotionSettings.ChargePullbackAngle * 0.45f * depthFactor;
-                    info.transform.localRotation = info.baseLocalRotation * Quaternion.AngleAxis(bodyLean, ResolveBendAxis(MotionSettings.SpineBendAxis));
+                    info.transform.localRotation = info.baseLocalRotation
+                        * Quaternion.AngleAxis(bodyLean, ResolveBendAxis(MotionSettings.SpineBendAxis));
                 }
             }
         }
@@ -1255,7 +1321,7 @@ namespace ClayEditor.Rigging
             }
 
             float strike = EvaluateStrikeEnvelope(u);
-            ApplyForwardMove(strike * MotionSettings.SpinTackleDistance);
+            ApplyForwardMove(Mathf.Max(0f, strike) * MotionSettings.SpinTackleDistance);
 
             float spin = (time - attackStartTime) * MotionSettings.SpinTackleSpeed;
             transform.rotation = Quaternion.AngleAxis(spin, Vector3.up) * attackStartWorldRotation;
@@ -1300,7 +1366,11 @@ namespace ClayEditor.Rigging
                 return;
             }
 
-            float swing = EvaluateStrikeEnvelope(u) * MotionSettings.TailWhipAmplitude;
+            float swing = EvaluateStrikeEnvelope(u);
+            float whip = ResolveSwingAngle(
+                swing,
+                MotionSettings.ChargeLimbPullbackAngle * 1.25f,
+                MotionSettings.TailWhipAmplitude);
 
             for (int i = 0; i < infos.Count; i++)
             {
@@ -1313,7 +1383,7 @@ namespace ClayEditor.Rigging
                 // 尻尾(Back)だけを薙ぎ払う、それ以外は基準ポーズ
                 if (info.isBack)
                 {
-                    info.transform.localRotation = info.baseLocalRotation * Quaternion.AngleAxis(swing, ResolveBendAxis(MotionSettings.TailWhipAxis));
+                    info.transform.localRotation = info.baseLocalRotation * Quaternion.AngleAxis(whip, ResolveBendAxis(MotionSettings.TailWhipAxis));
                 }
                 else
                 {
@@ -1345,9 +1415,11 @@ namespace ClayEditor.Rigging
             else
             {
                 float t = (normalized - holdEnd) / Mathf.Max(1f - holdEnd, 0.01f);
-                intensity = 1f + Mathf.Sin(t * Mathf.PI * 4f) * 0.05f;
+                // 溜め終わりは解放せず震えを強めて攻撃へつなぐ
+                intensity = 1f + Mathf.Sin(t * Mathf.PI * 6f) * 0.08f;
             }
 
+            lastChargeIntensity = Mathf.Clamp01(intensity);
             ApplyChargeBackwardMove(intensity * MotionSettings.ChargePullbackDistance);
 
             for (int i = 0; i < infos.Count; i++)
@@ -1503,7 +1575,7 @@ namespace ClayEditor.Rigging
             }
 
             float thrust = EvaluateStrikeEnvelope(u);
-            ApplyForwardMove(thrust * MotionSettings.HeadbuttDistance);
+            ApplyForwardMove(Mathf.Max(0f, thrust) * MotionSettings.HeadbuttDistance);
 
             for (int i = 0; i < infos.Count; i++)
             {
@@ -1538,7 +1610,7 @@ namespace ClayEditor.Rigging
             }
 
             float strike = EvaluateStrikeEnvelope(u);
-            ApplyForwardMove(strike * MotionSettings.ElbowDistance);
+            ApplyForwardMove(Mathf.Max(0f, strike) * MotionSettings.ElbowDistance);
 
             for (int i = 0; i < infos.Count; i++)
             {
@@ -1550,13 +1622,19 @@ namespace ClayEditor.Rigging
 
                 if (info.isArm)
                 {
-                    info.transform.localRotation = info.baseLocalRotation * Quaternion.AngleAxis(strike * MotionSettings.ElbowAmplitude, ResolveBendAxis(MotionSettings.AttackBendAxis));
+                    float armAngle = ResolveSwingAngle(
+                        strike,
+                        MotionSettings.ChargeLimbPullbackAngle * 1.2f,
+                        MotionSettings.ElbowAmplitude);
+                    info.transform.localRotation = info.baseLocalRotation
+                        * Quaternion.AngleAxis(armAngle, ResolveBendAxis(MotionSettings.AttackBendAxis));
                 }
                 else
                 {
                     float depthFactor = maxDepth > 0 ? (float)info.depth / maxDepth : 1f;
-                    float brace = strike * MotionSettings.ChargePullbackAngle * 0.25f * depthFactor;
-                    info.transform.localRotation = info.baseLocalRotation * Quaternion.AngleAxis(brace, ResolveBendAxis(MotionSettings.SpineBendAxis));
+                    float brace = -strike * MotionSettings.ChargePullbackAngle * 0.25f * depthFactor;
+                    info.transform.localRotation = info.baseLocalRotation
+                        * Quaternion.AngleAxis(brace, ResolveBendAxis(MotionSettings.SpineBendAxis));
                 }
             }
         }
@@ -1634,7 +1712,7 @@ namespace ClayEditor.Rigging
             }
 
             float strike = EvaluateStrikeEnvelope(u);
-            ApplyForwardMove(strike * MotionSettings.ElbowDistance * 0.6f);
+            ApplyForwardMove(Mathf.Max(0f, strike) * MotionSettings.ElbowDistance * 0.6f);
 
             for (int i = 0; i < infos.Count; i++)
             {
@@ -1670,7 +1748,7 @@ namespace ClayEditor.Rigging
             }
 
             float strike = EvaluateStrikeEnvelope(u);
-            ApplyForwardMove(strike * MotionSettings.KickDistance * 0.55f);
+            ApplyForwardMove(Mathf.Max(0f, strike) * MotionSettings.KickDistance * 0.55f);
 
             for (int i = 0; i < infos.Count; i++)
             {
@@ -1707,7 +1785,7 @@ namespace ClayEditor.Rigging
             }
 
             float move = EvaluateStrikeEnvelope(u);
-            ApplyForwardMove(move * MotionSettings.BodySlamDistance);
+            ApplyForwardMove(Mathf.Max(0f, move) * MotionSettings.BodySlamDistance);
 
             for (int i = 0; i < infos.Count; i++)
             {
@@ -1735,7 +1813,7 @@ namespace ClayEditor.Rigging
             }
 
             float strike = EvaluateStrikeEnvelope(u);
-            ApplyForwardMove(strike * MotionSettings.TackleDistance * 0.9f);
+            ApplyForwardMove(Mathf.Max(0f, strike) * MotionSettings.TackleDistance * 0.9f);
 
             for (int i = 0; i < infos.Count; i++)
             {
@@ -1779,7 +1857,7 @@ namespace ClayEditor.Rigging
             {
                 float t = (u - jumpEnd) / Mathf.Max(slamEnd - jumpEnd, 0.01f);
                 intensity = Mathf.Sin(t * Mathf.PI * 0.5f);
-                ApplyForwardMove(intensity * MotionSettings.BodySlamDistance * 1.15f);
+                ApplyForwardMove(Mathf.Max(0f, intensity) * MotionSettings.BodySlamDistance * 1.15f);
             }
             else
             {
@@ -1814,7 +1892,7 @@ namespace ClayEditor.Rigging
             }
 
             float strike = EvaluateStrikeEnvelope(u);
-            ApplyForwardMove(strike * MotionSettings.TackleDistance * 0.65f);
+            ApplyForwardMove(Mathf.Max(0f, strike) * MotionSettings.TackleDistance * 0.65f);
             transform.rotation = Quaternion.AngleAxis(strike * 42f, Vector3.up) * attackStartWorldRotation;
             if (rootBone != null)
             {
@@ -1903,7 +1981,7 @@ namespace ClayEditor.Rigging
             }
 
             float strike = EvaluateStrikeEnvelope(u);
-            ApplyForwardMove(strike * MotionSettings.PunchDistance * 0.55f);
+            ApplyForwardMove(Mathf.Max(0f, strike) * MotionSettings.PunchDistance * 0.55f);
 
             for (int i = 0; i < infos.Count; i++)
             {
@@ -1941,7 +2019,7 @@ namespace ClayEditor.Rigging
             }
 
             float strike = EvaluateStrikeEnvelope(u);
-            ApplyForwardMove(strike * MotionSettings.KickDistance * 0.45f);
+            ApplyForwardMove(Mathf.Max(0f, strike) * MotionSettings.KickDistance * 0.45f);
 
             for (int i = 0; i < infos.Count; i++)
             {
@@ -1978,7 +2056,7 @@ namespace ClayEditor.Rigging
             }
 
             float strike = EvaluateStrikeEnvelope(u);
-            ApplyForwardMove(strike * MotionSettings.HeadbuttDistance * 0.85f);
+            ApplyForwardMove(Mathf.Max(0f, strike) * MotionSettings.HeadbuttDistance * 0.85f);
 
             for (int i = 0; i < infos.Count; i++)
             {
@@ -2030,8 +2108,25 @@ namespace ClayEditor.Rigging
                 return;
             }
 
-            float recoil = Mathf.Sin(Mathf.Clamp01(u) * Mathf.PI);
+            float snapEnd = Mathf.Clamp(MotionSettings.HitSnapRatio, 0.12f, 0.4f);
+            float recoil;
+            if (u < snapEnd)
+            {
+                float t = u / snapEnd;
+                recoil = 1f - Mathf.Pow(1f - t, 3f);
+            }
+            else
+            {
+                float t = (u - snapEnd) / Mathf.Max(1f - snapEnd, 0.01f);
+                float bounce = Mathf.Sin(t * Mathf.PI) * 0.18f;
+                recoil = Mathf.Max(0f, (1f - t * t) + bounce);
+            }
+
             ApplyBackwardMove(recoil * MotionSettings.HitKnockbackDistance);
+            if (!enableRootTranslation || hasBattlePositionConstraint)
+            {
+                ApplyVisualLunge(-recoil * MotionSettings.HitKnockbackDistance);
+            }
 
             for (int i = 0; i < infos.Count; i++)
             {
@@ -2042,21 +2137,28 @@ namespace ClayEditor.Rigging
                 }
 
                 float depthFactor = maxDepth > 0 ? (float)info.depth / maxDepth : 1f;
+                float tip = 0.55f + depthFactor * 0.45f;
                 float angle;
                 Vector3 axis;
 
                 if (info.isLimb)
                 {
-                    angle = -recoil * MotionSettings.HitLimbAmplitude * (0.5f + info.depth * 0.2f);
+                    angle = -recoil * MotionSettings.HitLimbAmplitude * tip;
                     axis = MotionSettings.LimbSwingAxis;
+                    Quaternion flail = Quaternion.AngleAxis(
+                        recoil * 12f * info.lateralSign,
+                        Vector3.up);
+                    info.transform.localRotation = info.baseLocalRotation
+                        * Quaternion.AngleAxis(angle, ResolveBendAxis(axis))
+                        * flail;
                 }
                 else
                 {
                     angle = -recoil * MotionSettings.HitSpineAmplitude * depthFactor;
                     axis = MotionSettings.AttackBendAxis;
+                    info.transform.localRotation = info.baseLocalRotation
+                        * Quaternion.AngleAxis(angle, ResolveBendAxis(axis));
                 }
-
-                info.transform.localRotation = info.baseLocalRotation * Quaternion.AngleAxis(angle, ResolveBendAxis(axis));
             }
         }
 
@@ -2134,8 +2236,14 @@ namespace ClayEditor.Rigging
         /// <param name="distance">開始位置からの前進距離</param>
         private void ApplyForwardMove(float distance)
         {
-            if (!attackStateSaved || !enableRootTranslation || hasBattlePositionConstraint)
+            if (!attackStateSaved)
             {
+                return;
+            }
+
+            if (!enableRootTranslation || hasBattlePositionConstraint)
+            {
+                ApplyVisualLunge(distance * MotionSettings.VisualLungeScale);
                 return;
             }
 
@@ -2143,6 +2251,33 @@ namespace ClayEditor.Rigging
             Vector3 dir = transform.TransformDirection(localForward);
             transform.position = attackStartPosition + dir * distance;
             EnforceBattlePositionConstraint();
+        }
+
+        /// <summary>
+        /// ルート移動が使えないとき見た目だけ踏み込む
+        /// </summary>
+        private void ApplyVisualLunge(float distance)
+        {
+            if (!rootBoneLocalPositionSaved || rootBone == null || Mathf.Abs(distance) < 1e-5f)
+            {
+                return;
+            }
+
+            Vector3 localForward = MotionSettings.ForwardDirection.sqrMagnitude > 1e-6f
+                ? MotionSettings.ForwardDirection.normalized
+                : Vector3.forward;
+            rootBone.localPosition = rootBoneBaseLocalPosition + localForward * distance;
+        }
+
+        private void RestoreVisualLunge()
+        {
+            if (!rootBoneLocalPositionSaved || rootBone == null)
+            {
+                return;
+            }
+
+            rootBone.localPosition = rootBoneBaseLocalPosition;
+            rootBoneLocalPositionSaved = false;
         }
 
         private void ApplyBackwardMove(float distance)
@@ -2220,41 +2355,101 @@ namespace ClayEditor.Rigging
         }
 
         /// <summary>
-        /// 攻撃の打撃フェーズを0..1で返す
-        /// 開始直後は間を空けてから一気に振り出す
+        /// 攻撃の打撃フェーズを符号付きで返す
+        /// 負=溜め残渣の引き・正=振り出し・1超=オーバーシュート
         /// </summary>
         private float EvaluateStrikeEnvelope(float progress)
         {
-            float anticipation = Mathf.Clamp(MotionSettings.AttackAnticipationRatio, 0.05f, 0.3f);
-            float strikePortion = Mathf.Clamp(MotionSettings.AttackStrikePortion, 0.18f, 0.5f);
-            float strikeEnd = anticipation + strikePortion;
+            float carry = Mathf.Clamp01(strikeChargeCarry);
+            float overshoot = Mathf.Clamp(MotionSettings.AttackStrikeOvershoot, 0f, 0.45f);
+            float strikePortion = Mathf.Clamp(MotionSettings.AttackStrikePortion, 0.16f, 0.45f);
+
+            // 溜めからの継続時は引き残渣→解放→振りを一続きにする
+            if (carry > 0.01f)
+            {
+                float releaseEnd = 0.12f;
+                float strikeEnd = Mathf.Clamp(releaseEnd + strikePortion, releaseEnd + 0.12f, 0.72f);
+                float peak = 1f + overshoot;
+
+                if (progress < releaseEnd)
+                {
+                    float t = progress / Mathf.Max(releaseEnd, 0.01f);
+                    float eased = t * t * (3f - 2f * t);
+                    return Mathf.Lerp(-carry, 0.08f, eased);
+                }
+
+                if (progress < strikeEnd)
+                {
+                    float t = (progress - releaseEnd) / Mathf.Max(strikeEnd - releaseEnd, 0.01f);
+                    float eased = 1f - Mathf.Pow(1f - t, 4f);
+                    return Mathf.Lerp(0.08f, peak, eased);
+                }
+
+                float returnT = (progress - strikeEnd) / Mathf.Max(1f - strikeEnd, 0.01f);
+                float returnEased = 1f - Mathf.Pow(1f - Mathf.Clamp01(returnT), 2f);
+                return Mathf.Lerp(peak, 0f, returnEased);
+            }
+
+            float anticipation = Mathf.Clamp(MotionSettings.AttackAnticipationRatio, 0.04f, 0.22f);
+            float strikeEndNoCarry = Mathf.Clamp(anticipation + strikePortion, anticipation + 0.12f, 0.75f);
+            float peakNoCarry = 1f + overshoot;
 
             if (progress < anticipation)
             {
-                return 0f;
+                float t = progress / Mathf.Max(anticipation, 0.01f);
+                // わずかに引いてから振り出す予兆
+                return Mathf.Lerp(0f, -0.22f, t * t * (3f - 2f * t));
             }
 
-            if (progress < strikeEnd)
+            if (progress < strikeEndNoCarry)
             {
-                float t = (progress - anticipation) / Mathf.Max(strikeEnd - anticipation, 0.01f);
-                return 1f - Mathf.Pow(1f - t, 3f);
+                float t = (progress - anticipation) / Mathf.Max(strikeEndNoCarry - anticipation, 0.01f);
+                float eased = 1f - Mathf.Pow(1f - t, 4f);
+                return Mathf.Lerp(-0.22f, peakNoCarry, eased);
             }
 
-            float returnT = (progress - strikeEnd) / Mathf.Max(1f - strikeEnd, 0.01f);
-            return 1f - returnT * returnT;
+            float recoverT = (progress - strikeEndNoCarry) / Mathf.Max(1f - strikeEndNoCarry, 0.01f);
+            float recoverEased = 1f - Mathf.Pow(1f - Mathf.Clamp01(recoverT), 2f);
+            return Mathf.Lerp(peakNoCarry, 0f, recoverEased);
+        }
+
+        /// <summary>
+        /// 符号付き振り量から攻撃角を求める
+        /// </summary>
+        private static float ResolveSwingAngle(float swing, float pullbackAngle, float strikeAmplitude)
+        {
+            if (swing < 0f)
+            {
+                return swing * Mathf.Abs(pullbackAngle);
+            }
+
+            return swing * strikeAmplitude;
         }
 
         private void ApplyChargeBackwardMove(float distance)
         {
-            if (!chargeRootSaved || !enableRootTranslation || hasBattlePositionConstraint)
+            if (!chargeRootSaved)
             {
                 return;
             }
 
-            Vector3 localForward = MotionSettings.ForwardDirection.sqrMagnitude > 1e-6f
+            if (!enableRootTranslation || hasBattlePositionConstraint)
+            {
+                if (rootBone != null)
+                {
+                    Vector3 localForward = MotionSettings.ForwardDirection.sqrMagnitude > 1e-6f
+                        ? MotionSettings.ForwardDirection.normalized
+                        : Vector3.forward;
+                    rootBone.localPosition = rootBoneBaseLocalPosition - localForward * distance * MotionSettings.VisualLungeScale;
+                }
+
+                return;
+            }
+
+            Vector3 chargeForward = MotionSettings.ForwardDirection.sqrMagnitude > 1e-6f
                 ? MotionSettings.ForwardDirection.normalized
                 : Vector3.forward;
-            Vector3 dir = transform.TransformDirection(localForward);
+            Vector3 dir = transform.TransformDirection(chargeForward);
             dir.y = 0f;
             if (dir.sqrMagnitude > 1e-6f)
             {
@@ -2305,8 +2500,12 @@ namespace ClayEditor.Rigging
                         rootBone.localRotation = rootBoneBaseRotation;
                     }
 
+                    RestoreVisualLunge();
                     attackStateSaved = false;
                 }
+
+                strikeChargeCarry = 0f;
+                lastChargeIntensity = 0f;
 
                 MotionType resume = ResolveResumeMotion();
                 ResetPose();

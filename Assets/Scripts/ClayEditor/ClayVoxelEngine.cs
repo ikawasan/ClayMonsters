@@ -833,6 +833,10 @@ namespace ClayEditor
                     mesh.bindposes = bindPoses;
                     mesh.boneWeights = weights;
                     skinnedRenderer.bones = bones;
+                    if (bones != null && bones.Length > 0 && bones[0] != null)
+                    {
+                        skinnedRenderer.rootBone = bones[0];
+                    }
                 }
 
                 if (meshCollider != null)

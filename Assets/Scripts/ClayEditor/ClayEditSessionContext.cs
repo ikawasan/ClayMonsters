@@ -21,11 +21,6 @@ namespace ClayEditor
         public bool IsRemake => StartMode == ClayEditStartMode.Remake;
 
         /// <summary>
-        /// 作り直し保存時に同一スロットへ上書きするか
-        /// </summary>
-        public bool IsRemakeSave => IsRemake && RemakeSlotIndex >= 0;
-
-        /// <summary>
         /// 入場時の開始モード
         /// </summary>
         public ClayEditStartMode StartMode { get; private set; } = ClayEditStartMode.Pending;
