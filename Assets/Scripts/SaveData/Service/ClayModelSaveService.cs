@@ -14,7 +14,7 @@ namespace SaveData.Service
     /// </summary>
     public class ClayModelSaveService : IClayModelSaveService
     {
-        public const int AttackMotionCount = 4;
+        public const int AttackMotionCount = ModelAttackMotionUtility.SlotCount;
 
         private readonly IClayModelExporter exporter;
 
@@ -209,17 +209,7 @@ namespace SaveData.Service
                 return false;
             }
 
-            slot.attackMotions = new List<MotionType>();
-            int count = Mathf.Min(attackMotions.Count, AttackMotionCount);
-            for (int i = 0; i < count; i++)
-            {
-                slot.attackMotions.Add(attackMotions[i]);
-            }
-
-            while (slot.attackMotions.Count < AttackMotionCount)
-            {
-                slot.attackMotions.Add(MotionType.Punch);
-            }
+            slot.attackMotions = ModelAttackMotionUtility.Normalize(attackMotions, AttackMotionCount);
 
             data.slots[slotIndex] = slot;
             WriteToFile(pool, data);
@@ -313,12 +303,12 @@ namespace SaveData.Service
             string resolvedModelName = string.IsNullOrEmpty(modelName)
                 ? (string.IsNullOrEmpty(playerSlot.modelName) ? "Monster" : playerSlot.modelName)
                 : modelName;
-            ModelStatus statusCopy = CloneStatus(status);
-            List<MotionType> attacks = NormalizeAttackMotions(attackMotions);
+            ModelStatus statusCopy = ModelStatus.CloneOrDefault(status);
+            List<MotionType> attacks = ModelAttackMotionUtility.Normalize(attackMotions, AttackMotionCount);
 
             if (runtimeRenderer != null && boneRoot != null)
             {
-                byte[] thumbnailPng = ReadPlayerThumbnailBytes(playerSlot);
+                byte[] thumbnailPng = ModelSaveStorage.ReadThumbnailPng(playerSlot);
                 return await SaveAsync(
                     ModelSavePool.TrainedPlayer,
                     trainedSlotIndex,
@@ -388,13 +378,13 @@ namespace SaveData.Service
             string resolvedModelName = string.IsNullOrEmpty(modelName)
                 ? playerSlot.modelName
                 : modelName;
-            List<MotionType> attacks = NormalizeAttackMotions(attackMotions);
+            List<MotionType> attacks = ModelAttackMotionUtility.Normalize(attackMotions, AttackMotionCount);
             ClayModelSaveData data = LoadOrCreate(ModelSavePool.TrainedPlayer);
             data.slots[trainedSlotIndex] = new ModelSaveSlot
             {
                 isUsed = true,
                 modelName = resolvedModelName,
-                status = CloneStatus(status),
+                status = ModelStatus.CloneOrDefault(status),
                 glbFileName = trainedGlbFileName,
                 thumbnailFileName = trainedThumbnailFileName,
                 attackMotions = attacks
@@ -418,51 +408,6 @@ namespace SaveData.Service
             }
 
             return slot;
-        }
-
-        private static byte[] ReadPlayerThumbnailBytes(ModelSaveSlot playerSlot)
-        {
-            if (playerSlot == null || string.IsNullOrEmpty(playerSlot.thumbnailFileName))
-            {
-                return null;
-            }
-
-            return ModelSaveStorage.ReadAllBytes(playerSlot.thumbnailFileName);
-        }
-
-        private static ModelStatus CloneStatus(ModelStatus status)
-        {
-            if (status == null)
-            {
-                return new ModelStatus();
-            }
-
-            return new ModelStatus
-            {
-                hp = status.hp,
-                attack = status.attack,
-                defense = status.defense,
-                speed = status.speed
-            };
-        }
-
-        private static List<MotionType> NormalizeAttackMotions(IReadOnlyList<MotionType> attackMotions)
-        {
-            List<MotionType> attacks = attackMotions != null
-                ? new List<MotionType>(attackMotions)
-                : new List<MotionType>();
-            int count = Mathf.Min(attacks.Count, AttackMotionCount);
-            if (count < attacks.Count)
-            {
-                attacks.RemoveRange(count, attacks.Count - count);
-            }
-
-            while (attacks.Count < AttackMotionCount)
-            {
-                attacks.Add(MotionType.Punch);
-            }
-
-            return attacks;
         }
 
         private static TrainingSlotProgress CloneTrainingProgress(TrainingSlotProgress source)

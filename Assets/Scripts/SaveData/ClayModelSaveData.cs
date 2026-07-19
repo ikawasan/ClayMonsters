@@ -30,6 +30,31 @@ namespace SaveData
         /// 速度
         /// </summary>
         public int speed;
+
+        /// <summary>
+        /// ステータスのコピーを返す
+        /// </summary>
+        /// <returns>コピーしたModelStatus</returns>
+        public ModelStatus Clone()
+        {
+            return new ModelStatus
+            {
+                hp = hp,
+                attack = attack,
+                defense = defense,
+                speed = speed
+            };
+        }
+
+        /// <summary>
+        /// nullなら空のModelStatusを返す
+        /// </summary>
+        /// <param name="status">元のステータス</param>
+        /// <returns>コピーまたは新規インスタンス</returns>
+        public static ModelStatus CloneOrDefault(ModelStatus status)
+        {
+            return status != null ? status.Clone() : new ModelStatus();
+        }
     }
 
     /// <summary>

@@ -96,5 +96,20 @@ namespace SaveData
             string path = ResolveReadPath(fileName);
             return File.Exists(path) ? File.ReadAllBytes(path) : null;
         }
+
+        /// <summary>
+        /// スロットのサムネイルPNGを読み込む
+        /// </summary>
+        /// <param name="slot">対象スロット</param>
+        /// <returns>PNGバイト列なければnull</returns>
+        public static byte[] ReadThumbnailPng(ModelSaveSlot slot)
+        {
+            if (slot == null || string.IsNullOrEmpty(slot.thumbnailFileName))
+            {
+                return null;
+            }
+
+            return ReadAllBytes(slot.thumbnailFileName);
+        }
     }
 }
