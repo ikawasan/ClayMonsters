@@ -66,35 +66,61 @@ namespace Scene.BattleNpcScene
         {
             if (cameraView == null)
             {
-                cameraView = FindFirstObjectByType<ClayEditCameraView>();
+                Debug.LogError("[BattleNpcStaging] cameraViewが未配線です", this);
             }
 
             if (overlayView == null)
             {
-                overlayView = GetComponent<BattleStartOverlayView>();
-                if (overlayView == null)
-                {
-                    overlayView = gameObject.AddComponent<BattleStartOverlayView>();
-                }
+                Debug.LogError("[BattleNpcStaging] overlayViewが未配線です", this);
             }
 
             if (matchupBackground == null)
             {
-                matchupBackground = GetComponent<BattleMatchupBackgroundView>();
-                if (matchupBackground == null)
-                {
-                    matchupBackground = gameObject.AddComponent<BattleMatchupBackgroundView>();
-                }
+                Debug.LogError("[BattleNpcStaging] matchupBackgroundが未配線です", this);
             }
         }
 
         /// <summary>
         /// セーブスロット選択表示前の準備
         /// 教室は対戦紹介開始時にのみ隠す
+        /// 退場途中でも対戦紹介オーバーレイを閉じる
         /// </summary>
         public void PrepareSelectionEntry()
         {
             matchupBackground?.ShowClassroom();
+            overlayView?.HideImmediate();
+            overlayView?.HideVsUi();
+        }
+
+        /// <summary>
+        /// 戦闘用Field教室を表示する
+        /// </summary>
+        public void EnsureClassroomVisible()
+        {
+            if (matchupBackground == null)
+            {
+                Debug.LogError("[BattleNpcStaging] matchupBackgroundが未配線です", this);
+                return;
+            }
+
+            matchupBackground.enabled = true;
+            matchupBackground.ShowClassroom();
+        }
+
+        /// <summary>
+        /// 戦闘用Field教室を隠す
+        /// </summary>
+        public void HideClassroom()
+        {
+            matchupBackground?.HideClassroom();
+        }
+
+        /// <summary>
+        /// 対戦炎演出のみ終了する
+        /// </summary>
+        public void EndMatchupPresentation()
+        {
+            matchupBackground?.EndFlamePresentation();
         }
 
         /// <inheritdoc />
@@ -208,6 +234,9 @@ namespace Scene.BattleNpcScene
             BattleUnit winner,
             CancellationToken cancellationToken)
         {
+            GameplayTime.Reset();
+            BattleHitStopClock.Clear();
+
             if (context?.ScreenFade != null)
             {
                 await context.ScreenFade.FadeOutAsync(cancellationToken);
@@ -216,6 +245,7 @@ namespace Scene.BattleNpcScene
             overlayView?.HideImmediate();
             overlayView?.HideVsUi();
 
+            Transform winnerModel = null;
             if (winner != null)
             {
                 BattleVictoryLayout.Apply(
@@ -223,6 +253,7 @@ namespace Scene.BattleNpcScene
                     winner,
                     battleHorizontalAngle,
                     matchupModelTowardCameraDegrees);
+                winnerModel = ResolveWinnerModel(context, winner);
             }
             else
             {
@@ -245,14 +276,22 @@ namespace Scene.BattleNpcScene
                 await context.ScreenFade.FadeInAsync(cancellationToken);
             }
 
-            if (overlayView != null)
-            {
-                string label = winner != null ? winner.Name : "引き分け";
-                await overlayView.PlayVictoryPresentationAsync(label, cancellationToken);
-            }
+            using CancellationTokenSource spinCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            UniTask spinTask = winnerModel != null
+                ? BattleVictoryWalkSpin.SpinWhileAsync(
+                    winnerModel,
+                    VictorySpinDegreesPerSecond,
+                    spinCts.Token)
+                : UniTask.CompletedTask;
 
             try
             {
+                if (overlayView != null)
+                {
+                    string label = winner != null ? winner.Name : "引き分け";
+                    await overlayView.PlayVictoryPresentationAsync(label, cancellationToken);
+                }
+
                 IBattleDualVictoryReturnView dualReturnView = context?.VictoryDualReturnView;
                 if (dualReturnView != null)
                 {
@@ -272,12 +311,21 @@ namespace Scene.BattleNpcScene
                     }
                     else
                     {
-                        await base.PlayVictoryAsync(context, winner, cancellationToken);
+                        await DelayUnscaledAsync(2f, cancellationToken);
                     }
                 }
             }
             finally
             {
+                spinCts.Cancel();
+                try
+                {
+                    await spinTask;
+                }
+                catch (System.OperationCanceledException)
+                {
+                }
+
                 overlayView?.EndVictoryPresentation();
             }
         }
@@ -337,8 +385,8 @@ namespace Scene.BattleNpcScene
                 return;
             }
 
-            // 炎終了だけでなくFieldも戻す(Unload時は上のearly-outで触らない)
-            matchupBackground.ShowClassroom();
+            // 炎のみ終了するField再表示は育成戦闘終了を壊すため行わない
+            matchupBackground.EndFlamePresentation();
         }
 
         private static float ResolveMatchupGroundY(BattleStagingContext context)

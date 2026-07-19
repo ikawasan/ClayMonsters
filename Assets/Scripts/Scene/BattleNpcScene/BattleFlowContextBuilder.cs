@@ -1,5 +1,6 @@
 using Battle;
 using Battle.Interface;
+using Battle.Interface;
 using Battle.View;
 using Camera.View;
 using ClayEditor.Rigging;
@@ -45,6 +46,7 @@ namespace Scene.BattleNpcScene
                 FinishPresentation = runner.Staging != null ? runner.Staging.FinishPresentation : null,
                 PartBreakPresentation = runner.Staging != null ? runner.Staging.PartBreakPresentation : null,
                 VictoryReturnView = runner.VictoryReturnView,
+                TipsView = runner.TipsView,
                 LevelDesignSettings = runner.LevelDesignSettings,
                 AutoStartMatchup = false,
             };

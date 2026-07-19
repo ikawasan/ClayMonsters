@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using Scene.Rendering;
+using Scene.BattleNpcScene;
 using Scene.BattleNpcScene.Interface;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -25,6 +27,7 @@ namespace Scene.BattleNpcScene.View
         [Header("Background")]
         [SerializeField] private bool useSolidBackground;
         [SerializeField] private Color backgroundColor = Color.black;
+        [SerializeField] private GameObject fieldRoot;
 
         private Volume volume;
         private UniversalAdditionalCameraData cameraData;
@@ -61,6 +64,8 @@ namespace Scene.BattleNpcScene.View
 
             EnsureVolume();
             DisableBloomCompletely();
+            BackgroundOutlineActivation.ClearClayEditSuppression();
+            FieldBackgroundLayerUtility.Apply(fieldRoot);
 
             isPostProcessEnabled = true;
             remainingUiExclusionFrames = UiExclusionFrameCount;
@@ -114,13 +119,16 @@ namespace Scene.BattleNpcScene.View
 
         private void LateUpdate()
         {
-            if (!isPostProcessEnabled || remainingUiExclusionFrames <= 0)
+            if (!isPostProcessEnabled)
             {
                 return;
             }
 
             ApplyUiExclusion();
-            remainingUiExclusionFrames--;
+            if (remainingUiExclusionFrames > 0)
+            {
+                remainingUiExclusionFrames--;
+            }
         }
 
         private void EnsureVolume()

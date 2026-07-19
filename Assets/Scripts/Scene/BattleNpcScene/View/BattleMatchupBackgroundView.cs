@@ -76,7 +76,7 @@ namespace Scene.BattleNpcScene.View
                 targetCamera = UnityEngine.Camera.main;
             }
 
-            EnsureClassroomReference();
+            ValidateClassroomRoot();
         }
 
         private void LateUpdate()
@@ -97,8 +97,7 @@ namespace Scene.BattleNpcScene.View
         /// </summary>
         public void HideClassroom()
         {
-            EnsureClassroomReference();
-            BattleClassroomFieldLayout.SetFieldVisible(false);
+            BattleClassroomFieldLayout.SetFieldVisible(classroomRoot, false);
         }
 
         /// <summary>
@@ -108,7 +107,6 @@ namespace Scene.BattleNpcScene.View
         public void ShowFlame(Vector3 center)
         {
             backdropCenter = center;
-            EnsureClassroomReference();
             EnsureFlameRoot(center);
 
             HideClassroom();
@@ -150,18 +148,50 @@ namespace Scene.BattleNpcScene.View
         }
 
         /// <summary>
-        /// 教室背景へ戻す
+        /// 戦闘用Field教室を表示する
         /// </summary>
         public void ShowClassroom()
         {
             EndFlamePresentation();
-
-            EnsureClassroomReference();
-            BattleClassroomFieldLayout.SetFieldVisible(true);
-            if (classroomRoot != null && !classroomRoot.activeSelf)
+            if (!ValidateClassroomRoot())
             {
-                classroomRoot.SetActive(true);
+                return;
             }
+
+            FieldBackgroundLayerUtility.Apply(classroomRoot);
+            BattleClassroomFieldLayout.SetFieldVisible(classroomRoot, true);
+        }
+
+        private bool ValidateClassroomRoot()
+        {
+            if (classroomRoot == null)
+            {
+                Debug.LogError(
+                    "[BattleMatchupBackgroundView] classroomRootが未配線です"
+                    + " このシーンのFieldを割り当ててください",
+                    this);
+                return false;
+            }
+
+            if (classroomRoot.name != BattleClassroomFieldLayout.FieldObjectName)
+            {
+                Debug.LogError(
+                    "[BattleMatchupBackgroundView] classroomRootにはFieldを割り当ててください"
+                    + $" 現在:{classroomRoot.name}",
+                    this);
+                return false;
+            }
+
+            if (classroomRoot.scene != gameObject.scene)
+            {
+                Debug.LogError(
+                    "[BattleMatchupBackgroundView] classroomRootは同一シーンのFieldである必要があります"
+                    + $" fieldScene={classroomRoot.scene.name} viewScene={gameObject.scene.name}",
+                    this);
+                return false;
+            }
+
+            return true;
         }
 
         private void OnDestroy()
@@ -403,29 +433,6 @@ namespace Scene.BattleNpcScene.View
             }
 
             return BattleMatchupFlameEffectSettings.LoadDefault();
-        }
-
-        private void EnsureClassroomReference()
-        {
-            if (classroomRoot != null
-                && classroomRoot.name == BattleClassroomFieldLayout.FieldObjectName
-                && classroomRoot.scene == gameObject.scene)
-            {
-                return;
-            }
-
-            Transform nestedField = transform.root.Find(BattleClassroomFieldLayout.FieldObjectName);
-            if (nestedField != null)
-            {
-                classroomRoot = nestedField.gameObject;
-                return;
-            }
-
-            GameObject field = BattleClassroomFieldLayout.FindFieldObject();
-            if (field != null)
-            {
-                classroomRoot = field;
-            }
         }
 
         private void EnsureFlameRoot(Vector3 center)

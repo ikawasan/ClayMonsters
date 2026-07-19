@@ -7,7 +7,6 @@ using Scene.Core.Interface;
 using System.Threading;
 using UI.ClayEditor.View;
 using UnityEngine;
-using UnityEngine.UI;
 using VContainer;
 
 namespace Scene.BattleNpcScene
@@ -22,6 +21,7 @@ namespace Scene.BattleNpcScene
         private readonly IBattleCanvasTransition presentationTransition;
         private readonly ISceneFade sceneFade;
         private bool isRevealed;
+        private int selectedSlotIndex = -1;
 
         /// <summary>
         /// DIで依存を受け取る
@@ -41,12 +41,15 @@ namespace Scene.BattleNpcScene
         public ModelSavePool SavePool => loadSlotView != null ? loadSlotView.SavePool : ModelSavePool.TrainedPlayer;
 
         /// <inheritdoc />
-        public int SelectedSlotIndex => loadSlotView != null ? loadSlotView.SelectedSlotIndex : -1;
+        public int SelectedSlotIndex => selectedSlotIndex;
 
         /// <inheritdoc />
         public void PrepareEntry()
         {
             isRevealed = false;
+            selectedSlotIndex = -1;
+            // シーン再利用時に前回ロード済みモデルで選択待ちをスキップしない
+            loadSlotView?.HideForLeave();
             loadSlotView?.PrepareLayout();
             Hide();
         }
@@ -60,30 +63,22 @@ namespace Scene.BattleNpcScene
                 return null;
             }
 
-            if (loadSlotView.LoadedModel != null)
-            {
-                Hide();
-                return loadSlotView.LoadedModel;
-            }
-
+            // 再入場・再戦では必ず選択UIを出し直す
+            // 前回LoadedModelが残っていてもスキップしない
             await EnsureRevealedAsync(cancellationToken);
             loadSlotView.PrepareForSelectionWait();
 
             GameObject selected = null;
             using (loadSlotView.OnModelLoaded.Subscribe(model => selected = model))
             {
-                if (loadSlotView.LoadedModel != null)
-                {
-                    Hide();
-                    return loadSlotView.LoadedModel;
-                }
-
                 await UniTask.WaitUntil(
                     () => selected != null || loadSlotView.LoadedModel != null,
                     cancellationToken: cancellationToken);
             }
 
-            GameObject model = selected ?? loadSlotView.LoadedModel;
+            // Detach前にスロット番号を保持する(BattleFlowが直後に参照する)
+            selectedSlotIndex = loadSlotView.SelectedSlotIndex;
+            GameObject model = loadSlotView.DetachLoadedModel() ?? selected;
             loadSlotView.HideSelectionUi();
             presentationTransition?.ReleasePresentationInput();
             return model;
@@ -98,6 +93,15 @@ namespace Scene.BattleNpcScene
             }
 
             CanvasVisibilityUtility.SetCanvasEnabled(loadSlotView.SelectionCanvas, false);
+        }
+
+        /// <inheritdoc />
+        public void HideForLeave()
+        {
+            isRevealed = false;
+            selectedSlotIndex = -1;
+            loadSlotView?.HideForLeave();
+            Hide();
         }
 
         /// <inheritdoc />
@@ -177,22 +181,7 @@ namespace Scene.BattleNpcScene
             loadSlotView.DetachSelectionUiToSceneRoot(loadSlotView.transform.root);
             loadSlotView.PrepareLayout();
             loadSlotView.EnsureSelectionReady();
-
-            ModelSaveSlotScrollListView scrollList =
-                loadSlotView.GetComponentInChildren<ModelSaveSlotScrollListView>(true);
-            scrollList?.ForceSelectionLayout();
-            scrollList?.EnsureClickBinding();
             loadSlotView.Refresh();
-
-            Canvas selectionCanvas = loadSlotView.SelectionCanvas;
-            if (selectionCanvas != null)
-            {
-                RectTransform canvasRect = selectionCanvas.GetComponent<RectTransform>();
-                if (canvasRect != null)
-                {
-                    LayoutRebuilder.ForceRebuildLayoutImmediate(canvasRect);
-                }
-            }
 
             await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate, cancellationToken);
             Canvas.ForceUpdateCanvases();

@@ -60,6 +60,8 @@ namespace Scene.BattleNpcScene
 
         [SerializeField] BattleClassroomLighting classroomLighting;
 
+        [SerializeField] BattleMatchupBackgroundView matchupBackground;
+
 
 
         [Header("UI Views")]
@@ -102,6 +104,8 @@ namespace Scene.BattleNpcScene
 
             builder.RegisterComponent(classroomLighting);
 
+            builder.RegisterComponent(matchupBackground);
+
             builder.Register<BattleCanvasTransition>(Lifetime.Singleton).As<IBattleCanvasTransition>();
 
             builder.RegisterComponentInHierarchy<BattleStartOverlayView>();
@@ -128,6 +132,11 @@ namespace Scene.BattleNpcScene
             if (classroomLighting == null)
             {
                 classroomLighting = gameObject.AddComponent<BattleClassroomLighting>();
+            }
+
+            if (matchupBackground == null)
+            {
+                Debug.LogError("[BattleNpcLifetimeScope] matchupBackgroundが未配線です", this);
             }
         }
 

@@ -5,24 +5,17 @@ using LighthouseExtends.UIComponent.Button;
 using Scene.BattleNpcScene.Interface;
 using System;
 using System.Threading;
-using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.UI;
 
 namespace Scene.BattleNpcScene.View
 {
     /// <summary>
     /// BattleNpcシーンの戻るボタンUI
-    /// 勝利演出後に右下へ表示する
+    /// 位置と文言はBattleVictoryReturnSingleプレハブ側で設定する
     /// </summary>
     public class BattleNpcView : MonoBehaviour, IBattleNpcView
     {
-        private const float ReturnButtonWidth = 220f;
-        private const float ReturnButtonHeight = 64f;
-        private const float ReturnButtonRight = 40f;
-        private const float ReturnButtonBottom = 36f;
-
         [SerializeField] private Canvas rootCanvas;
         [SerializeField] private LHButton returnButton;
 
@@ -33,8 +26,7 @@ namespace Scene.BattleNpcScene.View
                 rootCanvas = GetComponent<Canvas>();
             }
 
-            EnsureReturnButtonCanvas();
-            EnsureReturnButtonLayout();
+            returnButton?.EnsureUiSoundFeedback();
             SetReturnButtonVisible(false);
         }
 
@@ -54,7 +46,12 @@ namespace Scene.BattleNpcScene.View
                 return;
             }
 
-            returnButton.gameObject.SetActive(visible);
+            // 表示はCanvas.enabledのみボタンGOは常時有効
+            if (!returnButton.gameObject.activeSelf)
+            {
+                returnButton.gameObject.SetActive(true);
+            }
+
             returnButton.interactable = visible;
         }
 
@@ -78,52 +75,6 @@ namespace Scene.BattleNpcScene.View
             finally
             {
                 returnButton.onClick.RemoveListener(OnClick);
-            }
-        }
-
-        private void EnsureReturnButtonCanvas()
-        {
-            if (rootCanvas == null)
-            {
-                return;
-            }
-
-            rootCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            rootCanvas.overrideSorting = true;
-            rootCanvas.sortingOrder = 320;
-
-            if (rootCanvas.GetComponent<GraphicRaycaster>() == null)
-            {
-                rootCanvas.gameObject.AddComponent<GraphicRaycaster>();
-            }
-        }
-
-        private void EnsureReturnButtonLayout()
-        {
-            if (returnButton == null)
-            {
-                return;
-            }
-
-            RectTransform rect = returnButton.transform as RectTransform;
-            if (rect == null)
-            {
-                return;
-            }
-
-            rect.anchorMin = new Vector2(1f, 0f);
-            rect.anchorMax = new Vector2(1f, 0f);
-            rect.pivot = new Vector2(1f, 0f);
-            rect.sizeDelta = new Vector2(ReturnButtonWidth, ReturnButtonHeight);
-            rect.anchoredPosition = new Vector2(-ReturnButtonRight, ReturnButtonBottom);
-
-            returnButton.EnsureUiSoundFeedback();
-
-            TMP_Text label = returnButton.GetComponentInChildren<TMP_Text>(true);
-            if (label != null)
-            {
-                label.text = "戻る";
-                label.textWrappingMode = TextWrappingModes.NoWrap;
             }
         }
     }

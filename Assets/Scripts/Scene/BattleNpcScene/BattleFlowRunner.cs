@@ -30,6 +30,7 @@ namespace Scene.BattleNpcScene
         [SerializeField] private LHButton titleReturnButton;
         [SerializeField] private BattleView battleView;
         [SerializeField] private Canvas battleUiCanvas;
+        [SerializeField] private BattleTipsView tipsView;
 
         [Header("配置")]
         [SerializeField] private Transform playerSpawn;
@@ -61,6 +62,8 @@ namespace Scene.BattleNpcScene
         private CancellationTokenSource flowCts;
         private bool isRunning;
         private System.IDisposable titleReturnSubscription;
+        private GameObject trackedPlayerModel;
+        private GameObject trackedEnemyModel;
 
         /// <summary>プレイヤー配置先</summary>
         public Transform PlayerSpawn => playerSpawn;
@@ -70,6 +73,9 @@ namespace Scene.BattleNpcScene
 
         /// <summary>戦闘UIキャンバス</summary>
         public Canvas BattleUiCanvas => battleUiCanvas;
+
+        /// <summary>戦闘チュートリアルTips</summary>
+        public IBattleTipsView TipsView => ResolveTipsView();
 
         /// <summary>戦闘カメラ</summary>
         public ClayEditCameraView BattleCamera => battleCamera;
@@ -153,6 +159,7 @@ namespace Scene.BattleNpcScene
                     saveService,
                     presentationTransition,
                     enemySlotIndex);
+                context.RegisterSpawnedParticipants = RegisterSpawnedParticipants;
 
                 var flow = new BattleFlow(
                     selectionSession,
@@ -189,6 +196,54 @@ namespace Scene.BattleNpcScene
             BattleHitStopClock.Clear();
         }
 
+        /// <inheritdoc />
+        public void CleanupForLeave()
+        {
+            Stop();
+            isRunning = false;
+            DestroyTrackedParticipants();
+            ClearSpawnedModels(playerSpawn);
+            ClearSpawnedModels(enemySpawn);
+            CanvasVisibilityUtility.SetCanvasEnabled(battleUiCanvas, false);
+            ResolveTipsView()?.HideAll();
+            staging?.PrepareSelectionEntry();
+            presentationTransition?.ReleasePresentationInput();
+        }
+
+        private void RegisterSpawnedParticipants(GameObject playerModel, GameObject enemyModel)
+        {
+            trackedPlayerModel = playerModel;
+            trackedEnemyModel = enemyModel;
+        }
+
+        private void DestroyTrackedParticipants()
+        {
+            if (trackedPlayerModel != null)
+            {
+                Object.Destroy(trackedPlayerModel);
+                trackedPlayerModel = null;
+            }
+
+            if (trackedEnemyModel != null)
+            {
+                Object.Destroy(trackedEnemyModel);
+                trackedEnemyModel = null;
+            }
+        }
+
+        private static void ClearSpawnedModels(Transform spawn)
+        {
+            if (spawn == null)
+            {
+                return;
+            }
+
+            for (int i = spawn.childCount - 1; i >= 0; i--)
+            {
+                Object.Destroy(spawn.GetChild(i).gameObject);
+            }
+        }
+
         private void OnClickTitleReturn()
         {
             if (sceneManager == null || sceneManager.IsTransition)
@@ -216,6 +271,25 @@ namespace Scene.BattleNpcScene
             {
                 gameObject.AddComponent<BattleDamagePopupView>();
             }
+        }
+
+        private IBattleTipsView ResolveTipsView()
+        {
+            if (tipsView != null)
+            {
+                return tipsView;
+            }
+
+            if (battleView != null)
+            {
+                Transform hudRoot = battleView.transform.parent;
+                if (hudRoot != null)
+                {
+                    tipsView = hudRoot.GetComponentInChildren<BattleTipsView>(true);
+                }
+            }
+
+            return tipsView;
         }
 
         private async UniTask ReturnToTitleAsync(CancellationToken cancellationToken)

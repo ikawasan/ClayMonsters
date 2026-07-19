@@ -15,5 +15,10 @@ namespace Scene.BattleNpcScene.Interface
         /// 進行中の戦闘フローを停止する
         /// </summary>
         void Stop();
+
+        /// <summary>
+        /// シーン退場時に戦闘UIと配置済みモデルを整理する
+        /// </summary>
+        void CleanupForLeave();
     }
 }
