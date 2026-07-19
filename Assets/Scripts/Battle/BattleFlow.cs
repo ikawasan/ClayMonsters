@@ -71,6 +71,8 @@ namespace Battle
 
             public Interface.IBattleDamagePopup DamagePopup;
 
+            public Interface.IBattleChargeEffect ChargeEffect;
+
             public Interface.IBattleFinishPresentation FinishPresentation;
 
             public Interface.IBattlePartBreakPresentation PartBreakPresentation;
@@ -189,6 +191,7 @@ namespace Battle
             BattleFieldPresenter fieldPresenter = null;
             BattleFieldCameraPresenter cameraPresenter = null;
             BattleCombatFeedbackPresenter combatFeedbackPresenter = null;
+            BattleChargeEffectPresenter chargeEffectPresenter = null;
             BattleFinishPresenter finishPresenter = null;
             BattlePartBreakPresenter partBreakPresenter = null;
 
@@ -450,6 +453,20 @@ namespace Battle
                         seService);
                 }
 
+                if (context.ChargeEffect == null)
+                {
+                    context.ChargeEffect = EnsureChargeEffectView();
+                }
+
+                if (context.ChargeEffect != null)
+                {
+                    chargeEffectPresenter = new BattleChargeEffectPresenter(
+                        context.ChargeEffect,
+                        system,
+                        player.Model.transform,
+                        enemy.Model.transform);
+                }
+
                 if (context.FinishPresentation != null)
                 {
                     finishPresenter = new BattleFinishPresenter(
@@ -508,6 +525,8 @@ namespace Battle
                     presenter = null;
                     combatFeedbackPresenter?.Dispose();
                     combatFeedbackPresenter = null;
+                    chargeEffectPresenter?.Dispose();
+                    chargeEffectPresenter = null;
                     finishPresenter?.Dispose();
                     finishPresenter = null;
                     partBreakPresenter?.Dispose();
@@ -542,6 +561,7 @@ namespace Battle
 
                 presenter?.Dispose();
                 combatFeedbackPresenter?.Dispose();
+                chargeEffectPresenter?.Dispose();
                 finishPresenter?.Dispose();
                 partBreakPresenter?.Dispose();
                 fieldPresenter?.Dispose();
@@ -627,6 +647,19 @@ namespace Battle
 
             var host = new GameObject(nameof(BattleHitEffectView));
             return host.AddComponent<BattleHitEffectView>();
+        }
+
+        private static BattleChargeEffectView EnsureChargeEffectView()
+        {
+            BattleChargeEffectView existing = UnityEngine.Object.FindFirstObjectByType<BattleChargeEffectView>(
+                UnityEngine.FindObjectsInactive.Include);
+            if (existing != null)
+            {
+                return existing;
+            }
+
+            var host = new GameObject(nameof(BattleChargeEffectView));
+            return host.AddComponent<BattleChargeEffectView>();
         }
 
         private static BattleDamagePopupView EnsureDamagePopupView()

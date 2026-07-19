@@ -280,6 +280,8 @@ namespace Scene.TrainingScene
 
             BattleCombatFeedbackPresenter combatFeedbackPresenter = null;
 
+            BattleChargeEffectPresenter chargeEffectPresenter = null;
+
             BattleFinishPresenter finishPresenter = null;
 
             BattlePartBreakPresenter partBreakPresenter = null;
@@ -493,6 +495,20 @@ namespace Scene.TrainingScene
 
 
 
+                BattleChargeEffectView chargeEffect = GetOrAddComponent<BattleChargeEffectView>();
+
+                chargeEffectPresenter = new BattleChargeEffectPresenter(
+
+                    chargeEffect,
+
+                    system,
+
+                    player.Model.transform,
+
+                    enemy.Model.transform);
+
+
+
                 if (overlayView != null)
 
                 {
@@ -576,6 +592,7 @@ namespace Scene.TrainingScene
                     DisposeBattlePresenters(
                         ref presenter,
                         ref combatFeedbackPresenter,
+                        ref chargeEffectPresenter,
                         ref finishPresenter,
                         ref partBreakPresenter,
                         ref fieldPresenter,
@@ -596,6 +613,8 @@ namespace Scene.TrainingScene
                 presenter?.Dispose();
 
                 combatFeedbackPresenter?.Dispose();
+
+                chargeEffectPresenter?.Dispose();
 
                 finishPresenter?.Dispose();
 
@@ -896,6 +915,7 @@ namespace Scene.TrainingScene
         private static void DisposeBattlePresenters(
             ref BattlePresenter presenter,
             ref BattleCombatFeedbackPresenter combatFeedbackPresenter,
+            ref BattleChargeEffectPresenter chargeEffectPresenter,
             ref BattleFinishPresenter finishPresenter,
             ref BattlePartBreakPresenter partBreakPresenter,
             ref BattleFieldPresenter fieldPresenter,
@@ -905,6 +925,8 @@ namespace Scene.TrainingScene
             presenter = null;
             combatFeedbackPresenter?.Dispose();
             combatFeedbackPresenter = null;
+            chargeEffectPresenter?.Dispose();
+            chargeEffectPresenter = null;
             finishPresenter?.Dispose();
             finishPresenter = null;
             partBreakPresenter?.Dispose();

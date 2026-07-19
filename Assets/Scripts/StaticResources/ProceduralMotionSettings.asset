@@ -23,8 +23,11 @@ MonoBehaviour:
   legRunSwingAxis: {x: 1, y: 0, z: 0}
   attackDuration: 0.72
   attackAmplitude: 90
-  attackAnticipationRatio: 0.14
-  attackStrikePortion: 0.32
+  attackAnticipationRatio: 0.08
+  attackStrikePortion: 0.28
+  attackStrikeOvershoot: 0.18
+  chargeCarryWeight: 0.9
+  visualLungeScale: 0.35
   forwardDirection: {x: 0, y: 0, z: 1}
   tackleDistance: 2.2
   tackleLeanAngle: 42
@@ -58,9 +61,10 @@ MonoBehaviour:
   stepLandRatio: 0.12
   stepRollTuckAngle: 18
   hitDuration: 0.3
-  hitSpineAmplitude: 35
-  hitLimbAmplitude: 25
-  hitKnockbackDistance: 0.22
+  hitSpineAmplitude: 42
+  hitLimbAmplitude: 32
+  hitKnockbackDistance: 0.28
+  hitSnapRatio: 0.22
   idleFrequency: 1.5
   idleAmplitude: 3
   spineBendAxis: {x: 1, y: 0, z: 0}

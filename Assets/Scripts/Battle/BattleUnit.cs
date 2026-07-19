@@ -652,6 +652,16 @@ namespace Battle
         public bool HasMotion => motion != null && motion.IsReady;
 
         /// <summary>
+        /// 攻撃溜め中の力の強さ(0-1)
+        /// </summary>
+        public float ChargeIntensity => motion != null ? motion.ChargeIntensity : 0f;
+
+        /// <summary>
+        /// 攻撃溜めモーション中か
+        /// </summary>
+        public bool IsCharging => motion != null && motion.IsCharging;
+
+        /// <summary>
         /// 移動中・待機中の見えるモーションを更新する
         /// </summary>
         public void UpdateLocomotionMotion()
