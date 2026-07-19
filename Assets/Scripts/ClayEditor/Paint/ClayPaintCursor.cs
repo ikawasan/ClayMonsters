@@ -24,6 +24,7 @@ namespace ClayEditor.Paint
         [SerializeField] private MeshRenderer cursorMeshRenderer;
         [SerializeField] private LayerMask raycastLayerMask = -1;
         [SerializeField] private float brushSizeChangeSpeed = 0.1f;
+        [SerializeField] [Range(0.05f, 1f)] private float cursorAlpha = 0.4f;
 
         private UnityEngine.Camera mainCamera;
         private readonly CursorRaycaster raycaster = new();
@@ -32,6 +33,11 @@ namespace ClayEditor.Paint
         // カーソルの色表示に使うマテリアルのインスタンス
         private Material cursorMaterial;
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+        private static readonly int SurfaceId = Shader.PropertyToID("_Surface");
+        private static readonly int BlendId = Shader.PropertyToID("_Blend");
+        private static readonly int SrcBlendId = Shader.PropertyToID("_SrcBlend");
+        private static readonly int DstBlendId = Shader.PropertyToID("_DstBlend");
+        private static readonly int ZWriteId = Shader.PropertyToID("_ZWrite");
 
         // 直前フレームに塗っていたか(ストローク終了の検知に使う)
         private bool wasPainting;
@@ -51,6 +57,7 @@ namespace ClayEditor.Paint
             if (cursorMeshRenderer != null)
             {
                 cursorMaterial = cursorMeshRenderer.material;
+                ApplyCursorTransparency();
             }
 
             CacheCursorMeshDiameter();
@@ -279,8 +286,27 @@ namespace ClayEditor.Paint
 
             if (cursorMaterial.HasProperty(BaseColorId))
             {
-                cursorMaterial.SetColor(BaseColorId, PaintColorUtility.ToMaterialColor(color));
+                Color materialColor = PaintColorUtility.ToMaterialColor(color);
+                materialColor.a = cursorAlpha;
+                cursorMaterial.SetColor(BaseColorId, materialColor);
             }
+        }
+
+        private void ApplyCursorTransparency()
+        {
+            if (cursorMaterial == null)
+            {
+                return;
+            }
+
+            cursorMaterial.SetFloat(SurfaceId, 1f);
+            cursorMaterial.SetFloat(BlendId, 0f);
+            cursorMaterial.SetFloat(SrcBlendId, (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            cursorMaterial.SetFloat(DstBlendId, (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            cursorMaterial.SetFloat(ZWriteId, 0f);
+            cursorMaterial.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+            cursorMaterial.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            cursorMaterial.SetOverrideTag("RenderType", "Transparent");
         }
 
         private void CacheCursorMeshDiameter()
