@@ -1,4 +1,3 @@
-using System;
 using UnityEngine;
 
 namespace Extensions
@@ -14,6 +13,11 @@ namespace Extensions
         public static bool IsHitStopActive { get; set; }
 
         /// <summary>
+        /// Tipsなどによる戦闘一時停止中か
+        /// </summary>
+        public static bool IsPaused { get; set; }
+
+        /// <summary>
         /// スローモーション倍率(1=通常)
         /// </summary>
         public static float SlowMotionScale { get; set; } = 1f;
@@ -25,7 +29,7 @@ namespace Extensions
         {
             get
             {
-                if (IsHitStopActive)
+                if (IsPaused || IsHitStopActive)
                 {
                     return 0f;
                 }
@@ -53,6 +57,7 @@ namespace Extensions
         public static void Reset()
         {
             IsHitStopActive = false;
+            IsPaused = false;
             SlowMotionScale = 1f;
             if (!Mathf.Approximately(Time.timeScale, 1f))
             {
