@@ -72,6 +72,8 @@ namespace Scene.BattlePvpArena
         private CancellationTokenSource flowCts;
         private bool isRunning;
         private System.IDisposable titleReturnSubscription;
+        private GameObject trackedPlayerModel;
+        private GameObject trackedEnemyModel;
 
         private IMonsterSelectionSession selectionSession;
 
@@ -216,10 +218,38 @@ namespace Scene.BattlePvpArena
         /// </summary>
         public void PrepareSelectionLayout()
         {
+            selectionSession?.PrepareEntry();
             staging?.PrepareSelectionEntry();
             battleCamera?.SetCameraEnable(false);
             loadSlotView?.PrepareLayout();
-            SetCanvasEnabled(selectionCanvas, false);
+            CanvasVisibilityUtility.SetCanvasEnabled(selectionCanvas, false);
+            CanvasVisibilityUtility.SetCanvasEnabled(battleUiCanvas, false);
+            pvpVictoryReturnView?.SetDualButtonsVisible(false);
+            disconnectView?.SetVisible(false);
+            opponentWaitView?.SetVisible(false);
+        }
+
+        /// <summary>
+        /// シーン退場時に選択UI戦闘UI配置モデルを整理する
+        /// </summary>
+        public void CleanupForLeave()
+        {
+            disconnectHandler?.SuppressNotifications();
+            pvpSessionController?.EndSession();
+            StopFlow();
+            DestroyTrackedParticipants();
+            selectionSession?.HideForLeave();
+            loadSlotView?.HideForLeave();
+            ClearSpawnedModels(playerSpawn);
+            ClearSpawnedModels(enemySpawn);
+            CanvasVisibilityUtility.SetCanvasEnabled(selectionCanvas, false);
+            CanvasVisibilityUtility.SetCanvasEnabled(battleUiCanvas, false);
+            pvpVictoryReturnView?.SetDualButtonsVisible(false);
+            disconnectView?.SetVisible(false);
+            opponentWaitView?.SetVisible(false);
+            staging?.PrepareSelectionEntry();
+            canvasTransition?.ReleasePresentationInput();
+            ModelSaveSlotScrollListView.ExitFullscreenSelectionLayout();
         }
 
         /// <summary>
@@ -244,7 +274,7 @@ namespace Scene.BattlePvpArena
             }
 
             DetachSelectionCanvasToSceneRoot();
-            SetCanvasEnabled(selectionCanvas, true);
+            CanvasVisibilityUtility.SetCanvasEnabled(selectionCanvas, true);
 
             loadSlotView?.EnsureSelectionReady();
             await FinalizeSelectionLayoutAsync(cancellationToken);
@@ -387,6 +417,7 @@ namespace Scene.BattlePvpArena
                 };
                 context.OnBattleInputCreated = input => inputRelay?.BeginBattleInput(input);
                 context.OnBattleInputDisposed = () => inputRelay?.EndBattleInput();
+                context.RegisterSpawnedParticipants = RegisterSpawnedParticipants;
 
                 var flow = new BattleFlow(selectionSession, battleView, staging, loader, context, bgmService, seService);
                 while (!cancellationToken.IsCancellationRequested)
@@ -462,9 +493,10 @@ namespace Scene.BattlePvpArena
             CancellationToken cancellationToken)
         {
             inputRelay?.ResetForRematch();
+            DestroyTrackedParticipants();
             ClearSpawnedModels(playerSpawn);
             ClearSpawnedModels(enemySpawn);
-            SetCanvasEnabled(battleUiCanvas, false);
+            CanvasVisibilityUtility.SetCanvasEnabled(battleUiCanvas, false);
             pvpVictoryReturnView?.SetDualButtonsVisible(false);
 
             if (sceneFade != null)
@@ -473,6 +505,27 @@ namespace Scene.BattlePvpArena
             }
 
             await RevealSelectionAsync(cancellationToken);
+        }
+
+        private void RegisterSpawnedParticipants(GameObject playerModel, GameObject enemyModel)
+        {
+            trackedPlayerModel = playerModel;
+            trackedEnemyModel = enemyModel;
+        }
+
+        private void DestroyTrackedParticipants()
+        {
+            if (trackedPlayerModel != null)
+            {
+                Object.Destroy(trackedPlayerModel);
+                trackedPlayerModel = null;
+            }
+
+            if (trackedEnemyModel != null)
+            {
+                Object.Destroy(trackedEnemyModel);
+                trackedEnemyModel = null;
+            }
         }
 
         private static void ClearSpawnedModels(Transform spawn)
@@ -556,12 +609,23 @@ namespace Scene.BattlePvpArena
 
         private void DetachSelectionCanvasToSceneRoot()
         {
+            Transform sceneRoot = transform;
+            if (loadSlotView != null)
+            {
+                loadSlotView.DetachSelectionUiToSceneRoot(sceneRoot);
+                if (selectionCanvas == null)
+                {
+                    selectionCanvas = loadSlotView.SelectionCanvas;
+                }
+
+                return;
+            }
+
             if (selectionCanvas == null)
             {
                 return;
             }
 
-            Transform sceneRoot = transform;
             if (selectionCanvas.transform.parent != sceneRoot)
             {
                 selectionCanvas.transform.SetParent(sceneRoot, false);
@@ -620,7 +684,23 @@ namespace Scene.BattlePvpArena
             BattlePvpInputRelay inputRelay,
             CancellationToken cancellationToken)
         {
-            int localSlot = loadSlotView != null ? loadSlotView.SelectedSlotIndex : 0;
+            // DetachLoadedModel後はLoadSlotView.SelectedSlotIndexが-1になるためセッション側を使う
+            int localSlot = selectionSession != null
+                ? selectionSession.SelectedSlotIndex
+                : (loadSlotView != null ? loadSlotView.SelectedSlotIndex : 0);
+            if (localSlot < 0)
+            {
+                Debug.LogError(
+                    "[BattlePvpArena] ローカルスロットが未確定です"
+                    + $" sessionSlot={(selectionSession != null ? selectionSession.SelectedSlotIndex : -99)}"
+                    + $" loadSlot={(loadSlotView != null ? loadSlotView.SelectedSlotIndex : -99)}");
+                return default;
+            }
+
+            Debug.Log(
+                "[BattlePvpArena] スロット送信"
+                + $" localSlot={localSlot}"
+                + $" IsOwner={inputRelay.IsOwner}");
             inputRelay.SubmitSlotSelection(localSlot);
             await BattlePvpOpponentWaitScope.RunAsync(
                 opponentWaitView,
@@ -658,14 +738,6 @@ namespace Scene.BattlePvpArena
                 new TitleTransitionData(),
                 TransitionType.Exclusive,
                 ClayMonstersMainSceneId.Title);
-        }
-
-        private static void SetCanvasEnabled(Canvas canvas, bool isEnabled)
-        {
-            if (canvas != null)
-            {
-                canvas.enabled = isEnabled;
-            }
         }
 
         private static Canvas FindCanvasInHierarchy(Transform sceneRoot, string canvasName)

@@ -3,6 +3,7 @@ using Lighthouse.Scene;
 using Lighthouse.Scene.SceneCamera;
 using Scene.BattleNpcScene;
 using Scene.BattleNpcScene.Interface;
+using Scene.BattleNpcScene.View;
 using Scene.Core;
 using System.Threading;
 using UI.ClayEditor.View;
@@ -19,6 +20,7 @@ namespace Scene.BattlePvpArena
         BattlePvpArenaFlowRunner arenaFlowRunner;
         IBattleNpcPostProcess battleNpcPostProcess;
         BattleClassroomLighting classroomLighting;
+        BattleMatchupBackgroundView matchupBackground;
 
         public override MainSceneId MainSceneId => ClayMonstersMainSceneId.BattlePvpArena;
 
@@ -39,11 +41,13 @@ namespace Scene.BattlePvpArena
         public void Construct(
             BattlePvpArenaFlowRunner arenaFlowRunner,
             IBattleNpcPostProcess battleNpcPostProcess,
-            BattleClassroomLighting classroomLighting)
+            BattleClassroomLighting classroomLighting,
+            BattleMatchupBackgroundView matchupBackground)
         {
             this.arenaFlowRunner = arenaFlowRunner;
             this.battleNpcPostProcess = battleNpcPostProcess;
             this.classroomLighting = classroomLighting;
+            this.matchupBackground = matchupBackground;
         }
 
         /// <summary>
@@ -81,7 +85,7 @@ namespace Scene.BattlePvpArena
             classroomLighting?.Apply();
             battleNpcPostProcess.Enable();
             // シーン上Fieldは初期非アクティブのため入場時に表示する
-            BattleClassroomFieldLayout.SetFieldVisible(true);
+            matchupBackground?.ShowClassroom();
             BattlePvpArenaFlowRunner runner = ResolveFlowRunner();
             runner?.EnsureSceneReferences(transform);
             runner?.PrepareSelectionLayout();
@@ -109,10 +113,9 @@ namespace Scene.BattlePvpArena
 
         protected override UniTask OnLeave(ISceneTransitionContext context, CancellationToken cancelToken)
         {
-            ResolveFlowRunner()?.StopFlow();
+            ResolveFlowRunner()?.CleanupForLeave();
             battleNpcPostProcess.Disable();
             classroomLighting?.DisableLighting();
-            ModelSaveSlotScrollListView.ExitFullscreenSelectionLayout();
             return base.OnLeave(context, cancelToken);
         }
 

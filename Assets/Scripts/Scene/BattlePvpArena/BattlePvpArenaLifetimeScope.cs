@@ -2,6 +2,7 @@ using Battle.Interface;
 using Camera.Model;
 using Camera.Presenter;
 using Camera.View;
+using Extensions;
 using SaveData;
 using SaveData.Interface;
 using SaveData.Service;
@@ -21,6 +22,8 @@ namespace Scene.BattlePvpArena
     /// </summary>
     public sealed class BattlePvpArenaLifetimeScope : LifetimeScope
     {
+        private const string ScopeTag = "BattlePvpArenaLifetimeScope";
+
         [Header("Scene Views")]
         [SerializeField] private BattlePvpArenaScene arenaScene;
         [SerializeField] private BattlePvpVictoryReturnView pvpVictoryReturnView;
@@ -36,6 +39,7 @@ namespace Scene.BattlePvpArena
         [Header("Post Process")]
         [SerializeField] private BattleNpcPostProcessView postProcessView;
         [SerializeField] private BattleClassroomLighting classroomLighting;
+        [SerializeField] private BattleMatchupBackgroundView matchupBackground;
 
         [Header("UI Views")]
         [SerializeField] private LoadSlotView loadSlotView;
@@ -54,23 +58,24 @@ namespace Scene.BattlePvpArena
         protected override void Configure(IContainerBuilder builder)
         {
             EnsureSerializedReferences();
-            RegisterComponent(builder, arenaScene);
-            RegisterComponent(builder, arenaFlowRunner);
-            RegisterComponentAsInterfaces(builder, pvpVictoryReturnView);
-            RegisterComponentAsInterfaces(builder, pvpDisconnectView);
-            RegisterComponentAsInterfaces(builder, pvpOpponentWaitView);
-            RegisterComponentAsInterfaces(builder, cameraView);
+            VContainerComponentRegistration.RegisterComponent(builder, arenaScene, ScopeTag);
+            VContainerComponentRegistration.RegisterComponent(builder, arenaFlowRunner, ScopeTag);
+            VContainerComponentRegistration.RegisterComponentAsInterfaces(builder, pvpVictoryReturnView, ScopeTag);
+            VContainerComponentRegistration.RegisterComponentAsInterfaces(builder, pvpDisconnectView, ScopeTag);
+            VContainerComponentRegistration.RegisterComponentAsInterfaces(builder, pvpOpponentWaitView, ScopeTag);
+            VContainerComponentRegistration.RegisterComponentAsInterfaces(builder, cameraView, ScopeTag);
             builder.Register<ClayEditCameraPresenter>(Lifetime.Singleton).AsImplementedInterfaces();
             builder.Register<ClayEditCameraModel>(Lifetime.Singleton).AsImplementedInterfaces();
-            RegisterComponentAsInterfaces(builder, postProcessView);
-            RegisterComponent(builder, classroomLighting);
+            VContainerComponentRegistration.RegisterComponentAsInterfaces(builder, postProcessView, ScopeTag);
+            VContainerComponentRegistration.RegisterComponent(builder, classroomLighting, ScopeTag);
+            VContainerComponentRegistration.RegisterComponent(builder, matchupBackground, ScopeTag);
             builder.Register<BattleCanvasTransition>(Lifetime.Singleton).As<IBattleCanvasTransition>();
             builder.Register<MonsterSelectionSession>(Lifetime.Singleton).AsImplementedInterfaces();
             builder.RegisterComponentInHierarchy<BattleStartOverlayView>();
             builder.Register<ClayModelSaveService>(Lifetime.Singleton).As<IClayModelSaveService>();
             builder.Register<ClayModelGltfImporter>(Lifetime.Singleton).As<IClayModelImporter>();
             builder.Register<ClayModelGltfExporter>(Lifetime.Singleton).As<IClayModelExporter>();
-            RegisterComponent(builder, loadSlotView);
+            VContainerComponentRegistration.RegisterComponent(builder, loadSlotView, ScopeTag);
         }
 
         private void EnsureSerializedReferences()
@@ -120,34 +125,17 @@ namespace Scene.BattlePvpArena
                 classroomLighting = gameObject.AddComponent<BattleClassroomLighting>();
             }
 
+            if (matchupBackground == null)
+            {
+                Debug.LogError($"[{ScopeTag}] matchupBackgroundが未配線です", this);
+            }
+
             if (loadSlotView == null)
             {
                 loadSlotView = GetComponentInChildren<LoadSlotView>(true);
             }
 
             loadSlotView?.ConfigureSavePool(ModelSavePool.TrainedPlayer, "未育成");
-        }
-
-        private static void RegisterComponent<T>(IContainerBuilder builder, T component) where T : Component
-        {
-            if (component == null)
-            {
-                Debug.LogError($"[BattlePvpArenaLifetimeScope] {typeof(T).Name} が未設定です");
-                return;
-            }
-
-            builder.RegisterComponent(component);
-        }
-
-        private static void RegisterComponentAsInterfaces<T>(IContainerBuilder builder, T component) where T : Component
-        {
-            if (component == null)
-            {
-                Debug.LogError($"[BattlePvpArenaLifetimeScope] {typeof(T).Name} が未設定です");
-                return;
-            }
-
-            builder.RegisterComponent(component).AsImplementedInterfaces();
         }
     }
 }
