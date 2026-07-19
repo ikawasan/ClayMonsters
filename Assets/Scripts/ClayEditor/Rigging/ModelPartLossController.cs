@@ -346,7 +346,7 @@ namespace ClayEditor.Rigging
                 return false;
             }
 
-            if (gradualRestoreLimbIndex == limbIndex)
+            if (gradualRestoreLimbIndex == limbIndex || DoesGradualRestoreTouchLimb(limbIndex))
             {
                 ClearGradualRestoreState();
             }
@@ -373,15 +373,20 @@ namespace ClayEditor.Rigging
                 return false;
             }
 
+            bool resumeFrozenProgress = DoesGradualRestoreTouchLimb(limbIndex) && gradualRestoreProgress > 0f;
             gradualRestoreLimbIndex = limbIndex;
-            gradualRestoreProgress = 0f;
+            if (!resumeFrozenProgress)
+            {
+                gradualRestoreProgress = 0f;
+            }
+
             gradualRestoreRootBone = limbs[limbIndex].RootBone;
             gradualRestoreBaseLocalRotation = gradualRestoreRootBone != null
                 ? gradualRestoreRootBone.localRotation
                 : Quaternion.identity;
             repairWobblePhase = Random.Range(0f, 100f);
             CacheGradualRestoreBoneIndices(limbIndex);
-            ApplyPartialBattleLimbShow(limbIndex, 0f);
+            ApplyPartialBattleLimbShow(limbIndex, gradualRestoreProgress);
             SyncBattleMeshVertexGlow();
             return true;
         }
@@ -405,6 +410,7 @@ namespace ClayEditor.Rigging
 
         /// <summary>
         /// 戦闘中の部位修復表示をキャンセルする
+        /// 途中停止時は進捗時点のメッシュを残す
         /// </summary>
         public void CancelGradualRestoreLimb()
         {
@@ -414,8 +420,11 @@ namespace ClayEditor.Rigging
             }
 
             int limbIndex = gradualRestoreLimbIndex;
-            ApplyPartialBattleLimbShow(limbIndex, 0f);
-            ClearGradualRestoreState();
+            ApplyPartialBattleLimbShow(limbIndex, gradualRestoreProgress, enableWobble: false);
+            ResetGradualRestoreRootTransform();
+            // Updateによる揺れ更新だけ止め進捗とボーン情報は残して表示を維持する
+            gradualRestoreLimbIndex = -1;
+            gradualRestoreRootBone = null;
             SyncBattleMeshVertexGlow();
         }
 
@@ -662,9 +671,29 @@ namespace ClayEditor.Rigging
             battleColorMesh.colors = colors;
         }
 
+        private bool DoesGradualRestoreTouchLimb(int limbIndex)
+        {
+            if (gradualRestoreBoneIndices.Count == 0 || limbIndex < 0 || limbIndex >= limbBoneIndices.Count)
+            {
+                return false;
+            }
+
+            List<int> boneIndices = limbBoneIndices[limbIndex];
+            for (int i = 0; i < boneIndices.Count; i++)
+            {
+                if (gradualRestoreBoneIndices.Contains(boneIndices[i]))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private float ResolveGradualRestoreVisibility()
         {
-            if (gradualRestoreLimbIndex < 0)
+            // 修復中および途中キャンセル後の凍結表示の両方で進捗を参照する
+            if (gradualRestoreBoneIndices.Count == 0)
             {
                 return 0f;
             }
@@ -762,7 +791,7 @@ namespace ClayEditor.Rigging
             }
         }
 
-        private void ApplyPartialBattleLimbShow(int limbIndex, float progress)
+        private void ApplyPartialBattleLimbShow(int limbIndex, float progress, bool enableWobble = true)
         {
             if (limbIndex < 0 || limbIndex >= limbBoneIndices.Count)
             {
@@ -771,7 +800,7 @@ namespace ClayEditor.Rigging
 
             float t = Mathf.Clamp01(progress);
             float grow = 1f - Mathf.Pow(1f - t, 2.4f);
-            float wobbleStrength = (1f - t) * (1f - t);
+            float wobbleStrength = enableWobble ? (1f - t) * (1f - t) : 0f;
             float time = Time.time + repairWobblePhase;
             float speed = repairWobbleSpeed;
 
