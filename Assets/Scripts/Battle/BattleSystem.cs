@@ -79,7 +79,6 @@ namespace Battle
     /// </summary>
     public sealed class BattleSystem
     {
-        private const float DistanceCorrectionThreshold = 0.03f;
         private const float DistanceSyncInterval = 0.2f;
 
         private readonly BattleUnit player;
@@ -89,7 +88,6 @@ namespace Battle
         private readonly IBattlePlayerInput playerCombatInput;
 
         private readonly Subject<Unit> updatedSubject = new Subject<Unit>();
-        private readonly Subject<Unit> distanceResyncSubject = new Subject<Unit>();
         private readonly Subject<MoveUsedResult> moveUsedSubject = new Subject<MoveUsedResult>();
         private readonly Subject<AttackWindUpStarted> attackWindUpStartedSubject = new Subject<AttackWindUpStarted>();
         private readonly Subject<BattleUnit> battleEndSubject = new Subject<BattleUnit>();
@@ -338,11 +336,6 @@ namespace Battle
         public Observable<Unit> OnUpdated => updatedSubject;
 
         /// <summary>
-        /// ネットワーク同期で間合いを再配置する必要がある通知
-        /// </summary>
-        public Observable<Unit> OnDistanceResyncRequested => distanceResyncSubject;
-
-        /// <summary>
         /// 技が使われた通知(ログ・演出用)
         /// </summary>
         public Observable<MoveUsedResult> OnMoveUsed => moveUsedSubject;
@@ -460,10 +453,15 @@ namespace Battle
                 return;
             }
 
+            if (GameplayTime.IsPaused)
+            {
+                return;
+            }
+
             if (playerMovementInput != null)
             {
                 playerMovementInput.RefreshInput();
-                if (!isPlayerStepping && !IsAttackPresentationActive)
+                if (!isPlayerStepping && !IsAttackPresentationActive && player.CanAct)
                 {
                     SetPlayerMovement(playerMovementInput.MovementIntent);
                 }
@@ -475,7 +473,7 @@ namespace Battle
 
             if (playerCombatInput != null)
             {
-                if (!isPlayerStepping && !IsAttackPresentationActive)
+                if (!isPlayerStepping && !IsAttackPresentationActive && player.CanAct)
                 {
                     int stepIntent = playerCombatInput.ConsumeStepIntent();
                     if (stepIntent != 0)
@@ -514,7 +512,7 @@ namespace Battle
                 enemyAttackCooldownRemaining = Mathf.Max(0f, enemyAttackCooldownRemaining - deltaTime);
             }
 
-            if (attackLockoutRemaining > 0f)
+            if (attackLockoutRemaining > 0f && !IsAttackPresentationActive)
             {
                 attackLockoutRemaining = Mathf.Max(0f, attackLockoutRemaining - deltaTime);
             }
@@ -532,6 +530,8 @@ namespace Battle
 
             // カウンター無効化を溜め解決より先に反映する
             ProcessRemoteCombatSync();
+            // 同期攻撃開始はローカル攻撃演出中でも取り込む(カウンター迎撃のため)
+            TryBeginNetworkSyncedEnemyAttack();
             UpdateAttackWindUp(deltaTime);
             if (IsFinished)
             {
@@ -577,8 +577,8 @@ namespace Battle
         // 双方の移動意図で間合いを更新する
         private void UpdateDistance(float deltaTime)
         {
-            int playerIntent = player.MovementIntent;
-            int enemyIntent = enemy.MovementIntent;
+            int playerIntent = player.CanAct ? player.MovementIntent : 0;
+            int enemyIntent = enemy.CanAct ? enemy.MovementIntent : 0;
 
             if (Distance >= settings.MaxDistance - 1e-4f)
             {
@@ -640,6 +640,11 @@ namespace Battle
         // 敵AI:間合い調整と技選択と部位修復をIBattleEnemyAiに委譲する
         private void UpdateEnemyAi(float deltaTime)
         {
+            if (TryBeginNetworkSyncedEnemyAttack())
+            {
+                return;
+            }
+
             if (IsPlayerPerformingAttack || pendingAttackAttacker != null)
             {
                 enemy.MovementIntent = 0;
@@ -711,6 +716,56 @@ namespace Battle
                 decision.AttackSequence);
         }
 
+        // ネットワーク同期の敵攻撃開始をローカル制約を越えて反映する
+        private bool TryBeginNetworkSyncedEnemyAttack()
+        {
+            if (combatSync == null || enemyAi == null || IsFinished)
+            {
+                return false;
+            }
+
+            if (!enemyAi.TryConsumeNetworkAttackStart(out int moveIndex, out int attackSequence, out bool isCounter))
+            {
+                return false;
+            }
+
+            if (moveIndex < 0 || moveIndex >= enemy.Moves.Count || attackSequence <= 0)
+            {
+                return false;
+            }
+
+            // カウンター済みの自分の溜めは敵攻撃開始より先に止める
+            if (pendingAttackAttacker == player)
+            {
+                if (pendingAttackSequence > 0
+                    && cancelledAttackSequences.Contains(pendingAttackSequence))
+                {
+                    ClearPendingAttack();
+                    player.PlayMotion(MotionType.Idle);
+                }
+                else if (isCounter)
+                {
+                    // カウンター通知より攻撃開始が先に届いた場合も自分の溜めを止める
+                    ClearPendingAttack();
+                    player.PlayMotion(MotionType.Idle);
+                }
+            }
+
+            AttackMove move = enemy.Moves[moveIndex];
+            enemy.MovementIntent = 0;
+            PauseEnemyPartRepair();
+            float powerMultiplier = isCounter ? settings.CounterDamageMultiplier : 1f;
+            BeginAttackWindUp(
+                enemy,
+                player,
+                move,
+                moveIndex,
+                powerMultiplier,
+                isCounter,
+                attackSequence);
+            return true;
+        }
+
         private void BeginAttackWindUp(
             BattleUnit attacker,
             BattleUnit target,
@@ -720,12 +775,13 @@ namespace Battle
             bool isCounter,
             int attackSequence = 0)
         {
-            if (attackLockoutRemaining > 0f && !isCounter)
+            bool isNetworkSynced = combatSync != null && attackSequence > 0;
+            if (attackLockoutRemaining > 0f && !isCounter && !isNetworkSynced)
             {
                 return;
             }
 
-            if (!attacker.IsMoveUsableByPart(moveIndex))
+            if (!isNetworkSynced && !attacker.IsMoveUsableByPart(moveIndex))
             {
                 return;
             }
@@ -910,7 +966,7 @@ namespace Battle
                 settings.EnemyAttackCooldownMax);
 
             int counterAttackSequence = combatSync != null
-                ? combatSync.ReportLocalAttackStart(moveIndex)
+                ? combatSync.ReportLocalAttackStart(moveIndex, isCounter: true)
                 : 0;
             BeginAttackWindUp(
                 player,
@@ -939,12 +995,25 @@ namespace Battle
                 return;
             }
 
+            SetPlayerMovement(0);
             player.ConsumeGuts(settings.KnockbackGutsCost);
             player.BeginRecovery(settings.KnockbackRecovery);
             player.PlayMotion(MotionType.Tackle);
-            Distance = Mathf.Min(settings.MaxDistance, Distance + settings.KnockbackPushDistance);
+            if (fieldMovement != null)
+            {
+                fieldMovement.PushEnemyAway(
+                    settings.KnockbackPushDistance,
+                    Distance,
+                    settings.MaxDistance,
+                    out float newDistance);
+                Distance = newDistance;
+            }
+            else
+            {
+                Distance = Mathf.Min(settings.MaxDistance, Distance + settings.KnockbackPushDistance);
+            }
+
             combatSync?.ReportLocalKnockback(Distance);
-            distanceResyncSubject.OnNext(Unit.Default);
         }
 
         private void ApplyRemoteEnemyKnockback(float resultingDistance)
@@ -961,8 +1030,20 @@ namespace Battle
 
             enemy.BeginRecovery(settings.KnockbackRecovery);
             enemy.PlayMotion(MotionType.Tackle);
-            Distance = Mathf.Clamp(resultingDistance, 0f, settings.MaxDistance);
-            distanceResyncSubject.OnNext(Unit.Default);
+            float openAmount = Mathf.Max(0f, resultingDistance - Distance);
+            if (fieldMovement != null && openAmount > 1e-4f)
+            {
+                fieldMovement.PushPlayerAway(
+                    openAmount,
+                    Distance,
+                    settings.MaxDistance,
+                    out float newDistance);
+                Distance = newDistance;
+            }
+            else
+            {
+                Distance = Mathf.Clamp(resultingDistance, 0f, settings.MaxDistance);
+            }
         }
 
         private void UpdatePartRepair(float deltaTime)
@@ -1175,27 +1256,10 @@ namespace Battle
 
         private void ProcessRemoteDistanceSync()
         {
-            if (combatSync.IsDistanceAuthority || isPlayerStepping || isEnemyStepping)
+            // 間合いは移動結果から算出するため権威距離では位置も間合いも上書きしない
+            while (combatSync.TryConsumeAuthoritativeDistance(out _))
             {
-                return;
             }
-
-            bool received = false;
-            float authoritativeDistance = Distance;
-            while (combatSync.TryConsumeAuthoritativeDistance(out float distance))
-            {
-                authoritativeDistance = distance;
-                received = true;
-            }
-
-            authoritativeDistance = Mathf.Clamp(authoritativeDistance, 0f, settings.MaxDistance);
-            if (!received || Mathf.Abs(authoritativeDistance - Distance) < DistanceCorrectionThreshold)
-            {
-                return;
-            }
-
-            Distance = authoritativeDistance;
-            distanceResyncSubject.OnNext(Unit.Default);
         }
 
         private void UpdateDistanceAuthoritySync(float deltaTime)
@@ -1367,6 +1431,7 @@ namespace Battle
             playerStepStartDistance = Distance;
             playerStepTargetDistance = targetDistance;
             playerStepElapsed = 0f;
+            fieldMovement?.BeginPlayerStep(playerStepStartDistance, playerStepTargetDistance, settings.MaxDistance);
             player.BeginRecovery(settings.StepDuration);
             player.PlayStepMotion(stepIntent, settings.StepDuration);
             playerStepCooldownRemaining = settings.StepCooldown;
@@ -1423,6 +1488,7 @@ namespace Battle
             enemyStepStartDistance = Distance;
             enemyStepTargetDistance = targetDistance;
             enemyStepElapsed = 0f;
+            fieldMovement?.BeginEnemyStep(enemyStepStartDistance, enemyStepTargetDistance, settings.MaxDistance);
             enemy.BeginRecovery(settings.StepDuration);
             enemy.PlayStepMotion(stepIntent, settings.StepDuration);
 
@@ -1445,11 +1511,28 @@ namespace Battle
             float duration = Mathf.Max(0.01f, settings.StepDuration);
             float t = Mathf.Clamp01(enemyStepElapsed / duration);
             float eased = 1f - (1f - t) * (1f - t);
-            Distance = Mathf.Lerp(enemyStepStartDistance, enemyStepTargetDistance, eased);
+            if (fieldMovement != null)
+            {
+                fieldMovement.SetEnemyStepProgress(eased, settings.MaxDistance, out float newDistance);
+                Distance = newDistance;
+            }
+            else
+            {
+                Distance = Mathf.Lerp(enemyStepStartDistance, enemyStepTargetDistance, eased);
+            }
 
             if (t >= 1f)
             {
-                Distance = enemyStepTargetDistance;
+                if (fieldMovement != null)
+                {
+                    fieldMovement.SetEnemyStepProgress(1f, settings.MaxDistance, out float finalDistance);
+                    Distance = finalDistance;
+                }
+                else
+                {
+                    Distance = enemyStepTargetDistance;
+                }
+
                 isEnemyStepping = false;
                 enemyStepMovementIntent = 0;
             }
@@ -1466,11 +1549,28 @@ namespace Battle
             float duration = Mathf.Max(0.01f, settings.StepDuration);
             float t = Mathf.Clamp01(playerStepElapsed / duration);
             float eased = 1f - (1f - t) * (1f - t);
-            Distance = Mathf.Lerp(playerStepStartDistance, playerStepTargetDistance, eased);
+            if (fieldMovement != null)
+            {
+                fieldMovement.SetPlayerStepProgress(eased, settings.MaxDistance, out float newDistance);
+                Distance = newDistance;
+            }
+            else
+            {
+                Distance = Mathf.Lerp(playerStepStartDistance, playerStepTargetDistance, eased);
+            }
 
             if (t >= 1f)
             {
-                Distance = playerStepTargetDistance;
+                if (fieldMovement != null)
+                {
+                    fieldMovement.SetPlayerStepProgress(1f, settings.MaxDistance, out float finalDistance);
+                    Distance = finalDistance;
+                }
+                else
+                {
+                    Distance = playerStepTargetDistance;
+                }
+
                 isPlayerStepping = false;
                 playerStepMovementIntent = 0;
             }
@@ -1679,7 +1779,6 @@ namespace Battle
         {
             ClearHitStop();
             updatedSubject.Dispose();
-            distanceResyncSubject.Dispose();
             moveUsedSubject.Dispose();
             attackWindUpStartedSubject.Dispose();
             battleEndSubject.Dispose();

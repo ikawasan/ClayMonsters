@@ -6,7 +6,7 @@ using UnityEngine;
 namespace Battle.Presenter
 {
     /// <summary>
-    /// 戦闘エンジンの間合い変化をフィールド上のモデル配置へ反映する
+    /// 戦闘中のオフセット結果をフィールド上のモデル配置へ反映する
     /// </summary>
     public sealed class BattleFieldPresenter : IDisposable
     {
@@ -26,18 +26,7 @@ namespace Battle.Presenter
             this.layout = layout;
             this.system = system;
             system.SetFieldBoundary(layout);
-            layout.ApplyDistance(
-                system.Distance,
-                system.MaxDistance,
-                0f,
-                ResolvePlayerMovementIntent(system),
-                ResolveEnemyMovementIntent(system),
-                system.Player.MoveSpeed,
-                system.Enemy.MoveSpeed,
-                system.IsPlayerStepping,
-                system.PlayerStepMovementIntent,
-                system.IsEnemyStepping,
-                system.EnemyStepMovementIntent);
+            layout.ApplyModelTransforms();
             system.Player.SyncMotionLayoutPosition();
             system.Enemy.SyncMotionLayoutPosition();
 
@@ -52,56 +41,14 @@ namespace Battle.Presenter
                 positionEnforcer.Bind(layout);
             }
 
-            system.OnDistanceResyncRequested
-                .Subscribe(_ => ResyncLayoutToBattleDistance())
-                .AddTo(disposables);
-
             system.OnUpdated
                 .Subscribe(_ =>
                 {
-                    layout.ApplyDistance(
-                        system.Distance,
-                        system.MaxDistance,
-                        GameplayTime.DeltaTime,
-                        ResolvePlayerMovementIntent(system),
-                        ResolveEnemyMovementIntent(system),
-                        system.Player.MoveSpeed,
-                        system.Enemy.MoveSpeed,
-                        system.IsPlayerStepping,
-                        system.PlayerStepMovementIntent,
-                        system.IsEnemyStepping,
-                        system.EnemyStepMovementIntent);
+                    layout.ApplyModelTransforms();
                     system.Player.SyncMotionLayoutPosition();
                     system.Enemy.SyncMotionLayoutPosition();
                 })
                 .AddTo(disposables);
-        }
-
-        private void ResyncLayoutToBattleDistance()
-        {
-            layout.ApplyInitialBattlePositions(system.Distance, system.MaxDistance);
-            system.Player.SyncMotionLayoutPosition();
-            system.Enemy.SyncMotionLayoutPosition();
-        }
-
-        private static int ResolvePlayerMovementIntent(BattleSystem system)
-        {
-            if (system.IsPlayerStepping)
-            {
-                return system.PlayerStepMovementIntent;
-            }
-
-            return system.Player.MovementIntent;
-        }
-
-        private static int ResolveEnemyMovementIntent(BattleSystem system)
-        {
-            if (system.IsEnemyStepping)
-            {
-                return system.EnemyStepMovementIntent;
-            }
-
-            return system.Enemy.MovementIntent;
         }
 
         /// <inheritdoc />

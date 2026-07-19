@@ -76,8 +76,8 @@ namespace Battle
             Quaternion playerRotation = playerSpawn != null ? playerSpawn.rotation : Quaternion.identity;
             Quaternion enemyRotation = enemySpawn != null ? enemySpawn.rotation : Quaternion.identity;
 
-            BattleSpawnPlacement.ApplyAt(playerModel, playerPosition, playerRotation, groundY);
-            BattleSpawnPlacement.ApplyAt(enemyModel, enemyPosition, enemyRotation, groundY);
+            BattleSpawnPlacement.ApplyAt(playerModel, playerPosition, playerRotation, groundY, playerSpawn);
+            BattleSpawnPlacement.ApplyAt(enemyModel, enemyPosition, enemyRotation, groundY, enemySpawn);
 
             BattleFieldFacing.ApplyMatchupBetween(
                 playerModel,

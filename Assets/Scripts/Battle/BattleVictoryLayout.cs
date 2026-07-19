@@ -56,6 +56,7 @@ namespace Battle
             RecenterHorizontally(winnerModel, center);
             BattleSpawnPlacement.SnapBottomToGroundY(winnerModel, groundY);
             winner.SyncMotionLayoutPosition();
+            BattleVictoryWalkSpin.BeginWalk(winner);
         }
 
         // モデルのピボットずれを補正し見た目の中心を目標へ合わせる

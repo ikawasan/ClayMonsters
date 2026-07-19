@@ -20,7 +20,7 @@ namespace Battle
                 return;
             }
 
-            ApplyAt(model, spawn.position, spawn.rotation, spawn.position.y);
+            ApplyAt(model, spawn.position, spawn.rotation, spawn.position.y, spawn);
         }
 
         /// <summary>
@@ -36,12 +36,38 @@ namespace Battle
             Quaternion worldRotation,
             float groundY)
         {
+            ApplyAt(model, worldPosition, worldRotation, groundY, hierarchyParent: null);
+        }
+
+        /// <summary>
+        /// 指定位置へ配置しHierarchy親も指定する
+        /// </summary>
+        /// <param name="model">配置するモデル</param>
+        /// <param name="worldPosition">ルートのワールド座標</param>
+        /// <param name="worldRotation">ルートのワールド回転</param>
+        /// <param name="groundY">足元を合わせるY座標</param>
+        /// <param name="hierarchyParent">破棄しやすいようぶら下げる親</param>
+        public static void ApplyAt(
+            Transform model,
+            Vector3 worldPosition,
+            Quaternion worldRotation,
+            float groundY,
+            Transform hierarchyParent)
+        {
             if (model == null)
             {
                 return;
             }
 
-            model.SetParent(null, true);
+            if (hierarchyParent != null)
+            {
+                model.SetParent(hierarchyParent, true);
+            }
+            else
+            {
+                model.SetParent(null, true);
+            }
+
             model.SetPositionAndRotation(worldPosition, worldRotation);
             SnapBottomToGroundY(model, groundY);
         }

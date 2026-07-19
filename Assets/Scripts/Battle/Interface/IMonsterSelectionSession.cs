@@ -37,6 +37,11 @@ namespace Battle.Interface
         void Hide();
 
         /// <summary>
+        /// シーン退場時に選択UIと保持モデルを破棄する
+        /// </summary>
+        void HideForLeave();
+
+        /// <summary>
         /// 参加者構築失敗後に選択UIへ戻す
         /// </summary>
         /// <param name="cancellationToken">キャンセルトークン</param>

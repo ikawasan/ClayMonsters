@@ -34,7 +34,7 @@ namespace Battle
         [SerializeField] private float knockbackRecovery = 0.5f;
 
         [Header("Combo And Counter")]
-        [Tooltip("攻撃成立後に双方が攻撃不可になる時間(秒)")]
+        [Tooltip("攻撃演出終了後に双方が攻撃不可になる時間(秒)")]
         [SerializeField] private float postAttackLockoutDuration = 3f;
         [Tooltip("チェーン継続猶予(秒)")]
         [SerializeField] private float chainBonusWindow = 1.2f;

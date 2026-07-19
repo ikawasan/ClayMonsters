@@ -710,6 +710,20 @@ namespace Battle
         }
 
         /// <summary>
+        /// 勝利演出用に歩きモーションを再生する
+        /// </summary>
+        public void PlayPresentationWalk()
+        {
+            if (!HasMotion)
+            {
+                return;
+            }
+
+            MotionType walk = motion.HasLegs ? MotionType.LegRun : MotionType.Run;
+            motion.Play(walk);
+        }
+
+        /// <summary>
         /// 部位欠損メッシュの再構築を止める
         /// </summary>
         public void SuspendPartLossRebuild()

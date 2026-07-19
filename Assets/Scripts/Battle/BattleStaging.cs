@@ -15,6 +15,9 @@ namespace Battle
         [SerializeField] private float battleStartSeconds = 1f;
         [SerializeField] private float victorySeconds = 2f;
 
+        [Header("勝利演出")]
+        [SerializeField] private float victorySpinDegreesPerSecond = BattleVictoryWalkSpin.DefaultDegreesPerSecond;
+
         /// <summary>
         /// 両モンスターを見せる導入演出既定では一定時間待つだけ
         /// </summary>
@@ -32,19 +35,67 @@ namespace Battle
         }
 
         /// <summary>
-        /// 勝利演出。既定では勝者にIdleを再生させて一定時間待つ。
+        /// 勝利演出。歩きモーションとその場回転を再生して一定時間待つ。
         /// </summary>
         public virtual async UniTask PlayVictoryAsync(
             BattleStagingContext context,
             BattleUnit winner,
             CancellationToken cancellationToken)
         {
-            if (winner != null)
+            if (winner == null)
             {
-                winner.PreparePresentationIdle();
+                await DelayUnscaledAsync(victorySeconds, cancellationToken);
+                return;
             }
 
-            await DelayUnscaledAsync(victorySeconds, cancellationToken);
+            BattleVictoryWalkSpin.BeginWalk(winner);
+            Transform winnerModel = ResolveWinnerModel(context, winner);
+            using CancellationTokenSource linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            UniTask spinTask = BattleVictoryWalkSpin.SpinWhileAsync(
+                winnerModel,
+                victorySpinDegreesPerSecond,
+                linkedCts.Token);
+
+            try
+            {
+                await DelayUnscaledAsync(victorySeconds, cancellationToken);
+            }
+            finally
+            {
+                linkedCts.Cancel();
+                try
+                {
+                    await spinTask;
+                }
+                catch (System.OperationCanceledException)
+                {
+                }
+            }
+        }
+
+        /// <summary>
+        /// 勝利演出のその場回転速度(度/秒)
+        /// </summary>
+        protected float VictorySpinDegreesPerSecond => victorySpinDegreesPerSecond;
+
+        protected static Transform ResolveWinnerModel(BattleStagingContext context, BattleUnit winner)
+        {
+            if (context == null || winner == null)
+            {
+                return null;
+            }
+
+            if (winner == context.Player)
+            {
+                return context.PlayerModel;
+            }
+
+            if (winner == context.Enemy)
+            {
+                return context.EnemyModel;
+            }
+
+            return null;
         }
 
         protected static async UniTask DelayUnscaledAsync(float seconds, CancellationToken cancellationToken)

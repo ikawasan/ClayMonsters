@@ -19,5 +19,14 @@ namespace Battle.Interface
         /// </summary>
         /// <returns>ステップ移動意図・未同期時0</returns>
         int ConsumeRemoteStepIntent();
+
+        /// <summary>
+        /// ネットワーク同期の攻撃開始を1回分消費する
+        /// </summary>
+        /// <param name="moveIndex">攻撃技番号</param>
+        /// <param name="attackSequence">攻撃開始同期番号</param>
+        /// <param name="isCounter">カウンター攻撃か</param>
+        /// <returns>同期攻撃があればtrue</returns>
+        bool TryConsumeNetworkAttackStart(out int moveIndex, out int attackSequence, out bool isCounter);
     }
 }

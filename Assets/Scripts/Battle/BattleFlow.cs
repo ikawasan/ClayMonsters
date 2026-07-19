@@ -98,6 +98,11 @@ namespace Battle
             public IBattlePvpCombatSync CombatSync;
 
             /// <summary>
+            /// NPC戦闘向けチュートリアルTips
+            /// </summary>
+            public IBattleTipsView TipsView;
+
+            /// <summary>
             /// 戦闘のレベルデザイン設定
             /// </summary>
             public BattleLevelDesignSettings LevelDesignSettings;
@@ -106,6 +111,12 @@ namespace Battle
             /// VS開始ボタンを待たずに紹介演出だけ再生する
             /// </summary>
             public bool AutoStartMatchup;
+
+            /// <summary>
+            /// 参加者モデルが確定したときに通知する
+            /// 退場時破棄のため呼び出し側が参照を保持する
+            /// </summary>
+            public System.Action<GameObject, GameObject> RegisterSpawnedParticipants;
         }
 
 
@@ -183,15 +194,12 @@ namespace Battle
 
             BattleSystem system = null;
             BattleKeyboardMovementInput movementInput = null;
-
-
+            GameObject spawnedPlayerModel = null;
+            GameObject spawnedEnemyModel = null;
 
             try
-
             {
-
                 // 1. プレイヤーのモンスター選択
-
                 GameObject playerModel;
                 BattleParticipant player;
                 BattleParticipant enemy;
@@ -313,7 +321,9 @@ namespace Battle
 
                 }
 
-
+                spawnedPlayerModel = player.Model;
+                spawnedEnemyModel = enemy.Model;
+                context.RegisterSpawnedParticipants?.Invoke(spawnedPlayerModel, spawnedEnemyModel);
 
                 BattleSettings battleSettings = BattleLevelDesignSettings.Resolve(context.LevelDesignSettings);
 
@@ -462,6 +472,11 @@ namespace Battle
 
                 BattleUnit winner = null;
                 BattleUiInputScope inputScope = BattleUiInputScope.Suppress();
+                System.IDisposable tipsSession = null;
+                if (context.CombatSync == null && context.TipsView != null)
+                {
+                    tipsSession = context.TipsView.BeginCombatSession();
+                }
 
                 try
                 {
@@ -485,6 +500,9 @@ namespace Battle
                     {
                         await system.RunAsync(cancellationToken);
                     }
+
+                    tipsSession?.Dispose();
+                    tipsSession = null;
 
                     presenter.Dispose();
                     presenter = null;
@@ -512,6 +530,7 @@ namespace Battle
                 }
                 finally
                 {
+                    tipsSession?.Dispose();
                     inputScope.Dispose();
                 }
 
@@ -535,6 +554,18 @@ namespace Battle
                 BattleHitStopClock.Clear();
                 GameplayTime.Reset();
 
+                // BattleSpawnPlacementは親を外すためスポーン子破棄では消えない
+                // プレロードのプレイヤーは呼び出し側所有のため敵のみ破棄する
+                if (context.PreloadedPlayerModel != null)
+                {
+                    DestroyParticipantModels(null, spawnedEnemyModel);
+                }
+                else
+                {
+                    DestroyParticipantModels(spawnedPlayerModel, spawnedEnemyModel);
+                }
+
+                context.RegisterSpawnedParticipants?.Invoke(null, null);
             }
 
             return returnChoice;

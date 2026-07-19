@@ -5,7 +5,8 @@ using UnityEngine;
 namespace Battle
 {
     /// <summary>
-    /// 戦闘の間合い値をフィールド上のモデル配置へ反映する
+    /// 各ユニットの移動オフセットをフィールド上のモデル配置へ反映する
+    /// 間合いはオフセットから算出する結果値であり配置の入力には使わない
     /// </summary>
     public sealed class BattleFieldLayout : IBattleFieldMovement
     {
@@ -18,7 +19,10 @@ namespace Battle
         private readonly float minCloseSeparation;
         private float playerClosureOffset;
         private float enemyClosureOffset;
-        private float lastAppliedDistance = float.NaN;
+        private float playerStepStartOffset;
+        private float playerStepTargetOffset;
+        private float enemyStepStartOffset;
+        private float enemyStepTargetOffset;
 
         /// <inheritdoc/>
         public bool IsPlayerAtHomeBoundary => playerClosureOffset <= 1e-6f;
@@ -74,19 +78,87 @@ namespace Battle
         {
             ApplyOffsetMovement(ref playerClosureOffset, playerMovementIntent, playerMoveSpeed * deltaTime);
             ApplyOffsetMovement(ref enemyClosureOffset, enemyMovementIntent, enemyMoveSpeed * deltaTime);
-            playerClosureOffset = Mathf.Max(0f, playerClosureOffset);
-            enemyClosureOffset = Mathf.Max(0f, enemyClosureOffset);
+            ClampOffsets(maxDistance, playerMovementIntent, enemyMovementIntent);
+            distance = ComputeDistanceFromOffsets(maxDistance);
+        }
 
-            float maxTotalClosure = ComputeClosure(0f, maxDistance);
-            float sum = playerClosureOffset + enemyClosureOffset;
-            if (sum > maxTotalClosure + 1e-4f)
+        /// <inheritdoc/>
+        public void BeginPlayerStep(float startDistance, float targetDistance, float maxDistance)
+        {
+            float closureDelta = ComputeClosure(targetDistance, maxDistance) - ComputeClosure(startDistance, maxDistance);
+            playerStepStartOffset = playerClosureOffset;
+            playerStepTargetOffset = Mathf.Max(0f, playerClosureOffset + closureDelta);
+        }
+
+        /// <inheritdoc/>
+        public void BeginEnemyStep(float startDistance, float targetDistance, float maxDistance)
+        {
+            float closureDelta = ComputeClosure(targetDistance, maxDistance) - ComputeClosure(startDistance, maxDistance);
+            enemyStepStartOffset = enemyClosureOffset;
+            enemyStepTargetOffset = Mathf.Max(0f, enemyClosureOffset + closureDelta);
+        }
+
+        /// <inheritdoc/>
+        public void SetPlayerStepProgress(float easedT01, float maxDistance, out float distance)
+        {
+            playerClosureOffset = Mathf.Lerp(playerStepStartOffset, playerStepTargetOffset, Mathf.Clamp01(easedT01));
+            ClampOffsetsPreferringPlayer(maxDistance);
+            distance = ComputeDistanceFromOffsets(maxDistance);
+        }
+
+        /// <inheritdoc/>
+        public void SetEnemyStepProgress(float easedT01, float maxDistance, out float distance)
+        {
+            enemyClosureOffset = Mathf.Lerp(enemyStepStartOffset, enemyStepTargetOffset, Mathf.Clamp01(easedT01));
+            ClampOffsetsPreferringEnemy(maxDistance);
+            distance = ComputeDistanceFromOffsets(maxDistance);
+        }
+
+        /// <inheritdoc/>
+        public void PushEnemyAway(
+            float openDistanceAmount,
+            float currentDistance,
+            float maxDistance,
+            out float distance)
+        {
+            ApplySingleUnitOpen(ref enemyClosureOffset, openDistanceAmount, currentDistance, maxDistance, out distance);
+        }
+
+        /// <inheritdoc/>
+        public void PushPlayerAway(
+            float openDistanceAmount,
+            float currentDistance,
+            float maxDistance,
+            out float distance)
+        {
+            ApplySingleUnitOpen(ref playerClosureOffset, openDistanceAmount, currentDistance, maxDistance, out distance);
+        }
+
+        /// <inheritdoc/>
+        public float ComputeDistance(float maxDistance) => ComputeDistanceFromOffsets(maxDistance);
+
+        /// <inheritdoc/>
+        public void ApplyModelTransforms()
+        {
+            Vector3 playerPosition = playerHomePosition - approachAxisFromEnemy * playerClosureOffset;
+            Vector3 enemyPosition = enemyHomePosition + approachAxisFromEnemy * enemyClosureOffset;
+
+            if (playerModel != null)
             {
-                float scale = maxTotalClosure / sum;
-                playerClosureOffset *= scale;
-                enemyClosureOffset *= scale;
+                playerPosition.y = playerHomePosition.y;
+                playerModel.SetPositionAndRotation(playerPosition, playerModel.rotation);
+                BattleSpawnPlacement.SnapBottomToGroundY(playerModel, playerHomePosition.y);
             }
 
-            distance = ComputeDistanceFromOffsets(maxDistance);
+            if (enemyModel != null)
+            {
+                enemyPosition.y = enemyHomePosition.y;
+                enemyModel.SetPositionAndRotation(enemyPosition, enemyModel.rotation);
+                BattleSpawnPlacement.SnapBottomToGroundY(enemyModel, enemyHomePosition.y);
+            }
+
+            ClampPlayerApproachSide();
+            ApplyFacing();
         }
 
         /// <summary>
@@ -107,454 +179,14 @@ namespace Battle
         }
 
         /// <summary>
-        /// 間合いに応じて両モデルを移動する各ユニットの移動意図を独立反映する
-        /// </summary>
-        public void ApplyDistance(
-            float distance,
-            float maxDistance,
-            float deltaTime,
-            int playerMovementIntent,
-            int enemyMovementIntent,
-            float playerMoveSpeed,
-            float enemyMoveSpeed,
-            bool isPlayerStepping = false,
-            int playerStepIntent = 0,
-            bool isEnemyStepping = false,
-            int enemyStepIntent = 0)
-        {
-            float totalClosure = ComputeClosure(distance, maxDistance);
-            int effectivePlayerIntent = isPlayerStepping ? playerStepIntent : playerMovementIntent;
-            int effectiveEnemyIntent = isEnemyStepping ? enemyStepIntent : enemyMovementIntent;
-
-            if (float.IsNaN(lastAppliedDistance))
-            {
-                playerClosureOffset = 0f;
-                enemyClosureOffset = 0f;
-                SyncClosureOffsetsToTotal(totalClosure);
-            }
-            else
-            {
-                float distanceDelta = distance - lastAppliedDistance;
-
-                if (isPlayerStepping && Mathf.Abs(distanceDelta) > 1e-6f)
-                {
-                    ApplyClosureDelta(
-                        ComputeClosure(distance, maxDistance) - ComputeClosure(lastAppliedDistance, maxDistance),
-                        effectivePlayerIntent,
-                        0,
-                        forcePlayerOnly: true);
-                }
-                else if (isEnemyStepping && Mathf.Abs(distanceDelta) > 1e-6f)
-                {
-                    ApplyClosureDelta(
-                        ComputeClosure(distance, maxDistance) - ComputeClosure(lastAppliedDistance, maxDistance),
-                        0,
-                        enemyStepIntent,
-                        forcePlayerOnly: false,
-                        forceEnemyOnly: true);
-                }
-                else if (!isPlayerStepping
-                    && !isEnemyStepping
-                    && Mathf.Abs(distanceDelta) > 1e-6f)
-                {
-                    ApplyClosureDelta(
-                        ComputeClosure(distance, maxDistance) - ComputeClosure(lastAppliedDistance, maxDistance),
-                        0,
-                        0,
-                        false);
-                }
-            }
-
-            if (isPlayerStepping
-                || isEnemyStepping
-                || (!float.IsNaN(lastAppliedDistance)
-                    && Mathf.Abs(distance - lastAppliedDistance) > 1e-4f))
-            {
-                ClampClosureOffsetsToDistance(
-                    distance,
-                    maxDistance,
-                    effectivePlayerIntent,
-                    effectiveEnemyIntent,
-                    isPlayerStepping,
-                    isEnemyStepping);
-            }
-            playerClosureOffset = Mathf.Max(0f, playerClosureOffset);
-            enemyClosureOffset = Mathf.Max(0f, enemyClosureOffset);
-
-            Vector3 playerPosition = playerHomePosition - approachAxisFromEnemy * playerClosureOffset;
-            Vector3 enemyPosition = enemyHomePosition + approachAxisFromEnemy * enemyClosureOffset;
-
-            if (playerModel != null)
-            {
-                playerPosition.y = playerHomePosition.y;
-                playerModel.SetPositionAndRotation(playerPosition, playerModel.rotation);
-                BattleSpawnPlacement.SnapBottomToGroundY(playerModel, playerHomePosition.y);
-            }
-
-            if (enemyModel != null)
-            {
-                enemyPosition.y = enemyHomePosition.y;
-                enemyModel.SetPositionAndRotation(enemyPosition, enemyModel.rotation);
-                BattleSpawnPlacement.SnapBottomToGroundY(enemyModel, enemyHomePosition.y);
-            }
-
-            lastAppliedDistance = distance;
-            ClampPlayerApproachSide();
-            ApplyFacing();
-        }
-
-        private void ApplyClosureDelta(
-            float deltaClosure,
-            int playerMovementIntent,
-            int enemyMovementIntent,
-            bool forcePlayerOnly,
-            bool forceEnemyOnly = false)
-        {
-            if (Mathf.Abs(deltaClosure) <= 1e-6f)
-            {
-                return;
-            }
-
-            bool approaching = deltaClosure > 0f;
-            ResolveMovementWeights(
-                playerMovementIntent,
-                enemyMovementIntent,
-                approaching,
-                out float playerWeight,
-                out float enemyWeight);
-
-            if (forcePlayerOnly)
-            {
-                playerWeight = 1f;
-                enemyWeight = 0f;
-            }
-
-            if (forceEnemyOnly)
-            {
-                playerWeight = 0f;
-                enemyWeight = 1f;
-            }
-
-            if (!approaching)
-            {
-                playerClosureOffset += deltaClosure * playerWeight;
-                enemyClosureOffset += deltaClosure * enemyWeight;
-                return;
-            }
-
-            if (!forcePlayerOnly && !forceEnemyOnly)
-            {
-                RedirectOpeningWeightsAtHome(ref playerWeight, ref enemyWeight);
-            }
-
-            playerClosureOffset += deltaClosure * playerWeight;
-            enemyClosureOffset += deltaClosure * enemyWeight;
-        }
-
-        private void RedirectOpeningWeightsAtHome(ref float playerWeight, ref float enemyWeight)
-        {
-            if (playerClosureOffset <= 1e-6f && playerWeight > 1e-6f)
-            {
-                enemyWeight += playerWeight;
-                playerWeight = 0f;
-            }
-
-            if (enemyClosureOffset <= 1e-6f && enemyWeight > 1e-6f)
-            {
-                playerWeight += enemyWeight;
-                enemyWeight = 0f;
-            }
-        }
-
-        private void ClampClosureOffsetsToDistance(
-            float distance,
-            float maxDistance,
-            int playerMovementIntent,
-            int enemyMovementIntent,
-            bool isPlayerStepping,
-            bool isEnemyStepping)
-        {
-            float totalClosure = ComputeClosure(distance, maxDistance);
-            if (totalClosure <= 1e-6f)
-            {
-                playerClosureOffset = 0f;
-                enemyClosureOffset = 0f;
-                return;
-            }
-
-            float sum = playerClosureOffset + enemyClosureOffset;
-            if (sum <= 1e-6f)
-            {
-                playerClosureOffset = totalClosure * 0.5f;
-                enemyClosureOffset = totalClosure * 0.5f;
-                return;
-            }
-
-            if (sum > totalClosure + 1e-4f)
-            {
-                float excess = sum - totalClosure;
-                if (TryAbsorbClosureExcess(
-                    excess,
-                    playerMovementIntent,
-                    enemyMovementIntent,
-                    opening: true,
-                    isPlayerStepping,
-                    isEnemyStepping))
-                {
-                    return;
-                }
-
-                float scale = totalClosure / sum;
-                playerClosureOffset *= scale;
-                enemyClosureOffset *= scale;
-            }
-            else if (sum < totalClosure - 1e-4f)
-            {
-                float deficit = totalClosure - sum;
-                if (TryAbsorbClosureExcess(
-                    deficit,
-                    playerMovementIntent,
-                    enemyMovementIntent,
-                    opening: false,
-                    isPlayerStepping,
-                    isEnemyStepping))
-                {
-                    return;
-                }
-
-                float scale = totalClosure / sum;
-                playerClosureOffset *= scale;
-                enemyClosureOffset *= scale;
-            }
-        }
-
-        private bool TryAbsorbClosureExcess(
-            float amount,
-            int playerMovementIntent,
-            int enemyMovementIntent,
-            bool opening,
-            bool isPlayerStepping,
-            bool isEnemyStepping)
-        {
-            if (amount <= 1e-6f)
-            {
-                return true;
-            }
-
-            if (isPlayerStepping)
-            {
-                if (opening)
-                {
-                    playerClosureOffset = Mathf.Max(0f, playerClosureOffset - amount);
-                }
-                else
-                {
-                    playerClosureOffset += amount;
-                }
-
-                return true;
-            }
-
-            if (isEnemyStepping)
-            {
-                if (opening)
-                {
-                    enemyClosureOffset = Mathf.Max(0f, enemyClosureOffset - amount);
-                }
-                else
-                {
-                    enemyClosureOffset += amount;
-                }
-
-                return true;
-            }
-
-            bool playerRetreating = playerMovementIntent > 0;
-            bool enemyRetreating = enemyMovementIntent > 0;
-            bool playerApproaching = playerMovementIntent < 0;
-            bool enemyApproaching = enemyMovementIntent < 0;
-
-            if (opening)
-            {
-                if (playerClosureOffset <= 1e-6f && !playerRetreating)
-                {
-                    enemyClosureOffset = Mathf.Max(0f, enemyClosureOffset - amount);
-                    return true;
-                }
-
-                if (enemyClosureOffset <= 1e-6f && !enemyRetreating)
-                {
-                    playerClosureOffset = Mathf.Max(0f, playerClosureOffset - amount);
-                    return true;
-                }
-
-                if (playerRetreating && !enemyRetreating && enemyClosureOffset > 1e-6f)
-                {
-                    float absorbed = Mathf.Min(amount, enemyClosureOffset);
-                    enemyClosureOffset -= absorbed;
-                    return absorbed >= amount - 1e-4f;
-                }
-
-                if (enemyRetreating && !playerRetreating && playerClosureOffset > 1e-6f)
-                {
-                    float absorbed = Mathf.Min(amount, playerClosureOffset);
-                    playerClosureOffset -= absorbed;
-                    return absorbed >= amount - 1e-4f;
-                }
-            }
-            else
-            {
-                if (playerApproaching && !enemyApproaching)
-                {
-                    playerClosureOffset += amount;
-                    return true;
-                }
-
-                if (enemyApproaching && !playerApproaching)
-                {
-                    enemyClosureOffset += amount;
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private static void ApplyOffsetMovement(ref float closureOffset, int movementIntent, float delta)
-        {
-            if (movementIntent < 0)
-            {
-                closureOffset += Mathf.Abs(delta);
-            }
-            else if (movementIntent > 0)
-            {
-                closureOffset = Mathf.Max(0f, closureOffset - Mathf.Abs(delta));
-            }
-        }
-
-        private float ComputeDistanceFromOffsets(float maxDistance)
-        {
-            float totalClosure = playerClosureOffset + enemyClosureOffset;
-            if (totalClosure <= 1e-6f)
-            {
-                return maxDistance;
-            }
-
-            float maxSep = Mathf.Max(maxSeparation, minCloseSeparation);
-            float separation = maxSeparation - totalClosure;
-            float span = maxSep - minCloseSeparation;
-            if (span <= 1e-6f)
-            {
-                return 0f;
-            }
-
-            float ratio = Mathf.Clamp01((separation - minCloseSeparation) / span);
-            return ratio * maxDistance;
-        }
-
-        private float ComputeClosure(float distance, float maxDistance)
-        {
-            float ratio = maxDistance > 0f ? Mathf.Clamp01(distance / maxDistance) : 0f;
-            float maxSep = Mathf.Max(maxSeparation, minCloseSeparation);
-            float separation = Mathf.Lerp(minCloseSeparation, maxSep, ratio);
-            return Mathf.Max(0f, maxSeparation - separation);
-        }
-
-        private void SyncClosureOffsetsToTotal(float totalClosure)
-        {
-            if (totalClosure <= 1e-6f)
-            {
-                playerClosureOffset = 0f;
-                enemyClosureOffset = 0f;
-                return;
-            }
-
-            float sum = playerClosureOffset + enemyClosureOffset;
-            if (sum <= 1e-6f)
-            {
-                playerClosureOffset = totalClosure * 0.5f;
-                enemyClosureOffset = totalClosure * 0.5f;
-                return;
-            }
-
-            if (!Mathf.Approximately(sum, totalClosure))
-            {
-                float scale = totalClosure / sum;
-                playerClosureOffset *= scale;
-                enemyClosureOffset *= scale;
-            }
-        }
-
-        private static void ResolveMovementWeights(
-            int playerMovementIntent,
-            int enemyMovementIntent,
-            bool forApproach,
-            out float playerWeight,
-            out float enemyWeight)
-        {
-            float playerDrive = 0f;
-            float enemyDrive = 0f;
-
-            if (playerMovementIntent < 0)
-            {
-                playerDrive = 1f;
-            }
-            else if (playerMovementIntent > 0)
-            {
-                playerDrive = -1f;
-            }
-
-            if (enemyMovementIntent < 0)
-            {
-                enemyDrive = 1f;
-            }
-            else if (enemyMovementIntent > 0)
-            {
-                enemyDrive = -1f;
-            }
-
-            float closePlayer = Mathf.Max(0f, playerDrive);
-            float closeEnemy = Mathf.Max(0f, enemyDrive);
-            float openPlayer = Mathf.Max(0f, -playerDrive);
-            float openEnemy = Mathf.Max(0f, -enemyDrive);
-            float playerShare = forApproach ? closePlayer : openPlayer;
-            float enemyShare = forApproach ? closeEnemy : openEnemy;
-            float shareSum = playerShare + enemyShare;
-
-            if (shareSum > 1e-6f)
-            {
-                playerWeight = playerShare / shareSum;
-                enemyWeight = enemyShare / shareSum;
-                return;
-            }
-
-            if (playerMovementIntent != 0 && enemyMovementIntent == 0)
-            {
-                playerWeight = 1f;
-                enemyWeight = 0f;
-                return;
-            }
-
-            if (enemyMovementIntent != 0 && playerMovementIntent == 0)
-            {
-                playerWeight = 0f;
-                enemyWeight = 1f;
-                return;
-            }
-
-            playerWeight = 0.5f;
-            enemyWeight = 0.5f;
-        }
-
-        /// <summary>
-        /// 本戦開始時の間合いでモデルを配置する
+        /// 両ユニットをホーム位置へ戻す
         /// </summary>
         public void ApplyInitialBattlePositions(float distance, float maxDistance)
         {
+            _ = distance;
             playerClosureOffset = 0f;
             enemyClosureOffset = 0f;
-            lastAppliedDistance = float.NaN;
-            ApplyDistance(distance, maxDistance, 0f, 0, 0, 0f, 0f);
+            ApplyModelTransforms();
         }
 
         /// <summary>
@@ -617,6 +249,121 @@ namespace Battle
             Vector3 corrected = enemyPos + axis * clampedAlong;
             corrected.y = groundY;
             player.position = corrected;
+        }
+
+        private void ApplySingleUnitOpen(
+            ref float closureOffset,
+            float openDistanceAmount,
+            float currentDistance,
+            float maxDistance,
+            out float distance)
+        {
+            float targetDistance = Mathf.Min(maxDistance, currentDistance + Mathf.Max(0f, openDistanceAmount));
+            float closureDelta = ComputeClosure(targetDistance, maxDistance) - ComputeClosure(currentDistance, maxDistance);
+            closureOffset = Mathf.Max(0f, closureOffset + closureDelta);
+            distance = ComputeDistanceFromOffsets(maxDistance);
+        }
+
+        private void ClampOffsets(float maxDistance, int playerMovementIntent, int enemyMovementIntent)
+        {
+            playerClosureOffset = Mathf.Max(0f, playerClosureOffset);
+            enemyClosureOffset = Mathf.Max(0f, enemyClosureOffset);
+
+            float maxTotalClosure = ComputeClosure(0f, maxDistance);
+            float excess = playerClosureOffset + enemyClosureOffset - maxTotalClosure;
+            if (excess <= 1e-4f)
+            {
+                return;
+            }
+
+            bool playerApproaching = playerMovementIntent < 0;
+            bool enemyApproaching = enemyMovementIntent < 0;
+            if (playerApproaching && !enemyApproaching)
+            {
+                AbsorbExcess(ref playerClosureOffset, ref enemyClosureOffset, excess);
+                return;
+            }
+
+            if (enemyApproaching && !playerApproaching)
+            {
+                AbsorbExcess(ref enemyClosureOffset, ref playerClosureOffset, excess);
+                return;
+            }
+
+            AbsorbExcess(ref playerClosureOffset, ref enemyClosureOffset, excess);
+        }
+
+        private void ClampOffsetsPreferringPlayer(float maxDistance)
+        {
+            playerClosureOffset = Mathf.Max(0f, playerClosureOffset);
+            enemyClosureOffset = Mathf.Max(0f, enemyClosureOffset);
+            float excess = playerClosureOffset + enemyClosureOffset - ComputeClosure(0f, maxDistance);
+            if (excess > 1e-4f)
+            {
+                AbsorbExcess(ref playerClosureOffset, ref enemyClosureOffset, excess);
+            }
+        }
+
+        private void ClampOffsetsPreferringEnemy(float maxDistance)
+        {
+            playerClosureOffset = Mathf.Max(0f, playerClosureOffset);
+            enemyClosureOffset = Mathf.Max(0f, enemyClosureOffset);
+            float excess = playerClosureOffset + enemyClosureOffset - ComputeClosure(0f, maxDistance);
+            if (excess > 1e-4f)
+            {
+                AbsorbExcess(ref enemyClosureOffset, ref playerClosureOffset, excess);
+            }
+        }
+
+        private static void AbsorbExcess(ref float primary, ref float secondary, float excess)
+        {
+            float absorbed = Mathf.Min(excess, primary);
+            primary -= absorbed;
+            excess -= absorbed;
+            if (excess > 1e-4f)
+            {
+                secondary = Mathf.Max(0f, secondary - excess);
+            }
+        }
+
+        private static void ApplyOffsetMovement(ref float closureOffset, int movementIntent, float delta)
+        {
+            if (movementIntent < 0)
+            {
+                closureOffset += Mathf.Abs(delta);
+            }
+            else if (movementIntent > 0)
+            {
+                closureOffset = Mathf.Max(0f, closureOffset - Mathf.Abs(delta));
+            }
+        }
+
+        private float ComputeDistanceFromOffsets(float maxDistance)
+        {
+            float totalClosure = playerClosureOffset + enemyClosureOffset;
+            if (totalClosure <= 1e-6f)
+            {
+                return maxDistance;
+            }
+
+            float maxSep = Mathf.Max(maxSeparation, minCloseSeparation);
+            float separation = maxSeparation - totalClosure;
+            float span = maxSep - minCloseSeparation;
+            if (span <= 1e-6f)
+            {
+                return 0f;
+            }
+
+            float ratio = Mathf.Clamp01((separation - minCloseSeparation) / span);
+            return ratio * maxDistance;
+        }
+
+        private float ComputeClosure(float distance, float maxDistance)
+        {
+            float ratio = maxDistance > 0f ? Mathf.Clamp01(distance / maxDistance) : 0f;
+            float maxSep = Mathf.Max(maxSeparation, minCloseSeparation);
+            float separation = Mathf.Lerp(minCloseSeparation, maxSep, ratio);
+            return Mathf.Max(0f, maxSeparation - separation);
         }
 
         private void ApplyFacing()

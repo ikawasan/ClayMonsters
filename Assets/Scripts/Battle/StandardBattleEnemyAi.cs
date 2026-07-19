@@ -55,6 +55,15 @@ namespace Battle
         /// <inheritdoc/>
         public int ConsumeRemoteStepIntent() => 0;
 
+        /// <inheritdoc/>
+        public bool TryConsumeNetworkAttackStart(out int moveIndex, out int attackSequence, out bool isCounter)
+        {
+            moveIndex = -1;
+            attackSequence = 0;
+            isCounter = false;
+            return false;
+        }
+
         // 欠損部位があり安全なときや攻撃手段が無いときは修復を優先する
         private bool ShouldRepair(BattleEnemyAiContext context, int bestMove)
         {

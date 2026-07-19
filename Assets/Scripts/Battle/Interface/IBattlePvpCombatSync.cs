@@ -24,8 +24,9 @@ namespace Battle.Interface
         /// ローカル攻撃開始を相手へ送信し同期番号を返す
         /// </summary>
         /// <param name="moveIndex">攻撃技番号</param>
+        /// <param name="isCounter">カウンター攻撃か</param>
         /// <returns>攻撃開始同期番号・未送信時0</returns>
-        int ReportLocalAttackStart(int moveIndex);
+        int ReportLocalAttackStart(int moveIndex, bool isCounter = false);
 
         /// <summary>
         /// ローカルプレイヤーの攻撃結果を相手へ送信する
