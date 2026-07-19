@@ -40,6 +40,37 @@ namespace Extensions
         }
 
         /// <summary>
+        /// Canvasの有効状態とsortingOrderを設定する
+        /// </summary>
+        /// <param name="canvas">対象Canvas</param>
+        /// <param name="visible">表示するか</param>
+        /// <param name="sortingOrder">表示時のsortingOrder</param>
+        public static void SetCanvasEnabled(Canvas canvas, bool visible, int sortingOrder)
+        {
+            SetCanvasEnabled(canvas, visible);
+            if (visible)
+            {
+                ApplyOverrideSorting(canvas, sortingOrder);
+            }
+        }
+
+        /// <summary>
+        /// CanvasのoverrideSortingとsortingOrderを設定する
+        /// </summary>
+        /// <param name="canvas">対象Canvas</param>
+        /// <param name="sortingOrder">sortingOrder</param>
+        public static void ApplyOverrideSorting(Canvas canvas, int sortingOrder)
+        {
+            if (canvas == null)
+            {
+                return;
+            }
+
+            canvas.overrideSorting = true;
+            canvas.sortingOrder = sortingOrder;
+        }
+
+        /// <summary>
         /// 同一GameObject上のCanvasを有効状態で設定する
         /// </summary>
         /// <param name="host">Canvasを持つGameObject</param>
