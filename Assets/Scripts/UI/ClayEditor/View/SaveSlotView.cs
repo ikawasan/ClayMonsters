@@ -21,7 +21,7 @@ namespace UI.ClayEditor.View
 {
     /// <summary>
     /// モデルのセーブUIフロー全体を制御するView
-    /// プレイヤー保存または敵保存ボタン(敵はUnityエディタのみ) → スロット選択 → 名前入力 → 確認表示 → セーブ(完了をOnSavedで通知)
+    /// プレイヤー保存または敵保存ボタン(敵はUnityエディタのみ) → スロット選択 → 名前入力 → 確認表示 → セーブ → 完了ウィンドウ → 閉じるでOnSaved通知
     /// シーン遷移や入力/カメラのロックはScene側(ClayEditPresenter)がOnSaved/IsSaveUiOpenを購読して行う
     /// (asmdefの循環参照を避けるため、このViewからは他レイヤーを直接触らない)
     /// </summary>
@@ -110,8 +110,12 @@ namespace UI.ClayEditor.View
         [Tooltip("確認画面から名前入力へ戻るボタン")]
         [SerializeField] private LHButton confirmBackButton;
 
-        [Tooltip("保存完了後に閉じるボタン。押すとシーン遷移する")]
-        [SerializeField] private LHButton closeButton;
+        [Header("保存完了")]
+        [Tooltip("セーブ完了専用ウィンドウ")]
+        [SerializeField] private ModelSaveCompleteView saveCompleteView;
+
+        [Tooltip("保存完了メッセージ文言")]
+        [SerializeField] private string saveCompleteMessage = "セーブが完了しました";
 
         [Header("サムネイル撮影")]
         [Tooltip("保存時にモデルを画像化する撮影器。未設定ならサムネイルは保存しない")]
@@ -131,7 +135,7 @@ namespace UI.ClayEditor.View
         private readonly List<Object> runtimeThumbnailObjects = new List<Object>();
 
         /// <summary>
-        /// セーブ完了後、セーブ完了キャンバスの「閉じる」ボタンが押されたときに発火する。
+        /// セーブ完了後、完了ウィンドウの閉じるボタンが押されたときに発火する。
         /// Scene側がこれを購読してシーン遷移する。
         /// </summary>
         public Observable<SaveCompletedInfo> OnSaved => savedSubject;
@@ -187,16 +191,18 @@ namespace UI.ClayEditor.View
 
             EnsureSlotScrollListReady();
 
+            if (saveCompleteView != null)
+            {
+                saveCompleteView.OnClosed
+                    .Subscribe(_ => OnSaveCompleteClosed())
+                    .AddTo(this);
+                saveCompleteView.Hide();
+            }
+
             // 名前入力完了ボタン → セーブを実行する
             if (confirmNameButton != null)
             {
                 confirmNameButton.SubscribeOnClick(OnConfirmName);
-            }
-
-            // 閉じるボタン → 確認キャンバスを閉じてシーン遷移する
-            if (closeButton != null)
-            {
-                closeButton.SubscribeOnClick(OnCloseSaveComplete);
             }
 
             // 初期状態は各キャンバスを閉じておく
@@ -243,7 +249,7 @@ namespace UI.ClayEditor.View
                 slotActionBackButton.SubscribeOnClick(OnSlotActionBack);
             }
 
-            SetConfirmCanvasButtonsVisible(previewVisible: false, closeVisible: false);
+            SetConfirmCanvasButtonsVisible(previewVisible: false);
         }
 
         /// <summary>
@@ -256,12 +262,13 @@ namespace UI.ClayEditor.View
             selectedSlot = -1;
             slotActionConfirmView?.Clear();
             slotActionDeletePromptView?.Hide();
+            saveCompleteView?.Hide();
             CloseConfirmCanvas();
             SetCanvasEnabled(slotCanvas, false);
             SetCanvasEnabled(nameInputCanvas, false);
             SetCanvasEnabled(slotActionCanvas, false);
             SetCanvasEnabled(saveConfirmCanvas, false);
-            SetConfirmCanvasButtonsVisible(previewVisible: false, closeVisible: false);
+            SetConfirmCanvasButtonsVisible(previewVisible: false);
             isSaveUiOpen.Value = false;
             ModelSaveSlotScrollListView.ExitFullscreenSelectionLayout();
         }
@@ -298,40 +305,10 @@ namespace UI.ClayEditor.View
         }
 
         // 保存ボタンが押されたとき: スロット選択キャンバスを開く
+        // 作り直し時も保存先スロットを選べる
         private void OnOpenPlayerSaveClicked()
         {
-            if (sessionContext != null && sessionContext.IsRemakeSave)
-            {
-                OpenRemakeSaveFlow(sessionContext.RemakeSlotIndex, sessionContext.RemakeModelName);
-                return;
-            }
-
             OpenSlotCanvas(ModelSavePool.Player);
-        }
-
-        /// <summary>
-        /// 作り直しモード用に保存先スロットを固定して名前入力から開始する
-        /// </summary>
-        /// <param name="slotIndex">上書き先スロット番号</param>
-        /// <param name="existingModelName">初期表示するモデル名</param>
-        public void OpenRemakeSaveFlow(int slotIndex, string existingModelName)
-        {
-            if (!TryValidateSavableMesh())
-            {
-                return;
-            }
-
-            currentSavePool = ModelSavePool.Player;
-            selectedSlot = slotIndex;
-            if (nameInputView != null)
-            {
-                nameInputView.SetName(existingModelName ?? string.Empty);
-            }
-
-            SetCanvasEnabled(slotCanvas, false);
-            SetCanvasEnabled(nameInputCanvas, true);
-            SetSaveUiOpenState(true);
-            nameInputView?.FocusInput();
         }
 
         // 保存ボタンが押されたとき: スロット選択キャンバスを開く
@@ -488,7 +465,8 @@ namespace UI.ClayEditor.View
         {
             if (nameInputView != null)
             {
-                nameInputView.SetName(slot != null ? slot.modelName : string.Empty);
+                string initialName = ResolveInitialModelName(slot);
+                nameInputView.SetName(initialName);
             }
 
             SetCanvasEnabled(slotActionCanvas, false);
@@ -496,6 +474,24 @@ namespace UI.ClayEditor.View
             SetCanvasEnabled(nameInputCanvas, true);
             SetSaveUiOpenState(true);
             nameInputView?.FocusInput();
+        }
+
+        // 空きスロットは作り直し元の名前を優先し使用中スロットは既存名を使う
+        private string ResolveInitialModelName(ModelSaveSlot slot)
+        {
+            if (slot != null && !string.IsNullOrEmpty(slot.modelName))
+            {
+                return slot.modelName;
+            }
+
+            if (sessionContext != null
+                && sessionContext.IsRemake
+                && !string.IsNullOrEmpty(sessionContext.RemakeModelName))
+            {
+                return sessionContext.RemakeModelName;
+            }
+
+            return string.Empty;
         }
 
         private void OpenSlotActionConfirm(int slotIndex, ModelSaveSlot slot)
@@ -574,13 +570,6 @@ namespace UI.ClayEditor.View
         {
             if (isSaving)
             {
-                return;
-            }
-
-            if (sessionContext != null && sessionContext.IsRemakeSave)
-            {
-                SetCanvasEnabled(nameInputCanvas, false);
-                SetSaveUiOpenState(false);
                 return;
             }
 
@@ -687,12 +676,17 @@ namespace UI.ClayEditor.View
 
                 SetCanvasEnabled(nameInputCanvas, false);
                 SetCanvasEnabled(slotCanvas, false);
+                if (saveConfirmView != null)
+                {
+                    saveConfirmView.gameObject.SetActive(true);
+                }
+
                 saveConfirmView?.ShowPreview(
                     pendingModelName,
                     pendingStatus,
                     pendingRegisteredAttackMotions,
                     pendingThumbnailPng);
-                SetConfirmCanvasButtonsVisible(previewVisible: true, closeVisible: false);
+                SetConfirmCanvasButtonsVisible(previewVisible: true);
                 SetCanvasEnabled(saveConfirmCanvas, true);
                 SetSaveUiOpenState(true);
                 RestoreSculptMeshAfterPreview();
@@ -811,24 +805,7 @@ namespace UI.ClayEditor.View
                 hasSavedOnConfirmCanvas = true;
                 ClearPendingSaveData();
                 RestoreSculptMeshAfterPreview();
-
-                // 閉じるボタンがある場合は完了表示へ切り替えて閉じる操作を待つ
-                // 無い場合は確認UIを残したまま遷移し暗転で覆う
-                if (closeButton != null)
-                {
-                    byte[] savedThumbnailPng = thumbnailPng;
-                    ModelSaveSlot savedSlot = saveService.GetSlot(currentSavePool, selectedSlot);
-                    if (savedSlot != null && saveConfirmView != null)
-                    {
-                        saveConfirmView.ShowSlot(savedSlot, savedThumbnailPng, selectedSlot);
-                    }
-
-                    SetConfirmCanvasButtonsVisible(previewVisible: false, closeVisible: true);
-                }
-                else
-                {
-                    CompleteAndTransition();
-                }
+                ShowSaveCompletedWindow();
             }
             finally
             {
@@ -836,9 +813,34 @@ namespace UI.ClayEditor.View
             }
         }
 
-        // セーブ完了キャンバスの閉じるボタンが押されたとき: シーン遷移する
-        private void OnCloseSaveComplete()
+        // セーブ完了専用ウィンドウを表示し閉じる操作を待つ
+        private void ShowSaveCompletedWindow()
         {
+            if (saveCompleteView == null)
+            {
+                Debug.LogError(
+                    "[SaveSlotView] saveCompleteViewが未設定ですSaveCompletePromptCanvasを配置して配線してください",
+                    this);
+                return;
+            }
+
+            SetCanvasEnabled(nameInputCanvas, false);
+            SetCanvasEnabled(slotCanvas, false);
+            SetCanvasEnabled(slotActionCanvas, false);
+            SetCanvasEnabled(saveConfirmCanvas, false);
+            SetConfirmCanvasButtonsVisible(previewVisible: false);
+            saveCompleteView.Show(saveCompleteMessage);
+            SetSaveUiOpenState(true);
+        }
+
+        // 完了ウィンドウの閉じる後にシーン遷移する
+        private void OnSaveCompleteClosed()
+        {
+            if (!hasSavedOnConfirmCanvas)
+            {
+                return;
+            }
+
             CompleteAndTransition();
         }
 
@@ -903,8 +905,13 @@ namespace UI.ClayEditor.View
         private void CloseConfirmCanvas()
         {
             SetCanvasEnabled(saveConfirmCanvas, false);
+            if (saveConfirmView != null)
+            {
+                saveConfirmView.gameObject.SetActive(true);
+            }
+
             saveConfirmView?.Clear();
-            SetConfirmCanvasButtonsVisible(previewVisible: false, closeVisible: false);
+            SetConfirmCanvasButtonsVisible(previewVisible: false);
             hasSavedOnConfirmCanvas = false;
             ClearPendingSaveData();
             RestoreSculptMeshAfterPreview();
@@ -923,7 +930,7 @@ namespace UI.ClayEditor.View
             pendingRegisteredAttackMotions = null;
         }
 
-        private void SetConfirmCanvasButtonsVisible(bool previewVisible, bool closeVisible)
+        private void SetConfirmCanvasButtonsVisible(bool previewVisible)
         {
             if (confirmSaveButton != null)
             {
@@ -933,11 +940,6 @@ namespace UI.ClayEditor.View
             if (confirmBackButton != null)
             {
                 confirmBackButton.gameObject.SetActive(previewVisible);
-            }
-
-            if (closeButton != null)
-            {
-                closeButton.gameObject.SetActive(closeVisible);
             }
         }
 
@@ -951,6 +953,7 @@ namespace UI.ClayEditor.View
             if (saveConfirmView == null
                 || confirmSaveButton == null
                 || confirmBackButton == null
+                || saveCompleteView == null
                 || nameInputBackButton == null
                 || slotActionCanvas == null
                 || slotActionConfirmView == null
