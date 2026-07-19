@@ -13,14 +13,14 @@ Shader "Custom/FieldToon"
         
         [Space(10)]
         [Header(Metal Highlight)]
-        // デフォルトを黒にして、既存のマテリアルの見た目が変わらないように設定
+        // デフォルトを黒にして既存マテリアルの見た目を変えない
         [HDR] _SpecularColor("Specular Color", Color) = (0.0, 0.0, 0.0, 0.0)
         _SpecularThreshold("Specular Threshold", Range(0.0, 1.0)) = 0.95
         _SpecularSmoothness("Specular Smoothness", Range(0.0, 1.0)) = 0.01
 
         [Space(10)]
         [Header(Rim Light (Nostalgic Sun))]
-        [HDR]         _RimColor("Rim Light Color", Color) = (1.0, 0.85, 0.5, 1)
+        [HDR] _RimColor("Rim Light Color", Color) = (1.0, 0.85, 0.5, 1)
         _RimPower("Rim Power (Spread)", Range(0.1, 10.0)) = 3.0
 
         [Space(10)]
@@ -45,6 +45,8 @@ Shader "Custom/FieldToon"
             Name "ForwardLit"
             Tags { "LightMode" = "UniversalForward" }
 
+            ZWrite On
+            ZTest LEqual
             Cull [_Cull]
 
             HLSLPROGRAM
@@ -55,6 +57,7 @@ Shader "Custom/FieldToon"
             #pragma multi_compile _ _SHADOWS_SOFT
             #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
             #pragma multi_compile_fog
+            #pragma multi_compile_instancing
             #pragma shader_feature_local _ _SHOW_BACK_FACES_ONLY
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
@@ -189,28 +192,54 @@ Shader "Custom/FieldToon"
             Name "ShadowCaster"
             Tags { "LightMode" = "ShadowCaster" }
 
+            ZWrite On
+            ZTest LEqual
+            ColorMask 0
             Cull [_Cull]
 
             HLSLPROGRAM
             #pragma vertex ShadowPassVertex
             #pragma fragment ShadowPassFragment
-            
+            #pragma multi_compile_instancing
+
             #include "Packages/com.unity.render-pipelines.universal/Shaders/ShadowCasterPass.hlsl"
             ENDHLSL
         }
-        
+
         Pass
         {
             Name "DepthOnly"
             Tags { "LightMode" = "DepthOnly" }
 
+            ZWrite On
+            ZTest LEqual
+            ColorMask R
             Cull [_Cull]
 
             HLSLPROGRAM
-            #pragma vertex DepthOnlyVertex
-            #pragma fragment DepthOnlyFragment
-            
-            #include "Packages/com.unity.render-pipelines.universal/Shaders/DepthOnlyPass.hlsl"
+            #pragma vertex ClayDepthVertex
+            #pragma fragment ClayDepthOnlyFragment
+            #pragma multi_compile_instancing
+
+            #include "../Common/OpaqueDepthPasses.hlsl"
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "DepthNormals"
+            Tags { "LightMode" = "DepthNormals" }
+
+            ZWrite On
+            ZTest LEqual
+            Cull [_Cull]
+
+            HLSLPROGRAM
+            #pragma vertex ClayDepthVertex
+            #pragma fragment ClayDepthNormalsFragment
+            #pragma multi_compile_instancing
+
+            #include "../Common/OpaqueDepthPasses.hlsl"
             ENDHLSL
         }
     }

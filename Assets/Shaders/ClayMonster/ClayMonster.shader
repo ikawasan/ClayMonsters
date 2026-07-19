@@ -55,7 +55,8 @@ Shader "Custom/ClayMonster"
             Tags { "LightMode" = "SRPDefaultUnlit" }
 
             Cull Front
-            ZWrite On
+            ZWrite Off
+            ZTest LEqual
 
             HLSLPROGRAM
             #pragma vertex OutlineVert
@@ -103,6 +104,9 @@ Shader "Custom/ClayMonster"
             Name "ForwardLit"
             Tags { "LightMode"="UniversalForward" }
 
+            ZWrite On
+            Cull Back
+
             HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
@@ -112,6 +116,7 @@ Shader "Custom/ClayMonster"
             #pragma multi_compile _ _SHADOWS_SOFT
             #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
             #pragma multi_compile_fog
+            #pragma multi_compile_instancing
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -230,9 +235,15 @@ Shader "Custom/ClayMonster"
             Name "ShadowCaster"
             Tags { "LightMode" = "ShadowCaster" }
 
+            ZWrite On
+            ZTest LEqual
+            ColorMask 0
+            Cull Back
+
             HLSLPROGRAM
             #pragma vertex ShadowPassVertex
             #pragma fragment ShadowPassFragment
+            #pragma multi_compile_instancing
 
             #include "Packages/com.unity.render-pipelines.universal/Shaders/ShadowCasterPass.hlsl"
             ENDHLSL
@@ -243,11 +254,35 @@ Shader "Custom/ClayMonster"
             Name "DepthOnly"
             Tags { "LightMode" = "DepthOnly" }
 
-            HLSLPROGRAM
-            #pragma vertex DepthOnlyVertex
-            #pragma fragment DepthOnlyFragment
+            ZWrite On
+            ZTest LEqual
+            ColorMask R
+            Cull Back
 
-            #include "Packages/com.unity.render-pipelines.universal/Shaders/DepthOnlyPass.hlsl"
+            HLSLPROGRAM
+            #pragma vertex ClayDepthVertex
+            #pragma fragment ClayDepthOnlyFragment
+            #pragma multi_compile_instancing
+
+            #include "../Common/OpaqueDepthPasses.hlsl"
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "DepthNormals"
+            Tags { "LightMode" = "DepthNormals" }
+
+            ZWrite On
+            ZTest LEqual
+            Cull Back
+
+            HLSLPROGRAM
+            #pragma vertex ClayDepthVertex
+            #pragma fragment ClayDepthNormalsFragment
+            #pragma multi_compile_instancing
+
+            #include "../Common/OpaqueDepthPasses.hlsl"
             ENDHLSL
         }
     }
