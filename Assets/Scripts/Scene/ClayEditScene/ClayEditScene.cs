@@ -59,6 +59,7 @@ namespace Scene.ClayEditScene
 
         protected override UniTask OnLeave(ISceneTransitionContext context, CancellationToken cancelToken)
         {
+            clayEditPresenter.OnLeave();
             clayEditPostProcess.Disable();
             cameraPresenter.OnExit();
             sceneResetter.Reset();

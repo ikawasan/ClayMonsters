@@ -19,5 +19,10 @@ namespace Scene.ClayEditScene.Interface
         /// フェード明け後に入場UIを表示する
         /// </summary>
         void OnEnterAfterFadeIn();
+
+        /// <summary>
+        /// 退場時に保存UIと作り直しUIを整理する
+        /// </summary>
+        void OnLeave();
     }
 }

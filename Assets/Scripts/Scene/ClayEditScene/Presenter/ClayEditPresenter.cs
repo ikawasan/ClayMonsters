@@ -122,8 +122,9 @@ namespace Scene.ClayEditScene.Presenter
         {
             clayEditView.Inisialize();
             sessionContext.Reset();
-            editorUiGate.SetEditorVisible(false);
             remakeLoadSlotView.Hide();
+            saveSlotView.HideForLeave();
+            editorUiGate.SetEditorVisible(false);
             entryView.Hide();
             SetEditorInteractable(false);
         }
@@ -134,11 +135,27 @@ namespace Scene.ClayEditScene.Presenter
             entryView.Show();
         }
 
+        /// <inheritdoc/>
+        void IClayEditPresenter.OnLeave()
+        {
+            remakeLoadSlotView.Hide();
+            saveSlotView.HideForLeave();
+            entryView.Hide();
+            editorUiGate.SetEditorVisible(false);
+            if (clayEditView?.CheckToModeSelectSceneWindow != null)
+            {
+                clayEditView.CheckToModeSelectSceneWindow.enabled = false;
+            }
+
+            SetEditorInteractable(false);
+        }
+
         private void BeginNewCreateFlow()
         {
             sessionContext.BeginNewCreate();
             entryView.Hide();
             editorUiGate.SetEditorVisible(true);
+            saveSlotView.ShowEditorChrome();
             SetEditorInteractable(true);
         }
 
@@ -154,6 +171,7 @@ namespace Scene.ClayEditScene.Presenter
             historyManager.Clear();
             remakeLoadSlotView.Hide();
             editorUiGate.SetEditorVisible(true);
+            saveSlotView.ShowEditorChrome();
             SetEditorInteractable(true);
         }
 
