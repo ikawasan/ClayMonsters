@@ -171,6 +171,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Chair
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: b8b29ac46f6ab9a488f0d03951333725, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -190,7 +194,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 32097285}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: DeskAndChair (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -266,6 +270,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Locker (3)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 2cb45de7c308527488f114ef09d9d50e, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -285,7 +293,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 55793583}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Field
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -480,6 +488,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Locker
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 2cb45de7c308527488f114ef09d9d50e, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -616,6 +628,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 957fdf3ca72f0424194861896e224ce6, type: 3}
       propertyPath: m_Name
       value: SlidingDoors
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 957fdf3ca72f0424194861896e224ce6, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -993,6 +1009,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Chair
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: b8b29ac46f6ab9a488f0d03951333725, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1128,7 +1148,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 230146024}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: ClayBoards
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1211,6 +1231,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: f58715374a19b254c840607f6fbf48ce, type: 3}
       propertyPath: m_Name
       value: CleaningCabinet
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f58715374a19b254c840607f6fbf48ce, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1411,6 +1435,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Desk
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 013847016e4551e41ad5fd2728e8460b, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1593,6 +1621,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 00db03369690f664ba8f03f40b7db490, type: 3}
       propertyPath: m_Name
       value: Poster
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 00db03369690f664ba8f03f40b7db490, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1824,6 +1856,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Locker (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 2cb45de7c308527488f114ef09d9d50e, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1886,6 +1922,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Desk
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 013847016e4551e41ad5fd2728e8460b, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1941,7 +1981,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 422562134}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: DeskAndChair (5)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1974,7 +2014,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 426234548}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: DeskAndChairs (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2054,6 +2094,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Chair
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: b8b29ac46f6ab9a488f0d03951333725, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2073,7 +2117,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 445090142}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: DeskAndChair (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2149,6 +2193,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Desk
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 013847016e4551e41ad5fd2728e8460b, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2211,6 +2259,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Chair
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: b8b29ac46f6ab9a488f0d03951333725, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2230,7 +2282,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 483635975}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: DeskAndChair (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2306,6 +2358,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Desk
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 013847016e4551e41ad5fd2728e8460b, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2367,6 +2423,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 013847016e4551e41ad5fd2728e8460b, type: 3}
       propertyPath: m_Name
       value: Desk
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 013847016e4551e41ad5fd2728e8460b, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2430,6 +2490,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Clock
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 7e7374e31532eb048b37fb486484b22f, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2449,7 +2513,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 508387807}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: DeskAndChair
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2525,6 +2589,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Chair
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: b8b29ac46f6ab9a488f0d03951333725, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2544,7 +2612,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 541272343}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: DeskAndChair (2)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2577,7 +2645,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 570113601}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: DeskAndChair (4)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2653,6 +2721,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Desk
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 013847016e4551e41ad5fd2728e8460b, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2715,6 +2787,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Chair
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: b8b29ac46f6ab9a488f0d03951333725, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2734,7 +2810,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 674906840}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: DeskAndChair (4)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2810,6 +2886,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: ClayBoard (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 8589b4ad05f5b7746961048c593b97f0, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2872,6 +2952,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Desk
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 013847016e4551e41ad5fd2728e8460b, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2891,7 +2975,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 703635309}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: DeskAndChair (5)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2924,7 +3008,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 715198154}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: DeskAndChair (3)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3094,7 +3178,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 751772943}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: DeskAndChair (2)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3169,6 +3253,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 8da8c2b41ed323640ac7685bc26a3e42, type: 3}
       propertyPath: m_Name
       value: Blackboard
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 8da8c2b41ed323640ac7685bc26a3e42, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3300,6 +3388,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: b8b29ac46f6ab9a488f0d03951333725, type: 3}
       propertyPath: m_Name
       value: Chair
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: b8b29ac46f6ab9a488f0d03951333725, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3500,6 +3592,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: ClayBoard
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 8589b4ad05f5b7746961048c593b97f0, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -3561,6 +3657,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: b8b29ac46f6ab9a488f0d03951333725, type: 3}
       propertyPath: m_Name
       value: Chair
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: b8b29ac46f6ab9a488f0d03951333725, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3918,6 +4018,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Chair
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: b8b29ac46f6ab9a488f0d03951333725, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -3980,6 +4084,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Desk
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 013847016e4551e41ad5fd2728e8460b, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -4041,6 +4149,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 013847016e4551e41ad5fd2728e8460b, type: 3}
       propertyPath: m_Name
       value: Desk
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 013847016e4551e41ad5fd2728e8460b, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -4225,6 +4337,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Chair
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: b8b29ac46f6ab9a488f0d03951333725, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -4287,6 +4403,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: BulletinBoard
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 12976153d6350044e9d40e775ab4c63e, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -4348,6 +4468,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: b8b29ac46f6ab9a488f0d03951333725, type: 3}
       propertyPath: m_Name
       value: Chair
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: b8b29ac46f6ab9a488f0d03951333725, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -4548,6 +4672,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Desk
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 013847016e4551e41ad5fd2728e8460b, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -4731,6 +4859,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Desk
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 013847016e4551e41ad5fd2728e8460b, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -4792,6 +4924,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: b8b29ac46f6ab9a488f0d03951333725, type: 3}
       propertyPath: m_Name
       value: Chair
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: b8b29ac46f6ab9a488f0d03951333725, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -4962,6 +5098,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Poster (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 00db03369690f664ba8f03f40b7db490, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -5023,6 +5163,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 2cb45de7c308527488f114ef09d9d50e, type: 3}
       propertyPath: m_Name
       value: Locker (2)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 2cb45de7c308527488f114ef09d9d50e, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -5086,6 +5230,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Chair
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: b8b29ac46f6ab9a488f0d03951333725, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -5105,7 +5253,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1257112074}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: DeskAndChair (5)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -5138,7 +5286,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1280668613}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: DeskAndChairs
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -5173,7 +5321,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1304153604}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: DeskAndChair (5)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -5285,6 +5433,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Desk
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 013847016e4551e41ad5fd2728e8460b, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -5346,6 +5498,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: b8b29ac46f6ab9a488f0d03951333725, type: 3}
       propertyPath: m_Name
       value: Chair
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: b8b29ac46f6ab9a488f0d03951333725, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -5413,6 +5569,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Poster (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 00db03369690f664ba8f03f40b7db490, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -5475,6 +5635,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Desk
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 013847016e4551e41ad5fd2728e8460b, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -5494,7 +5658,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1414395953}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: DeskAndChair (3)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -5525,7 +5689,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1459407198}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: DeskAndChair
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -5601,6 +5765,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Desk
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 013847016e4551e41ad5fd2728e8460b, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -5663,6 +5831,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Chair
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: b8b29ac46f6ab9a488f0d03951333725, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -5682,7 +5854,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1490505126}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: DeskAndChair (3)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -5847,6 +6019,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Poster (3)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 00db03369690f664ba8f03f40b7db490, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -5866,7 +6042,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1532420495}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: DeskAndChair (3)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -5941,6 +6117,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Desk
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 013847016e4551e41ad5fd2728e8460b, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -5960,7 +6140,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1595244351}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: DeskAndChairs (2)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -6264,6 +6444,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Speaker
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 1f755059233b09c41aa3af1212b43a05, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -6283,7 +6467,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1688373219}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: DeskAndChair
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -6437,7 +6621,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1710344644}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: DeskAndChair (2)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -6649,6 +6833,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Chair
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: b8b29ac46f6ab9a488f0d03951333725, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -6832,6 +7020,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Windows
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 6590c8fae228b0742a81abe251cfed0e, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -6894,6 +7086,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Desk
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 013847016e4551e41ad5fd2728e8460b, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -6913,7 +7109,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1808821129}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: DeskAndChair (4)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -6989,6 +7185,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Desk
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 013847016e4551e41ad5fd2728e8460b, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -7050,6 +7250,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: b8b29ac46f6ab9a488f0d03951333725, type: 3}
       propertyPath: m_Name
       value: Chair
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: b8b29ac46f6ab9a488f0d03951333725, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -7113,6 +7317,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Desk
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 013847016e4551e41ad5fd2728e8460b, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -7132,7 +7340,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1857542670}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Posters
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -7211,6 +7419,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Room
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f2bc0210ecdef644bab0f1be71e8faa8, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -7272,6 +7484,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 013847016e4551e41ad5fd2728e8460b, type: 3}
       propertyPath: m_Name
       value: Desk
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 013847016e4551e41ad5fd2728e8460b, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -7371,6 +7587,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Chair
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: b8b29ac46f6ab9a488f0d03951333725, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -7433,6 +7653,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Locker (4)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 2cb45de7c308527488f114ef09d9d50e, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -7494,6 +7718,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 013847016e4551e41ad5fd2728e8460b, type: 3}
       propertyPath: m_Name
       value: Desk
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 013847016e4551e41ad5fd2728e8460b, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -7616,7 +7844,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1920710921}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: DeskAndChairs (3)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -7696,6 +7924,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Desk
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 013847016e4551e41ad5fd2728e8460b, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -7715,7 +7947,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1946763790}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: DeskAndChairs (4)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -7795,6 +8027,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Chair
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: b8b29ac46f6ab9a488f0d03951333725, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -7814,7 +8050,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1990842537}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: DeskAndChair (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -7847,7 +8083,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2021540546}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Lockers
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -7927,6 +8163,10 @@ PrefabInstance:
       value: Ceiling
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 361100273dfaec94c9dd99db0b58a4a9, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 361100273dfaec94c9dd99db0b58a4a9, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -7949,7 +8189,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2048312373}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: DeskAndChair (4)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -7982,7 +8222,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2067726869}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: DeskAndChair
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -8058,6 +8298,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: TeacherDesk
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 8ed3d3292b7a18a438e33cf2d74cd617, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -8119,6 +8363,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 013847016e4551e41ad5fd2728e8460b, type: 3}
       propertyPath: m_Name
       value: Desk
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 013847016e4551e41ad5fd2728e8460b, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -8182,6 +8430,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Chair
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: b8b29ac46f6ab9a488f0d03951333725, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -8201,7 +8453,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2077341769}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: DeskAndChair (2)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -8282,6 +8534,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 00db03369690f664ba8f03f40b7db490, type: 3}
       propertyPath: m_Name
       value: Poster (4)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 00db03369690f664ba8f03f40b7db490, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
