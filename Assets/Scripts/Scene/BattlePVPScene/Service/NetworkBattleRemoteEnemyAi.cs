@@ -1,7 +1,6 @@
 using Battle;
 using Battle.Interface;
 using Scene.BattlePVPScene.Network;
-using UnityEngine;
 
 namespace Scene.BattlePVPScene.Service
 {
@@ -29,28 +28,6 @@ namespace Scene.BattlePVPScene.Service
                 return BattleEnemyAiDecision.Hold;
             }
 
-            BattlePvpInputRelay opponentRelay = inputRelay.GetOpponentRelay();
-            if (opponentRelay != null
-                && opponentRelay.TryConsumeRemoteAttackStart(out int rpcMoveIndex, out int rpcSequence))
-            {
-                if (rpcSequence > lastRemoteAttackSequence && rpcMoveIndex >= 0)
-                {
-                    lastRemoteAttackSequence = rpcSequence;
-                    return new BattleEnemyAiDecision(0, rpcMoveIndex, attackSequence: rpcSequence);
-                }
-            }
-
-            int remoteAttackSequence = inputRelay.OpponentAttackSequence;
-            if (remoteAttackSequence > lastRemoteAttackSequence)
-            {
-                lastRemoteAttackSequence = remoteAttackSequence;
-                int moveIndex = inputRelay.OpponentAttackMoveIndex;
-                if (moveIndex >= 0)
-                {
-                    return new BattleEnemyAiDecision(0, moveIndex, attackSequence: remoteAttackSequence);
-                }
-            }
-
             BattlePvpInputSnapshot snapshot = inputRelay.RemoteInput;
             if (snapshot.IsHoldingPartRepair && context.Self.LostPartCount > 0)
             {
@@ -62,5 +39,47 @@ namespace Scene.BattlePVPScene.Service
 
         /// <inheritdoc/>
         public int ConsumeRemoteStepIntent() => 0;
+
+        /// <inheritdoc/>
+        public bool TryConsumeNetworkAttackStart(out int moveIndex, out int attackSequence, out bool isCounter)
+        {
+            moveIndex = -1;
+            attackSequence = 0;
+            isCounter = false;
+            if (inputRelay == null)
+            {
+                return false;
+            }
+
+            BattlePvpInputRelay opponentRelay = inputRelay.GetOpponentRelay();
+            if (opponentRelay != null
+                && opponentRelay.TryConsumeRemoteAttackStart(out int rpcMoveIndex, out int rpcSequence, out bool rpcIsCounter))
+            {
+                if (rpcSequence > lastRemoteAttackSequence && rpcMoveIndex >= 0)
+                {
+                    lastRemoteAttackSequence = rpcSequence;
+                    moveIndex = rpcMoveIndex;
+                    attackSequence = rpcSequence;
+                    isCounter = rpcIsCounter;
+                    return true;
+                }
+            }
+
+            int remoteAttackSequence = inputRelay.OpponentAttackSequence;
+            if (remoteAttackSequence > lastRemoteAttackSequence)
+            {
+                int remoteMoveIndex = inputRelay.OpponentAttackMoveIndex;
+                if (remoteMoveIndex >= 0)
+                {
+                    lastRemoteAttackSequence = remoteAttackSequence;
+                    moveIndex = remoteMoveIndex;
+                    attackSequence = remoteAttackSequence;
+                    isCounter = inputRelay.OpponentAttackIsCounter;
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 }

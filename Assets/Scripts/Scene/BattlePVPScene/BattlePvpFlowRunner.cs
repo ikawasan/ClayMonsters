@@ -77,32 +77,19 @@ namespace Scene.BattlePVPScene
         private CancellationTokenSource flowCts;
         private bool isRunning;
         private bool diagnosticsSubscribed;
+        private GameObject trackedPlayerModel;
+        private GameObject trackedEnemyModel;
 
         private void OnDestroy()
         {
             Debug.LogWarning(
                 "[BattlePvpFlow] FlowRunnerが破棄されました"
                 + $" sceneLoaded={gameObject.scene.isLoaded}"
-                + $" quitting={applicationQuitting}");
+                + $" quitting={ApplicationQuitGuard.IsQuitting}");
             UnsubscribeDiagnostics();
             disconnectHandler?.Dispose();
             flowCts?.Cancel();
             flowCts?.Dispose();
-        }
-
-        private static bool applicationQuitting;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetQuitFlag()
-        {
-            applicationQuitting = false;
-            Application.quitting -= OnApplicationQuitting;
-            Application.quitting += OnApplicationQuitting;
-        }
-
-        private static void OnApplicationQuitting()
-        {
-            applicationQuitting = true;
         }
 
         private void SubscribeDiagnostics()
@@ -220,10 +207,15 @@ namespace Scene.BattlePVPScene
         /// </summary>
         public void PrepareEntryLayout()
         {
+            selectionSession?.PrepareEntry();
             staging?.PrepareSelectionEntry();
+            loadSlotView?.HideForLeave();
             loadSlotView?.PrepareLayout();
             SetCanvasEnabled(selectionCanvas, false);
             SetCanvasEnabled(battleUiCanvas, false);
+            opponentWaitView?.SetVisible(false);
+            disconnectView?.SetVisible(false);
+            pvpVictoryReturnView?.SetDualButtonsVisible(false);
             SetMatchmakingCanvasEnabled(true);
         }
 
@@ -322,6 +314,31 @@ namespace Scene.BattlePVPScene
         {
             flowCts?.Cancel();
             BattleHitStopClock.Clear();
+        }
+
+        /// <summary>
+        /// シーン退場時に選択UI戦闘UI配置モデルを整理する
+        /// </summary>
+        public void CleanupForLeave()
+        {
+            disconnectHandler?.SuppressNotifications();
+            pvpSessionController?.EndSession();
+            StopFlow();
+            isRunning = false;
+            DestroyTrackedParticipants();
+            selectionSession?.HideForLeave();
+            loadSlotView?.HideForLeave();
+            ClearSpawnedModels(playerSpawn);
+            ClearSpawnedModels(enemySpawn);
+            SetCanvasEnabled(selectionCanvas, false);
+            SetCanvasEnabled(battleUiCanvas, false);
+            SetMatchmakingCanvasEnabled(false);
+            pvpVictoryReturnView?.SetDualButtonsVisible(false);
+            disconnectView?.SetVisible(false);
+            opponentWaitView?.SetVisible(false);
+            staging?.PrepareSelectionEntry();
+            canvasTransition?.ReleasePresentationInput();
+            ModelSaveSlotScrollListView.ExitFullscreenSelectionLayout();
         }
 
         /// <summary>
@@ -548,6 +565,7 @@ namespace Scene.BattlePVPScene
                 {
                     inputRelay?.EndBattleInput();
                 };
+                context.RegisterSpawnedParticipants = RegisterSpawnedParticipants;
 
                 var flow = new BattleFlow(selectionSession, battleView, staging, loader, context, bgmService, seService);
                 while (!cancellationToken.IsCancellationRequested)
@@ -614,6 +632,7 @@ namespace Scene.BattlePVPScene
             CancellationToken cancellationToken)
         {
             inputRelay?.ResetForRematch();
+            DestroyTrackedParticipants();
             ClearSpawnedModels(playerSpawn);
             ClearSpawnedModels(enemySpawn);
             SetCanvasEnabled(battleUiCanvas, false);
@@ -625,6 +644,27 @@ namespace Scene.BattlePVPScene
             }
 
             await RevealSelectionAsync(cancellationToken);
+        }
+
+        private void RegisterSpawnedParticipants(GameObject playerModel, GameObject enemyModel)
+        {
+            trackedPlayerModel = playerModel;
+            trackedEnemyModel = enemyModel;
+        }
+
+        private void DestroyTrackedParticipants()
+        {
+            if (trackedPlayerModel != null)
+            {
+                Object.Destroy(trackedPlayerModel);
+                trackedPlayerModel = null;
+            }
+
+            if (trackedEnemyModel != null)
+            {
+                Object.Destroy(trackedEnemyModel);
+                trackedEnemyModel = null;
+            }
         }
 
         private async UniTask ReturnToTitleAsync(CancellationToken cancellationToken)
@@ -677,7 +717,19 @@ namespace Scene.BattlePVPScene
             BattlePvpInputRelay inputRelay,
             CancellationToken cancellationToken)
         {
-            int localSlot = loadSlotView != null ? loadSlotView.SelectedSlotIndex : 0;
+            // DetachLoadedModel後はLoadSlotView.SelectedSlotIndexが-1になるためセッション側を使う
+            int localSlot = selectionSession != null
+                ? selectionSession.SelectedSlotIndex
+                : (loadSlotView != null ? loadSlotView.SelectedSlotIndex : 0);
+            if (localSlot < 0)
+            {
+                Debug.LogError(
+                    "[BattlePvpFlow] ローカルスロットが未確定です"
+                    + $" sessionSlot={(selectionSession != null ? selectionSession.SelectedSlotIndex : -99)}"
+                    + $" loadSlot={(loadSlotView != null ? loadSlotView.SelectedSlotIndex : -99)}");
+                return default;
+            }
+
             Debug.Log($"[BattlePvpFlow] スロット送信 localSlot={localSlot} IsOwner={inputRelay.IsOwner}");
             inputRelay.SubmitSlotSelection(localSlot);
             await BattlePvpOpponentWaitScope.RunAsync(
@@ -704,7 +756,7 @@ namespace Scene.BattlePVPScene
                 }
             }
 
-            canvas.enabled = isEnabled;
+            CanvasVisibilityUtility.SetCanvasEnabled(canvas, isEnabled);
         }
     }
 }

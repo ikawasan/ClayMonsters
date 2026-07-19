@@ -54,6 +54,11 @@ namespace Scene.BattlePVPScene.Network
             NetworkVariableReadPermission.Everyone,
             NetworkVariableWritePermission.Owner);
 
+        private readonly NetworkVariable<bool> ownerAttackIsCounter = new NetworkVariable<bool>(
+            false,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Owner);
+
         private readonly NetworkVariable<int> ownerStrikeSequence = new NetworkVariable<int>(
             0,
             NetworkVariableReadPermission.Everyone,
@@ -118,6 +123,7 @@ namespace Scene.BattlePVPScene.Network
         private BattlePvpInputRelay opponentRelay;
         private int pendingRemoteAttackMoveIndex = -1;
         private int pendingRemoteAttackSequence;
+        private bool pendingRemoteAttackIsCounter;
         private int consumedRemoteAttackStartSequence;
         private int pendingRemoteKnockbackSequence;
         private float pendingRemoteKnockbackDistance;
@@ -128,11 +134,13 @@ namespace Scene.BattlePVPScene.Network
         /// </summary>
         /// <param name="moveIndex">攻撃技番号</param>
         /// <param name="sequence">同期番号</param>
+        /// <param name="isCounter">カウンター攻撃か</param>
         /// <returns>通知があればtrue</returns>
-        public bool TryConsumeRemoteAttackStart(out int moveIndex, out int sequence)
+        public bool TryConsumeRemoteAttackStart(out int moveIndex, out int sequence, out bool isCounter)
         {
             moveIndex = -1;
             sequence = 0;
+            isCounter = false;
             if (pendingRemoteAttackSequence <= 0
                 || pendingRemoteAttackSequence <= consumedRemoteAttackStartSequence)
             {
@@ -141,9 +149,11 @@ namespace Scene.BattlePVPScene.Network
 
             moveIndex = pendingRemoteAttackMoveIndex;
             sequence = pendingRemoteAttackSequence;
+            isCounter = pendingRemoteAttackIsCounter;
             consumedRemoteAttackStartSequence = sequence;
             pendingRemoteAttackSequence = 0;
             pendingRemoteAttackMoveIndex = -1;
+            pendingRemoteAttackIsCounter = false;
             return moveIndex >= 0;
         }
 
@@ -217,6 +227,18 @@ namespace Scene.BattlePVPScene.Network
             {
                 BattlePvpInputRelay opponent = ResolveOpponentRelay();
                 return opponent != null ? opponent.ownerAttackMoveIndex.Value : -1;
+            }
+        }
+
+        /// <summary>
+        /// 相手の最新攻撃がカウンターか
+        /// </summary>
+        public bool OpponentAttackIsCounter
+        {
+            get
+            {
+                BattlePvpInputRelay opponent = ResolveOpponentRelay();
+                return opponent != null && opponent.ownerAttackIsCounter.Value;
             }
         }
 
@@ -376,6 +398,7 @@ namespace Scene.BattlePVPScene.Network
             ownerStepTargetDistance.Value = 0f;
             ownerAttackSequence.Value = 0;
             ownerAttackMoveIndex.Value = -1;
+            ownerAttackIsCounter.Value = false;
             ownerStrikeSequence.Value = 0;
             ownerStrikeResult.Value = default;
             ownerInput.Value = default;
@@ -419,8 +442,9 @@ namespace Scene.BattlePVPScene.Network
         /// ローカル攻撃開始を通知し同期番号を返す
         /// </summary>
         /// <param name="moveIndex">攻撃技番号</param>
+        /// <param name="isCounter">カウンター攻撃か</param>
         /// <returns>攻撃開始同期番号・未送信時0</returns>
-        public int SubmitAttackStart(int moveIndex)
+        public int SubmitAttackStart(int moveIndex, bool isCounter = false)
         {
             if (!IsOwner || moveIndex < 0)
             {
@@ -428,9 +452,10 @@ namespace Scene.BattlePVPScene.Network
             }
 
             ownerAttackMoveIndex.Value = moveIndex;
+            ownerAttackIsCounter.Value = isCounter;
             ownerAttackSequence.Value++;
             int sequence = ownerAttackSequence.Value;
-            PublishAttackStartRpc(moveIndex, sequence, ownerMatchGeneration.Value);
+            PublishAttackStartRpc(moveIndex, sequence, isCounter, ownerMatchGeneration.Value);
             return sequence;
         }
 
@@ -441,10 +466,18 @@ namespace Scene.BattlePVPScene.Network
         {
             if (!IsOwner)
             {
+                Debug.LogWarning("[BattlePvpRelay] スロット送信スキップ IsOwner=false");
+                return;
+            }
+
+            if (slotIndex < 0)
+            {
+                Debug.LogWarning($"[BattlePvpRelay] 無効なスロット送信を無視しました slotIndex={slotIndex}");
                 return;
             }
 
             ownerSlotIndex.Value = slotIndex;
+            Debug.Log($"[BattlePvpRelay] スロット送信完了 slotIndex={slotIndex}");
         }
 
         /// <summary>
@@ -632,7 +665,7 @@ namespace Scene.BattlePVPScene.Network
         }
 
         [Rpc(SendTo.NotOwner)]
-        private void PublishAttackStartRpc(int moveIndex, int sequence, int matchGeneration)
+        private void PublishAttackStartRpc(int moveIndex, int sequence, bool isCounter, int matchGeneration)
         {
             if (sequence <= 0 || moveIndex < 0)
             {
@@ -651,6 +684,7 @@ namespace Scene.BattlePVPScene.Network
 
             pendingRemoteAttackMoveIndex = moveIndex;
             pendingRemoteAttackSequence = sequence;
+            pendingRemoteAttackIsCounter = isCounter;
         }
 
         [Rpc(SendTo.NotOwner)]
@@ -766,6 +800,7 @@ namespace Scene.BattlePVPScene.Network
             consumedRemoteAttackStartSequence = 0;
             pendingRemoteAttackSequence = 0;
             pendingRemoteAttackMoveIndex = -1;
+            pendingRemoteAttackIsCounter = false;
         }
 
         private void OnOwnerKnockbackSequenceChanged(int previousValue, int newValue)

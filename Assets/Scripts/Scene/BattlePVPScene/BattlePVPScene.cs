@@ -1,4 +1,5 @@
 using Cysharp.Threading.Tasks;
+using Extensions;
 using Lighthouse.Scene;
 using Scene.BattleNpcScene.Interface;
 using Scene.BattlePVPScene.Interface;
@@ -75,14 +76,14 @@ namespace Scene.BattlePVPScene
         protected override UniTask OnLeave(ISceneTransitionContext context, CancellationToken cancelToken)
         {
             Debug.LogWarning("[BattlePvpScene] OnLeave BattlePVPシーン退場");
-            battlePvpFlowRunner.StopFlow();
+            battlePvpFlowRunner.CleanupForLeave();
             battleNpcPostProcess?.Disable();
             return base.OnLeave(context, cancelToken);
         }
 
         private void OnDisable()
         {
-            if (!applicationQuitting)
+            if (!ApplicationQuitGuard.IsQuitting)
             {
                 Debug.LogWarning(
                     "[BattlePvpScene] BattlePVPSceneルートが非アクティブになりました"
@@ -92,28 +93,13 @@ namespace Scene.BattlePVPScene
 
         private void OnDestroy()
         {
-            if (!applicationQuitting)
+            if (!ApplicationQuitGuard.IsQuitting)
             {
                 Debug.LogError(
                     "[BattlePvpScene] BattlePVPSceneルートがDestroyされました"
                     + $" ownerScene={gameObject.scene.name}"
                     + $" stack={new StackTrace(1, true)}");
             }
-        }
-
-        private static bool applicationQuitting;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetQuitFlag()
-        {
-            applicationQuitting = false;
-            Application.quitting -= OnApplicationQuitting;
-            Application.quitting += OnApplicationQuitting;
-        }
-
-        private static void OnApplicationQuitting()
-        {
-            applicationQuitting = true;
         }
     }
 }

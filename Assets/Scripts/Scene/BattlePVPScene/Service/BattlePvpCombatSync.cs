@@ -54,9 +54,9 @@ namespace Scene.BattlePVPScene.Service
         public int LocalAttackSequence => inputRelay != null ? inputRelay.LocalAttackSequence : 0;
 
         /// <inheritdoc/>
-        public int ReportLocalAttackStart(int moveIndex)
+        public int ReportLocalAttackStart(int moveIndex, bool isCounter = false)
         {
-            return inputRelay != null ? inputRelay.SubmitAttackStart(moveIndex) : 0;
+            return inputRelay != null ? inputRelay.SubmitAttackStart(moveIndex, isCounter) : 0;
         }
 
         /// <inheritdoc/>

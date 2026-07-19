@@ -48,5 +48,10 @@ namespace Scene.BattlePVPScene.Interface
         /// マッチングと接続を中断する
         /// </summary>
         void Cancel();
+
+        /// <summary>
+        /// ロビーのみ解放しNetworkManager接続はArenaへ引き継ぐ
+        /// </summary>
+        void FinishMatchmakingKeepNetwork();
     }
 }

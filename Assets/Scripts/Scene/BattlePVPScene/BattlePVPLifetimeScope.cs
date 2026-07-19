@@ -2,6 +2,7 @@ using Battle.Interface;
 using Camera.Model;
 using Camera.Presenter;
 using Camera.View;
+using Extensions;
 using SaveData;
 using SaveData.Interface;
 using SaveData.Service;
@@ -13,6 +14,7 @@ using Scene.BattlePVPScene.Network;
 using Scene.BattlePVPScene.Presenter;
 using Scene.BattlePVPScene.Service;
 using Scene.BattlePVPScene.View;
+using Scene.Core;
 using System.Diagnostics;
 using UI.ClayEditor.View;
 using Unity.Netcode;
@@ -32,6 +34,7 @@ namespace Scene.BattlePVPScene
     public sealed class BattlePVPLifetimeScope : LifetimeScope
     {
         private const string DedicatedScopeObjectName = "BattlePvpDi";
+        private const string ScopeTag = "BattlePVPLifetimeScope";
 
         [Header("Scene")]
         [FormerlySerializedAs("battlePVPScene")]
@@ -79,7 +82,7 @@ namespace Scene.BattlePVPScene
 
         protected override void OnDestroy()
         {
-            if (!applicationQuitting)
+            if (!ApplicationQuitGuard.IsQuitting)
             {
                 Debug.LogWarning(
                     "[BattlePVPLifetimeScope] OnDestroy"
@@ -91,38 +94,23 @@ namespace Scene.BattlePVPScene
             base.OnDestroy();
         }
 
-        private static bool applicationQuitting;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetQuitFlag()
-        {
-            applicationQuitting = false;
-            Application.quitting -= OnApplicationQuitting;
-            Application.quitting += OnApplicationQuitting;
-        }
-
-        private static void OnApplicationQuitting()
-        {
-            applicationQuitting = true;
-        }
-
         protected override void Configure(IContainerBuilder builder)
         {
             EnsureSerializedReferences();
 
-            RegisterComponent(builder, battlePvpScene);
-            RegisterComponentAsInterfaces(builder, battlePvpView);
+            VContainerComponentRegistration.RegisterComponent(builder, battlePvpScene, ScopeTag);
+            VContainerComponentRegistration.RegisterComponentAsInterfaces(builder, battlePvpView, ScopeTag);
             builder.Register<BattlePVPPresenter>(Lifetime.Singleton).AsImplementedInterfaces();
 
-            RegisterComponentAsInterfaces(builder, cameraView);
+            VContainerComponentRegistration.RegisterComponentAsInterfaces(builder, cameraView, ScopeTag);
             builder.Register<ClayEditCameraPresenter>(Lifetime.Singleton).AsImplementedInterfaces();
             builder.Register<ClayEditCameraModel>(Lifetime.Singleton).AsImplementedInterfaces();
 
             RegisterFlowRunner(builder);
-            RegisterComponentAsInterfaces(builder, pvpVictoryReturnView);
-            RegisterComponentAsInterfaces(builder, pvpDisconnectView);
-            RegisterComponentAsInterfaces(builder, pvpOpponentWaitView);
-            RegisterComponentAsInterfaces(builder, postProcessView);
+            VContainerComponentRegistration.RegisterComponentAsInterfaces(builder, pvpVictoryReturnView, ScopeTag);
+            VContainerComponentRegistration.RegisterComponentAsInterfaces(builder, pvpDisconnectView, ScopeTag);
+            VContainerComponentRegistration.RegisterComponentAsInterfaces(builder, pvpOpponentWaitView, ScopeTag);
+            VContainerComponentRegistration.RegisterComponentAsInterfaces(builder, postProcessView, ScopeTag);
             builder.Register<BattleCanvasTransition>(Lifetime.Singleton).As<IBattleCanvasTransition>();
             builder.Register<MonsterSelectionSession>(Lifetime.Singleton).AsImplementedInterfaces();
             RegisterOverlayFromSceneRoot(builder);
@@ -130,10 +118,10 @@ namespace Scene.BattlePVPScene
             builder.Register<ClayModelSaveService>(Lifetime.Singleton).As<IClayModelSaveService>();
             builder.Register<ClayModelGltfImporter>(Lifetime.Singleton).As<IClayModelImporter>();
             builder.Register<ClayModelGltfExporter>(Lifetime.Singleton).As<IClayModelExporter>();
-            RegisterComponent(builder, loadSlotView);
+            VContainerComponentRegistration.RegisterComponent(builder, loadSlotView, ScopeTag);
 
-            RegisterComponent(builder, networkManager);
-            RegisterComponent(builder, sessionSpawner);
+            VContainerComponentRegistration.RegisterComponent(builder, networkManager, ScopeTag);
+            VContainerComponentRegistration.RegisterComponent(builder, sessionSpawner, ScopeTag);
             builder.Register<NetcodeBattlePvpMatchmakingService>(Lifetime.Singleton).AsImplementedInterfaces();
         }
 
@@ -278,30 +266,6 @@ namespace Scene.BattlePVPScene
             }
 
             builder.RegisterComponent(battlePvpFlowRunner).AsSelf().AsImplementedInterfaces();
-        }
-
-        private static void RegisterComponent<T>(IContainerBuilder builder, T component) where T : Component
-        {
-            if (component == null)
-            {
-                Debug.LogError(
-                    $"[BattlePVPLifetimeScope] {typeof(T).Name} が未設定です。シーン上の参照をHierarchyで確認してください");
-                return;
-            }
-
-            builder.RegisterComponent(component);
-        }
-
-        private static void RegisterComponentAsInterfaces<T>(IContainerBuilder builder, T component) where T : Component
-        {
-            if (component == null)
-            {
-                Debug.LogError(
-                    $"[BattlePVPLifetimeScope] {typeof(T).Name} が未設定です。シーン上の参照をHierarchyで確認してください");
-                return;
-            }
-
-            builder.RegisterComponent(component).AsImplementedInterfaces();
         }
     }
 }

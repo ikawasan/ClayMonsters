@@ -108,7 +108,7 @@ namespace Scene.BattlePVPScene.Service
                 bool matched = await WaitUntilSessionReadyAsync(true, HostWaitSeconds, operationCts.Token);
                 if (!matched)
                 {
-                    CancelInternal();
+                    CancelInternal(shutdownNetwork: true);
                     return BattlePvpMatchmakingResult.Failed("相手が参加しませんでした");
                 }
 
@@ -118,7 +118,7 @@ namespace Scene.BattlePVPScene.Service
             }
             catch (Exception exception)
             {
-                CancelInternal();
+                CancelInternal(shutdownNetwork: true);
                 return BattlePvpMatchmakingResult.Failed(ToUserMessage(exception));
             }
         }
@@ -161,7 +161,7 @@ namespace Scene.BattlePVPScene.Service
                 bool matched = await WaitUntilSessionReadyAsync(false, HostWaitSeconds, operationCts.Token);
                 if (!matched)
                 {
-                    CancelInternal();
+                    CancelInternal(shutdownNetwork: true);
                     return BattlePvpMatchmakingResult.Failed("ルームが見つからないか満員です");
                 }
 
@@ -171,7 +171,7 @@ namespace Scene.BattlePVPScene.Service
             }
             catch (Exception exception)
             {
-                CancelInternal();
+                CancelInternal(shutdownNetwork: true);
                 return BattlePvpMatchmakingResult.Failed(ToUserMessage(exception));
             }
         }
@@ -207,7 +207,7 @@ namespace Scene.BattlePVPScene.Service
                     bool matched = await WaitUntilSessionReadyAsync(true, HostWaitSeconds, operationCts.Token);
                     if (!matched)
                     {
-                        CancelInternal();
+                        CancelInternal(shutdownNetwork: true);
                         return BattlePvpMatchmakingResult.Failed("対戦相手が見つかりませんでした");
                     }
 
@@ -221,7 +221,7 @@ namespace Scene.BattlePVPScene.Service
                 bool clientMatched = await WaitUntilSessionReadyAsync(false, HostWaitSeconds, operationCts.Token);
                 if (!clientMatched)
                 {
-                    CancelInternal();
+                    CancelInternal(shutdownNetwork: true);
                     return BattlePvpMatchmakingResult.Failed("接続がタイムアウトしました");
                 }
 
@@ -231,7 +231,7 @@ namespace Scene.BattlePVPScene.Service
             }
             catch (Exception exception)
             {
-                CancelInternal();
+                CancelInternal(shutdownNetwork: true);
                 return BattlePvpMatchmakingResult.Failed(ToUserMessage(exception));
             }
         }
@@ -239,19 +239,26 @@ namespace Scene.BattlePVPScene.Service
         /// <inheritdoc/>
         public void Cancel()
         {
-            CancelInternal();
+            CancelInternal(shutdownNetwork: true);
+            PublishStatus(string.Empty);
+        }
+
+        /// <inheritdoc/>
+        public void FinishMatchmakingKeepNetwork()
+        {
+            CancelInternal(shutdownNetwork: false);
             PublishStatus(string.Empty);
         }
 
         /// <inheritdoc/>
         public void Dispose()
         {
-            CancelInternal();
+            CancelInternal(shutdownNetwork: true);
         }
 
         private void BeginOperation(CancellationToken cancellationToken)
         {
-            CancelInternal();
+            CancelInternal(shutdownNetwork: true);
             operationCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         }
 
@@ -445,7 +452,7 @@ namespace Scene.BattlePVPScene.Service
             spawner?.TrySpawnPlayersIfNeeded();
         }
 
-        private void CancelInternal()
+        private void CancelInternal(bool shutdownNetwork)
         {
             operationCts?.Cancel();
             operationCts?.Dispose();
@@ -457,6 +464,11 @@ namespace Scene.BattlePVPScene.Service
 
             CurrentRoomCode = string.Empty;
             LeaveLobbyIfNeeded().Forget();
+
+            if (!shutdownNetwork)
+            {
+                return;
+            }
 
             NetworkManager activeManager = ResolveActiveNetworkManager();
             if (activeManager != null && (activeManager.IsClient || activeManager.IsServer))
