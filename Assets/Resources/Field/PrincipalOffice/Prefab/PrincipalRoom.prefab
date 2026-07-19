@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3046049874759128712}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: PrincipalRoom
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -110,6 +110,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: FilingCabinet
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 8c39103690015dc4fb7084122524b561, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -171,6 +175,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: ca50c7c66e630ca44b71a04a34841f68, type: 3}
       propertyPath: m_Name
       value: CalligraphyPaper
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: ca50c7c66e630ca44b71a04a34841f68, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -234,6 +242,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: DeskHandles
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 833f9f856646bb2418674c24a00539e0, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -295,6 +307,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 41488f1c38287aa4aaac92cf44c6049d, type: 3}
       propertyPath: m_Name
       value: PenStand
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 41488f1c38287aa4aaac92cf44c6049d, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -358,6 +374,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: CalligraphyFrame
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 6a4981c52a3e2af4bb70474764aec0ac, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -419,6 +439,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 153fbc255b551f244b8a03b46eba6565, type: 3}
       propertyPath: m_Name
       value: Window
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 153fbc255b551f244b8a03b46eba6565, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -482,6 +506,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Bookshelf
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: a1ddb79c7e519b6478efdb01ff8e226e, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -543,6 +571,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: cbbe03567475b9a4ba58c155e49b1bac, type: 3}
       propertyPath: m_Name
       value: CurtainRod
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: cbbe03567475b9a4ba58c155e49b1bac, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -606,6 +638,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: FlagBase
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 525eab8f498975041bd7e9c4063ed5e2, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -667,6 +703,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 60aa5ef0c409a814a80542d0c0852381, type: 3}
       propertyPath: m_Name
       value: Wall_Left
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 60aa5ef0c409a814a80542d0c0852381, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -730,6 +770,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Desk
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 315e6d4b6b54466459e3d1bd73523f52, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -791,6 +835,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: fa61051b3c63eff438d304845d3bfa75, type: 3}
       propertyPath: m_Name
       value: Floor
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fa61051b3c63eff438d304845d3bfa75, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -854,6 +902,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: TrophyCabinet
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 0aea63dc6e3ccdc42b4b0881f0644184, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -915,6 +967,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: bf262b440c480a44e977014cc0e10b84, type: 3}
       propertyPath: m_Name
       value: Trophies
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: bf262b440c480a44e977014cc0e10b84, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -978,6 +1034,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: FlagPole
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 173ce784dc0576c4ba957ed3ff88682d, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1040,6 +1100,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Books
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 602a7c932c3a70c48beef8dc97f22e33, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1101,6 +1165,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: e8881bd99ae30a04482432c4ec780789, type: 3}
       propertyPath: m_Name
       value: Ceiling
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: e8881bd99ae30a04482432c4ec780789, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: e8881bd99ae30a04482432c4ec780789, type: 3}
       propertyPath: m_IsActive
@@ -1168,6 +1236,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Telephone
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: cbeb84f46e34d9347a55f2254080e33c, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1229,6 +1301,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 25d80858681bca743b91d0d7dee68f34, type: 3}
       propertyPath: m_Name
       value: DeskPapers
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 25d80858681bca743b91d0d7dee68f34, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1292,6 +1368,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: ExecChair_Base
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: e903bbc70cd25394caa446d410ab8cd1, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1353,6 +1433,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 3b93bdfb4597ef44c8ad7e786dec441a, type: 3}
       propertyPath: m_Name
       value: DeskLamp
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 3b93bdfb4597ef44c8ad7e786dec441a, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1416,6 +1500,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Wall_Right
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: efa0c1d9e2981cc4596519d8a070221c, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1477,6 +1565,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 82d4ffbf990f0e244bc50a8c6bf43a72, type: 3}
       propertyPath: m_Name
       value: Baseboard
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 82d4ffbf990f0e244bc50a8c6bf43a72, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1540,6 +1632,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: ExecChair_Seat
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 9bd68361e92f5e144b456a7d51b4ba66, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1601,6 +1697,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 9736d12a0003d4040ad5953a2f1550e7, type: 3}
       propertyPath: m_Name
       value: Curtains
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 9736d12a0003d4040ad5953a2f1550e7, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1664,6 +1764,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Wall_Front
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 8c11c3d062c05dd40828ba397402ae58, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1725,6 +1829,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: e14b9ecceb8990c45b976749cd9fef45, type: 3}
       propertyPath: m_Name
       value: Wall_Back
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: e14b9ecceb8990c45b976749cd9fef45, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

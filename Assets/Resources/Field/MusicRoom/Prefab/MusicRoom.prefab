@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6538534189984633716}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: MusicRoom
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -53,7 +53,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4048523541113043197}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Piano
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -131,6 +131,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Piano_Pedals
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 97e37d57fb0d49043b34dc6c83d2dc88, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -192,6 +196,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 7cbadcdf4d3f9cf4a96eb16ff11b0e66, type: 3}
       propertyPath: m_Name
       value: Door
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 7cbadcdf4d3f9cf4a96eb16ff11b0e66, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -255,6 +263,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Curtains
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 007b3e379b6699b45ab4c3e6eb1bd94b, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -316,6 +328,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 8fac6236929a6944eb2c97e073f4408c, type: 3}
       propertyPath: m_Name
       value: Door_Knob
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 8fac6236929a6944eb2c97e073f4408c, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -379,6 +395,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Clock
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 5e018e4788cab0f4ca37503c59a65edd, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -440,6 +460,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 6ac3aaaf0b4a6534daf84ca8314ba7f2, type: 3}
       propertyPath: m_Name
       value: Piano_Keys
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 6ac3aaaf0b4a6534daf84ca8314ba7f2, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -503,6 +527,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Blackboard_Frame
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 5297f42cee1c762439482a497127397e, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -565,6 +593,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Walls
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 959ad68f99ac1444283342b70cfc1825, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -626,6 +658,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 319fc7a46007e654e8ad943cd670e697, type: 3}
       propertyPath: m_Name
       value: Ceiling
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 319fc7a46007e654e8ad943cd670e697, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 319fc7a46007e654e8ad943cd670e697, type: 3}
       propertyPath: m_IsActive
@@ -693,6 +729,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Piano_Body
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: e2159d0bb01743b4fabfb9bc43f9d694, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -754,6 +794,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 4556a8140b4ab7b4ba27f5b4dc0f5501, type: 3}
       propertyPath: m_Name
       value: Floor
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 4556a8140b4ab7b4ba27f5b4dc0f5501, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -817,6 +861,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Wainscot
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 2773f998fd48ca5498cdeb34d2ab60f9, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -878,6 +926,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 018fb9dcf386bf54e9e500f889cc6b89, type: 3}
       propertyPath: m_Name
       value: Blackboard
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 018fb9dcf386bf54e9e500f889cc6b89, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -941,6 +993,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Sheet_Music
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: be017736add3e8343aa1233bab2f30bd, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1003,6 +1059,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Metronome
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 20b72a6aaa37a70429d6e666b916a934, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1064,6 +1124,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: a23276cabb778b7459b69f1dc4b264cf, type: 3}
       propertyPath: m_Name
       value: Windows
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: a23276cabb778b7459b69f1dc4b264cf, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

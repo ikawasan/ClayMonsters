@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2186509580266769205}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Gym
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -116,6 +116,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: VaultingBox
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 377baa2fc35e27e4d82b8c4eaf29428b, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -177,6 +181,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 1d47594de16d7804b8514050d9b5261f, type: 3}
       propertyPath: m_Name
       value: HulaHoop_03
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 1d47594de16d7804b8514050d9b5261f, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -240,6 +248,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: GymMat_Green
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 5282c7af9eb9e4d4d875b6ddd55826e3, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -301,6 +313,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 5a1e20d9614c61249b06e66f9b49ef7f, type: 3}
       propertyPath: m_Name
       value: CardboardBox_04
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 5a1e20d9614c61249b06e66f9b49ef7f, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -364,6 +380,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Window
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: bd2bb313eb5b0a44fad79d66358bef85, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -425,6 +445,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: fdbe03287b1d8784e803f8ce8bb23818, type: 3}
       propertyPath: m_Name
       value: Unicycle
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fdbe03287b1d8784e803f8ce8bb23818, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -488,6 +512,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: CardboardBox_02
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: efe5ae0e3eb307e4b86758a5a7ee6245, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -549,6 +577,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: ce348901c102c82409d3f41d0c734a75, type: 3}
       propertyPath: m_Name
       value: Floor
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: ce348901c102c82409d3f41d0c734a75, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -612,6 +644,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: BallsVolley
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: e555b484182e9bb45ad8b2805e686dee, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -673,6 +709,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: fb210c6fddfaa2547baba8c89e22b06c, type: 3}
       propertyPath: m_Name
       value: Crate
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fb210c6fddfaa2547baba8c89e22b06c, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -736,6 +776,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: BallsDodge
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: c462ab6434043bd40a342bc47596ccda, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -797,6 +841,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 57a6887b5a3ea10489a205420d9bc825, type: 3}
       propertyPath: m_Name
       value: HulaHoop_02
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 57a6887b5a3ea10489a205420d9bc825, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -860,6 +908,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Shelf
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: cf74631527c932247af74bfcad0a3039, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -921,6 +973,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 043026464da2a1847aae4f016fc273cd, type: 3}
       propertyPath: m_Name
       value: JumpRope_01
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 043026464da2a1847aae4f016fc273cd, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -984,6 +1040,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: HulaHoop_01
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 811cef956df3c9e42be06d3a4c50938b, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1045,6 +1105,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 96cae80d26061e443b68201aec57a3c6, type: 3}
       propertyPath: m_Name
       value: Ceiling
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 96cae80d26061e443b68201aec57a3c6, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 96cae80d26061e443b68201aec57a3c6, type: 3}
       propertyPath: m_IsActive
@@ -1112,6 +1176,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: JumpRope_02
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 6196fb48a43acdc419239656d24f54bd, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1173,6 +1241,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 159219e6d98359e4f8a1736a7034c6b4, type: 3}
       propertyPath: m_Name
       value: Cone
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 159219e6d98359e4f8a1736a7034c6b4, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1236,6 +1308,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: CardboardBox_03
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 907784b150dafea45ac164620a466356, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1297,6 +1373,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 81784ac9abfb8494fb0446a555ff703a, type: 3}
       propertyPath: m_Name
       value: HulaHoop_04
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 81784ac9abfb8494fb0446a555ff703a, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1360,6 +1440,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: BallCage
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: bf3ef496bb5e29f419765e7e0dcc92ac, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1421,6 +1505,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 978e5fb27a905dd48a14cf134bee7512, type: 3}
       propertyPath: m_Name
       value: BalanceBeam
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 978e5fb27a905dd48a14cf134bee7512, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1484,6 +1572,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: BallsBasket
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fd7d8052c50816e4d814f19a4b39aa34, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1545,6 +1637,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: f60f3cf318701d54fb1b94f5a3e805ee, type: 3}
       propertyPath: m_Name
       value: Hurdle
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f60f3cf318701d54fb1b94f5a3e805ee, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1608,6 +1704,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Wall
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 9e095a8131d25614b9c69c4fb23d8edd, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1669,6 +1769,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 0c2d4b6cea0adec4e9ee32ddfdb9044d, type: 3}
       propertyPath: m_Name
       value: JumpRope_03
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 0c2d4b6cea0adec4e9ee32ddfdb9044d, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1732,6 +1836,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: BallCage (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: bf3ef496bb5e29f419765e7e0dcc92ac, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1793,6 +1901,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 1ee849c57c768d0409d7bce57e629d3c, type: 3}
       propertyPath: m_Name
       value: CardboardBox_01
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 1ee849c57c768d0409d7bce57e629d3c, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1856,6 +1968,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Stilts
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 1738d6b6c2decea448c7e1a941a53949, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1917,6 +2033,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: f30ec5b0ab526f140a7a0760f46f16b4, type: 3}
       propertyPath: m_Name
       value: ShutterDoor
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f30ec5b0ab526f140a7a0760f46f16b4, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1980,6 +2100,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: GymMat_Blue
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f8ccb3d18f6cd68498225cfbe47226d1, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2042,6 +2166,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: BallCage (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: bf3ef496bb5e29f419765e7e0dcc92ac, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2103,6 +2231,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: dd79e16fff3a0fa4e982299d6f06951c, type: 3}
       propertyPath: m_Name
       value: GymMat_Tan
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: dd79e16fff3a0fa4e982299d6f06951c, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

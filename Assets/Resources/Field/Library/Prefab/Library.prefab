@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 364336501234741619}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Library
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -53,7 +53,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5805635464457534665}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Global
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -86,7 +86,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8336835214437102810}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Cart
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -163,6 +163,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Bookshelf (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 0bfc74cd4e64c5f4caf8fb8be567782a, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -224,6 +228,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 28432f63b0018994185cf0a03ade4c7d, type: 3}
       propertyPath: m_Name
       value: Poster
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 28432f63b0018994185cf0a03ade4c7d, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -287,6 +295,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Floor
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: c9348b61c106b264cac08a13751ba9fa, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -348,6 +360,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: dabcd4aef9cbf484abb0bd49c33e5110, type: 3}
       propertyPath: m_Name
       value: Globe
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: dabcd4aef9cbf484abb0bd49c33e5110, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -411,6 +427,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Counter
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f8e116240c4824f409487fbf8256e6fa, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -472,6 +492,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 0bfc74cd4e64c5f4caf8fb8be567782a, type: 3}
       propertyPath: m_Name
       value: Bookshelf
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 0bfc74cd4e64c5f4caf8fb8be567782a, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -535,6 +559,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Window (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 2cb01889296287a4fbc707b106d5503b, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -596,6 +624,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: d6c9e7757f0d042419ae66a98d7db9c8, type: 3}
       propertyPath: m_Name
       value: Cart_Books
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: d6c9e7757f0d042419ae66a98d7db9c8, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -659,6 +691,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Walls
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 820a6f88b69f0604fb35626194b0b87b, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -720,6 +756,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: bacd7cb894e8eec41b4bfad809ba3784, type: 3}
       propertyPath: m_Name
       value: Globe_Stand
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: bacd7cb894e8eec41b4bfad809ba3784, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -783,6 +823,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Bookshelf (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 0bfc74cd4e64c5f4caf8fb8be567782a, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -844,6 +888,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: fb1a2a8e52774fb498f0b6f9bd152398, type: 3}
       propertyPath: m_Name
       value: Ceiling
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fb1a2a8e52774fb498f0b6f9bd152398, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: fb1a2a8e52774fb498f0b6f9bd152398, type: 3}
       propertyPath: m_IsActive
@@ -911,6 +959,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Window
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 2cb01889296287a4fbc707b106d5503b, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -972,6 +1024,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 2cb01889296287a4fbc707b106d5503b, type: 3}
       propertyPath: m_Name
       value: Window (2)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 2cb01889296287a4fbc707b106d5503b, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1035,6 +1091,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Cart_Deck
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 76d9a1b0ae6d7fe47a7829fbf4fcdf66, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1096,6 +1156,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: ab657f32ffc4b134fb829032989e3d1f, type: 3}
       propertyPath: m_Name
       value: Cart_Frame
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: ab657f32ffc4b134fb829032989e3d1f, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
