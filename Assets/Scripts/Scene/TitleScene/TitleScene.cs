@@ -74,6 +74,7 @@ namespace Scene.TitleScene
 
         protected override UniTask OnLeave(ISceneTransitionContext context, CancellationToken cancelToken)
         {
+            titlePresenter.OnLeave();
             titleModelDisplay.Clear();
             cameraView.SetCameraEnable(false);
             return base.OnLeave(context, cancelToken);

@@ -49,6 +49,13 @@ namespace Scene.TitleScene.Presenter
             messageWindowView.SubscribeOkButtonClick(OnClickMessageWindowOk);
         }
 
+        /// <inheritdoc/>
+        void ITitlePresenter.OnLeave()
+        {
+            messageWindowView.Hide();
+            optionPresenter.Hide();
+        }
+
         private void OnClickClayEditButton()
         {
             if (sceneManager.IsTransition)

@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using Scene.Rendering;
+using Scene.BattleNpcScene;
 using Scene.TitleScene.Interface;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -19,6 +21,7 @@ namespace Scene.TitleScene.View
         [SerializeField] private VolumeProfile titleVolumeProfile;
         [SerializeField] private float volumePriority = 10f;
         [SerializeField] private int titleRendererIndex;
+        [SerializeField] private GameObject fieldRoot;
 
         private Volume volume;
         private UniversalAdditionalCameraData cameraData;
@@ -55,6 +58,8 @@ namespace Scene.TitleScene.View
             isPostProcessEnabled = true;
             remainingUiExclusionFrames = UiExclusionFrameCount;
             ApplyUiExclusion();
+            BackgroundOutlineActivation.ClearClayEditSuppression();
+            FieldBackgroundLayerUtility.Apply(fieldRoot);
 
             if (volume != null)
             {
@@ -101,13 +106,16 @@ namespace Scene.TitleScene.View
 
         private void LateUpdate()
         {
-            if (!isPostProcessEnabled || remainingUiExclusionFrames <= 0)
+            if (!isPostProcessEnabled)
             {
                 return;
             }
 
             ApplyUiExclusion();
-            remainingUiExclusionFrames--;
+            if (remainingUiExclusionFrames > 0)
+            {
+                remainingUiExclusionFrames--;
+            }
         }
 
         private void EnsureVolume()
