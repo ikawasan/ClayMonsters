@@ -61,7 +61,7 @@ namespace SaveData.Service
 
             if (pool == ModelSavePool.Enemy && !EnemySaveAvailability.IsAvailable)
             {
-                Debug.LogWarning("[ClayModelSaveService] 敵保存はUnityエディタでのみ利用できます");
+                Debug.LogWarning("[ClayModelSaveService] 敵保存はEditorまたはROM敵保存Build Profileでのみ利用できます");
                 return false;
             }
 

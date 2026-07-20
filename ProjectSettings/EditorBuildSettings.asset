@@ -6,8 +6,24 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/SampleScene.unity
-    guid: 99c9720ab356a0642a771bea13969a05
+    path: Assets/Scenes/Bootstrap.unity
+    guid: fd1beeeb94e453d4eaebf104a558554e
+  - enabled: 1
+    path: Assets/Scenes/Title.unity
+    guid: 7af44d9dacead8846a123126f0c4699e
+  - enabled: 1
+    path: Assets/Scenes/ClayEdit.unity
+    guid: 12e9afca14765764eb210ffb97fb957d
+  - enabled: 1
+    path: Assets/Scenes/BattleNpc.unity
+    guid: 7ad80e110197c5b4195056c16fdd0313
+  - enabled: 1
+    path: Assets/Scenes/BattlePvpArena.unity
+    guid: a8f3c2e14b9d6a047b1e5d8c3f7a2101
+  - enabled: 1
+    path: Assets/Scenes/Training.unity
+    guid: ceaf03ae7c2084f4da1f07e2a5fbfe7c
   m_configObjects:
+    com.unity.addressableassets: {fileID: 11400000, guid: eb02d806897ef424db602041e8966186, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0

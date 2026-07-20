@@ -21,7 +21,7 @@ namespace UI.ClayEditor.View
 {
     /// <summary>
     /// モデルのセーブUIフロー全体を制御するView
-    /// プレイヤー保存または敵保存ボタン(敵はUnityエディタのみ) → スロット選択 → 名前入力 → 確認表示 → セーブ → 完了ウィンドウ → 閉じるでOnSaved通知
+    /// プレイヤー保存または敵保存ボタン(敵はEditorまたはROM敵保存Build Profileのみ) → スロット選択 → 名前入力 → 確認表示 → セーブ → 完了ウィンドウ → 閉じるでOnSaved通知
     /// シーン遷移や入力/カメラのロックはScene側(ClayEditPresenter)がOnSaved/IsSaveUiOpenを購読して行う
     /// (asmdefの循環参照を避けるため、このViewからは他レイヤーを直接触らない)
     /// </summary>
@@ -42,7 +42,7 @@ namespace UI.ClayEditor.View
         [Tooltip("画面上の保存ボタン。押すとプレイヤー用セーブスロット選択キャンバスを開く")]
         [SerializeField] private LHButton openSaveButton;
 
-        [Tooltip("敵として保存ボタン。Unityエディタでのみ表示・操作可能")]
+        [Tooltip("敵として保存ボタン。EditorまたはROM敵保存Build Profileでのみ表示・操作可能")]
         [SerializeField] private LHButton openEnemySaveButton;
 
         [Tooltip("敵保存UIのルート。未設定ならopenEnemySaveButtonを非表示にする")]
@@ -287,7 +287,7 @@ namespace UI.ClayEditor.View
             SetOpenSaveUiVisible(true);
         }
 
-        // Unityエディタ以外では敵保存UIを隠す
+        // EditorまたはROM敵保存Build Profile以外では敵保存UIを隠す
         private void ApplyEnemySaveUiVisibility()
         {
             bool visible = EnemySaveAvailability.IsAvailable;
@@ -321,7 +321,7 @@ namespace UI.ClayEditor.View
 
             if (pool == ModelSavePool.Enemy && !EnemySaveAvailability.IsAvailable)
             {
-                Debug.LogWarning("[SaveSlotView] 敵保存はUnityエディタでのみ利用できます");
+                Debug.LogWarning("[SaveSlotView] 敵保存はEditorまたはROM敵保存Build Profileでのみ利用できます");
                 return;
             }
 
@@ -701,7 +701,7 @@ namespace UI.ClayEditor.View
         {
             if (currentSavePool == ModelSavePool.Enemy && !EnemySaveAvailability.IsAvailable)
             {
-                Debug.LogWarning("[SaveSlotView] 敵保存はUnityエディタでのみ利用できます");
+                Debug.LogWarning("[SaveSlotView] 敵保存はEditorまたはROM敵保存Build Profileでのみ利用できます");
                 return;
             }
 
