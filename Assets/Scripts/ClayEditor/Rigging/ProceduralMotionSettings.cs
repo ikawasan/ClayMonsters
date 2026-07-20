@@ -17,15 +17,15 @@ namespace ClayEditor.Rigging
         [Tooltip("背骨の進行波の位相差(深さ1あたりのラジアン)")]
         [SerializeField] private float spinePhasePerDepth = 0.6f;
         [Tooltip("手足の振り角(度)")]
-        [SerializeField] private float runLimbAmplitude = 35f;
+        [SerializeField] private float runLimbAmplitude = 22f;
 
         [Header("LegRun(足のある走り)")]
         [Tooltip("脚を動かす周波数(速さ)")]
-        [SerializeField] private float legRunFrequency = 9f;
+        [SerializeField] private float legRunFrequency = 8f;
         [Tooltip("脚の振り角(度)")]
-        [SerializeField] private float legRunLegAmplitude = 45f;
+        [SerializeField] private float legRunLegAmplitude = 26f;
         [Tooltip("腕の振り角(度、脚と逆位相で振る)")]
-        [SerializeField] private float legRunArmAmplitude = 30f;
+        [SerializeField] private float legRunArmAmplitude = 18f;
         [Tooltip("胴体の上下バウンド角(度)")]
         [SerializeField] private float legRunBodyAmplitude = 5f;
         [Tooltip("脚を振るローカル軸(前後に振るので通常はX)")]

@@ -23,7 +23,7 @@ namespace ClayEditor
 
         [Header("Weight Settings")]
         [Tooltip("距離の重み付けの鋭さ大きいほど最寄りボーンに偏る")]
-        [SerializeField] private float weightFalloffPower = 3.5f;
+        [SerializeField] private float weightFalloffPower = 4.5f;
 
         [Tooltip("各頂点に割り当てるボーンの最大数最大4")]
         [Range(1, 4)]
@@ -31,35 +31,35 @@ namespace ClayEditor
 
         [Tooltip("候補に残す近傍ボーン数")]
         [Range(2, 12)]
-        [SerializeField] private int candidateBoneCount = 8;
+        [SerializeField] private int candidateBoneCount = 6;
 
         [Tooltip("最寄り距離に対する候補半径倍率")]
-        [SerializeField] private float candidateRadiusScale = 3.5f;
+        [SerializeField] private float candidateRadiusScale = 2.5f;
 
-        [Tooltip("優勢ボーンを強める閾値1.0固定にはしない")]
+        [Tooltip("優勢ボーンを強める閾値")]
         [Range(0.55f, 0.98f)]
-        [SerializeField] private float softPinThreshold = 0.88f;
+        [SerializeField] private float softPinThreshold = 0.9f;
 
-        [Tooltip("優勢時に残す第2ボーンの下限")]
+        [Tooltip("優勢時に残す第2ボーンの下限親子のみ")]
         [Range(0f, 0.35f)]
-        [SerializeField] private float softPinSecondaryFloor = 0.12f;
+        [SerializeField] private float softPinSecondaryFloor = 0.1f;
 
         [Tooltip("親子関節で親へ流す最小ブレンド")]
         [Range(0f, 0.45f)]
-        [SerializeField] private float jointParentBlend = 0.22f;
+        [SerializeField] private float jointParentBlend = 0.16f;
 
         [Header("Smoothing Settings")]
         [Tooltip("隣接平滑化の反復回数0で無効")]
         [Range(0, 10)]
-        [SerializeField] private int smoothingIterations = 5;
+        [SerializeField] private int smoothingIterations = 3;
 
         [Tooltip("平滑化の強さ0〜1隣接平均へ寄せる割合")]
         [Range(0f, 1f)]
-        [SerializeField] private float smoothingStrength = 0.45f;
+        [SerializeField] private float smoothingStrength = 0.3f;
 
-        [Tooltip("支配ボーンが違う隣との追加ブレンド")]
+        [Tooltip("親子関節境目の追加ブレンド")]
         [Range(0f, 1f)]
-        [SerializeField] private float seamBlendStrength = 0.55f;
+        [SerializeField] private float seamBlendStrength = 0.35f;
 
         [Tooltip("溶接で同一頂点とみなすグリッドサイズ外部トポロジー未提供時のみ使用")]
         [SerializeField] private float weldEpsilon = 0.01f;
@@ -148,9 +148,14 @@ namespace ClayEditor
             }
 
             float[] boneThickness = EstimateBoneThickness(uniquePositions, boneLocalPos, boneParentIndex);
+            int[] limbBranchIds = BuildLimbBranchIds(boneParentIndex);
+            int rootBoneIndex = FindRootBoneIndex(boneParentIndex);
+            Vector3 rootLocalPos = rootBoneIndex >= 0 ? boneLocalPos[rootBoneIndex] : Vector3.zero;
+            float lateralThreshold = EstimateLateralThreshold(boneLocalPos, rootLocalPos, rootBoneIndex);
 
             float[][] uniqueWeights = new float[uniqueCount][];
             float[] confidence = new float[uniqueCount];
+            int[] dominantBones = new int[uniqueCount];
             float pow = Mathf.Max(weightFalloffPower, 0.1f);
             int candidateLimit = Mathf.Clamp(candidateBoneCount, 2, Mathf.Min(12, boneCount));
 
@@ -161,6 +166,9 @@ namespace ClayEditor
                     boneLocalPos,
                     boneParentIndex,
                     boneThickness,
+                    limbBranchIds,
+                    rootLocalPos,
+                    lateralThreshold,
                     boneCount,
                     candidateLimit,
                     pow,
@@ -173,20 +181,45 @@ namespace ClayEditor
                     boneParentIndex,
                     boneCount);
 
+                StripOppositeLimbWeights(
+                    uniqueWeights[u],
+                    limbBranchIds,
+                    boneParentIndex,
+                    boneLocalPos,
+                    rootLocalPos,
+                    lateralThreshold);
                 int dominant = FindDominantBone(uniqueWeights[u]);
                 float conf = dominant >= 0 ? uniqueWeights[u][dominant] : 0f;
-                SoftPinDominant(uniqueWeights[u], conf);
+                SoftPinDominant(uniqueWeights[u], conf, boneParentIndex, limbBranchIds);
                 dominant = FindDominantBone(uniqueWeights[u]);
+                dominantBones[u] = dominant;
                 confidence[u] = dominant >= 0 ? uniqueWeights[u][dominant] : 0f;
             }
 
             if (smoothingIterations > 0 && smoothingStrength > 0f)
             {
-                SmoothWeightsWithSeamBlend(topo, uniqueWeights, confidence, boneCount);
+                SmoothWeightsWithSeamBlend(
+                    topo,
+                    uniqueWeights,
+                    confidence,
+                    dominantBones,
+                    boneParentIndex,
+                    limbBranchIds,
+                    boneLocalPos,
+                    rootLocalPos,
+                    lateralThreshold,
+                    boneCount);
             }
 
             for (int u = 0; u < uniqueCount; u++)
             {
+                StripOppositeLimbWeights(
+                    uniqueWeights[u],
+                    limbBranchIds,
+                    boneParentIndex,
+                    boneLocalPos,
+                    rootLocalPos,
+                    lateralThreshold);
                 TruncateAndNormalize(uniqueWeights[u], maxBonesPerVertex);
             }
 
@@ -220,6 +253,9 @@ namespace ClayEditor
             Vector3[] boneLocalPos,
             int[] boneParentIndex,
             float[] boneThickness,
+            int[] limbBranchIds,
+            Vector3 rootLocalPos,
+            float lateralThreshold,
             int boneCount,
             int candidateLimit,
             float pow,
@@ -240,6 +276,8 @@ namespace ClayEditor
                 float dist = ResolveBoneDistance(point, b, boneLocalPos, boneParentIndex);
                 // 骨の太さ分だけ距離を縮めて太い部位の拘束を強める
                 dist = Mathf.Max(0.0001f, dist - boneThickness[b] * 0.35f);
+                // 左右反対側の肢は距離を伸ばして混入を防ぐ
+                dist *= ResolveLateralPenalty(point, boneLocalPos[b], rootLocalPos, lateralThreshold);
                 distances[b] = dist;
                 nearest = Mathf.Min(nearest, dist);
                 validCount++;
@@ -278,13 +316,19 @@ namespace ClayEditor
                     continue;
                 }
 
+                if (!IsAllowedLimbInfluence(nearestBone, b, limbBranchIds, boneParentIndex))
+                {
+                    continue;
+                }
+
                 InsertCandidate(candidateIndices, candidateDistances, ref candidateFilled, candidateLimit, b, dist);
             }
 
             // 最寄りとその親は必ず候補に入れ関節の切れ目を防ぐ
             ForceCandidate(candidateIndices, candidateDistances, ref candidateFilled, candidateLimit, nearestBone, distances[nearestBone]);
             int nearestParent = boneParentIndex[nearestBone];
-            if (nearestParent >= 0)
+            if (nearestParent >= 0
+                && IsAllowedLimbInfluence(nearestBone, nearestParent, limbBranchIds, boneParentIndex))
             {
                 ForceCandidate(
                     candidateIndices,
@@ -295,12 +339,17 @@ namespace ClayEditor
                     distances[nearestParent]);
             }
 
-            // 半径内が足りないときは最寄り順で埋める
+            // 半径内が足りないときは同肢内の最寄り順で埋める
             if (candidateFilled < Mathf.Min(candidateLimit, validCount))
             {
                 for (int b = 0; b < boneCount; b++)
                 {
                     if (distances[b] >= float.MaxValue * 0.5f)
+                    {
+                        continue;
+                    }
+
+                    if (!IsAllowedLimbInfluence(nearestBone, b, limbBranchIds, boneParentIndex))
                     {
                         continue;
                     }
@@ -350,6 +399,192 @@ namespace ClayEditor
             }
 
             return weights;
+        }
+
+        private static float ResolveLateralPenalty(
+            Vector3 point,
+            Vector3 bonePos,
+            Vector3 rootPos,
+            float lateralThreshold)
+        {
+            float pointSide = point.x - rootPos.x;
+            float boneSide = bonePos.x - rootPos.x;
+            float threshold = Mathf.Max(0.02f, lateralThreshold);
+            if (Mathf.Abs(pointSide) < threshold || Mathf.Abs(boneSide) < threshold)
+            {
+                return 1f;
+            }
+
+            if (pointSide * boneSide < 0f)
+            {
+                return 12f;
+            }
+
+            return 1f;
+        }
+
+        private static float EstimateLateralThreshold(Vector3[] boneLocalPos, Vector3 rootLocalPos, int rootBoneIndex)
+        {
+            float maxAbs = 0.05f;
+            for (int i = 0; i < boneLocalPos.Length; i++)
+            {
+                if (i == rootBoneIndex)
+                {
+                    continue;
+                }
+
+                maxAbs = Mathf.Max(maxAbs, Mathf.Abs(boneLocalPos[i].x - rootLocalPos.x));
+            }
+
+            return Mathf.Max(0.03f, maxAbs * 0.08f);
+        }
+
+        private int FindRootBoneIndex(int[] boneParentIndex)
+        {
+            for (int i = 0; i < boneParentIndex.Length; i++)
+            {
+                if (bones[i] != null && boneParentIndex[i] < 0)
+                {
+                    return i;
+                }
+            }
+
+            return bones.Length > 0 ? 0 : -1;
+        }
+
+        private int[] BuildLimbBranchIds(int[] boneParentIndex)
+        {
+            int boneCount = bones.Length;
+            int[] branchIds = new int[boneCount];
+            int root = FindRootBoneIndex(boneParentIndex);
+
+            for (int i = 0; i < boneCount; i++)
+            {
+                if (bones[i] == null || i == root)
+                {
+                    branchIds[i] = -1;
+                    continue;
+                }
+
+                int current = i;
+                int childOfRoot = i;
+                int guard = 0;
+                while (current >= 0 && current != root && guard++ < boneCount)
+                {
+                    childOfRoot = current;
+                    current = boneParentIndex[current];
+                }
+
+                branchIds[i] = childOfRoot;
+            }
+
+            return branchIds;
+        }
+
+        private static bool IsAllowedLimbInfluence(
+            int nearestBone,
+            int candidateBone,
+            int[] limbBranchIds,
+            int[] boneParentIndex)
+        {
+            if (nearestBone < 0 || candidateBone < 0)
+            {
+                return false;
+            }
+
+            if (nearestBone == candidateBone)
+            {
+                return true;
+            }
+
+            int nearestBranch = limbBranchIds[nearestBone];
+            int candidateBranch = limbBranchIds[candidateBone];
+
+            // 胴体ルート側は常に許可
+            if (candidateBranch < 0 || nearestBranch < 0)
+            {
+                return true;
+            }
+
+            if (nearestBranch == candidateBranch)
+            {
+                return true;
+            }
+
+            // 最寄りの祖先だけは関節つなぎ用に許可
+            return IsAncestorBone(candidateBone, nearestBone, boneParentIndex);
+        }
+
+        private static bool IsAncestorBone(int ancestor, int descendant, int[] boneParentIndex)
+        {
+            int current = descendant;
+            int guard = 0;
+            while (current >= 0 && guard++ < boneParentIndex.Length)
+            {
+                if (current == ancestor)
+                {
+                    return true;
+                }
+
+                current = boneParentIndex[current];
+            }
+
+            return false;
+        }
+
+        private static void StripOppositeLimbWeights(
+            float[] weights,
+            int[] limbBranchIds,
+            int[] boneParentIndex,
+            Vector3[] boneLocalPos,
+            Vector3 rootLocalPos,
+            float lateralThreshold)
+        {
+            int dominant = FindDominantBone(weights);
+            if (dominant < 0)
+            {
+                return;
+            }
+
+            int dominantBranch = limbBranchIds[dominant];
+            float dominantSide = boneLocalPos[dominant].x - rootLocalPos.x;
+            float threshold = Mathf.Max(0.02f, lateralThreshold);
+            bool dominantHasSide = Mathf.Abs(dominantSide) >= threshold;
+            bool changed = false;
+
+            for (int b = 0; b < weights.Length; b++)
+            {
+                if (weights[b] <= 0f || b == dominant)
+                {
+                    continue;
+                }
+
+                if (IsAncestorBone(b, dominant, boneParentIndex) || limbBranchIds[b] < 0)
+                {
+                    continue;
+                }
+
+                bool oppositeBranch = dominantBranch >= 0
+                    && limbBranchIds[b] >= 0
+                    && limbBranchIds[b] != dominantBranch;
+                float boneSide = boneLocalPos[b].x - rootLocalPos.x;
+                bool oppositeSide = dominantHasSide
+                    && Mathf.Abs(boneSide) >= threshold
+                    && dominantSide * boneSide < 0f;
+
+                if (!oppositeBranch && !oppositeSide)
+                {
+                    continue;
+                }
+
+                weights[b] = 0f;
+                changed = true;
+            }
+
+            if (changed)
+            {
+                NormalizeWeights(weights);
+            }
         }
 
         private static void InsertCandidate(
@@ -556,8 +791,8 @@ namespace ClayEditor
                 along = Mathf.Clamp01(Vector3.Dot(point - a, ab) / abSqr);
             }
 
-            float parentShare = Mathf.Lerp(Mathf.Max(jointParentBlend, 0.28f), jointParentBlend * 0.35f, along);
-            parentShare = Mathf.Clamp(parentShare, 0.05f, 0.45f);
+            float parentShare = Mathf.Lerp(jointParentBlend, jointParentBlend * 0.35f, along);
+            parentShare = Mathf.Clamp(parentShare, 0.04f, 0.32f);
             float childKeep = 1f - parentShare;
             float childWeight = weights[dominant];
             float injected = childWeight * parentShare;
@@ -566,7 +801,7 @@ namespace ClayEditor
             NormalizeWeights(weights);
         }
 
-        private void SoftPinDominant(float[] weights, float maxWeight)
+        private void SoftPinDominant(float[] weights, float maxWeight, int[] boneParentIndex, int[] limbBranchIds)
         {
             if (maxWeight < softPinThreshold)
             {
@@ -579,38 +814,95 @@ namespace ClayEditor
                 return;
             }
 
-            int secondary = FindSecondBone(weights, dominant);
-            float secondaryKeep = Mathf.Clamp(softPinSecondaryFloor, 0.08f, 0.35f);
+            int secondary = ResolveSoftPinSecondary(weights, dominant, boneParentIndex);
+            int dominantBranch = limbBranchIds[dominant];
+
+            // 反対肢のウェイトを落とし同肢と親子だけ残す
+            for (int b = 0; b < weights.Length; b++)
+            {
+                if (b == dominant || b == secondary)
+                {
+                    continue;
+                }
+
+                if (AreBonesRelated(dominant, b, boneParentIndex))
+                {
+                    continue;
+                }
+
+                if (dominantBranch >= 0
+                    && limbBranchIds[b] >= 0
+                    && limbBranchIds[b] != dominantBranch
+                    && !IsAncestorBone(b, dominant, boneParentIndex))
+                {
+                    weights[b] = 0f;
+                    continue;
+                }
+
+                weights[b] *= 0.12f;
+            }
+
             if (secondary >= 0)
             {
-                secondaryKeep = Mathf.Max(weights[secondary], secondaryKeep);
+                weights[secondary] = Mathf.Max(weights[secondary], softPinSecondaryFloor);
             }
-            else
+
+            weights[dominant] = Mathf.Max(weights[dominant], Mathf.Max(0.55f, 1f - softPinSecondaryFloor * 2f));
+            NormalizeWeights(weights);
+        }
+
+        private int ResolveSoftPinSecondary(float[] weights, int dominant, int[] boneParentIndex)
+        {
+            int second = FindSecondBone(weights, dominant);
+            if (second >= 0 && AreBonesRelated(dominant, second, boneParentIndex))
             {
-                secondary = (dominant + 1) % weights.Length;
-                if (secondary == dominant)
+                return second;
+            }
+
+            int parent = boneParentIndex[dominant];
+            if (parent >= 0)
+            {
+                return parent;
+            }
+
+            return FindBestChildBone(weights, dominant, boneParentIndex);
+        }
+
+        private static int FindBestChildBone(float[] weights, int dominant, int[] boneParentIndex)
+        {
+            int best = -1;
+            float bestWeight = -1f;
+            for (int b = 0; b < weights.Length; b++)
+            {
+                if (boneParentIndex[b] != dominant)
                 {
-                    return;
+                    continue;
+                }
+
+                if (weights[b] > bestWeight)
+                {
+                    bestWeight = weights[b];
+                    best = b;
                 }
             }
 
-            secondaryKeep = Mathf.Min(secondaryKeep, 0.35f);
-            float dominantShare = 1f - secondaryKeep;
-            for (int b = 0; b < weights.Length; b++)
+            return best;
+        }
+
+        private static bool AreBonesRelated(int a, int b, int[] boneParentIndex)
+        {
+            if (a < 0 || b < 0 || a == b)
             {
-                if (b == dominant)
-                {
-                    weights[b] = dominantShare;
-                }
-                else if (b == secondary)
-                {
-                    weights[b] = secondaryKeep;
-                }
-                else
-                {
-                    weights[b] = 0f;
-                }
+                return false;
             }
+
+            if (boneParentIndex[a] == b || boneParentIndex[b] == a)
+            {
+                return true;
+            }
+
+            int parentA = boneParentIndex[a];
+            return parentA >= 0 && parentA == boneParentIndex[b];
         }
 
         private static int FindDominantBone(float[] weights)
@@ -738,15 +1030,23 @@ namespace ClayEditor
             ClayMeshTopology topo,
             float[][] uniqueWeights,
             float[] confidence,
+            int[] dominantBones,
+            int[] boneParentIndex,
+            int[] limbBranchIds,
+            Vector3[] boneLocalPos,
+            Vector3 rootLocalPos,
+            float lateralThreshold,
             int boneCount)
         {
             int uniqueCount = uniqueWeights.Length;
             float[][] buffer = new float[uniqueCount][];
-            int[] dominant = new int[uniqueCount];
             for (int u = 0; u < uniqueCount; u++)
             {
                 buffer[u] = new float[boneCount];
-                dominant[u] = FindDominantBone(uniqueWeights[u]);
+                if (dominantBones[u] < 0)
+                {
+                    dominantBones[u] = FindDominantBone(uniqueWeights[u]);
+                }
             }
 
             for (int iter = 0; iter < smoothingIterations; iter++)
@@ -764,10 +1064,47 @@ namespace ClayEditor
                     }
 
                     float weightSum = 0f;
+                    int selfDominant = dominantBones[u];
+                    int selfBranch = selfDominant >= 0 ? limbBranchIds[selfDominant] : -1;
+                    float selfSide = selfDominant >= 0
+                        ? boneLocalPos[selfDominant].x - rootLocalPos.x
+                        : 0f;
+                    float threshold = Mathf.Max(0.02f, lateralThreshold);
                     for (int n = 0; n < neighbors.Count; n++)
                     {
                         int nb = neighbors[n];
-                        float seamBoost = dominant[u] != dominant[nb] ? 1f + seamBlendStrength : 1f;
+                        int neighborDominant = dominantBones[nb];
+                        int neighborBranch = neighborDominant >= 0 ? limbBranchIds[neighborDominant] : -1;
+
+                        if (selfBranch >= 0
+                            && neighborBranch >= 0
+                            && selfBranch != neighborBranch)
+                        {
+                            continue;
+                        }
+
+                        if (selfDominant >= 0 && neighborDominant >= 0)
+                        {
+                            float neighborSide = boneLocalPos[neighborDominant].x - rootLocalPos.x;
+                            if (Mathf.Abs(selfSide) >= threshold
+                                && Mathf.Abs(neighborSide) >= threshold
+                                && selfSide * neighborSide < 0f)
+                            {
+                                continue;
+                            }
+                        }
+
+                        float seamBoost = 1f;
+                        if (selfDominant != neighborDominant
+                            && AreBonesRelated(selfDominant, neighborDominant, boneParentIndex))
+                        {
+                            seamBoost = 1f + seamBlendStrength;
+                        }
+                        else if (selfDominant != neighborDominant)
+                        {
+                            seamBoost = 0.35f;
+                        }
+
                         float[] nw = uniqueWeights[nb];
                         for (int b = 0; b < boneCount; b++)
                         {
@@ -794,22 +1131,24 @@ namespace ClayEditor
 
                 for (int u = 0; u < uniqueCount; u++)
                 {
-                    // 自信が高い頂点も少しは混ぜ境目の段差を消す
-                    float localStrength = Mathf.Lerp(smoothingStrength, smoothingStrength * 0.35f, confidence[u]);
-                    bool hasSeamNeighbor = false;
+                    float localStrength = Mathf.Lerp(smoothingStrength, smoothingStrength * 0.2f, confidence[u]);
+                    bool hasRelatedSeamNeighbor = false;
+                    int selfDominant = dominantBones[u];
                     var neighbors = topo.Adjacency[u];
                     for (int n = 0; n < neighbors.Count; n++)
                     {
-                        if (dominant[neighbors[n]] != dominant[u])
+                        int nb = neighbors[n];
+                        if (dominantBones[nb] != selfDominant
+                            && AreBonesRelated(selfDominant, dominantBones[nb], boneParentIndex))
                         {
-                            hasSeamNeighbor = true;
+                            hasRelatedSeamNeighbor = true;
                             break;
                         }
                     }
 
-                    if (hasSeamNeighbor)
+                    if (hasRelatedSeamNeighbor)
                     {
-                        localStrength = Mathf.Max(localStrength, seamBlendStrength);
+                        localStrength = Mathf.Max(localStrength, seamBlendStrength * 0.7f);
                     }
 
                     float[] cur = uniqueWeights[u];
@@ -820,8 +1159,15 @@ namespace ClayEditor
                     }
 
                     NormalizeWeights(cur);
-                    dominant[u] = FindDominantBone(cur);
-                    confidence[u] = cur[dominant[u]];
+                    StripOppositeLimbWeights(
+                        cur,
+                        limbBranchIds,
+                        boneParentIndex,
+                        boneLocalPos,
+                        rootLocalPos,
+                        lateralThreshold);
+                    dominantBones[u] = FindDominantBone(cur);
+                    confidence[u] = dominantBones[u] >= 0 ? cur[dominantBones[u]] : 0f;
                 }
             }
         }
