@@ -113,6 +113,25 @@ namespace ClayEditor.Backend
         /// <inheritdoc/>
         public void Paint(Vector3 hitPosition, float paintRadius, Vector3 paintColor, Vector3 paintNormal)
         {
+            Vector3 voxelCenter = (hitPosition + (Vector3)offset) / scale;
+            float voxelRadius = paintRadius / scale + 1f;
+
+            int minX = Mathf.Clamp(Mathf.FloorToInt(voxelCenter.x - voxelRadius), 0, size);
+            int minY = Mathf.Clamp(Mathf.FloorToInt(voxelCenter.y - voxelRadius), 0, size);
+            int minZ = Mathf.Clamp(Mathf.FloorToInt(voxelCenter.z - voxelRadius), 0, size);
+            int maxX = Mathf.Clamp(Mathf.CeilToInt(voxelCenter.x + voxelRadius), 0, size);
+            int maxY = Mathf.Clamp(Mathf.CeilToInt(voxelCenter.y + voxelRadius), 0, size);
+            int maxZ = Mathf.Clamp(Mathf.CeilToInt(voxelCenter.z + voxelRadius), 0, size);
+
+            int sizeX = Mathf.Max(0, maxX - minX + 1);
+            int sizeY = Mathf.Max(0, maxY - minY + 1);
+            int sizeZ = Mathf.Max(0, maxZ - minZ + 1);
+            int voxelCount = sizeX * sizeY * sizeZ;
+            if (voxelCount <= 0)
+            {
+                return;
+            }
+
             var job = new ClayVoxelPaintJob
             {
                 Size = size,
@@ -123,9 +142,15 @@ namespace ClayEditor.Backend
                 PaintRadius = paintRadius,
                 PaintColor = paintColor,
                 PaintNormal = paintNormal,
+                MinX = minX,
+                MinY = minY,
+                MinZ = minZ,
+                SizeX = sizeX,
+                SizeY = sizeY,
+                SizeZ = sizeZ,
                 Colors = colors
             };
-            job.Schedule(totalVoxelCount, 256).Complete();
+            job.Schedule(voxelCount, 64).Complete();
         }
 
         /// <inheritdoc/>

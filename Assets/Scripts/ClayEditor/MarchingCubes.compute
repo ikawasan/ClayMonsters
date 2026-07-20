@@ -37,6 +37,8 @@ float3 _PaintColor;
 float _PaintRadius;
 float3 _PaintNormal;
 float3 _DefaultColor;
+int3 _PaintOrigin;
+int3 _PaintSize;
 
 int GetIndex(int x, int y, int z)
 {
@@ -217,15 +219,22 @@ void ModifyVoxels(uint3 id : SV_DispatchThreadID)
 }
 
 // ブラシ範囲内のボクセル色を塗る
+// idはブラシAABB内の相対座標_PaintOriginからのオフセット
 [numthreads(8, 8, 8)]
 void PaintVoxels(uint3 id : SV_DispatchThreadID)
 {
-    if (id.x > (uint) _Size || id.y > (uint) _Size || id.z > (uint) _Size)
+    if (id.x >= (uint) _PaintSize.x || id.y >= (uint) _PaintSize.y || id.z >= (uint) _PaintSize.z)
     {
         return;
     }
 
-    float3 localPos = (float3) id * _Scale - _Offset;
+    uint3 voxelId = (uint3) _PaintOrigin + id;
+    if (voxelId.x > (uint) _Size || voxelId.y > (uint) _Size || voxelId.z > (uint) _Size)
+    {
+        return;
+    }
+
+    float3 localPos = (float3) voxelId * _Scale - _Offset;
     if (distance(localPos, _HitPosition) >= _PaintRadius)
     {
         return;
@@ -243,6 +252,6 @@ void PaintVoxels(uint3 id : SV_DispatchThreadID)
         }
     }
 
-    int idx = GetIndex(id.x, id.y, id.z);
+    int idx = GetIndex(voxelId.x, voxelId.y, voxelId.z);
     _VoxelColors[idx] = _PaintColor;
 }

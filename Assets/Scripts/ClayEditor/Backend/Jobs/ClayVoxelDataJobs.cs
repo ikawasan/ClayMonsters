@@ -76,7 +76,7 @@ namespace ClayEditor.Backend.Jobs
     }
 
     /// <summary>
-    /// ブラシ範囲内のボクセル色を塗るJob
+    /// ブラシAABB内のボクセル色を塗るJob
     /// </summary>
     [BurstCompile]
     internal struct ClayVoxelPaintJob : IJobParallelFor
@@ -89,14 +89,26 @@ namespace ClayEditor.Backend.Jobs
         [ReadOnly] public float PaintRadius;
         [ReadOnly] public float3 PaintColor;
         [ReadOnly] public float3 PaintNormal;
+        [ReadOnly] public int MinX;
+        [ReadOnly] public int MinY;
+        [ReadOnly] public int MinZ;
+        [ReadOnly] public int SizeX;
+        [ReadOnly] public int SizeY;
+        [ReadOnly] public int SizeZ;
+        // jobIndexと色配列indexは一致しないが各スレッドは異なるボクセルのみ書く
+        [NativeDisableParallelForRestriction]
         public NativeArray<float3> Colors;
 
         /// <inheritdoc/>
         public void Execute(int index)
         {
-            int z = index % GridCount;
-            int y = (index / GridCount) % GridCount;
-            int x = index / (GridCount * GridCount);
+            int localZ = index % SizeZ;
+            int localY = (index / SizeZ) % SizeY;
+            int localX = index / (SizeZ * SizeY);
+
+            int x = MinX + localX;
+            int y = MinY + localY;
+            int z = MinZ + localZ;
 
             if (x > Size || y > Size || z > Size)
             {
@@ -119,7 +131,8 @@ namespace ClayEditor.Backend.Jobs
                 }
             }
 
-            Colors[index] = PaintColor;
+            int colorIndex = x * GridCount * GridCount + y * GridCount + z;
+            Colors[colorIndex] = PaintColor;
         }
     }
 }

@@ -160,7 +160,8 @@ namespace ClayEditor
                     return;
                 case EditModeType.Paint:
                     ClearBones();
-                    engine.SwitchToSingleMesh();
+                    // 単一メッシュ全再生成を避け汚れたチャンクだけ更新する
+                    engine.UpdateShapeFast(refreshColliders: true);
                     return;
                 default:
                     ClearBones();

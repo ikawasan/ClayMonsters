@@ -52,8 +52,6 @@ namespace ClayEditor
 
         [Header("Paint Settings")]
         [SerializeField] private Color defaultVertexColor = new Color(0.94f, 0.86f, 0.74f, 1f);
-        [Tooltip("ペイント中にメッシュ色を反映する間隔（フレーム数）")]
-        [SerializeField] private int paintMeshUpdateInterval = 4;
 
         [SerializeField] private GameObject clayModel;
 
@@ -64,7 +62,6 @@ namespace ClayEditor
         private MeshCollider meshCollider;
 
         private int cachedTotalTriangleCount;
-        private int paintMeshFrameCounter;
         private bool pendingPaintMeshUpdate;
 
         // チャンク（造形中の表示用）
@@ -117,7 +114,8 @@ namespace ClayEditor
         {
             worldHit = default;
 
-            if (mesh == null || mesh.vertexCount == 0)
+            // チャンク表示時は単一meshが空でも表面コライダーは存在する
+            if (!HasMesh())
             {
                 return false;
             }
@@ -466,16 +464,8 @@ namespace ClayEditor
 
             if (triangleCount == 0)
             {
-                if (refreshColliders)
-                {
-                    chunk.collider.sharedMesh = null;
-                    chunk.colliderDirty = false;
-                }
-                else
-                {
-                    chunk.colliderDirty = true;
-                }
-
+                chunk.collider.sharedMesh = null;
+                chunk.colliderDirty = !refreshColliders;
                 return;
             }
 
@@ -540,6 +530,9 @@ namespace ClayEditor
             }
             else
             {
+                // メッシュ内容更新後は参照を張り直さないとレイキャストが外れる
+                chunk.collider.sharedMesh = null;
+                chunk.collider.sharedMesh = chunk.mesh;
                 chunk.colliderDirty = true;
             }
         }
@@ -907,19 +900,28 @@ namespace ClayEditor
         }
 
         /// <summary>
-        /// ペイント中に遅延していた単一メッシュの色反映を実行する
+        /// ペイント中に遅延していたメッシュ色反映を実行する
+        /// チャンク表示時は汚れたチャンクのみ再生成する
         /// </summary>
-        /// <param name="refreshCollider">true のときMeshColliderも更新する</param>
+        /// <param name="refreshCollider">trueのときコライダーも更新する</param>
         public void FlushPaintMesh(bool refreshCollider = false)
         {
-            if (!pendingPaintMeshUpdate || skinnedRenderer == null || !skinnedRenderer.enabled)
+            if (!pendingPaintMeshUpdate)
             {
                 return;
             }
 
             pendingPaintMeshUpdate = false;
-            paintMeshFrameCounter = 0;
-            ApplyShapeOnly(GenerateMeshData(), refreshCollider);
+
+            // ペイント中は単一メッシュ全再生成せずチャンク部分更新のみ行う
+            SetChunksVisible(true);
+            RebuildDirtyChunks(refreshCollider);
+            if (refreshCollider)
+            {
+                Physics.SyncTransforms();
+            }
+
+            RefreshCachedTriangleCountFromChunks();
             PublishHasMeshIfChanged();
         }
 
@@ -935,7 +937,7 @@ namespace ClayEditor
             PaintVoxelsInternal(worldCenter, worldRadius, color, worldNormal, true);
         }
 
-        // ペイント本体 applyImmediately が true のとき単一メッシュ表示中は表示更新を間引く
+        // ペイント本体 applyImmediately が true のとき汚れたチャンクへ即時反映する
         private void PaintVoxelsInternal(
             Vector3 worldCenter,
             float worldRadius,
@@ -970,18 +972,13 @@ namespace ClayEditor
 
             MarkDirtyChunks(localPos, localRadius);
 
-            if (!applyImmediately || !skinnedRenderer.enabled)
+            if (!applyImmediately)
             {
                 return;
             }
 
             pendingPaintMeshUpdate = true;
-            paintMeshFrameCounter++;
-            int interval = Mathf.Max(paintMeshUpdateInterval, 1);
-            if (paintMeshFrameCounter >= interval)
-            {
-                FlushPaintMesh(refreshCollider: false);
-            }
+            FlushPaintMesh(refreshCollider: false);
         }
 
         /// <summary>
@@ -1013,18 +1010,8 @@ namespace ClayEditor
             }
 
             // 表示中の経路に合わせて一度だけ反映する
-            if (skinnedRenderer != null && skinnedRenderer.enabled)
-            {
-                pendingPaintMeshUpdate = false;
-                paintMeshFrameCounter = 0;
-                ApplyShapeOnly(GenerateMeshData(), refreshCollider: true);
-                PublishHasMeshIfChanged();
-            }
-            else
-            {
-                RebuildDirtyChunks(refreshColliders: true);
-                RefreshCachedTriangleCountFromChunks();
-            }
+            pendingPaintMeshUpdate = true;
+            FlushPaintMesh(refreshCollider: true);
         }
 
         /// <summary>

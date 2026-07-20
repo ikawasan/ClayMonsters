@@ -33,6 +33,8 @@ namespace ClayEditor.Backend
             public static readonly int PaintColor = Shader.PropertyToID("_PaintColor");
             public static readonly int PaintRadius = Shader.PropertyToID("_PaintRadius");
             public static readonly int PaintNormal = Shader.PropertyToID("_PaintNormal");
+            public static readonly int PaintOrigin = Shader.PropertyToID("_PaintOrigin");
+            public static readonly int PaintSize = Shader.PropertyToID("_PaintSize");
             public static readonly int DefaultColor = Shader.PropertyToID("_DefaultColor");
         }
 
@@ -180,14 +182,58 @@ namespace ClayEditor.Backend
         public void Paint(Vector3 hitPosition, float paintRadius, Vector3 paintColor, Vector3 paintNormal)
         {
             EnsureShaderGridParams();
+            ComputePaintVoxelBounds(
+                hitPosition,
+                paintRadius,
+                out int minX,
+                out int minY,
+                out int minZ,
+                out int sizeX,
+                out int sizeY,
+                out int sizeZ);
+
+            if (sizeX <= 0 || sizeY <= 0 || sizeZ <= 0)
+            {
+                return;
+            }
+
             marchingCubesCompute.SetBuffer(kernelPaintVoxels, ShaderIDs.VoxelColors, voxelColorBuffer);
             marchingCubesCompute.SetVector(ShaderIDs.HitPosition, hitPosition);
             marchingCubesCompute.SetVector(ShaderIDs.PaintNormal, paintNormal);
             marchingCubesCompute.SetFloat(ShaderIDs.PaintRadius, paintRadius);
             marchingCubesCompute.SetVector(ShaderIDs.PaintColor, paintColor);
+            marchingCubesCompute.SetInts(ShaderIDs.PaintOrigin, minX, minY, minZ);
+            marchingCubesCompute.SetInts(ShaderIDs.PaintSize, sizeX, sizeY, sizeZ);
 
-            int groups = Mathf.CeilToInt((size + 1) / (float)ComputeThreads);
-            marchingCubesCompute.Dispatch(kernelPaintVoxels, groups, groups, groups);
+            int groupsX = Mathf.CeilToInt(sizeX / (float)ComputeThreads);
+            int groupsY = Mathf.CeilToInt(sizeY / (float)ComputeThreads);
+            int groupsZ = Mathf.CeilToInt(sizeZ / (float)ComputeThreads);
+            marchingCubesCompute.Dispatch(kernelPaintVoxels, groupsX, groupsY, groupsZ);
+        }
+
+        private void ComputePaintVoxelBounds(
+            Vector3 hitPosition,
+            float paintRadius,
+            out int minX,
+            out int minY,
+            out int minZ,
+            out int sizeX,
+            out int sizeY,
+            out int sizeZ)
+        {
+            Vector3 voxelCenter = (hitPosition + offset) / scale;
+            float voxelRadius = paintRadius / scale + 1f;
+
+            minX = Mathf.Clamp(Mathf.FloorToInt(voxelCenter.x - voxelRadius), 0, size);
+            minY = Mathf.Clamp(Mathf.FloorToInt(voxelCenter.y - voxelRadius), 0, size);
+            minZ = Mathf.Clamp(Mathf.FloorToInt(voxelCenter.z - voxelRadius), 0, size);
+            int maxX = Mathf.Clamp(Mathf.CeilToInt(voxelCenter.x + voxelRadius), 0, size);
+            int maxY = Mathf.Clamp(Mathf.CeilToInt(voxelCenter.y + voxelRadius), 0, size);
+            int maxZ = Mathf.Clamp(Mathf.CeilToInt(voxelCenter.z + voxelRadius), 0, size);
+
+            sizeX = Mathf.Max(0, maxX - minX + 1);
+            sizeY = Mathf.Max(0, maxY - minY + 1);
+            sizeZ = Mathf.Max(0, maxZ - minZ + 1);
         }
 
         /// <inheritdoc/>

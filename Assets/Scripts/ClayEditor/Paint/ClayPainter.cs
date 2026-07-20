@@ -19,8 +19,12 @@ namespace ClayEditor.Paint
         [SerializeField] private float minBrushRadius = 0.1f;
         [SerializeField] private float maxBrushRadius = 20f;
         [SerializeField] private Color initialColor = Color.red;
+        [Tooltip("ブラシ半径に対する最小ダブ間隔係数小さいほど密に塗る")]
+        [SerializeField] [Range(0.1f, 0.8f)] private float minDabSpacingFactor = 0.35f;
 
         private Color currentColor;
+        private Vector3 lastDabWorldPos;
+        private bool hasLastDabInStroke;
 
         // 塗り直し用に履歴のストロークを展開する使い回しバッファ
         private readonly List<Vector3> repaintCenters = new();
@@ -70,6 +74,7 @@ namespace ClayEditor.Paint
         /// </summary>
         public void BeginStroke()
         {
+            hasLastDabInStroke = false;
             historyManager.BeginStroke();
         }
 
@@ -78,16 +83,27 @@ namespace ClayEditor.Paint
         /// </summary>
         public void EndStroke()
         {
+            hasLastDabInStroke = false;
             historyManager.EndStroke();
         }
 
         /// <summary>
         /// ワールド座標を中心に現在の色でボクセル色を塗る あわせて現在ストロークへ記録する
+        /// 直前ダブから十分離れていない場合は間引く
         /// </summary>
         /// <param name="worldPos">塗りの中心となるワールド座標</param>
         /// <param name="worldNormal">ヒット面の法線（ワールド座標）</param>
         public void PaintAtWorldPosition(Vector3 worldPos, Vector3 worldNormal)
         {
+            if (hasLastDabInStroke)
+            {
+                float minSpacing = brushRadius * minDabSpacingFactor;
+                if ((worldPos - lastDabWorldPos).sqrMagnitude < minSpacing * minSpacing)
+                {
+                    return;
+                }
+            }
+
             engine.PaintVoxels(worldPos, brushRadius, currentColor, worldNormal);
 
             historyManager.AddDab(new PaintDab
@@ -96,6 +112,9 @@ namespace ClayEditor.Paint
                 worldRadius = brushRadius,
                 color = currentColor
             });
+
+            lastDabWorldPos = worldPos;
+            hasLastDabInStroke = true;
         }
 
         /// <summary>
