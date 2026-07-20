@@ -88,8 +88,7 @@ namespace Scene.BattleNpcScene
         public void PrepareSelectionEntry()
         {
             matchupBackground?.ShowClassroom();
-            overlayView?.HideImmediate();
-            overlayView?.HideVsUi();
+            overlayView?.HideForLeave();
         }
 
         /// <summary>

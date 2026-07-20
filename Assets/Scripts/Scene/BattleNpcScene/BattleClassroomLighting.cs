@@ -5,13 +5,13 @@ using UnityEngine.Scripting.APIUpdating;
 namespace Scene.BattleNpcScene
 {
     /// <summary>
-    /// BattleNpc教室向けの3点ライティング
+    /// BattleClassroom教室向けの3点ライティング
     /// Directional・窓からのFill・モデル照らすPointでTitle教室と同系統の見た目を再現する
     /// </summary>
-    [MovedFrom("Scene.ModelGalleryScene.ModelGalleryBattleNpcLighting")]
+    [MovedFrom("Scene.ModelGalleryScene.ModelGalleryBattleClassroomLighting")]
     public sealed class BattleClassroomLighting : MonoBehaviour
     {
-        private const string LightingRootName = "BattleNpcLighting";
+        private const string LightingRootName = "BattleClassroomLighting";
 
         [Header("スポーン")]
         [SerializeField] private Transform playerSpawnPoint;
@@ -42,13 +42,14 @@ namespace Scene.BattleNpcScene
         }
 
         /// <summary>
-        /// BattleNpc教室と同じライティング構成を有効化する
+        /// BattleClassroom教室と同じライティング構成を有効化する
         /// </summary>
         public void Apply()
         {
             EnsureSpawnReferences();
             EnsureLightingRoot();
             lightingRoot.gameObject.SetActive(true);
+            ForceEnableLightsUnderRoot();
             UpdateModelFillPosition();
         }
 
@@ -94,6 +95,27 @@ namespace Scene.BattleNpcScene
             }
         }
 
+        private void ForceEnableLightsUnderRoot()
+        {
+            if (lightingRoot == null)
+            {
+                return;
+            }
+
+            Light[] lights = lightingRoot.GetComponentsInChildren<Light>(true);
+            for (int i = 0; i < lights.Length; i++)
+            {
+                Light light = lights[i];
+                if (light == null)
+                {
+                    continue;
+                }
+
+                light.gameObject.SetActive(true);
+                light.enabled = true;
+            }
+        }
+
         private void EnsureLightingRoot()
         {
             if (lightingRoot != null)
@@ -106,32 +128,56 @@ namespace Scene.BattleNpcScene
             if (existing != null)
             {
                 lightingRoot = existing;
+                if (existing.GetComponentsInChildren<Light>(true).Length == 0)
+                {
+                    DestroyAllChildren(existing);
+                    CreateClassroomLights(lightingRoot);
+                }
+
                 return;
             }
 
             var rootObject = new GameObject(LightingRootName);
             lightingRoot = rootObject.transform;
             lightingRoot.SetParent(parent, false);
+            CreateClassroomLights(lightingRoot);
+        }
 
+        private void CreateClassroomLights(Transform root)
+        {
             CreateDirectionalLight(
-                lightingRoot,
+                root,
                 "Directional Light",
                 keyLightEuler,
                 keyLightColor,
                 keyLightIntensity);
             CreateDirectionalLight(
-                lightingRoot,
+                root,
                 "Window Fill Light",
                 windowFillEuler,
                 windowFillColor,
                 windowFillIntensity);
             CreatePointLight(
-                lightingRoot,
+                root,
                 "Model Fill Light",
                 ResolveFieldCenter() + Vector3.up * modelFillHeightOffset,
                 modelFillColor,
                 modelFillIntensity,
                 modelFillRange);
+        }
+
+        private static void DestroyAllChildren(Transform parent)
+        {
+            for (int i = parent.childCount - 1; i >= 0; i--)
+            {
+                Transform child = parent.GetChild(i);
+                if (child == null)
+                {
+                    continue;
+                }
+
+                Object.Destroy(child.gameObject);
+            }
         }
 
         private void UpdateModelFillPosition()

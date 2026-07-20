@@ -133,8 +133,7 @@ namespace Scene.TrainingScene
         /// </summary>
         public void HideForLeave()
         {
-            overlayView?.HideImmediate();
-            overlayView?.HideVsUi();
+            overlayView?.HideForLeave();
             SetBattleSceneActive(false);
             DestroyEnemyModel();
             HideBattleFieldForTraining();

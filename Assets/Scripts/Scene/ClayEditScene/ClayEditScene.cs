@@ -1,6 +1,7 @@
 using Camera.Interface;
 using Cysharp.Threading.Tasks;
 using Lighthouse.Scene;
+using Scene.BattleNpcScene;
 using Scene.ClayEditScene.Interface;
 using Scene.Core;
 using System.Threading;
@@ -14,6 +15,7 @@ namespace Scene.ClayEditScene
         IClayEditCameraPresenter cameraPresenter;
         IClayEditPostProcess clayEditPostProcess;
         ClayEditSceneResetter sceneResetter;
+        BattleClassroomLighting classroomLighting;
 
         public override MainSceneId MainSceneId => ClayMonstersMainSceneId.ClayEdit;
 
@@ -27,12 +29,14 @@ namespace Scene.ClayEditScene
             IClayEditPresenter clayEditPresenter,
             IClayEditCameraPresenter cameraPresenter,
             IClayEditPostProcess clayEditPostProcess,
-            ClayEditSceneResetter sceneResetter)
+            ClayEditSceneResetter sceneResetter,
+            BattleClassroomLighting classroomLighting)
         {
             this.clayEditPresenter = clayEditPresenter;
             this.cameraPresenter = cameraPresenter;
             this.clayEditPostProcess = clayEditPostProcess;
             this.sceneResetter = sceneResetter;
+            this.classroomLighting = classroomLighting;
         }
 
         protected override UniTask OnSetup()
@@ -47,6 +51,7 @@ namespace Scene.ClayEditScene
             clayEditPresenter.OnEnter();
             cameraPresenter.OnEnter();
             clayEditPostProcess.Enable();
+            classroomLighting?.Apply();
             return UniTask.CompletedTask;
         }
 
@@ -54,6 +59,7 @@ namespace Scene.ClayEditScene
         {
             clayEditPresenter.OnEnterAfterFadeIn();
             cameraPresenter.OnEnterAfterFadeIn();
+            classroomLighting?.Apply();
             return UniTask.CompletedTask;
         }
 

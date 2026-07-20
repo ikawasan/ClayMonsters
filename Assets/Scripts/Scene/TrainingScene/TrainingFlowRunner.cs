@@ -140,6 +140,7 @@ namespace Scene.TrainingScene
         public void CleanupForLeave()
         {
             StopFlow();
+            battleRunner?.HideForLeave();
             loadSlotView?.HideForLeave();
             SetSelectionUiVisible(false);
             SetSelectionBackToTitleButtonVisible(false);

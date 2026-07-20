@@ -380,7 +380,8 @@ namespace Scene.BattleNpcScene.View
 
             TitleClayUiVisualUtility.EnsureTextFontOnly(victoryTitleText);
             TitleClayUiVisualUtility.EnsureTextFontOnly(victoryNameText);
-            victoryConfetti.Play(ResolveVictoryConfettiAnchor());
+            // オーバーレイ配下に親付けしシーン退場で紙吹雪も破棄する
+            victoryConfetti.Play(transform);
 
             bool isDraw = winnerName == "引き分け" || string.IsNullOrWhiteSpace(winnerName);
             string title = isDraw ? "Draw" : "Winner";
@@ -444,8 +445,24 @@ namespace Scene.BattleNpcScene.View
         public void EndVictoryPresentation()
         {
             isVictoryPresentationActive = false;
-            victoryConfetti.Stop();
+            victoryConfetti.Dispose();
             HideVictoryLabels();
+            SetCanvasVisible(false);
+        }
+
+        /// <summary>
+        /// シーン退場時に勝利演出と紙吹雪を強制終了する
+        /// </summary>
+        public void HideForLeave()
+        {
+            EndVictoryPresentation();
+            CancelPartBreakPresentation();
+            SetStartButtonVisible(false);
+            SetVsNamePlatesVisible(false);
+            HidePhaseTexts();
+            HideFinishImmediate();
+            isVsIdleAnimating = false;
+            HideVsUi();
             SetCanvasVisible(false);
         }
 
@@ -850,7 +867,7 @@ namespace Scene.BattleNpcScene.View
             }
 
             isVictoryPresentationActive = false;
-            victoryConfetti.Stop();
+            victoryConfetti.Dispose();
             CancelPartBreakPresentation();
             SetStartButtonVisible(false);
             SetVsNamePlatesVisible(false);
@@ -859,6 +876,11 @@ namespace Scene.BattleNpcScene.View
             HideFinishImmediate();
             isVsIdleAnimating = false;
             SetCanvasVisible(false);
+        }
+
+        private void OnDisable()
+        {
+            victoryConfetti.Dispose();
         }
 
         private void OnDestroy()
@@ -938,12 +960,6 @@ namespace Scene.BattleNpcScene.View
             {
                 startButton.onClick.RemoveListener(OnClick);
             }
-        }
-
-        private Transform ResolveVictoryConfettiAnchor()
-        {
-            UnityEngine.Camera camera = UnityEngine.Camera.main;
-            return camera != null ? camera.transform : transform;
         }
 
         private void HidePhaseTexts()

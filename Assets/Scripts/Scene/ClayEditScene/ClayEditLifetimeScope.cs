@@ -69,6 +69,12 @@ namespace Scene.ClayEditScene
             ValidateEntryFlowComponents();
             EnsureSerializedReferences();
 
+            BattleClassroomLighting classroomLighting = GetComponent<BattleClassroomLighting>();
+            if (classroomLighting != null)
+            {
+                builder.RegisterComponent(classroomLighting);
+            }
+
             builder.RegisterComponent(clayEditScene);
             builder.RegisterComponent(clayEditView).AsImplementedInterfaces();
             builder.Register<ClayEditPresenter>(Lifetime.Singleton).AsImplementedInterfaces();
@@ -131,8 +137,7 @@ namespace Scene.ClayEditScene
 
         private void PrepareClayEditPresentation()
         {
-            BattleClassroomLighting lighting = GetComponent<BattleClassroomLighting>()
-                ?? FindFirstObjectByType<BattleClassroomLighting>(FindObjectsInactive.Include);
+            BattleClassroomLighting lighting = GetComponent<BattleClassroomLighting>();
             if (lighting == null)
             {
                 lighting = gameObject.AddComponent<BattleClassroomLighting>();
@@ -142,7 +147,7 @@ namespace Scene.ClayEditScene
             lighting.Apply();
 
             BattleNpcPostProcessView classroomPostProcess =
-                FindFirstObjectByType<BattleNpcPostProcessView>(FindObjectsInactive.Include);
+                GetComponentInChildren<BattleNpcPostProcessView>(true);
             if (classroomPostProcess == null)
             {
                 return;
@@ -163,15 +168,14 @@ namespace Scene.ClayEditScene
                 return;
             }
 
-            clayEditPostProcessView =
-                FindFirstObjectByType<ClayEditPostProcessView>(FindObjectsInactive.Include);
+            clayEditPostProcessView = GetComponentInChildren<ClayEditPostProcessView>(true);
             if (clayEditPostProcessView != null)
             {
                 return;
             }
 
             BattleNpcPostProcessView classroomPostProcess =
-                FindFirstObjectByType<BattleNpcPostProcessView>(FindObjectsInactive.Include);
+                GetComponentInChildren<BattleNpcPostProcessView>(true);
             if (classroomPostProcess != null)
             {
                 clayEditPostProcessView =
@@ -199,7 +203,7 @@ namespace Scene.ClayEditScene
                 || clayEditEditorUiGate == null)
             {
                 Debug.LogError(
-                    "[ClayEditLifetimeScope] Entry/Remake/UIGateの参�Eが未設定ですHierarchyを確認してください",
+                    "[ClayEditLifetimeScope] Entry/Remake/UIGate?????????Hierarchy?????????",
                     this);
             }
         }
