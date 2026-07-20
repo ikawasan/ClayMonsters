@@ -12,6 +12,7 @@ namespace Scene.BattleNpcScene.View
         private const float EmitterHeight = 6.5f;
         private const float EmitterWidth = 10f;
         private const float EmitterDepth = 4.5f;
+        private const float CameraHeightOffset = 1.2f;
 
         private static Material sharedParticleMaterial;
 
@@ -24,6 +25,8 @@ namespace Scene.BattleNpcScene.View
         /// <param name="anchor">基準位置</param>
         public void Play(Transform anchor)
         {
+            // 前回インスタンスが残るとシーン跨ぎで残留するため先に破棄する
+            Dispose();
             EnsureCreated(anchor);
             if (particleSystem == null)
             {
@@ -36,29 +39,28 @@ namespace Scene.BattleNpcScene.View
         }
 
         /// <summary>
-        /// 紙吹雪の発生を止め残粒子は消えさせる
+        /// 紙吹雪の発生を止め残粒子ごと破棄する
         /// </summary>
         public void Stop()
         {
-            if (particleSystem == null)
-            {
-                return;
-            }
-
-            particleSystem.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+            Dispose();
         }
 
         /// <summary>
-        /// 生成した紙吹雪オブジェクトを破棄する
+        /// 生成した紙吹雪オブジェクトを即座に破棄する
         /// </summary>
         public void Dispose()
         {
-            Stop();
+            if (particleSystem != null)
+            {
+                particleSystem.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                particleSystem = null;
+            }
+
             if (root != null)
             {
                 Object.Destroy(root);
                 root = null;
-                particleSystem = null;
             }
         }
 
@@ -70,6 +72,12 @@ namespace Scene.BattleNpcScene.View
             }
 
             root = new GameObject("VictoryConfetti");
+            // シーンオブジェクト配下に置きアンロード時に確実に破棄する
+            if (anchor != null)
+            {
+                root.transform.SetParent(anchor, false);
+            }
+
             AlignToAnchor(anchor);
 
             particleSystem = root.AddComponent<ParticleSystem>();
@@ -79,6 +87,7 @@ namespace Scene.BattleNpcScene.View
             main.playOnAwake = false;
             main.loop = true;
             main.duration = 6f;
+            main.startDelay = 0f;
             main.startLifetime = new ParticleSystem.MinMaxCurve(8f, 13f);
             main.startSpeed = new ParticleSystem.MinMaxCurve(0.02f, 0.12f);
             main.startSize3D = true;
@@ -99,7 +108,7 @@ namespace Scene.BattleNpcScene.View
             main.scalingMode = ParticleSystemScalingMode.Hierarchy;
             main.maxParticles = 320;
             main.useUnscaledTime = true;
-            main.cullingMode = ParticleSystemCullingMode.AlwaysSimulate;
+            main.cullingMode = ParticleSystemCullingMode.PauseAndCatchup;
 
             ParticleSystem.EmissionModule emission = particleSystem.emission;
             emission.enabled = true;
@@ -109,7 +118,7 @@ namespace Scene.BattleNpcScene.View
             shape.enabled = true;
             shape.shapeType = ParticleSystemShapeType.Box;
             shape.scale = new Vector3(EmitterWidth, 0.2f, EmitterDepth);
-            shape.randomDirectionAmount = 0.12f;
+            shape.randomDirectionAmount = 0.08f;
 
             ParticleSystem.VelocityOverLifetimeModule velocity = particleSystem.velocityOverLifetime;
             velocity.enabled = true;
@@ -161,8 +170,8 @@ namespace Scene.BattleNpcScene.View
                 new[]
                 {
                     new GradientAlphaKey(0f, 0f),
-                    new GradientAlphaKey(1f, 0.08f),
-                    new GradientAlphaKey(1f, 0.75f),
+                    new GradientAlphaKey(1f, 0.05f),
+                    new GradientAlphaKey(1f, 0.7f),
                     new GradientAlphaKey(0f, 1f)
                 });
             colorOverLifetime.color = new ParticleSystem.MinMaxGradient(alphaGradient);
@@ -200,9 +209,10 @@ namespace Scene.BattleNpcScene.View
 
                 forward.Normalize();
                 center = camera.transform.position + forward * 4.5f;
-                center.y = camera.transform.position.y + 1.2f;
+                center.y = camera.transform.position.y + CameraHeightOffset;
             }
 
+            // 親付きでもワールド位置で前方やや上方に置きシーン退場で親ごと破棄する
             root.transform.position = center + Vector3.up * EmitterHeight;
             root.transform.rotation = Quaternion.identity;
         }
