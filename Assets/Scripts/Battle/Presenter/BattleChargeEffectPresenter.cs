@@ -7,7 +7,7 @@ using UnityEngine;
 namespace Battle.Presenter
 {
     /// <summary>
-    /// 攻撃溜め開始に合わせて力溜め演出を同期する
+    /// 攻撃溜め開始に合わせて粒子取り込み演出を同期する
     /// </summary>
     public sealed class BattleChargeEffectPresenter : IDisposable
     {

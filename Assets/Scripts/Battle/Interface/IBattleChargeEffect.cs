@@ -3,12 +3,12 @@ using UnityEngine;
 namespace Battle.Interface
 {
     /// <summary>
-    /// 攻撃溜め中の力溜め演出を再生する
+    /// 攻撃溜め中に周囲から粒子を取り込む演出を再生する
     /// </summary>
     public interface IBattleChargeEffect
     {
         /// <summary>
-        /// 指定モデルへ溜め演出を開始する
+        /// 指定モデルへ取り込み演出を開始する
         /// </summary>
         /// <param name="modelRoot">攻撃側モデルルート</param>
         /// <param name="duration">溜め時間(秒)</param>
@@ -21,7 +21,7 @@ namespace Battle.Interface
         void SetIntensity(float intensity);
 
         /// <summary>
-        /// 溜め演出を停止する
+        /// 取り込み演出を停止する
         /// </summary>
         void Stop();
     }
