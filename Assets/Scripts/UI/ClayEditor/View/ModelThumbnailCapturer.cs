@@ -43,7 +43,7 @@ namespace UI.ClayEditor.View
         [SerializeField] private Color gridLineColor = new Color(0.92f, 0.95f, 0.90f, 1f);
         [SerializeField] private int gridDivisions = 8;
         [SerializeField] private int boardTextureSize = 128;
-        [SerializeField] private int gridLineThickness = 2;
+        [SerializeField] private int gridLineThickness = 1;
 
         [Header("‰æŠp")]
         [SerializeField] private Vector3 viewEulerAngles = new Vector3(15f, -150f, 0f);
