@@ -66,8 +66,8 @@ namespace Scene.ClayEditScene
 
         protected override void Configure(IContainerBuilder builder)
         {
-            ValidateEntryFlowComponents();
-            EnsureSerializedReferences();
+            ValidateRequiredReferences();
+            PrepareClayEditPresentation();
 
             BattleClassroomLighting classroomLighting = GetComponent<BattleClassroomLighting>();
             if (classroomLighting != null)
@@ -129,25 +129,28 @@ namespace Scene.ClayEditScene
             builder.RegisterComponent(skeletonPartAnalyzer);
         }
 
-        private void EnsureSerializedReferences()
-        {
-            PrepareClayEditPresentation();
-            EnsureClayEditPostProcess();
-        }
-
         private void PrepareClayEditPresentation()
         {
             BattleClassroomLighting lighting = GetComponent<BattleClassroomLighting>();
             if (lighting == null)
             {
-                lighting = gameObject.AddComponent<BattleClassroomLighting>();
+                Debug.LogError(
+                    "[ClayEditLifetimeScope] BattleClassroomLightingが未配線です",
+                    this);
+            }
+            else
+            {
+                lighting.enabled = true;
+                lighting.Apply();
             }
 
-            lighting.enabled = true;
-            lighting.Apply();
+            if (clayEditPostProcessView == null)
+            {
+                return;
+            }
 
             BattleNpcPostProcessView classroomPostProcess =
-                GetComponentInChildren<BattleNpcPostProcessView>(true);
+                clayEditPostProcessView.GetComponent<BattleNpcPostProcessView>();
             if (classroomPostProcess == null)
             {
                 return;
@@ -161,49 +164,33 @@ namespace Scene.ClayEditScene
             }
         }
 
-        private void EnsureClayEditPostProcess()
+        private void ValidateRequiredReferences()
         {
-            if (clayEditPostProcessView != null)
-            {
-                return;
-            }
-
-            clayEditPostProcessView = GetComponentInChildren<ClayEditPostProcessView>(true);
-            if (clayEditPostProcessView != null)
-            {
-                return;
-            }
-
-            BattleNpcPostProcessView classroomPostProcess =
-                GetComponentInChildren<BattleNpcPostProcessView>(true);
-            if (classroomPostProcess != null)
-            {
-                clayEditPostProcessView =
-                    classroomPostProcess.gameObject.GetComponent<ClayEditPostProcessView>()
-                    ?? classroomPostProcess.gameObject.AddComponent<ClayEditPostProcessView>();
-                return;
-            }
-
-            Transform postProcessRoot = transform.Find("PostProcess");
-            GameObject host = postProcessRoot != null
-                ? postProcessRoot.gameObject
-                : new GameObject("PostProcess");
-            if (postProcessRoot == null)
-            {
-                host.transform.SetParent(transform, false);
-            }
-
-            clayEditPostProcessView = host.AddComponent<ClayEditPostProcessView>();
-        }
-
-        private void ValidateEntryFlowComponents()
-        {
-            if (clayEditEntryView == null
+            if (clayEditScene == null
+                || clayEditView == null
+                || cameraView == null
+                || clayEditPostProcessView == null
+                || clayEditor == null
+                || clayVoxelEngine == null
+                || clayAutoRigger == null
+                || clayAutoRigController == null
+                || clayEditModelInitializer == null
+                || clayEditorRangeVisualizer == null
+                || clayCursor == null
+                || colorPicker == null
+                || clayPainter == null
+                || clayPaintCursor == null
+                || clayEditModeView == null
+                || clayModelAnimationView == null
+                || saveSlotView == null
+                || clayEditEntryView == null
                 || clayEditRemakeLoadSlotView == null
-                || clayEditEditorUiGate == null)
+                || clayEditEditorUiGate == null
+                || clayBoneVisualizer == null
+                || skeletonPartAnalyzer == null)
             {
                 Debug.LogError(
-                    "[ClayEditLifetimeScope] Entry/Remake/UIGate?????????Hierarchy?????????",
+                    "[ClayEditLifetimeScope] 必須SerializeFieldが未配線ですHierarchyで接続してください",
                     this);
             }
         }

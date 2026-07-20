@@ -240,89 +240,29 @@ namespace Scene.TrainingScene
 
         private void EnsureSerializedReferences()
         {
-            if (trainingScene == null)
+            if (trainingScene == null
+                || flowRunner == null
+                || battleRunner == null
+                || hudView == null
+                || selectionCanvas == null
+                || cameraView == null
+                || trainingDisplay == null
+                || backgroundView == null
+                || locationCameraView == null
+                || postProcessView == null
+                || classroomLighting == null
+                || loadSlotView == null
+                || trainedSaveView == null
+                || modeSelectView == null
+                || autoResultView == null)
             {
-                trainingScene = GetComponent<TrainingScene>();
-            }
-
-            if (flowRunner == null)
-            {
-                flowRunner = FindFirstObjectByType<TrainingFlowRunner>(FindObjectsInactive.Include);
-            }
-
-            if (battleRunner == null)
-            {
-                battleRunner = FindFirstObjectByType<TrainingBattleRunner>(FindObjectsInactive.Include);
-            }
-
-            if (hudView == null)
-            {
-                hudView = FindFirstObjectByType<TrainingHudView>(FindObjectsInactive.Include);
-            }
-
-            if (trainedSaveView == null)
-            {
-                trainedSaveView = FindFirstObjectByType<TrainingTrainedSaveView>(FindObjectsInactive.Include);
-            }
-
-            if (modeSelectView == null)
-            {
-                modeSelectView = FindFirstObjectByType<TrainingModeSelectView>(FindObjectsInactive.Include);
-            }
-
-            if (autoResultView == null)
-            {
-                autoResultView = FindFirstObjectByType<TrainingAutoResultView>(FindObjectsInactive.Include);
-            }
-
-            if (cameraView == null)
-            {
-                cameraView = FindFirstObjectByType<ClayEditCameraView>(FindObjectsInactive.Include);
-            }
-
-            if (trainingDisplay == null)
-            {
-                trainingDisplay = FindFirstObjectByType<TrainingDisplay>(FindObjectsInactive.Include);
-            }
-
-            if (backgroundView == null)
-            {
-                backgroundView = FindFirstObjectByType<TrainingBackgroundView>(FindObjectsInactive.Include);
+                Debug.LogError(
+                    "[TrainingLifetimeScope] 必須SerializeFieldが未配線ですHierarchyで接続してください",
+                    this);
             }
 
             backgroundView?.EnsureSceneOwnership();
-
-            if (locationCameraView == null)
-            {
-                locationCameraView = FindFirstObjectByType<TrainingLocationCameraView>(FindObjectsInactive.Include);
-            }
-
-            if (postProcessView == null)
-            {
-                postProcessView = FindFirstObjectByType<BattleNpcPostProcessView>(FindObjectsInactive.Include);
-            }
-
-            if (classroomLighting == null)
-            {
-                classroomLighting = FindFirstObjectByType<BattleClassroomLighting>(FindObjectsInactive.Include);
-            }
-
-            if (classroomLighting == null)
-            {
-                classroomLighting = gameObject.AddComponent<BattleClassroomLighting>();
-            }
-
-            if (loadSlotView == null)
-            {
-                loadSlotView = FindFirstObjectByType<LoadSlotView>(FindObjectsInactive.Include);
-            }
-
             loadSlotView?.ConfigureSavePool(ModelSavePool.Player);
-
-            if (selectionCanvas == null && loadSlotView != null)
-            {
-                selectionCanvas = loadSlotView.SelectionCanvas;
-            }
         }
     }
 }

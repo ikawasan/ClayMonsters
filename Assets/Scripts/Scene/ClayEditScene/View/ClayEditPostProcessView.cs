@@ -14,7 +14,6 @@ namespace Scene.ClayEditScene.View
     [DisallowMultipleComponent]
     public sealed class ClayEditPostProcessView : MonoBehaviour, IClayEditPostProcess
     {
-        private const int UiExclusionFrameCount = 3;
         private const int DefaultRendererIndex = -1;
 
         [SerializeField] private Color backgroundColor = Color.black;
@@ -27,23 +26,7 @@ namespace Scene.ClayEditScene.View
         private CameraOverrideOption previousDepthOption = CameraOverrideOption.UsePipelineSettings;
         private bool hasStoredCameraState;
         private bool isEnabled;
-        private int remainingUiExclusionFrames;
         private readonly List<Volume> disabledVolumes = new();
-        private readonly List<CanvasRenderState> savedCanvasStates = new();
-
-        private readonly struct CanvasRenderState
-        {
-            public CanvasRenderState(Canvas canvas, RenderMode renderMode, UnityEngine.Camera worldCamera)
-            {
-                Canvas = canvas;
-                RenderMode = renderMode;
-                WorldCamera = worldCamera;
-            }
-
-            public Canvas Canvas { get; }
-            public RenderMode RenderMode { get; }
-            public UnityEngine.Camera WorldCamera { get; }
-        }
 
         /// <inheritdoc/>
         public void Enable()
@@ -59,8 +42,6 @@ namespace Scene.ClayEditScene.View
             }
 
             isEnabled = true;
-            remainingUiExclusionFrames = UiExclusionFrameCount;
-            ApplyUiExclusion();
             DisableSceneVolumes();
             BackgroundOutlineActivation.SuppressForClayEdit();
             ApplyBlackBackground();
@@ -76,22 +57,9 @@ namespace Scene.ClayEditScene.View
             }
 
             isEnabled = false;
-            remainingUiExclusionFrames = 0;
             BackgroundOutlineActivation.ClearClayEditSuppression();
             RestoreSceneVolumes();
             RestoreCameraSettings();
-            RestoreUiCanvases();
-        }
-
-        private void LateUpdate()
-        {
-            if (!isEnabled || remainingUiExclusionFrames <= 0)
-            {
-                return;
-            }
-
-            ApplyUiExclusion();
-            remainingUiExclusionFrames--;
         }
 
         private void ApplyBlackBackground()
@@ -179,60 +147,6 @@ namespace Scene.ClayEditScene.View
                 cameraData = null;
                 hasStoredCameraState = false;
             }
-        }
-
-        private void ApplyUiExclusion()
-        {
-            Canvas[] canvases = Object.FindObjectsByType<Canvas>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None);
-            foreach (Canvas canvas in canvases)
-            {
-                if (canvas.renderMode == RenderMode.ScreenSpaceOverlay)
-                {
-                    continue;
-                }
-
-                if (!ContainsCanvas(canvas))
-                {
-                    savedCanvasStates.Add(new CanvasRenderState(
-                        canvas,
-                        canvas.renderMode,
-                        canvas.worldCamera));
-                }
-
-                canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-                canvas.worldCamera = null;
-            }
-        }
-
-        private bool ContainsCanvas(Canvas canvas)
-        {
-            foreach (CanvasRenderState state in savedCanvasStates)
-            {
-                if (state.Canvas == canvas)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private void RestoreUiCanvases()
-        {
-            foreach (CanvasRenderState state in savedCanvasStates)
-            {
-                if (state.Canvas == null)
-                {
-                    continue;
-                }
-
-                state.Canvas.renderMode = state.RenderMode;
-                state.Canvas.worldCamera = state.WorldCamera;
-            }
-
-            savedCanvasStates.Clear();
         }
     }
 }

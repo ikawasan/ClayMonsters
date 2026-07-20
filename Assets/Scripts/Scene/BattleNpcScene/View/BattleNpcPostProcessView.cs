@@ -1,7 +1,6 @@
-using System.Collections.Generic;
-using Scene.Rendering;
 using Scene.BattleNpcScene;
 using Scene.BattleNpcScene.Interface;
+using Scene.Rendering;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -10,14 +9,12 @@ namespace Scene.BattleNpcScene.View
 {
     /// <summary>
     /// BattleNpc教室シーン向けの暖色ポストプロセスとSSAOを適用する
-    /// Bloomはintensity0で上書きしグローバルVolume分も含めて完全に切る
-    /// 3Dフィールドのみに効かせUIはOverlay表示でポストプロセス対象外にする
+    /// Bloomはintensity0で上書きしグローバルVolume側も含めて完全に切る
+    /// UIはシーン上でScreenSpaceOverlayとしポストプロセス対象外にする
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class BattleNpcPostProcessView : MonoBehaviour, IBattleNpcPostProcess
     {
-        private const int UiExclusionFrameCount = 3;
-
         private const int DefaultRendererIndex = -1;
 
         [SerializeField] private VolumeProfile classroomVolumeProfile;
@@ -36,23 +33,6 @@ namespace Scene.BattleNpcScene.View
         private CameraOverrideOption previousDepthOption = CameraOverrideOption.UsePipelineSettings;
         private CameraClearFlags previousClearFlags;
         private Color previousBackgroundColor;
-        private bool isPostProcessEnabled;
-        private int remainingUiExclusionFrames;
-        private readonly List<CanvasRenderState> savedCanvasStates = new();
-
-        private readonly struct CanvasRenderState
-        {
-            public CanvasRenderState(Canvas canvas, RenderMode renderMode, UnityEngine.Camera worldCamera)
-            {
-                Canvas = canvas;
-                RenderMode = renderMode;
-                WorldCamera = worldCamera;
-            }
-
-            public Canvas Canvas { get; }
-            public RenderMode RenderMode { get; }
-            public UnityEngine.Camera WorldCamera { get; }
-        }
 
         /// <inheritdoc/>
         public void Enable()
@@ -66,10 +46,6 @@ namespace Scene.BattleNpcScene.View
             DisableBloomCompletely();
             BackgroundOutlineActivation.ClearClayEditSuppression();
             FieldBackgroundLayerUtility.Apply(fieldRoot);
-
-            isPostProcessEnabled = true;
-            remainingUiExclusionFrames = UiExclusionFrameCount;
-            ApplyUiExclusion();
 
             if (volume != null)
             {
@@ -97,9 +73,6 @@ namespace Scene.BattleNpcScene.View
         /// <inheritdoc/>
         public void Disable()
         {
-            isPostProcessEnabled = false;
-            remainingUiExclusionFrames = 0;
-
             if (volume != null)
             {
                 volume.enabled = false;
@@ -114,32 +87,22 @@ namespace Scene.BattleNpcScene.View
             }
 
             RestoreSolidBackground();
-            RestoreUiCanvases();
-        }
-
-        private void LateUpdate()
-        {
-            if (!isPostProcessEnabled)
-            {
-                return;
-            }
-
-            ApplyUiExclusion();
-            if (remainingUiExclusionFrames > 0)
-            {
-                remainingUiExclusionFrames--;
-            }
         }
 
         private void EnsureVolume()
         {
+            if (volume != null)
+            {
+                return;
+            }
+
+            volume = GetComponent<Volume>();
             if (volume == null)
             {
-                volume = GetComponent<Volume>();
-                if (volume == null)
-                {
-                    volume = gameObject.AddComponent<Volume>();
-                }
+                Debug.LogError(
+                    "[BattleNpcPostProcessView] Volumeが未配線ですHierarchyで追加してください",
+                    this);
+                return;
             }
 
             volume.isGlobal = true;
@@ -178,57 +141,6 @@ namespace Scene.BattleNpcScene.View
             }
 
             return classroomVolumeProfile;
-        }
-
-        private void ApplyUiExclusion()
-        {
-            foreach (var canvas in transform.root.GetComponentsInChildren<Canvas>(true))
-            {
-                if (canvas.renderMode == RenderMode.ScreenSpaceOverlay)
-                {
-                    continue;
-                }
-
-                if (!ContainsCanvas(canvas))
-                {
-                    savedCanvasStates.Add(new CanvasRenderState(
-                        canvas,
-                        canvas.renderMode,
-                        canvas.worldCamera));
-                }
-
-                canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-                canvas.worldCamera = null;
-            }
-        }
-
-        private bool ContainsCanvas(Canvas canvas)
-        {
-            foreach (var state in savedCanvasStates)
-            {
-                if (state.Canvas == canvas)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private void RestoreUiCanvases()
-        {
-            foreach (var state in savedCanvasStates)
-            {
-                if (state.Canvas == null)
-                {
-                    continue;
-                }
-
-                state.Canvas.renderMode = state.RenderMode;
-                state.Canvas.worldCamera = state.WorldCamera;
-            }
-
-            savedCanvasStates.Clear();
         }
 
         private void ApplySolidBackground()

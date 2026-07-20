@@ -126,12 +126,9 @@ namespace Scene.BattleNpcScene
         {
             if (classroomLighting == null)
             {
-                classroomLighting = FindFirstObjectByType<BattleClassroomLighting>(FindObjectsInactive.Include);
-            }
-
-            if (classroomLighting == null)
-            {
-                classroomLighting = gameObject.AddComponent<BattleClassroomLighting>();
+                Debug.LogError(
+                    "[BattleNpcLifetimeScope] classroomLightingが未配線です",
+                    this);
             }
 
             if (matchupBackground == null)

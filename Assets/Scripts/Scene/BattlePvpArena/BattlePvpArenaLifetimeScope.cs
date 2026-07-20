@@ -80,59 +80,20 @@ namespace Scene.BattlePvpArena
 
         private void EnsureSerializedReferences()
         {
-            if (arenaScene == null)
+            if (arenaScene == null
+                || arenaFlowRunner == null
+                || pvpVictoryReturnView == null
+                || pvpDisconnectView == null
+                || pvpOpponentWaitView == null
+                || cameraView == null
+                || postProcessView == null
+                || classroomLighting == null
+                || matchupBackground == null
+                || loadSlotView == null)
             {
-                arenaScene = GetComponent<BattlePvpArenaScene>();
-            }
-
-            if (arenaFlowRunner == null)
-            {
-                arenaFlowRunner = GetComponentInChildren<BattlePvpArenaFlowRunner>(true);
-            }
-
-            if (pvpVictoryReturnView == null)
-            {
-                pvpVictoryReturnView = GetComponentInChildren<BattlePvpVictoryReturnView>(true);
-            }
-
-            if (pvpDisconnectView == null)
-            {
-                pvpDisconnectView = GetComponentInChildren<BattlePvpDisconnectView>(true);
-            }
-
-            if (pvpOpponentWaitView == null)
-            {
-                pvpOpponentWaitView = GetComponentInChildren<BattlePvpOpponentWaitView>(true);
-            }
-
-            if (cameraView == null)
-            {
-                cameraView = GetComponentInChildren<ClayEditCameraView>(true);
-            }
-
-            if (postProcessView == null)
-            {
-                postProcessView = GetComponentInChildren<BattleNpcPostProcessView>(true);
-            }
-
-            if (classroomLighting == null)
-            {
-                classroomLighting = FindFirstObjectByType<BattleClassroomLighting>(FindObjectsInactive.Include);
-            }
-
-            if (classroomLighting == null)
-            {
-                classroomLighting = gameObject.AddComponent<BattleClassroomLighting>();
-            }
-
-            if (matchupBackground == null)
-            {
-                Debug.LogError($"[{ScopeTag}] matchupBackgroundが未配線です", this);
-            }
-
-            if (loadSlotView == null)
-            {
-                loadSlotView = GetComponentInChildren<LoadSlotView>(true);
+                Debug.LogError(
+                    $"[{ScopeTag}] 必須SerializeFieldが未配線ですHierarchyで接続してください",
+                    this);
             }
 
             loadSlotView?.ConfigureSavePool(ModelSavePool.TrainedPlayer, "未育成");

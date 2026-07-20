@@ -1,16 +1,13 @@
 using Camera.Interface;
 using ClayEditor;
 using ClayEditor.Input.Interface;
-using ClayEditor.Rigging;
 using Cysharp.Threading.Tasks;
 using Lighthouse.Scene;
 using R3;
 using SaveData;
-using SaveData.Interface;
 using Scene.ClayEditScene.Interface;
 using Scene.Core.Interface;
 using System;
-using System.IO;
 using System.Threading;
 using UI.ClayEditor.View;
 using UnityEngine;
@@ -22,8 +19,6 @@ namespace Scene.ClayEditScene.Presenter
     {
         private IClayMonsterSceneManager sceneManager;
         private IClayEditView clayEditView;
-        private IClayModelExporter exporter;
-        private ClayAutoRigController autoRigController;
         private SaveSlotView saveSlotView;
         private IClayInputProvider inputProvider;
         private IClayEditCameraView cameraView;
@@ -35,14 +30,10 @@ namespace Scene.ClayEditScene.Presenter
 
         private readonly CompositeDisposable disposables = new();
 
-        private bool isExporting;
-
         [Inject]
         public void Construct(
             IClayMonsterSceneManager sceneManager,
             IClayEditView clayEditView,
-            IClayModelExporter exporter,
-            ClayAutoRigController autoRigController,
             SaveSlotView saveSlotView,
             IClayInputProvider inputProvider,
             IClayEditCameraView cameraView,
@@ -54,8 +45,6 @@ namespace Scene.ClayEditScene.Presenter
         {
             this.sceneManager = sceneManager;
             this.clayEditView = clayEditView;
-            this.exporter = exporter;
-            this.autoRigController = autoRigController;
             this.saveSlotView = saveSlotView;
             this.inputProvider = inputProvider;
             this.cameraView = cameraView;
@@ -179,13 +168,15 @@ namespace Scene.ClayEditScene.Presenter
         {
             clayEditView.CheckToModeSelectSceneWindow.enabled = true;
         }
+
         async UniTask ToModeSelectSceneButton(CancellationToken cancellationToken)
         {
             SetInputBlocker(true);
-            await OnSaveClicked(cancellationToken);
+            clayEditView.CheckToModeSelectSceneWindow.enabled = false;
+            await sceneManager.BackScene();
             SetInputBlocker(false);
-            sceneManager.BackScene().Forget();
         }
+
         void CancelToModeSelectSceneButton()
         {
             clayEditView.CheckToModeSelectSceneWindow.enabled = false;
@@ -215,54 +206,6 @@ namespace Scene.ClayEditScene.Presenter
         private void SetInputBlocker(bool isBlocked)
         {
             clayEditView.InputBlocker.SetActive(isBlocked);
-        }
-
-        private async UniTask OnSaveClicked(CancellationToken cancellationToken)
-        {
-            // 多重実行を防ぐ
-            if (isExporting)
-            {
-                return;
-            }
-
-            // TODO: ボーンを生成する
-            await ExportAsync(cancellationToken);
-            autoRigController.ClearBones();
-        }
-
-        private async UniTask ExportAsync(CancellationToken cancellationToken)
-        {
-            Transform boneRoot = autoRigController.BoneRoot;
-            SkinnedMeshRenderer runtimeRenderer = autoRigController.MeshRenderer;
-            if (runtimeRenderer == null || boneRoot == null)
-            {
-                Debug.LogWarning("エクスポート対象が不足しています(runtimeRenderer / BoneRoot)");
-                return;
-            }
-
-            isExporting = true;
-            try
-            {
-                // 出力直前に、その時点の形状からボーンを生成し適用する
-                autoRigController.RebuildSkeleton();
-
-                string fileName = "TestData.glb";
-                string filePath = Path.Combine(Application.persistentDataPath, fileName);
-
-                bool success = await exporter.ExportToGlbAsync(runtimeRenderer, boneRoot, filePath, cancellationToken);
-                if (success)
-                {
-                    Debug.Log($"モデルをエクスポートしました: {filePath}");
-                }
-                else
-                {
-                    Debug.LogError("モデルのエクスポートに失敗しました");
-                }
-            }
-            finally
-            {
-                isExporting = false;
-            }
         }
 
         public void Dispose()

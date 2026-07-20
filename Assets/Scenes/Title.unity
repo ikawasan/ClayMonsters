@@ -5007,8 +5007,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 64460ee683924f29b697001f049609b4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Lighthouse.Runtime::Lighthouse.Scene.SceneCamera.SceneCanvasInitializer
-  sceneCanvasList:
-  - {fileID: 1919676549}
+  sceneCanvasList: []
 --- !u!225 &1133578708
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -6247,7 +6246,7 @@ MonoBehaviour:
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
   m_DynamicPixelsPerUnit: 1
-  m_PresetInfoIsWorld: 1
+  m_PresetInfoIsWorld: 0
 --- !u!223 &1604266323
 Canvas:
   m_ObjectHideFlags: 0
@@ -6257,7 +6256,7 @@ Canvas:
   m_GameObject: {fileID: 1604266319}
   m_Enabled: 0
   serializedVersion: 3
-  m_RenderMode: 2
+  m_RenderMode: 0
   m_Camera: {fileID: 0}
   m_PlaneDistance: 100
   m_PixelPerfect: 0
@@ -7761,17 +7760,17 @@ RectTransform:
   m_GameObject: {fileID: 1919676545}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 226043043}
   m_Father: {fileID: 1133578709}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
-  m_Pivot: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1919676547
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7821,7 +7820,7 @@ Canvas:
   m_GameObject: {fileID: 1919676545}
   m_Enabled: 1
   serializedVersion: 3
-  m_RenderMode: 1
+  m_RenderMode: 0
   m_Camera: {fileID: 0}
   m_PlaneDistance: 100
   m_PixelPerfect: 0

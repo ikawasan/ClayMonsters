@@ -19266,6 +19266,7 @@ GameObject:
   - component: {fileID: 859135443}
   - component: {fileID: 859135442}
   - component: {fileID: 859135445}
+  - component: {fileID: 2888800301}
   m_Layer: 0
   m_Name: TrainingScene
   m_TagString: Untagged
@@ -19285,8 +19286,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 64460ee683924f29b697001f049609b4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Lighthouse.Runtime::Lighthouse.Scene.SceneCamera.SceneCanvasInitializer
-  sceneCanvasList:
-  - {fileID: 1534697441}
+  sceneCanvasList: []
 --- !u!225 &859135439
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -19372,7 +19372,7 @@ MonoBehaviour:
   backgroundView: {fileID: 609684277}
   locationCameraView: {fileID: 2131812465}
   postProcessView: {fileID: 2888800003}
-  classroomLighting: {fileID: 0}
+  classroomLighting: {fileID: 2888800301}
   loadSlotView: {fileID: 232673935}
   trainedSaveView: {fileID: 413235132}
   modeSelectView: {fileID: 5894385088278137213}
@@ -25970,7 +25970,7 @@ RectTransform:
   m_GameObject: {fileID: 1534697440}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 363719552}
@@ -25982,10 +25982,10 @@ RectTransform:
   m_Father: {fileID: 859135441}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
-  m_Pivot: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1001 &1537412754
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -42323,6 +42323,31 @@ Transform:
   m_Children: []
   m_Father: {fileID: 859135441}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2888800301
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 859135436}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99ce8d38155a64541830702c87a25e4e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Scene::Scene.BattleNpcScene.BattleClassroomLighting
+  playerSpawnPoint: {fileID: 1859559111}
+  enemySpawnPoint: {fileID: 1082684129}
+  fieldCenterOverride: {fileID: 0}
+  keyLightEuler: {x: 50, y: 160, z: 0}
+  keyLightColor: {r: 1, g: 0.98, b: 0.94, a: 1}
+  keyLightIntensity: 1.15
+  windowFillEuler: {x: 22, y: -60, z: 0}
+  windowFillColor: {r: 0.86, g: 0.92, b: 1, a: 1}
+  windowFillIntensity: 0.55
+  modelFillHeightOffset: 3.09
+  modelFillColor: {r: 1, g: 0.97, b: 0.9, a: 1}
+  modelFillIntensity: 2.2
+  modelFillRange: 22
 --- !u!114 &2888800003
 MonoBehaviour:
   m_ObjectHideFlags: 0
