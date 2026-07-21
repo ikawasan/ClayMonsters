@@ -1378,17 +1378,17 @@ RectTransform:
   m_GameObject: {fileID: 115479328}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 153662517}
   m_Father: {fileID: 559890494}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
+  m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_Pivot: {x: 0, y: 0}
 --- !u!114 &115479330
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -32912,8 +32912,10 @@ MonoBehaviour:
   brushRadius: 0.3
   brushStrength: 0.1
   minBrushRadius: 0.1
-  maxBrushRadius: 1
-  shapeUpdateInterval: 3
+  maxBrushRadius: 0.7
+  shapeUpdateInterval: 2
+  denseShapeUpdateInterval: 3
+  colliderUpdateInterval: 3
 --- !u!114 &1118514420
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -32958,7 +32960,7 @@ MonoBehaviour:
   boundsSize: 4
   chunkSize: 32
   defaultVertexColor: {r: 0.94, g: 0.86, b: 0.74, a: 1}
-  paintMeshUpdateInterval: 4
+  denseSculptTriangleThreshold: 20000
   clayModel: {fileID: 1510956835}
 --- !u!1 &1124347217
 GameObject:
@@ -38655,6 +38657,7 @@ MonoBehaviour:
   minBrushRadius: 0.02
   maxBrushRadius: 0.5
   initialColor: {r: 1, g: 0, b: 0, a: 1}
+  minDabSpacingFactor: 0.35
 --- !u!114 &1488084145
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -91556,7 +91559,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: -20, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1157708015713640539
 MonoBehaviour:
@@ -91772,7 +91775,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 10, y: 10}
+  m_SizeDelta: {x: 10, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!224 &2151209995183331759
 RectTransform:
@@ -91791,7 +91794,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 10, y: 10}
+  m_SizeDelta: {x: 10, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2158975163729350342
 MonoBehaviour:
@@ -92348,7 +92351,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 10, y: 10}
+  m_SizeDelta: {x: 10, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &6051761434042627565
 CanvasRenderer:
@@ -92468,7 +92471,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: -20, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &6780935350661666673
 GameObject:
@@ -92658,7 +92661,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: -20, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &7745888440254758808
 GameObject:
