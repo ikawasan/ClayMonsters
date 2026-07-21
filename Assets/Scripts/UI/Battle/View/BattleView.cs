@@ -63,18 +63,19 @@ namespace UI.Battle.View
 
         [Header("見た目")]
         [SerializeField] private float gaugeSmoothSpeed = 14f;
-        [SerializeField] private Color playerHpHealthyColor = new Color(0.35f, 0.95f, 0.45f, 1f);
-        [SerializeField] private Color playerHpWarningColor = new Color(0.98f, 0.82f, 0.2f, 1f);
-        [SerializeField] private Color playerHpCriticalColor = new Color(1f, 0.32f, 0.28f, 1f);
-        [SerializeField] private Color enemyHpHealthyColor = new Color(1f, 0.42f, 0.38f, 1f);
-        [SerializeField] private Color enemyHpWarningColor = new Color(1f, 0.62f, 0.22f, 1f);
-        [SerializeField] private Color enemyHpCriticalColor = new Color(0.92f, 0.2f, 0.2f, 1f);
-        [SerializeField] private Color playerGutsFillColor = new Color(0.35f, 0.78f, 1f, 1f);
-        [SerializeField] private Color enemyGutsFillColor = new Color(1f, 0.55f, 0.28f, 1f);
-        [SerializeField] private Color distanceCloseColor = new Color(1f, 0.55f, 0.32f, 1f);
-        [SerializeField] private Color distanceMidColor = new Color(0.98f, 0.86f, 0.28f, 1f);
-        [SerializeField] private Color distanceFarColor = new Color(0.42f, 0.82f, 1f, 1f);
-        [SerializeField] private Color distanceDefaultColor = new Color(0.72f, 0.88f, 1f, 1f);
+        // 乗算でもFillのハイライトが残るよう明度高めの粘土色にする
+        [SerializeField] private Color playerHpHealthyColor = new Color(0.62f, 0.9f, 0.58f, 1f);
+        [SerializeField] private Color playerHpWarningColor = new Color(0.98f, 0.86f, 0.42f, 1f);
+        [SerializeField] private Color playerHpCriticalColor = new Color(0.98f, 0.48f, 0.42f, 1f);
+        [SerializeField] private Color enemyHpHealthyColor = new Color(0.98f, 0.58f, 0.52f, 1f);
+        [SerializeField] private Color enemyHpWarningColor = new Color(0.98f, 0.72f, 0.4f, 1f);
+        [SerializeField] private Color enemyHpCriticalColor = new Color(0.92f, 0.38f, 0.34f, 1f);
+        [SerializeField] private Color playerGutsFillColor = new Color(0.55f, 0.86f, 1f, 1f);
+        [SerializeField] private Color enemyGutsFillColor = new Color(1f, 0.7f, 0.48f, 1f);
+        [SerializeField] private Color distanceCloseColor = new Color(1f, 0.68f, 0.48f, 1f);
+        [SerializeField] private Color distanceMidColor = new Color(0.98f, 0.9f, 0.48f, 1f);
+        [SerializeField] private Color distanceFarColor = new Color(0.58f, 0.88f, 1f, 1f);
+        [SerializeField] private Color distanceDefaultColor = new Color(0.82f, 0.92f, 1f, 1f);
         [SerializeField] private Color combatHintActiveColor = new Color(1f, 0.92f, 0.45f, 1f);
         [SerializeField] private float timeWarningPulseSpeed = 6f;
 
@@ -106,9 +107,10 @@ namespace UI.Battle.View
         private string currentDistanceBandName = string.Empty;
         private float lastTimeRemaining = float.MaxValue;
 
-        // HPバーがSliderで作られている場合SliderがfillAmountをvalueで上書きするため実行時に解決して同期する
+        // HP/コスト/間合いバーがSliderで作られている場合Sliderが長さを制御する
         private Slider playerHpSlider;
         private Slider enemyHpSlider;
+        private Slider distanceSlider;
 
         /// <summary>
         /// モーション種別とアイコン画像の対応(インスペクタ設定用)
@@ -186,8 +188,18 @@ namespace UI.Battle.View
 
             playerHpSlider = ResolveFillSlider(playerHpFill);
             enemyHpSlider = ResolveFillSlider(enemyHpFill);
+            distanceSlider = ResolveFillSlider(distanceFill);
+            ConfigureGaugeSlider(playerHpSlider);
+            ConfigureGaugeSlider(enemyHpSlider);
+            ConfigureGaugeSlider(playerGutsSlider);
+            ConfigureGaugeSlider(enemyGutsSlider);
+            ConfigureGaugeSlider(distanceSlider);
 
-            BattleHudVisualUtility.ApplySliders(playerGutsSlider, enemyGutsSlider);
+            BattleHudVisualUtility.ApplyValueOutline(playerHpText);
+            BattleHudVisualUtility.ApplyValueOutline(enemyHpText);
+            BattleHudVisualUtility.ApplyValueOutline(playerGutsText);
+            BattleHudVisualUtility.ApplyValueOutline(enemyGutsText);
+
             displayPlayerHpFill = targetPlayerHpFill = 1f;
             displayEnemyHpFill = targetEnemyHpFill = 1f;
             displayPlayerGutsFill = targetPlayerGutsFill = 0f;
@@ -217,33 +229,46 @@ namespace UI.Battle.View
         {
             if (playerHpFill != null)
             {
-                ApplyHpFill(playerHpSlider, playerHpFill, displayPlayerHpFill,
-                    playerHpHealthyColor, playerHpWarningColor, playerHpCriticalColor);
+                ApplyRatioFill(
+                    playerHpSlider,
+                    playerHpFill,
+                    displayPlayerHpFill,
+                    BattleHudVisualUtility.ResolveHpFillColor(
+                        displayPlayerHpFill,
+                        playerHpHealthyColor,
+                        playerHpWarningColor,
+                        playerHpCriticalColor));
             }
 
             if (enemyHpFill != null)
             {
-                ApplyHpFill(enemyHpSlider, enemyHpFill, displayEnemyHpFill,
-                    enemyHpHealthyColor, enemyHpWarningColor, enemyHpCriticalColor);
+                ApplyRatioFill(
+                    enemyHpSlider,
+                    enemyHpFill,
+                    displayEnemyHpFill,
+                    BattleHudVisualUtility.ResolveHpFillColor(
+                        displayEnemyHpFill,
+                        enemyHpHealthyColor,
+                        enemyHpWarningColor,
+                        enemyHpCriticalColor));
             }
 
             if (playerGutsFill != null)
             {
-                playerGutsFill.fillAmount = displayPlayerGutsFill;
-                BattleHudVisualUtility.SetImageColor(playerGutsFill, playerGutsFillColor);
+                ApplyRatioFill(playerGutsSlider, playerGutsFill, displayPlayerGutsFill, playerGutsFillColor);
             }
 
             if (enemyGutsFill != null)
             {
-                enemyGutsFill.fillAmount = displayEnemyGutsFill;
-                BattleHudVisualUtility.SetImageColor(enemyGutsFill, enemyGutsFillColor);
+                ApplyRatioFill(enemyGutsSlider, enemyGutsFill, displayEnemyGutsFill, enemyGutsFillColor);
             }
 
             if (distanceFill != null)
             {
-                distanceFill.fillAmount = displayDistanceFill;
-                BattleHudVisualUtility.SetImageColor(
+                ApplyRatioFill(
+                    distanceSlider,
                     distanceFill,
+                    displayDistanceFill,
                     BattleHudVisualUtility.ResolveDistanceFillColor(
                         currentDistanceBandName,
                         distanceCloseColor,
@@ -253,21 +278,38 @@ namespace UI.Battle.View
             }
         }
 
-        // HPバーへ比率と色を反映するSliderがある場合はvalueを更新してfillAmountの上書きを防ぐ
-        private static void ApplyHpFill(Slider slider, Image fill, float ratio, Color healthy, Color warning, Color critical)
+        // Slider付きはvalueで長さを制御しImage Type=FilledのときだけfillAmountも同期する
+        private static void ApplyRatioFill(Slider slider, Image fill, float ratio, Color color)
         {
+            ratio = Mathf.Clamp01(ratio);
             if (slider != null)
             {
                 slider.SetValueWithoutNotify(ratio);
             }
 
-            fill.fillAmount = ratio;
-            BattleHudVisualUtility.SetImageColor(
-                fill,
-                BattleHudVisualUtility.ResolveHpFillColor(ratio, healthy, warning, critical));
+            if (fill.type == Image.Type.Filled)
+            {
+                fill.fillAmount = ratio;
+            }
+
+            BattleHudVisualUtility.SetImageColor(fill, color);
         }
 
-        // Fill画像を包むSliderを探し戦闘中に誤操作されないよう無効化する
+        private static void ConfigureGaugeSlider(Slider slider)
+        {
+            if (slider == null)
+            {
+                return;
+            }
+
+            slider.interactable = false;
+            slider.minValue = 0f;
+            slider.maxValue = 1f;
+            slider.wholeNumbers = false;
+            slider.navigation = new Navigation { mode = Navigation.Mode.None };
+        }
+
+        // Fill画像を包むSliderを探す
         private static Slider ResolveFillSlider(Image fill)
         {
             if (fill == null)
@@ -275,14 +317,7 @@ namespace UI.Battle.View
                 return null;
             }
 
-            Slider slider = fill.GetComponentInParent<Slider>(true);
-            if (slider != null)
-            {
-                slider.interactable = false;
-                slider.navigation = new Navigation { mode = Navigation.Mode.None };
-            }
-
-            return slider;
+            return fill.GetComponentInParent<Slider>(true);
         }
 
         private void UpdateTimePulse()
@@ -488,7 +523,6 @@ namespace UI.Battle.View
         public void SetGuts(bool isPlayer, float guts, float maxGuts)
         {
             TMP_Text text = isPlayer ? playerGutsText : enemyGutsText;
-            Slider slider = isPlayer ? playerGutsSlider : enemyGutsSlider;
             float ratio = maxGuts > 0f ? Mathf.Clamp01(guts / maxGuts) : 0f;
 
             if (isPlayer)
@@ -498,11 +532,6 @@ namespace UI.Battle.View
             else
             {
                 targetEnemyGutsFill = ratio;
-            }
-
-            if (slider != null)
-            {
-                slider.SetValueWithoutNotify(ratio);
             }
 
             if (text != null)

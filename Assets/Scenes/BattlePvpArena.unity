@@ -27624,7 +27624,7 @@ RectTransform:
   m_GameObject: {fileID: 1534697440}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 363719552}
@@ -27635,10 +27635,10 @@ RectTransform:
   m_Father: {fileID: 859135441}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
+  m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_Pivot: {x: 0, y: 0}
 --- !u!1 &1542544053
 GameObject:
   m_ObjectHideFlags: 0
@@ -32266,6 +32266,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2888800002}
   - component: {fileID: 2888800003}
+  - component: {fileID: 2888800004}
   m_Layer: 0
   m_Name: PostProcess
   m_TagString: Untagged
@@ -32288,6 +32289,41 @@ Transform:
   m_Children: []
   m_Father: {fileID: 859135441}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2888800003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2888800001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5d7c9a31b2f4e608a1d3c5b7e9f0a12, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Scene::Scene.BattleNpcScene.View.BattleNpcPostProcessView
+  classroomVolumeProfile: {fileID: 11400000, guid: a3f8c2d14e6b49f7a8c1d5e9b2f7046c, type: 2}
+  volumePriority: 10
+  battleNpcRendererIndex: 1
+  useSolidBackground: 0
+  backgroundColor: {r: 0, g: 0, b: 0, a: 1}
+  fieldRoot: {fileID: 1136016444}
+--- !u!114 &2888800004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2888800001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 172515602e62fb746b5d573b38a5fe58, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Core.Runtime::UnityEngine.Rendering.Volume
+  m_IsGlobal: 1
+  priority: 0
+  blendDistance: 0
+  weight: 1
+  sharedProfile: {fileID: 11400000, guid: a3f8c2d14e6b49f7a8c1d5e9b2f7046c, type: 2}
 --- !u!114 &2888800303
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -32313,24 +32349,6 @@ MonoBehaviour:
   modelFillColor: {r: 1, g: 0.97, b: 0.9, a: 1}
   modelFillIntensity: 2.2
   modelFillRange: 22
---- !u!114 &2888800003
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2888800001}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e5d7c9a31b2f4e608a1d3c5b7e9f0a12, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Scene::Scene.BattleNpcScene.View.BattleNpcPostProcessView
-  classroomVolumeProfile: {fileID: 11400000, guid: a3f8c2d14e6b49f7a8c1d5e9b2f7046c, type: 2}
-  volumePriority: 10
-  battleNpcRendererIndex: 1
-  useSolidBackground: 0
-  backgroundColor: {r: 0, g: 0, b: 0, a: 1}
-  fieldRoot: {fileID: 1136016444}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

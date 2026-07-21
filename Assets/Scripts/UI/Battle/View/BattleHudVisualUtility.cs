@@ -44,7 +44,7 @@ namespace UI.Battle.View
         }
 
         /// <summary>
-        /// ガッツスライダーへ見た目を適用する
+        /// ガッツスライダーの操作を無効化する
         /// </summary>
         public static void ApplySliders(params Slider[] sliders)
         {
@@ -61,23 +61,10 @@ namespace UI.Battle.View
                     continue;
                 }
 
-                if (slider.fillRect != null)
-                {
-                    Image fill = slider.fillRect.GetComponent<Image>();
-                    if (fill != null)
-                    {
-                        fill.color = new Color(0.88f, 0.58f, 0.28f, 1f);
-                    }
-                }
-
-                if (slider.handleRect != null)
-                {
-                    Image handle = slider.handleRect.GetComponent<Image>();
-                    if (handle != null)
-                    {
-                        handle.color = new Color(0.97f, 0.95f, 0.91f, 1f);
-                    }
-                }
+                slider.interactable = false;
+                slider.minValue = 0f;
+                slider.maxValue = 1f;
+                slider.wholeNumbers = false;
             }
         }
 
