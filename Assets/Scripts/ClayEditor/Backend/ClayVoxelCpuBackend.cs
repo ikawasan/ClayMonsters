@@ -96,6 +96,25 @@ namespace ClayEditor.Backend
         /// <inheritdoc/>
         public void Modify(Vector3 hitPosition, float modRadius, float modStrength)
         {
+            Vector3 voxelCenter = (hitPosition + (Vector3)offset) / scale;
+            float voxelRadius = modRadius / scale + 1f;
+
+            int minX = Mathf.Clamp(Mathf.FloorToInt(voxelCenter.x - voxelRadius), 0, size);
+            int minY = Mathf.Clamp(Mathf.FloorToInt(voxelCenter.y - voxelRadius), 0, size);
+            int minZ = Mathf.Clamp(Mathf.FloorToInt(voxelCenter.z - voxelRadius), 0, size);
+            int maxX = Mathf.Clamp(Mathf.CeilToInt(voxelCenter.x + voxelRadius), 0, size);
+            int maxY = Mathf.Clamp(Mathf.CeilToInt(voxelCenter.y + voxelRadius), 0, size);
+            int maxZ = Mathf.Clamp(Mathf.CeilToInt(voxelCenter.z + voxelRadius), 0, size);
+
+            int sizeX = Mathf.Max(0, maxX - minX + 1);
+            int sizeY = Mathf.Max(0, maxY - minY + 1);
+            int sizeZ = Mathf.Max(0, maxZ - minZ + 1);
+            int voxelCount = sizeX * sizeY * sizeZ;
+            if (voxelCount <= 0)
+            {
+                return;
+            }
+
             var job = new ClayVoxelModifyJob
             {
                 Size = size,
@@ -105,9 +124,15 @@ namespace ClayEditor.Backend
                 HitPosition = hitPosition,
                 ModRadius = modRadius,
                 ModStrength = modStrength,
+                MinX = minX,
+                MinY = minY,
+                MinZ = minZ,
+                SizeX = sizeX,
+                SizeY = sizeY,
+                SizeZ = sizeZ,
                 Voxels = voxels
             };
-            job.Schedule(totalVoxelCount, 256).Complete();
+            job.Schedule(voxelCount, 64).Complete();
         }
 
         /// <inheritdoc/>

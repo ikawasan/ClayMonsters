@@ -18,14 +18,18 @@ namespace ClayEditor
         [SerializeField] private float maxBrushRadius = 20f;
 
         [Header("Performance")]
-        [Tooltip("造形中にメッシュ表示を更新する間隔（フレーム数）大きいほど軽いが追従が粗くなる")]
-        [SerializeField] private int shapeUpdateInterval = 3;
+        [Tooltip("薄いメッシュ時に表示メッシュを更新する間隔フレーム数")]
+        [SerializeField] private int shapeUpdateInterval = 2;
+        [Tooltip("厚いメッシュ時にブラシ周辺差し替えを行う間隔フレーム数")]
+        [SerializeField] private int denseShapeUpdateInterval = 2;
+        [Tooltip("コライダーを焼き直す間隔フレーム数")]
+        [SerializeField] private int colliderUpdateInterval = 4;
 
-        // 造形中のメッシュ更新を間引くためのフレームカウンタ
-        private int modifyFrameCounter;
-
-        // 直近の造形でまだ表示へ反映していない変更があるか
-        private bool pendingShapeUpdate;
+        private int shapeFrameCounter;
+        private int colliderFrameCounter;
+        private Vector3 lastModifyLocalPos;
+        private float lastModifyLocalRadius;
+        private bool hasLastModify;
 
         /// <summary>
         /// 現在のブラシ半径
@@ -56,39 +60,70 @@ namespace ClayEditor
 
         /// <summary>
         /// ワールド座標を中心にボクセルを加算 / 減算して造形する
-        /// ボクセル更新は毎フレーム行い、メッシュと当たり判定は shapeUpdateInterval フレームに1回へ間引く
+        /// 既存の厚いメッシュ上ではブラシ周辺だけ差し替えて更新する
         /// </summary>
         /// <param name="worldPos">造形する中心のワールド座標</param>
         /// <param name="isSubtract">true なら減算、false なら加算</param>
         public void ModifyAtWorldPosition(Vector3 worldPos, bool isSubtract)
         {
-            Vector3 localPos = transform.InverseTransformPoint(worldPos);
+            Transform meshTransform = engine.ClayModelTransform;
+            Vector3 localPos = meshTransform.InverseTransformPoint(worldPos);
+            float modelScale = meshTransform.lossyScale.x;
+            float localRadius = modelScale > 0f ? brushRadius / modelScale : brushRadius;
             float strength = isSubtract ? -brushStrength : brushStrength;
 
-            engine.Modify(localPos, brushRadius, strength);
+            engine.Modify(localPos, localRadius, strength);
+            lastModifyLocalPos = localPos;
+            lastModifyLocalRadius = localRadius;
+            hasLastModify = true;
 
-            // 間引きながらメッシュ表示を更新する
-            modifyFrameCounter++;
-            int interval = Mathf.Max(shapeUpdateInterval, 1);
-            if (modifyFrameCounter >= interval)
+            if (engine.IsDenseSculptMesh)
             {
-                modifyFrameCounter = 0;
-                pendingShapeUpdate = false;
-                engine.UpdateShapeFast(refreshColliders: true);
+                // ピンポイント: チャンク全体再生成せずブラシ周辺だけ本メッシュへ差し替える
+                shapeFrameCounter++;
+                int denseInterval = Mathf.Max(denseShapeUpdateInterval, 1);
+                if (shapeFrameCounter >= denseInterval)
+                {
+                    shapeFrameCounter = 0;
+                    engine.UpdateShapeFastNearBrush(localPos, localRadius, refreshColliders: false);
+                }
             }
             else
             {
-                pendingShapeUpdate = true;
+                engine.ClearBrushSculptPreview();
+
+                shapeFrameCounter++;
+                int meshInterval = Mathf.Max(shapeUpdateInterval, 1);
+                if (shapeFrameCounter >= meshInterval)
+                {
+                    shapeFrameCounter = 0;
+                    engine.UpdateShapeFast(refreshColliders: false);
+                }
+            }
+
+            colliderFrameCounter++;
+            int colliderInterval = Mathf.Max(colliderUpdateInterval, 1);
+            if (colliderFrameCounter >= colliderInterval)
+            {
+                colliderFrameCounter = 0;
+                engine.FlushChunkColliders();
             }
         }
 
         /// <summary>
-        /// 造形ストロークの終了時などに呼び 間引きで未反映の最終形状を確実に表示へ反映する
+        /// 造形ストロークの終了時などに呼び 最終形状とコライダーを確定する
         /// </summary>
         public void FlushShape()
         {
-            modifyFrameCounter = 0;
-            pendingShapeUpdate = false;
+            shapeFrameCounter = 0;
+            colliderFrameCounter = 0;
+            if (hasLastModify)
+            {
+                // 部分差し替えの継ぎ目をストローク終了時に本更新で解消する
+                engine.MarkBrushChunksDirty(lastModifyLocalPos, lastModifyLocalRadius);
+                hasLastModify = false;
+            }
+
             engine.FlushShape();
         }
 

@@ -35,20 +35,9 @@ namespace ClayEditor.Backend
             public static readonly int PaintNormal = Shader.PropertyToID("_PaintNormal");
             public static readonly int PaintOrigin = Shader.PropertyToID("_PaintOrigin");
             public static readonly int PaintSize = Shader.PropertyToID("_PaintSize");
+            public static readonly int ModOrigin = Shader.PropertyToID("_ModOrigin");
+            public static readonly int ModSize = Shader.PropertyToID("_ModSize");
             public static readonly int DefaultColor = Shader.PropertyToID("_DefaultColor");
-        }
-
-        private struct GpuTriangle
-        {
-            public Vector3 v1;
-            public Vector3 v2;
-            public Vector3 v3;
-            public Vector3 n1;
-            public Vector3 n2;
-            public Vector3 n3;
-            public Vector3 c1;
-            public Vector3 c2;
-            public Vector3 c3;
         }
 
         private ComputeShader marchingCubesCompute;
@@ -72,7 +61,6 @@ namespace ClayEditor.Backend
         private bool shaderGridParamsDirty = true;
 
         private readonly int[] countData = new int[1];
-        private GpuTriangle[] triangleCache;
 
         /// <inheritdoc/>
         public bool IsReady =>
@@ -169,20 +157,39 @@ namespace ClayEditor.Backend
         public void Modify(Vector3 hitPosition, float modRadius, float modStrength)
         {
             EnsureShaderGridParams();
+            ComputeBrushVoxelBounds(
+                hitPosition,
+                modRadius,
+                out int minX,
+                out int minY,
+                out int minZ,
+                out int sizeX,
+                out int sizeY,
+                out int sizeZ);
+
+            if (sizeX <= 0 || sizeY <= 0 || sizeZ <= 0)
+            {
+                return;
+            }
+
             marchingCubesCompute.SetVector(ShaderIDs.HitPosition, hitPosition);
             marchingCubesCompute.SetFloat(ShaderIDs.ModRadius, modRadius);
             marchingCubesCompute.SetFloat(ShaderIDs.ModStrength, modStrength);
             marchingCubesCompute.SetBuffer(kernelModifyVoxels, ShaderIDs.Voxels, voxelBuffer);
+            marchingCubesCompute.SetInts(ShaderIDs.ModOrigin, minX, minY, minZ);
+            marchingCubesCompute.SetInts(ShaderIDs.ModSize, sizeX, sizeY, sizeZ);
 
-            int threadGroups = Mathf.CeilToInt((size + 1) / (float)ComputeThreads);
-            marchingCubesCompute.Dispatch(kernelModifyVoxels, threadGroups, threadGroups, threadGroups);
+            int groupsX = Mathf.CeilToInt(sizeX / (float)ComputeThreads);
+            int groupsY = Mathf.CeilToInt(sizeY / (float)ComputeThreads);
+            int groupsZ = Mathf.CeilToInt(sizeZ / (float)ComputeThreads);
+            marchingCubesCompute.Dispatch(kernelModifyVoxels, groupsX, groupsY, groupsZ);
         }
 
         /// <inheritdoc/>
         public void Paint(Vector3 hitPosition, float paintRadius, Vector3 paintColor, Vector3 paintNormal)
         {
             EnsureShaderGridParams();
-            ComputePaintVoxelBounds(
+            ComputeBrushVoxelBounds(
                 hitPosition,
                 paintRadius,
                 out int minX,
@@ -211,9 +218,9 @@ namespace ClayEditor.Backend
             marchingCubesCompute.Dispatch(kernelPaintVoxels, groupsX, groupsY, groupsZ);
         }
 
-        private void ComputePaintVoxelBounds(
+        private void ComputeBrushVoxelBounds(
             Vector3 hitPosition,
-            float paintRadius,
+            float brushRadius,
             out int minX,
             out int minY,
             out int minZ,
@@ -222,7 +229,7 @@ namespace ClayEditor.Backend
             out int sizeZ)
         {
             Vector3 voxelCenter = (hitPosition + offset) / scale;
-            float voxelRadius = paintRadius / scale + 1f;
+            float voxelRadius = brushRadius / scale + 1f;
 
             minX = Mathf.Clamp(Mathf.FloorToInt(voxelCenter.x - voxelRadius), 0, size);
             minY = Mathf.Clamp(Mathf.FloorToInt(voxelCenter.y - voxelRadius), 0, size);
@@ -317,27 +324,14 @@ namespace ClayEditor.Backend
                 return 0;
             }
 
-            int copyCount = Mathf.Min(triangleCount, outputCapacity);
-            EnsureTriangleCache(copyCount);
-            triangleBuffer.GetData(triangleCache, 0, 0, copyCount);
-
-            for (int i = 0; i < copyCount; i++)
+            int copyCount = Mathf.Min(triangleCount, outputCapacity - outputOffset);
+            if (copyCount <= 0)
             {
-                GpuTriangle tri = triangleCache[i];
-                output[outputOffset + i] = new ClayVoxelTriangle
-                {
-                    v1 = tri.v1,
-                    v2 = tri.v2,
-                    v3 = tri.v3,
-                    n1 = tri.n1,
-                    n2 = tri.n2,
-                    n3 = tri.n3,
-                    c1 = tri.c1,
-                    c2 = tri.c2,
-                    c3 = tri.c3
-                };
+                return 0;
             }
 
+            // float3とVector3は同一レイアウトのため中間コピーなしで読み出す
+            triangleBuffer.GetData(output, outputOffset, 0, copyCount);
             return copyCount;
         }
 
@@ -369,14 +363,6 @@ namespace ClayEditor.Backend
             marchingCubesCompute.SetVector(ShaderIDs.Offset, offset);
             marchingCubesCompute.SetVector(ShaderIDs.DefaultColor, defaultColor);
             shaderGridParamsDirty = false;
-        }
-
-        private void EnsureTriangleCache(int count)
-        {
-            if (triangleCache == null || triangleCache.Length < count)
-            {
-                triangleCache = new GpuTriangle[count];
-            }
         }
     }
 }

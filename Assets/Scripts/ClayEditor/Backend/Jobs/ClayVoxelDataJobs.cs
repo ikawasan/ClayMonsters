@@ -37,7 +37,7 @@ namespace ClayEditor.Backend.Jobs
     }
 
     /// <summary>
-    /// ブラシ範囲内のボクセル密度を変更するJob
+    /// ブラシAABB内のボクセル密度を変更するJob
     /// </summary>
     [BurstCompile]
     internal struct ClayVoxelModifyJob : IJobParallelFor
@@ -49,14 +49,26 @@ namespace ClayEditor.Backend.Jobs
         [ReadOnly] public float3 HitPosition;
         [ReadOnly] public float ModRadius;
         [ReadOnly] public float ModStrength;
+        [ReadOnly] public int MinX;
+        [ReadOnly] public int MinY;
+        [ReadOnly] public int MinZ;
+        [ReadOnly] public int SizeX;
+        [ReadOnly] public int SizeY;
+        [ReadOnly] public int SizeZ;
+        // jobIndexとボクセルindexは一致しないが各スレッドは異なるボクセルのみ書く
+        [NativeDisableParallelForRestriction]
         public NativeArray<float> Voxels;
 
         /// <inheritdoc/>
         public void Execute(int index)
         {
-            int z = index % GridCount;
-            int y = (index / GridCount) % GridCount;
-            int x = index / (GridCount * GridCount);
+            int localZ = index % SizeZ;
+            int localY = (index / SizeZ) % SizeY;
+            int localX = index / (SizeZ * SizeY);
+
+            int x = MinX + localX;
+            int y = MinY + localY;
+            int z = MinZ + localZ;
 
             if (x == 0 || x == Size || y == 0 || y == Size || z == 0 || z == Size)
             {
@@ -71,7 +83,8 @@ namespace ClayEditor.Backend.Jobs
             }
 
             float influence = (1f - math.pow(dist / ModRadius, 2f)) * ModStrength;
-            Voxels[index] += influence;
+            int voxelIndex = x * GridCount * GridCount + y * GridCount + z;
+            Voxels[voxelIndex] += influence;
         }
     }
 

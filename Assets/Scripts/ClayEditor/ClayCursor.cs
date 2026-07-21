@@ -1,10 +1,10 @@
 using ClayEditor.Input.Interface;
 using ClayEditor.Interface;
 using GameData;
+using R3;
 using UnityEngine;
 using VContainer;
 using VContainer.Unity;
-using R3;
 
 namespace ClayEditor
 {
@@ -22,6 +22,7 @@ namespace ClayEditor
 
         private UnityEngine.Camera mainCamera;
         private readonly CursorRaycaster raycaster = new();
+        private float cursorMeshDiameter = 1f;
 
         // 直前フレームに造形していたか（ストローク終了の検知に使う）
         private bool wasModifying;
@@ -34,6 +35,12 @@ namespace ClayEditor
         void Start()
         {
             mainCamera = UnityEngine.Camera.main;
+            if (cursorObject == null)
+            {
+                cursorObject = gameObject;
+            }
+
+            CacheCursorMeshDiameter();
 
             if (mainCamera != null)
             {
@@ -138,7 +145,9 @@ namespace ClayEditor
             if (cursorObject != null)
             {
                 cursorObject.transform.position = worldPos;
-                cursorObject.transform.localScale = Vector3.one * editor.BrushRadius;
+                // 見た目の半径がBrushRadiusと一致するようメッシュ直径で正規化する
+                float cursorScale = editor.BrushRadius * 2f / cursorMeshDiameter;
+                cursorObject.transform.localScale = Vector3.one * cursorScale;
             }
 
             // Alt中（カメラ操作中）は造形しない
@@ -215,6 +224,31 @@ namespace ClayEditor
             Color baseColor = material.GetColor("_BaseColor");
             baseColor.a = cursorAlpha;
             material.SetColor("_BaseColor", baseColor);
+        }
+
+        private void CacheCursorMeshDiameter()
+        {
+            MeshFilter meshFilter = null;
+            if (cursorMeshRenderer != null)
+            {
+                meshFilter = cursorMeshRenderer.GetComponent<MeshFilter>();
+            }
+            else if (cursorObject != null)
+            {
+                meshFilter = cursorObject.GetComponent<MeshFilter>();
+            }
+
+            if (meshFilter == null || meshFilter.sharedMesh == null)
+            {
+                return;
+            }
+
+            Vector3 meshSize = meshFilter.sharedMesh.bounds.size;
+            cursorMeshDiameter = Mathf.Max(meshSize.x, Mathf.Max(meshSize.y, meshSize.z));
+            if (cursorMeshDiameter < 1e-4f)
+            {
+                cursorMeshDiameter = 1f;
+            }
         }
 
         // 非表示中では操作を無視

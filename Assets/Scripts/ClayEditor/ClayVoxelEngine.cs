@@ -53,6 +53,10 @@ namespace ClayEditor
         [Header("Paint Settings")]
         [SerializeField] private Color defaultVertexColor = new Color(0.94f, 0.86f, 0.74f, 1f);
 
+        [Header("Dense Sculpt")]
+        [Tooltip("三角形数がこの値以上のとき既存メッシュ上の盛りはブラシ周辺プレビューのみ更新する")]
+        [SerializeField] private int denseSculptTriangleThreshold = 20000;
+
         [SerializeField] private GameObject clayModel;
 
         private IClayVoxelBackend backend;
@@ -78,10 +82,31 @@ namespace ClayEditor
         /// 造形メッシュの有無が変わった通知
         /// </summary>
         public Observable<bool> HasMeshChanged => hasMeshSubject;
-        private readonly List<Vector3> vertexList = new();
-        private readonly List<Vector3> normalList = new();
-        private readonly List<int> indexList = new();
-        private readonly List<Color> colorList = new();
+
+        private Vector3[] vertexBuffer = System.Array.Empty<Vector3>();
+        private Vector3[] normalBuffer = System.Array.Empty<Vector3>();
+        private Color[] colorBuffer = System.Array.Empty<Color>();
+        private int[] indexBuffer = System.Array.Empty<int>();
+
+        private readonly List<Vector3> meshReadVertices = new();
+        private readonly List<Vector3> meshReadNormals = new();
+        private readonly List<Color> meshReadColors = new();
+
+        private GameObject brushPreviewObject;
+        private MeshFilter brushPreviewFilter;
+        private MeshCollider brushPreviewCollider;
+        private Mesh brushPreviewMesh;
+        private bool brushPreviewActive;
+
+        /// <summary>
+        /// 表示中チャンクの概算三角形数
+        /// </summary>
+        public int CachedTriangleCount => cachedTotalTriangleCount;
+
+        /// <summary>
+        /// 既存メッシュが厚くブラシ周辺プレビュー経路を使うべきか
+        /// </summary>
+        public bool IsDenseSculptMesh => cachedTotalTriangleCount >= denseSculptTriangleThreshold;
 
         public float Scale => boundsSize / size;
         public Vector3 CenterOffset => Vector3.one * (size * Scale * 0.5f);
@@ -177,6 +202,19 @@ namespace ClayEditor
 
         private void OnDestroy()
         {
+            ClearBrushSculptPreview();
+            if (brushPreviewMesh != null)
+            {
+                Destroy(brushPreviewMesh);
+                brushPreviewMesh = null;
+            }
+
+            if (brushPreviewObject != null)
+            {
+                Destroy(brushPreviewObject);
+                brushPreviewObject = null;
+            }
+
             ReleaseBackend();
             hasMeshSubject.Dispose();
         }
@@ -223,16 +261,13 @@ namespace ClayEditor
             for (int i = 0; i < chunks.Length; i++)
             {
                 Mesh chunkMesh = chunks[i].mesh;
-                if (chunkMesh == null)
+                if (chunkMesh == null || chunkMesh.vertexCount <= 0)
                 {
                     continue;
                 }
 
-                int[] triangles = chunkMesh.triangles;
-                if (triangles != null && triangles.Length > 0)
-                {
-                    cachedTotalTriangleCount += triangles.Length / 3;
-                }
+                // チャンクメッシュは三角形ごとに頂点を複製するためvertexCount/3で足りる
+                cachedTotalTriangleCount += chunkMesh.vertexCount / 3;
             }
         }
 
@@ -331,8 +366,11 @@ namespace ClayEditor
                 mr.sharedMaterial = material;
 
                 var col = go.AddComponent<MeshCollider>();
+                // 造形中の再焼きコストを抑える
+                col.cookingOptions = MeshColliderCookingOptions.CookForFasterSimulation;
 
                 var chunkMesh = new Mesh { indexFormat = IndexFormat.UInt32 };
+                chunkMesh.MarkDynamic();
                 mf.sharedMesh = chunkMesh;
 
                 chunks[i] = new Chunk
@@ -447,6 +485,224 @@ namespace ClayEditor
             }
         }
 
+        // ダーティチャンクをブラシ周辺だけ差し替えて更新する
+        private void RebuildDirtyChunksNearBrush(Vector3 localPos, float radius, bool refreshColliders)
+        {
+            if (chunks == null)
+            {
+                return;
+            }
+
+            ComputeBrushMeshBounds(
+                localPos,
+                radius,
+                out int brushMinX,
+                out int brushMinY,
+                out int brushMinZ,
+                out int brushSizeX,
+                out int brushSizeY,
+                out int brushSizeZ);
+
+            if (brushSizeX <= 0 || brushSizeY <= 0 || brushSizeZ <= 0)
+            {
+                return;
+            }
+
+            int brushMaxX = brushMinX + brushSizeX - 1;
+            int brushMaxY = brushMinY + brushSizeY - 1;
+            int brushMaxZ = brushMinZ + brushSizeZ - 1;
+            float keepRadiusSq = (radius + Scale * 2.5f) * (radius + Scale * 2.5f);
+            int brushCells = brushSizeX * brushSizeY * brushSizeZ;
+            int cs = Mathf.Max(chunkSize, 4);
+
+            for (int cx = 0; cx < chunksPerAxis; cx++)
+            {
+                for (int cy = 0; cy < chunksPerAxis; cy++)
+                {
+                    for (int cz = 0; cz < chunksPerAxis; cz++)
+                    {
+                        int index = ChunkIndex(cx, cy, cz);
+                        Chunk chunk = chunks[index];
+                        if (!chunk.dirty)
+                        {
+                            continue;
+                        }
+
+                        int originX = cx * cs;
+                        int originY = cy * cs;
+                        int originZ = cz * cs;
+                        int sizeX = GetChunkDispatchSize(originX, cs);
+                        int sizeY = GetChunkDispatchSize(originY, cs);
+                        int sizeZ = GetChunkDispatchSize(originZ, cs);
+
+                        int genMinX = Mathf.Max(originX, brushMinX);
+                        int genMinY = Mathf.Max(originY, brushMinY);
+                        int genMinZ = Mathf.Max(originZ, brushMinZ);
+                        int genMaxX = Mathf.Min(originX + sizeX - 1, brushMaxX);
+                        int genMaxY = Mathf.Min(originY + sizeY - 1, brushMaxY);
+                        int genMaxZ = Mathf.Min(originZ + sizeZ - 1, brushMaxZ);
+
+                        int genSizeX = genMaxX - genMinX + 1;
+                        int genSizeY = genMaxY - genMinY + 1;
+                        int genSizeZ = genMaxZ - genMinZ + 1;
+                        int chunkCells = Mathf.Max(sizeX * sizeY * sizeZ, 1);
+
+                        // 未生成またはブラシがチャンクの大半を覆うときは全体再生成する
+                        bool preferFullRebuild =
+                            chunk.mesh == null
+                            || chunk.mesh.vertexCount == 0
+                            || genSizeX <= 0
+                            || genSizeY <= 0
+                            || genSizeZ <= 0
+                            || brushCells * 10 >= chunkCells * 7;
+
+                        if (preferFullRebuild)
+                        {
+                            BuildChunkMesh(chunk, originX, originY, originZ, sizeX, sizeY, sizeZ, refreshColliders);
+                        }
+                        else
+                        {
+                            BuildChunkMeshNearBrush(
+                                chunk,
+                                localPos,
+                                keepRadiusSq,
+                                genMinX,
+                                genMinY,
+                                genMinZ,
+                                genSizeX,
+                                genSizeY,
+                                genSizeZ,
+                                refreshColliders);
+                        }
+
+                        chunk.dirty = false;
+                    }
+                }
+            }
+        }
+
+        // 既存三角形のうちブラシ外を残しブラシAABBだけ再生成して合成する
+        private void BuildChunkMeshNearBrush(
+            Chunk chunk,
+            Vector3 localPos,
+            float keepRadiusSq,
+            int genMinX,
+            int genMinY,
+            int genMinZ,
+            int genSizeX,
+            int genSizeY,
+            int genSizeZ,
+            bool refreshColliders)
+        {
+            meshReadVertices.Clear();
+            meshReadNormals.Clear();
+            meshReadColors.Clear();
+            chunk.mesh.GetVertices(meshReadVertices);
+            chunk.mesh.GetNormals(meshReadNormals);
+            chunk.mesh.GetColors(meshReadColors);
+
+            int oldVertCount = meshReadVertices.Count;
+            bool hasColors = meshReadColors.Count == oldVertCount;
+            Color fallbackColor = defaultVertexColor;
+
+            int estimatedCapacity = oldVertCount + GetMaxChunkTriangleCount(genSizeX, genSizeY, genSizeZ) * 3;
+            EnsureMeshWriteBuffers(Mathf.Max(estimatedCapacity, 3));
+
+            int writeCount = 0;
+            for (int i = 0; i + 2 < oldVertCount; i += 3)
+            {
+                Vector3 centroid = (meshReadVertices[i] + meshReadVertices[i + 1] + meshReadVertices[i + 2]) * (1f / 3f);
+                if ((centroid - localPos).sqrMagnitude <= keepRadiusSq)
+                {
+                    continue;
+                }
+
+                EnsureMeshWriteBuffers(writeCount + 3);
+                int baseIndex = writeCount;
+
+                vertexBuffer[writeCount] = meshReadVertices[i];
+                normalBuffer[writeCount] = i < meshReadNormals.Count ? meshReadNormals[i] : Vector3.up;
+                colorBuffer[writeCount] = hasColors ? meshReadColors[i] : fallbackColor;
+                indexBuffer[writeCount] = baseIndex;
+                writeCount++;
+
+                vertexBuffer[writeCount] = meshReadVertices[i + 1];
+                normalBuffer[writeCount] = i + 1 < meshReadNormals.Count ? meshReadNormals[i + 1] : Vector3.up;
+                colorBuffer[writeCount] = hasColors ? meshReadColors[i + 1] : fallbackColor;
+                indexBuffer[writeCount] = baseIndex + 1;
+                writeCount++;
+
+                vertexBuffer[writeCount] = meshReadVertices[i + 2];
+                normalBuffer[writeCount] = i + 2 < meshReadNormals.Count ? meshReadNormals[i + 2] : Vector3.up;
+                colorBuffer[writeCount] = hasColors ? meshReadColors[i + 2] : fallbackColor;
+                indexBuffer[writeCount] = baseIndex + 2;
+                writeCount++;
+            }
+
+            int triangleCount = DispatchChunk(genMinX, genMinY, genMinZ, genSizeX, genSizeY, genSizeZ);
+            EnsureTriangleCache(Mathf.Max(triangleCount, 1));
+            EnsureMeshWriteBuffers(writeCount + triangleCount * 3);
+
+            for (int i = 0; i < triangleCount; i++)
+            {
+                if (!float.IsFinite(triangleCache[i].v1.x))
+                {
+                    continue;
+                }
+
+                int baseIndex = writeCount;
+                vertexBuffer[writeCount] = triangleCache[i].v1;
+                normalBuffer[writeCount] = triangleCache[i].n1;
+                colorBuffer[writeCount] = ToColor(triangleCache[i].c1);
+                indexBuffer[writeCount] = baseIndex;
+                writeCount++;
+
+                vertexBuffer[writeCount] = triangleCache[i].v2;
+                normalBuffer[writeCount] = triangleCache[i].n2;
+                colorBuffer[writeCount] = ToColor(triangleCache[i].c2);
+                indexBuffer[writeCount] = baseIndex + 1;
+                writeCount++;
+
+                vertexBuffer[writeCount] = triangleCache[i].v3;
+                normalBuffer[writeCount] = triangleCache[i].n3;
+                colorBuffer[writeCount] = ToColor(triangleCache[i].c3);
+                indexBuffer[writeCount] = baseIndex + 2;
+                writeCount++;
+            }
+
+            chunk.mesh.Clear(false);
+            if (writeCount == 0)
+            {
+                if (refreshColliders)
+                {
+                    chunk.collider.sharedMesh = null;
+                    chunk.colliderDirty = false;
+                }
+                else
+                {
+                    chunk.colliderDirty = true;
+                }
+
+                return;
+            }
+
+            chunk.mesh.SetVertices(vertexBuffer, 0, writeCount);
+            chunk.mesh.SetNormals(normalBuffer, 0, writeCount);
+            chunk.mesh.SetColors(colorBuffer, 0, writeCount);
+            chunk.mesh.SetTriangles(indexBuffer, 0, writeCount, 0, false, 0);
+
+            if (refreshColliders)
+            {
+                chunk.collider.sharedMesh = null;
+                chunk.collider.sharedMesh = chunk.mesh;
+                chunk.colliderDirty = false;
+            }
+            else
+            {
+                chunk.colliderDirty = true;
+            }
+        }
+
         // 1チャンクぶんのメッシュを生成して反映する
         private void BuildChunkMesh(
             Chunk chunk,
@@ -464,18 +720,24 @@ namespace ClayEditor
 
             if (triangleCount == 0)
             {
-                chunk.collider.sharedMesh = null;
-                chunk.colliderDirty = !refreshColliders;
+                if (refreshColliders)
+                {
+                    chunk.collider.sharedMesh = null;
+                    chunk.colliderDirty = false;
+                }
+                else
+                {
+                    // 表示は空でもコライダーはストローク終了まで据え置く
+                    chunk.colliderDirty = true;
+                }
+
                 return;
             }
 
             EnsureTriangleCache(Mathf.Max(triangleCount, 1));
+            EnsureMeshWriteBuffers(triangleCount * 3);
 
-            vertexList.Clear();
-            normalList.Clear();
-            indexList.Clear();
-            colorList.Clear();
-
+            int writeCount = 0;
             for (int i = 0; i < triangleCount; i++)
             {
                 if (!float.IsFinite(triangleCache[i].v1.x))
@@ -483,26 +745,27 @@ namespace ClayEditor
                     continue;
                 }
 
-                int baseIndex = vertexList.Count;
+                int baseIndex = writeCount;
+                vertexBuffer[writeCount] = triangleCache[i].v1;
+                normalBuffer[writeCount] = triangleCache[i].n1;
+                colorBuffer[writeCount] = ToColor(triangleCache[i].c1);
+                indexBuffer[writeCount] = baseIndex;
+                writeCount++;
 
-                vertexList.Add(triangleCache[i].v1);
-                vertexList.Add(triangleCache[i].v2);
-                vertexList.Add(triangleCache[i].v3);
+                vertexBuffer[writeCount] = triangleCache[i].v2;
+                normalBuffer[writeCount] = triangleCache[i].n2;
+                colorBuffer[writeCount] = ToColor(triangleCache[i].c2);
+                indexBuffer[writeCount] = baseIndex + 1;
+                writeCount++;
 
-                normalList.Add(triangleCache[i].n1);
-                normalList.Add(triangleCache[i].n2);
-                normalList.Add(triangleCache[i].n3);
-
-                colorList.Add(ToColor(triangleCache[i].c1));
-                colorList.Add(ToColor(triangleCache[i].c2));
-                colorList.Add(ToColor(triangleCache[i].c3));
-
-                indexList.Add(baseIndex);
-                indexList.Add(baseIndex + 1);
-                indexList.Add(baseIndex + 2);
+                vertexBuffer[writeCount] = triangleCache[i].v3;
+                normalBuffer[writeCount] = triangleCache[i].n3;
+                colorBuffer[writeCount] = ToColor(triangleCache[i].c3);
+                indexBuffer[writeCount] = baseIndex + 2;
+                writeCount++;
             }
 
-            if (vertexList.Count == 0)
+            if (writeCount == 0)
             {
                 if (refreshColliders)
                 {
@@ -517,10 +780,10 @@ namespace ClayEditor
                 return;
             }
 
-            chunk.mesh.SetVertices(vertexList);
-            chunk.mesh.SetNormals(normalList);
-            chunk.mesh.SetColors(colorList);
-            chunk.mesh.SetTriangles(indexList, 0, false);
+            chunk.mesh.SetVertices(vertexBuffer, 0, writeCount);
+            chunk.mesh.SetNormals(normalBuffer, 0, writeCount);
+            chunk.mesh.SetColors(colorBuffer, 0, writeCount);
+            chunk.mesh.SetTriangles(indexBuffer, 0, writeCount, 0, false, 0);
 
             if (refreshColliders)
             {
@@ -530,10 +793,19 @@ namespace ClayEditor
             }
             else
             {
-                // メッシュ内容更新後は参照を張り直さないとレイキャストが外れる
-                chunk.collider.sharedMesh = null;
-                chunk.collider.sharedMesh = chunk.mesh;
+                // 表示だけ更新しコライダー焼き直しはストローク終了へ遅延する
                 chunk.colliderDirty = true;
+            }
+        }
+
+        private void EnsureMeshWriteBuffers(int capacity)
+        {
+            if (vertexBuffer.Length < capacity)
+            {
+                vertexBuffer = new Vector3[capacity];
+                normalBuffer = new Vector3[capacity];
+                colorBuffer = new Color[capacity];
+                indexBuffer = new int[capacity];
             }
         }
 
@@ -544,6 +816,16 @@ namespace ClayEditor
                 Mathf.Clamp01(c.y),
                 Mathf.Clamp01(c.z),
                 1f);
+        }
+
+        /// <summary>
+        /// ブラシ周辺のチャンクをダーティにして次回の本更新対象にする
+        /// </summary>
+        /// <param name="localPos">ブラシ中心ローカル座標</param>
+        /// <param name="radius">ブラシ半径ローカル単位</param>
+        public void MarkBrushChunksDirty(Vector3 localPos, float radius)
+        {
+            MarkDirtyChunks(localPos, radius);
         }
 
         // ブラシ位置と半径から ダーティにするチャンクを決める
@@ -620,11 +902,213 @@ namespace ClayEditor
         }
 
         /// <summary>
+        /// 既存の厚いメッシュ上向けにブラシ周辺だけ差し替えて表示を更新する
+        /// </summary>
+        /// <param name="localPos">ブラシ中心ローカル座標</param>
+        /// <param name="radius">ブラシ半径ローカル単位</param>
+        /// <param name="refreshColliders">true のときチャンクコライダーも更新する</param>
+        public void UpdateShapeFastNearBrush(Vector3 localPos, float radius, bool refreshColliders = false)
+        {
+            if (!IsBackendReady)
+            {
+                return;
+            }
+
+            ClearBrushSculptPreview();
+            SetChunksVisible(true);
+            RebuildDirtyChunksNearBrush(localPos, radius, refreshColliders);
+            if (refreshColliders)
+            {
+                Physics.SyncTransforms();
+            }
+
+            RefreshCachedTriangleCountFromChunks();
+            PublishHasMeshIfChanged();
+        }
+
+        /// <summary>
         /// 造形ストローク終了時に呼び 未反映メッシュとコライダーを確定する
         /// </summary>
         public void FlushShape()
         {
+            ClearBrushSculptPreview();
             UpdateShapeFast(refreshColliders: true);
+            FlushChunkColliders();
+        }
+
+        /// <summary>
+        /// 既存の厚いメッシュ上でブラシ周辺だけを軽量プレビュー更新する
+        /// チャンク本更新はFlushShapeまで遅延する
+        /// </summary>
+        /// <param name="localPos">ブラシ中心ローカル座標</param>
+        /// <param name="radius">ブラシ半径ローカル単位</param>
+        public void UpdateBrushSculptPreview(Vector3 localPos, float radius)
+        {
+            if (!IsBackendReady)
+            {
+                return;
+            }
+
+            EnsureBrushSculptPreview();
+            SetChunksVisible(true);
+
+            ComputeBrushMeshBounds(
+                localPos,
+                radius,
+                out int minX,
+                out int minY,
+                out int minZ,
+                out int sizeX,
+                out int sizeY,
+                out int sizeZ);
+
+            if (sizeX <= 0 || sizeY <= 0 || sizeZ <= 0)
+            {
+                brushPreviewMesh.Clear(false);
+                brushPreviewCollider.sharedMesh = null;
+                brushPreviewActive = true;
+                return;
+            }
+
+            int triangleCount = DispatchChunk(minX, minY, minZ, sizeX, sizeY, sizeZ);
+            ApplyTrianglesToMesh(brushPreviewMesh, triangleCount);
+
+            brushPreviewCollider.sharedMesh = null;
+            if (brushPreviewMesh.vertexCount > 0)
+            {
+                brushPreviewCollider.sharedMesh = brushPreviewMesh;
+            }
+
+            brushPreviewObject.SetActive(true);
+            brushPreviewActive = true;
+            Physics.SyncTransforms();
+        }
+
+        /// <summary>
+        /// ブラシ周辺プレビューを破棄する
+        /// </summary>
+        public void ClearBrushSculptPreview()
+        {
+            if (!brushPreviewActive && brushPreviewObject == null)
+            {
+                return;
+            }
+
+            if (brushPreviewMesh != null)
+            {
+                brushPreviewMesh.Clear(false);
+            }
+
+            if (brushPreviewCollider != null)
+            {
+                brushPreviewCollider.sharedMesh = null;
+            }
+
+            if (brushPreviewObject != null)
+            {
+                brushPreviewObject.SetActive(false);
+            }
+
+            brushPreviewActive = false;
+        }
+
+        private void EnsureBrushSculptPreview()
+        {
+            if (brushPreviewObject != null)
+            {
+                return;
+            }
+
+            brushPreviewObject = new GameObject("BrushSculptPreview");
+            brushPreviewObject.transform.SetParent(ClayModelTransform, false);
+            brushPreviewObject.layer = clayModel != null ? clayModel.layer : gameObject.layer;
+
+            brushPreviewFilter = brushPreviewObject.AddComponent<MeshFilter>();
+            var renderer = brushPreviewObject.AddComponent<MeshRenderer>();
+            renderer.sharedMaterial = material;
+
+            brushPreviewCollider = brushPreviewObject.AddComponent<MeshCollider>();
+            brushPreviewCollider.cookingOptions = MeshColliderCookingOptions.CookForFasterSimulation;
+
+            brushPreviewMesh = new Mesh { indexFormat = IndexFormat.UInt32 };
+            brushPreviewMesh.MarkDynamic();
+            brushPreviewFilter.sharedMesh = brushPreviewMesh;
+            brushPreviewObject.SetActive(false);
+        }
+
+        private void ComputeBrushMeshBounds(
+            Vector3 localPos,
+            float radius,
+            out int minX,
+            out int minY,
+            out int minZ,
+            out int sizeX,
+            out int sizeY,
+            out int sizeZ)
+        {
+            Vector3 voxelCenter = (localPos + CenterOffset) / Scale;
+            float voxelRadius = radius / Scale + 2f;
+
+            minX = Mathf.Clamp(Mathf.FloorToInt(voxelCenter.x - voxelRadius), 0, size - 1);
+            minY = Mathf.Clamp(Mathf.FloorToInt(voxelCenter.y - voxelRadius), 0, size - 1);
+            minZ = Mathf.Clamp(Mathf.FloorToInt(voxelCenter.z - voxelRadius), 0, size - 1);
+            int maxX = Mathf.Clamp(Mathf.CeilToInt(voxelCenter.x + voxelRadius), 0, size - 1);
+            int maxY = Mathf.Clamp(Mathf.CeilToInt(voxelCenter.y + voxelRadius), 0, size - 1);
+            int maxZ = Mathf.Clamp(Mathf.CeilToInt(voxelCenter.z + voxelRadius), 0, size - 1);
+
+            sizeX = Mathf.Max(0, maxX - minX + 1);
+            sizeY = Mathf.Max(0, maxY - minY + 1);
+            sizeZ = Mathf.Max(0, maxZ - minZ + 1);
+        }
+
+        private void ApplyTrianglesToMesh(Mesh targetMesh, int triangleCount)
+        {
+            targetMesh.Clear(false);
+            if (triangleCount <= 0)
+            {
+                return;
+            }
+
+            EnsureTriangleCache(Mathf.Max(triangleCount, 1));
+            EnsureMeshWriteBuffers(triangleCount * 3);
+
+            int writeCount = 0;
+            for (int i = 0; i < triangleCount; i++)
+            {
+                if (!float.IsFinite(triangleCache[i].v1.x))
+                {
+                    continue;
+                }
+
+                int baseIndex = writeCount;
+                vertexBuffer[writeCount] = triangleCache[i].v1;
+                normalBuffer[writeCount] = triangleCache[i].n1;
+                colorBuffer[writeCount] = ToColor(triangleCache[i].c1);
+                indexBuffer[writeCount] = baseIndex;
+                writeCount++;
+
+                vertexBuffer[writeCount] = triangleCache[i].v2;
+                normalBuffer[writeCount] = triangleCache[i].n2;
+                colorBuffer[writeCount] = ToColor(triangleCache[i].c2);
+                indexBuffer[writeCount] = baseIndex + 1;
+                writeCount++;
+
+                vertexBuffer[writeCount] = triangleCache[i].v3;
+                normalBuffer[writeCount] = triangleCache[i].n3;
+                colorBuffer[writeCount] = ToColor(triangleCache[i].c3);
+                indexBuffer[writeCount] = baseIndex + 2;
+                writeCount++;
+            }
+
+            if (writeCount == 0)
+            {
+                return;
+            }
+
+            targetMesh.SetVertices(vertexBuffer, 0, writeCount);
+            targetMesh.SetNormals(normalBuffer, 0, writeCount);
+            targetMesh.SetColors(colorBuffer, 0, writeCount);
+            targetMesh.SetTriangles(indexBuffer, 0, writeCount, 0, false, 0);
         }
 
         /// <summary>
@@ -646,7 +1130,12 @@ namespace ClayEditor
                     continue;
                 }
 
-                chunk.collider.sharedMesh = chunk.mesh.vertexCount > 0 ? chunk.mesh : null;
+                chunk.collider.sharedMesh = null;
+                if (chunk.mesh != null && chunk.mesh.vertexCount > 0)
+                {
+                    chunk.collider.sharedMesh = chunk.mesh;
+                }
+
                 chunk.colliderDirty = false;
                 updated = true;
             }
@@ -906,23 +1395,21 @@ namespace ClayEditor
         /// <param name="refreshCollider">trueのときコライダーも更新する</param>
         public void FlushPaintMesh(bool refreshCollider = false)
         {
-            if (!pendingPaintMeshUpdate)
+            if (pendingPaintMeshUpdate)
             {
-                return;
+                pendingPaintMeshUpdate = false;
+
+                // ペイント中は単一メッシュ全再生成せずチャンク部分更新のみ行う
+                SetChunksVisible(true);
+                RebuildDirtyChunks(refreshCollider);
+                RefreshCachedTriangleCountFromChunks();
+                PublishHasMeshIfChanged();
             }
 
-            pendingPaintMeshUpdate = false;
-
-            // ペイント中は単一メッシュ全再生成せずチャンク部分更新のみ行う
-            SetChunksVisible(true);
-            RebuildDirtyChunks(refreshCollider);
             if (refreshCollider)
             {
-                Physics.SyncTransforms();
+                FlushChunkColliders();
             }
-
-            RefreshCachedTriangleCountFromChunks();
-            PublishHasMeshIfChanged();
         }
 
         /// <summary>
@@ -1223,6 +1710,8 @@ namespace ClayEditor
 
         private void ClearDisplayedMesh()
         {
+            ClearBrushSculptPreview();
+
             if (mesh != null)
             {
                 mesh.Clear();

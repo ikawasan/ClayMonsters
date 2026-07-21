@@ -40,6 +40,10 @@ float3 _DefaultColor;
 int3 _PaintOrigin;
 int3 _PaintSize;
 
+// 造形Modify用ブラシAABB
+int3 _ModOrigin;
+int3 _ModSize;
+
 int GetIndex(int x, int y, int z)
 {
     return x * (_Size + 1) * (_Size + 1) + y * (_Size + 1) + z;
@@ -196,24 +200,31 @@ void GenerateMesh(uint3 tid : SV_DispatchThreadID)
 [numthreads(8, 8, 8)]
 void ModifyVoxels(uint3 id : SV_DispatchThreadID)
 {
-    if (id.x > (uint) _Size || id.y > (uint) _Size || id.z > (uint) _Size)
-    {
-        return;
-    }
-    
-    // 境界のボクセルは編集させない
-    if (id.x == 0 || id.x == (uint) _Size || id.y == 0 || id.y == (uint) _Size || id.z == 0 || id.z == (uint) _Size)
+    // idはブラシAABB内の相対座標_ModOriginからのオフセット
+    if (id.x >= (uint) _ModSize.x || id.y >= (uint) _ModSize.y || id.z >= (uint) _ModSize.z)
     {
         return;
     }
 
-    float3 localPos = (float3) id * _Scale - _Offset;
+    uint3 voxelId = (uint3) _ModOrigin + id;
+    if (voxelId.x > (uint) _Size || voxelId.y > (uint) _Size || voxelId.z > (uint) _Size)
+    {
+        return;
+    }
+
+    // 境界のボクセルは編集させない
+    if (voxelId.x == 0 || voxelId.x == (uint) _Size || voxelId.y == 0 || voxelId.y == (uint) _Size || voxelId.z == 0 || voxelId.z == (uint) _Size)
+    {
+        return;
+    }
+
+    float3 localPos = (float3) voxelId * _Scale - _Offset;
     float dist = distance(localPos, _HitPosition);
-    
+
     if (dist < _ModRadius)
     {
         float influence = (1.0 - pow(dist / _ModRadius, 2.0)) * _ModStrength;
-        int idx = GetIndex(id.x, id.y, id.z);
+        int idx = GetIndex(voxelId.x, voxelId.y, voxelId.z);
         _Voxels[idx] += influence;
     }
 }
