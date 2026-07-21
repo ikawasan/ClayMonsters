@@ -4,6 +4,7 @@ using SaveData;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 namespace UI.ClayEditor.View
 {
@@ -11,8 +12,15 @@ namespace UI.ClayEditor.View
     /// シーン配置済みスロット行のUI参照を保持する
     /// ModelSaveSlotRowUiBuilderのRowElementsへ変換する
     /// </summary>
-    public sealed class ModelSaveSlotRowElementRefs : MonoBehaviour
+    public sealed class ModelSaveSlotRowElementRefs :
+        MonoBehaviour,
+        IDeselectHandler,
+        IPointerEnterHandler,
+        IPointerExitHandler,
+        ISelectHandler
     {
+        private const float HighlightedBrightness = 0.72f;
+
         [SerializeField] private Image thumbnailImage;
         [SerializeField] private RectTransform thumbnailFrame;
         [SerializeField] private RectTransform thumbnailColumn;
@@ -28,6 +36,14 @@ namespace UI.ClayEditor.View
         [SerializeField] private bool preservePrefabLayout;
         [SerializeField] private ModelSaveSlotRowUiBuilder.ConfirmLayoutSize confirmLayoutSize =
             ModelSaveSlotRowUiBuilder.ConfirmLayoutSize.Standard;
+
+        private Color[] baseTextColors;
+        private Color[] baseImageColors;
+        private bool hasCapturedHighlightTargets;
+        private Image[] highlightImages;
+        private bool isPointerInside;
+        private bool isSelected;
+        private TMP_Text[] highlightTexts;
 
         private void Awake()
         {
@@ -84,6 +100,34 @@ namespace UI.ClayEditor.View
             useConfirmLayout = true;
             preservePrefabLayout = false;
             confirmLayoutSize = ModelSaveSlotRowUiBuilder.ConfirmLayoutSize.Preview;
+        }
+
+        /// <inheritdoc/>
+        public void OnDeselect(BaseEventData eventData)
+        {
+            isSelected = false;
+            ApplyHighlightState();
+        }
+
+        /// <inheritdoc/>
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            isPointerInside = true;
+            ApplyHighlightState();
+        }
+
+        /// <inheritdoc/>
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            isPointerInside = false;
+            ApplyHighlightState();
+        }
+
+        /// <inheritdoc/>
+        public void OnSelect(BaseEventData eventData)
+        {
+            isSelected = true;
+            ApplyHighlightState();
         }
 
         /// <summary>
@@ -256,6 +300,94 @@ namespace UI.ClayEditor.View
             }
 
             ApplyBuiltRowElements(rowElements);
+        }
+
+        private void ApplyHighlightState()
+        {
+            CaptureHighlightTargets();
+            bool highlighted = isPointerInside || isSelected;
+
+            for (int i = 0; i < highlightTexts.Length; i++)
+            {
+                TMP_Text text = highlightTexts[i];
+                if (text == null)
+                {
+                    continue;
+                }
+
+                text.color = highlighted
+                    ? DarkenColor(baseTextColors[i])
+                    : baseTextColors[i];
+            }
+
+            for (int i = 0; i < highlightImages.Length; i++)
+            {
+                Image image = highlightImages[i];
+                if (image == null)
+                {
+                    continue;
+                }
+
+                image.color = highlighted
+                    ? DarkenColor(baseImageColors[i])
+                    : baseImageColors[i];
+            }
+        }
+
+        private void CaptureHighlightTargets()
+        {
+            if (hasCapturedHighlightTargets)
+            {
+                return;
+            }
+
+            highlightTexts = GetComponentsInChildren<TMP_Text>(true);
+            baseTextColors = new Color[highlightTexts.Length];
+            for (int i = 0; i < highlightTexts.Length; i++)
+            {
+                baseTextColors[i] = highlightTexts[i].color;
+            }
+
+            Image[] rowImages = GetComponentsInChildren<Image>(true);
+            var contentImages = new List<Image>(rowImages.Length);
+            for (int i = 0; i < rowImages.Length; i++)
+            {
+                Image image = rowImages[i];
+                if (image != null)
+                {
+                    contentImages.Add(image);
+                }
+            }
+
+            highlightImages = contentImages.ToArray();
+            baseImageColors = new Color[highlightImages.Length];
+            for (int i = 0; i < highlightImages.Length; i++)
+            {
+                baseImageColors[i] = highlightImages[i].color;
+            }
+
+            hasCapturedHighlightTargets = true;
+        }
+
+        private static Color DarkenColor(Color color)
+        {
+            return new Color(
+                color.r * HighlightedBrightness,
+                color.g * HighlightedBrightness,
+                color.b * HighlightedBrightness,
+                color.a);
+        }
+
+        private void OnDisable()
+        {
+            if (!hasCapturedHighlightTargets)
+            {
+                return;
+            }
+
+            isPointerInside = false;
+            isSelected = false;
+            ApplyHighlightState();
         }
 
         private void HideAttributeRowDisplay()
