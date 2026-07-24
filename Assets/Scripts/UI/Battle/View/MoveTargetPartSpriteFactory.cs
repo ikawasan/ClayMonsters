@@ -5,25 +5,23 @@ using UnityEngine;
 namespace UI.Battle.View
 {
     /// <summary>
-    /// 破壊対象部位ごとの部位アイコンスプライトを生成してキャッシュする
-    /// 腕・脚・前・後・任意を判別しやすいシルエットで描画する
+    /// 使用部位と破壊部位のアイコンを生成する
+    /// 添付参考と同じ二重円枠の線画スタイルで描く
     /// </summary>
     public static class MoveTargetPartSpriteFactory
     {
-        private const int Size = 48;
+        private const int Size = 72;
         private static readonly Color32 Clear = new Color32(0, 0, 0, 0);
-        private static readonly Dictionary<MoveTargetPartId, Sprite> Cache = new Dictionary<MoveTargetPartId, Sprite>();
+        private static readonly Color32 Plate = new Color32(236, 236, 236, 255);
+        private static readonly Color32 Ink = new Color32(70, 70, 70, 255);
+        private static readonly Dictionary<MoveTargetPartId, Sprite> Cache =
+            new Dictionary<MoveTargetPartId, Sprite>();
 
         /// <summary>
-        /// 破壊対象部位用のアイコンスプライトを返す
+        /// 部位アイコンスプライトを返す
         /// </summary>
         public static Sprite GetOrCreate(MoveTargetPartId targetPartId)
         {
-            if (targetPartId == MoveTargetPartId.None)
-            {
-                return null;
-            }
-
             if (Cache.TryGetValue(targetPartId, out Sprite cached))
             {
                 return cached;
@@ -35,10 +33,11 @@ namespace UI.Battle.View
         }
 
         /// <summary>
-        /// 破壊対象部位の表示色を返す
+        /// 部位アイコンの乗算色を返す
         /// </summary>
         public static Color GetDisplayColor(MoveTargetPartId targetPartId)
         {
+            _ = targetPartId;
             return Color.white;
         }
 
@@ -50,33 +49,38 @@ namespace UI.Battle.View
                 pixels[i] = Clear;
             }
 
+            DrawFrame(pixels);
             switch (targetPartId)
             {
                 case MoveTargetPartId.Arm:
-                    DrawArmIcon(pixels);
+                    DrawArm(pixels);
                     break;
                 case MoveTargetPartId.Leg:
-                    DrawLegIcon(pixels);
+                    DrawLeg(pixels);
                     break;
                 case MoveTargetPartId.Front:
-                    DrawFrontIcon(pixels);
+                    DrawFront(pixels);
                     break;
                 case MoveTargetPartId.Back:
-                    DrawBackIcon(pixels);
+                    DrawBack(pixels);
                     break;
                 case MoveTargetPartId.Body:
-                    DrawBodyIcon(pixels);
-                    break;
+                case MoveTargetPartId.None:
                 case MoveTargetPartId.Any:
-                    DrawAnyIcon(pixels);
+                default:
+                    // Bodyは破壊なしと同じ×アイコン
+                    DrawNone(pixels);
                     break;
             }
 
-            var texture = new Texture2D(Size, Size, TextureFormat.RGBA32, false);
-            texture.filterMode = FilterMode.Bilinear;
-            texture.wrapMode = TextureWrapMode.Clamp;
+            var texture = new Texture2D(Size, Size, TextureFormat.RGBA32, false)
+            {
+                filterMode = FilterMode.Bilinear,
+                wrapMode = TextureWrapMode.Clamp,
+                alphaIsTransparency = true
+            };
             texture.SetPixels32(pixels);
-            texture.Apply();
+            texture.Apply(updateMipmaps: false, makeNoLongerReadable: false);
 
             return Sprite.Create(
                 texture,
@@ -87,145 +91,110 @@ namespace UI.Battle.View
                 SpriteMeshType.FullRect);
         }
 
-        private static void DrawArmIcon(Color32[] pixels)
+        private static void DrawFrame(Color32[] pixels)
         {
-            Color32 fill = new Color32(240, 120, 64, 255);
-            Color32 outline = new Color32(74, 32, 16, 255);
-            Color32 highlight = new Color32(255, 196, 140, 255);
-
-            FillRect(pixels, 8, 21, 20, 8, outline);
-            FillRect(pixels, 9, 22, 18, 6, fill);
-            FillCircle(pixels, 32, 22, 7, outline);
-            FillCircle(pixels, 32, 22, 6, fill);
-            FillRect(pixels, 29, 19, 5, 4, highlight);
-            FillCircle(pixels, 35, 24, 2, outline);
+            // 円内は不透明の薄い塗り円外は透明
+            FillCircle(pixels, 36, 36, 34, Plate);
+            StrokeCircle(pixels, 36, 36, 33, Ink, 3);
+            StrokeCircle(pixels, 36, 36, 28, Ink, 2);
         }
 
-        private static void DrawLegIcon(Color32[] pixels)
+        private static void DrawFront(Color32[] pixels)
         {
-            Color32 fill = new Color32(72, 216, 88, 255);
-            Color32 outline = new Color32(16, 72, 24, 255);
-            Color32 highlight = new Color32(170, 255, 180, 255);
-
-            FillRect(pixels, 10, 25, 14, 8, outline);
-            FillRect(pixels, 11, 26, 12, 6, fill);
-            FillRect(pixels, 20, 14, 8, 14, outline);
-            FillRect(pixels, 21, 15, 6, 12, fill);
-            FillRect(pixels, 24, 8, 14, 8, outline);
-            FillRect(pixels, 25, 9, 12, 6, fill);
-            FillRect(pixels, 27, 10, 6, 2, highlight);
-            FillCircle(pixels, 33, 12, 2, outline);
+            FillCircle(pixels, 28, 40, 3, Ink);
+            FillCircle(pixels, 44, 40, 3, Ink);
+            StrokeLine(pixels, 24, 28, 48, 28, Ink, 2);
         }
 
-        private static void DrawFrontIcon(Color32[] pixels)
+        private static void DrawArm(Color32[] pixels)
         {
-            Color32 fill = new Color32(80, 160, 248, 255);
-            Color32 outline = new Color32(16, 48, 96, 255);
-            Color32 face = new Color32(210, 232, 255, 255);
-
-            FillCircle(pixels, 24, 30, 11, outline);
-            FillCircle(pixels, 24, 30, 10, fill);
-            FillCircle(pixels, 24, 17, 9, outline);
-            FillCircle(pixels, 24, 17, 8, face);
-            FillCircle(pixels, 21, 16, 2, outline);
-            FillCircle(pixels, 27, 16, 2, outline);
-            FillRect(pixels, 22, 19, 4, 2, outline);
-            FillRect(pixels, 19, 8, 10, 4, outline);
-            FillRect(pixels, 20, 9, 8, 2, fill);
+            // 力こぶの輪郭
+            StrokeBezier(pixels, 22, 18, 12, 28, 14, 44, 24, 50, Ink, 2);
+            StrokeBezier(pixels, 24, 50, 32, 54, 40, 48, 42, 40, Ink, 2);
+            StrokeBezier(pixels, 42, 40, 44, 46, 50, 52, 58, 50, Ink, 2);
+            StrokeBezier(pixels, 58, 50, 64, 48, 66, 40, 62, 34, Ink, 2);
+            StrokeBezier(pixels, 62, 34, 56, 30, 48, 34, 44, 40, Ink, 2);
+            StrokeBezier(pixels, 42, 40, 36, 30, 28, 22, 22, 18, Ink, 2);
         }
 
-        private static void DrawBackIcon(Color32[] pixels)
+        private static void DrawLeg(Color32[] pixels)
         {
-            Color32 fill = new Color32(192, 96, 240, 255);
-            Color32 outline = new Color32(64, 24, 96, 255);
-            Color32 tail = new Color32(255, 196, 255, 255);
-            Color32 spine = new Color32(150, 72, 196, 255);
-
-            FillCircle(pixels, 22, 20, 10, outline);
-            FillCircle(pixels, 22, 20, 9, fill);
-            FillRect(pixels, 18, 8, 8, 5, outline);
-            FillRect(pixels, 19, 9, 6, 3, fill);
-            FillRect(pixels, 20, 14, 4, 8, outline);
-            FillRect(pixels, 21, 15, 2, 6, spine);
-            FillRect(pixels, 30, 18, 8, 5, outline);
-            FillRect(pixels, 31, 19, 6, 3, tail);
-            FillRect(pixels, 36, 20, 2, 9, outline);
-            FillRect(pixels, 37, 21, 1, 7, tail);
+            StrokeBezier(pixels, 28, 54, 22, 44, 22, 30, 28, 22, Ink, 2);
+            StrokeBezier(pixels, 28, 22, 36, 16, 44, 20, 48, 28, Ink, 2);
+            StrokeBezier(pixels, 48, 28, 52, 36, 54, 46, 52, 54, Ink, 2);
+            StrokeBezier(pixels, 52, 54, 56, 58, 64, 56, 68, 50, Ink, 2);
+            StrokeBezier(pixels, 68, 50, 60, 48, 54, 46, 50, 42, Ink, 2);
+            StrokeBezier(pixels, 50, 42, 42, 48, 34, 52, 28, 54, Ink, 2);
         }
 
-        private static void DrawBodyIcon(Color32[] pixels)
+        private static void DrawBack(Color32[] pixels)
         {
-            Color32 fill = new Color32(196, 148, 96, 255);
-            Color32 outline = new Color32(72, 48, 24, 255);
-            Color32 highlight = new Color32(232, 196, 148, 255);
-
-            FillCircle(pixels, 24, 28, 12, outline);
-            FillCircle(pixels, 24, 28, 11, fill);
-            FillCircle(pixels, 24, 14, 8, outline);
-            FillCircle(pixels, 24, 14, 7, fill);
-            FillRect(pixels, 14, 18, 20, 12, outline);
-            FillRect(pixels, 15, 19, 18, 10, fill);
-            FillRect(pixels, 18, 20, 8, 4, highlight);
+            // 尻尾のS曲線
+            StrokeBezier(pixels, 22, 20, 16, 36, 28, 52, 48, 48, Ink, 3);
+            StrokeBezier(pixels, 48, 48, 60, 44, 58, 28, 46, 30, Ink, 3);
         }
 
-        private static void DrawAnyIcon(Color32[] pixels)
+        private static void DrawNone(Color32[] pixels)
         {
-            Color32 fill = new Color32(208, 216, 232, 255);
-            Color32 outline = new Color32(64, 72, 96, 255);
-            Color32 accent = new Color32(120, 136, 168, 255);
-
-            FillCircle(pixels, 24, 24, 13, outline);
-            FillCircle(pixels, 24, 24, 12, fill);
-            FillCircle(pixels, 24, 24, 5, accent);
-            FillCircle(pixels, 24, 24, 3, fill);
-            DrawArrow(pixels, 24, 9, true, outline, fill);
-            DrawArrow(pixels, 24, 39, false, outline, fill);
-            DrawArrow(pixels, 9, 24, false, outline, fill, horizontal: true, positive: false);
-            DrawArrow(pixels, 39, 24, false, outline, fill, horizontal: true, positive: true);
+            // 部位なしの×マーク
+            StrokeLine(pixels, 22, 22, 50, 50, Ink, 5);
+            StrokeLine(pixels, 50, 22, 22, 50, Ink, 5);
         }
 
-        private static void DrawArrow(
+        private static void StrokeCircle(Color32[] pixels, int cx, int cy, int radius, Color32 color, int thickness)
+        {
+            for (int t = 0; t < thickness; t++)
+            {
+                int r = radius - t;
+                if (r <= 0)
+                {
+                    continue;
+                }
+
+                for (int angle = 0; angle < 360; angle++)
+                {
+                    float rad = angle * Mathf.Deg2Rad;
+                    int x = cx + Mathf.RoundToInt(Mathf.Cos(rad) * r);
+                    int y = cy + Mathf.RoundToInt(Mathf.Sin(rad) * r);
+                    FillCircle(pixels, x, y, 0, color);
+                    SetPixel(pixels, x, y, color);
+                }
+            }
+        }
+
+        private static void StrokeLine(Color32[] pixels, int x0, int y0, int x1, int y1, Color32 color, int thickness)
+        {
+            int steps = Mathf.Max(Mathf.Abs(x1 - x0), Mathf.Abs(y1 - y0), 1);
+            for (int i = 0; i <= steps; i++)
+            {
+                float t = i / (float)steps;
+                int x = Mathf.RoundToInt(Mathf.Lerp(x0, x1, t));
+                int y = Mathf.RoundToInt(Mathf.Lerp(y0, y1, t));
+                FillCircle(pixels, x, y, Mathf.Max(thickness / 2, 0), color);
+            }
+        }
+
+        private static void StrokeBezier(
             Color32[] pixels,
-            int cx,
-            int cy,
-            bool pointUp,
-            Color32 outline,
-            Color32 fill,
-            bool horizontal = false,
-            bool positive = true)
+            float x0,
+            float y0,
+            float x1,
+            float y1,
+            float x2,
+            float y2,
+            float x3,
+            float y3,
+            Color32 color,
+            int thickness)
         {
-            if (!horizontal)
+            const int steps = 32;
+            for (int i = 0; i <= steps; i++)
             {
-                int direction = pointUp ? -1 : 1;
-                for (int step = 0; step < 5; step++)
-                {
-                    int halfWidth = 4 - step;
-                    int y = cy + direction * step;
-                    FillRect(pixels, cx - halfWidth - 1, y - 1, halfWidth * 2 + 3, 3, outline);
-                    FillRect(pixels, cx - halfWidth, y, halfWidth * 2 + 1, 1, fill);
-                }
-
-                return;
-            }
-
-            int dir = positive ? 1 : -1;
-            for (int step = 0; step < 5; step++)
-            {
-                int halfHeight = 4 - step;
-                int x = cx + dir * step;
-                FillRect(pixels, x - 1, cy - halfHeight - 1, 3, halfHeight * 2 + 3, outline);
-                FillRect(pixels, x, cy - halfHeight, 1, halfHeight * 2 + 1, fill);
-            }
-        }
-
-        private static void FillRect(Color32[] pixels, int x, int y, int width, int height, Color32 color)
-        {
-            for (int py = y; py < y + height; py++)
-            {
-                for (int px = x; px < x + width; px++)
-                {
-                    SetPixel(pixels, px, py, color);
-                }
+                float t = i / (float)steps;
+                float u = 1f - t;
+                float x = (u * u * u * x0) + (3f * u * u * t * x1) + (3f * u * t * t * x2) + (t * t * t * x3);
+                float y = (u * u * u * y0) + (3f * u * u * t * y1) + (3f * u * t * t * y2) + (t * t * t * y3);
+                FillCircle(pixels, Mathf.RoundToInt(x), Mathf.RoundToInt(y), Mathf.Max(thickness / 2, 0), color);
             }
         }
 

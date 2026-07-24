@@ -364,11 +364,6 @@ namespace UI.Battle.View
             targetPartMap.Clear();
             foreach (MoveTargetPartId targetPartId in System.Enum.GetValues(typeof(MoveTargetPartId)))
             {
-                if (targetPartId == MoveTargetPartId.None)
-                {
-                    continue;
-                }
-
                 Sprite sprite = MoveCommandSpriteCatalog.LoadTargetPartIcon(targetPartId);
                 if (sprite != null)
                 {
@@ -397,7 +392,12 @@ namespace UI.Battle.View
         // 破壊対象部位から画像を引く
         private Sprite GetTargetPart(MoveTargetPartId targetPartId)
         {
-            return targetPartMap.TryGetValue(targetPartId, out Sprite sprite) ? sprite : null;
+            if (targetPartMap.TryGetValue(targetPartId, out Sprite sprite) && sprite != null)
+            {
+                return sprite;
+            }
+
+            return MoveCommandSpriteCatalog.LoadTargetPartIcon(targetPartId);
         }
 
         private Color GetTargetPartColor(MoveTargetPartId targetPartId)

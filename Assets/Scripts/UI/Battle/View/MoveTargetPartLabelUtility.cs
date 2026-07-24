@@ -33,11 +33,11 @@ namespace UI.Battle.View
                 case MoveTargetPartId.Back:
                     return "後";
                 case MoveTargetPartId.Body:
-                    return "体";
                 case MoveTargetPartId.Any:
-                    return "任意";
+                case MoveTargetPartId.None:
+                    return "なし";
                 default:
-                    return string.Empty;
+                    return "なし";
             }
         }
 

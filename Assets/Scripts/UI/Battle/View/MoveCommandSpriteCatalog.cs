@@ -25,17 +25,19 @@ namespace UI.Battle.View
 
         /// <summary>
         /// 破壊対象部位アイコンを読み込む
+        /// 実アルファ付きResourcesを優先し無ければ生成スプライトを使う
         /// </summary>
         public static Sprite LoadTargetPartIcon(MoveTargetPartId targetPartId)
         {
             Sprite sprite = targetPartId switch
             {
+                MoveTargetPartId.None => LoadSprite($"{Root}/TargetPart/None"),
                 MoveTargetPartId.Arm => LoadSprite($"{Root}/TargetPart/Arm"),
                 MoveTargetPartId.Leg => LoadSprite($"{Root}/TargetPart/Leg"),
                 MoveTargetPartId.Front => LoadSprite($"{Root}/TargetPart/Front"),
                 MoveTargetPartId.Back => LoadSprite($"{Root}/TargetPart/Back"),
-                MoveTargetPartId.Body => LoadSprite($"{Root}/TargetPart/Body"),
-                MoveTargetPartId.Any => LoadSprite($"{Root}/TargetPart/Any"),
+                MoveTargetPartId.Body => LoadSprite($"{Root}/TargetPart/None"),
+                MoveTargetPartId.Any => LoadSprite($"{Root}/TargetPart/None"),
                 _ => null
             };
 
@@ -43,20 +45,12 @@ namespace UI.Battle.View
         }
 
         /// <summary>
-        /// Resourcesに破壊対象部位アイコンがあるかを返す
+        /// 破壊対象部位アイコンが利用可能かを返す
         /// </summary>
         public static bool HasTargetPartSprite(MoveTargetPartId targetPartId)
         {
-            return targetPartId switch
-            {
-                MoveTargetPartId.Arm => LoadSprite($"{Root}/TargetPart/Arm") != null,
-                MoveTargetPartId.Leg => LoadSprite($"{Root}/TargetPart/Leg") != null,
-                MoveTargetPartId.Front => LoadSprite($"{Root}/TargetPart/Front") != null,
-                MoveTargetPartId.Back => LoadSprite($"{Root}/TargetPart/Back") != null,
-                MoveTargetPartId.Body => LoadSprite($"{Root}/TargetPart/Body") != null,
-                MoveTargetPartId.Any => LoadSprite($"{Root}/TargetPart/Any") != null,
-                _ => false
-            };
+            _ = targetPartId;
+            return true;
         }
 
         /// <summary>

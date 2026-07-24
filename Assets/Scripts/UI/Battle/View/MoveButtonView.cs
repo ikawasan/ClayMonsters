@@ -201,13 +201,6 @@ namespace UI.Battle.View
                 return;
             }
 
-            if (requiredPartId == MoveTargetPartId.None)
-            {
-                SetPartIconVisible(requiredPartImage, false);
-                SetPartLabelVisible(requiredPartLabelText, false);
-                return;
-            }
-
             Sprite sprite = MoveCommandSpriteCatalog.LoadTargetPartIcon(requiredPartId);
             if (sprite == null)
             {
@@ -226,6 +219,7 @@ namespace UI.Battle.View
             icon.color = Color.white;
             icon.preserveAspect = true;
             icon.type = Image.Type.Simple;
+            DisablePartFrame(requiredPartImage);
         }
 
         private void ApplyTargetPartIcon(Sprite sprite, Color color, MoveTargetPartId targetPartId)
@@ -233,13 +227,6 @@ namespace UI.Battle.View
             Image icon = ResolvePartIconImage(attributeImage);
             if (icon == null)
             {
-                return;
-            }
-
-            if (targetPartId == MoveTargetPartId.None)
-            {
-                SetPartIconVisible(attributeImage, false);
-                SetPartLabelVisible(targetPartLabelText, false);
                 return;
             }
 
@@ -261,6 +248,7 @@ namespace UI.Battle.View
             icon.color = color;
             icon.preserveAspect = true;
             icon.type = Image.Type.Simple;
+            DisablePartFrame(attributeImage);
         }
 
         private static Image ResolvePartIconImage(Image rootImage)
@@ -284,6 +272,25 @@ namespace UI.Battle.View
             return rootImage;
         }
 
+        private static void DisablePartFrame(Image rootImage)
+        {
+            if (rootImage == null)
+            {
+                return;
+            }
+
+            Image icon = ResolvePartIconImage(rootImage);
+            if (icon == null || icon == rootImage)
+            {
+                return;
+            }
+
+            // 親枠Imageは常に無効化して塗りが透けないようにする
+            rootImage.enabled = false;
+            rootImage.sprite = null;
+            rootImage.color = new Color(1f, 1f, 1f, 0f);
+        }
+
         private static void SetPartIconVisible(Image rootImage, bool visible)
         {
             if (rootImage == null)
@@ -301,11 +308,7 @@ namespace UI.Battle.View
                 }
             }
 
-            if (icon != rootImage)
-            {
-                rootImage.enabled = visible;
-            }
-
+            DisablePartFrame(rootImage);
             rootImage.gameObject.SetActive(visible);
         }
 
@@ -391,17 +394,24 @@ namespace UI.Battle.View
                 return;
             }
 
-            Color color = image.color;
-            color.a = alpha;
-            image.color = color;
-
             Transform iconTransform = image.transform.Find("Icon");
             if (iconTransform != null && iconTransform.TryGetComponent(out Image childIcon))
             {
+                // 親は枠なので透過のまま子アイコンだけアルファを変える
+                image.enabled = false;
+                Color frameColor = image.color;
+                frameColor.a = 0f;
+                image.color = frameColor;
+
                 Color childColor = childIcon.color;
                 childColor.a = alpha;
                 childIcon.color = childColor;
+                return;
             }
+
+            Color color = image.color;
+            color.a = alpha;
+            image.color = color;
         }
 
         private static void SetTextAlpha(TMP_Text text, float alpha)
