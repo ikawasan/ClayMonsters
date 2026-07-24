@@ -28,7 +28,6 @@ namespace UI.ClayEditor.View
         [SerializeField] private TMP_Text nameText;
         [SerializeField] private TMP_Text paramsText;
         [SerializeField] private TMP_Text subText;
-        [SerializeField] private Image modelAttributeImage;
         [SerializeField] private RectTransform leftInfoColumn;
         [SerializeField] private RectTransform attacksContainer;
         [SerializeField] private float thumbnailColumnWidth = ModelSaveSlotRowUiBuilder.ScrollListThumbnailColumnWidth;
@@ -43,6 +42,7 @@ namespace UI.ClayEditor.View
         private Image[] highlightImages;
         private bool isPointerInside;
         private bool isSelected;
+        private bool suppressHoverHighlight;
         private TMP_Text[] highlightTexts;
 
         private void Awake()
@@ -52,7 +52,6 @@ namespace UI.ClayEditor.View
                 EnsureConfirmPrefabLayout();
             }
 
-            HideAttributeRowDisplay();
             EnsureThumbnailVisuals();
         }
 
@@ -71,6 +70,7 @@ namespace UI.ClayEditor.View
             thumbnailColumnWidth = ModelSaveSlotRowUiBuilder.ScrollListThumbnailColumnWidth;
             useConfirmLayout = false;
             preservePrefabLayout = false;
+            suppressHoverHighlight = false;
             confirmLayoutSize = ModelSaveSlotRowUiBuilder.ConfirmLayoutSize.Standard;
         }
 
@@ -81,6 +81,7 @@ namespace UI.ClayEditor.View
         {
             useConfirmLayout = true;
             preservePrefabLayout = true;
+            suppressHoverHighlight = true;
         }
 
         /// <summary>
@@ -99,12 +100,18 @@ namespace UI.ClayEditor.View
             thumbnailColumnWidth = ModelSaveSlotRowUiBuilder.ConfirmPreviewThumbnailColumnWidth;
             useConfirmLayout = true;
             preservePrefabLayout = false;
+            suppressHoverHighlight = true;
             confirmLayoutSize = ModelSaveSlotRowUiBuilder.ConfirmLayoutSize.Preview;
         }
 
         /// <inheritdoc/>
         public void OnDeselect(BaseEventData eventData)
         {
+            if (suppressHoverHighlight)
+            {
+                return;
+            }
+
             isSelected = false;
             ApplyHighlightState();
         }
@@ -112,6 +119,11 @@ namespace UI.ClayEditor.View
         /// <inheritdoc/>
         public void OnPointerEnter(PointerEventData eventData)
         {
+            if (suppressHoverHighlight)
+            {
+                return;
+            }
+
             isPointerInside = true;
             ApplyHighlightState();
         }
@@ -119,6 +131,11 @@ namespace UI.ClayEditor.View
         /// <inheritdoc/>
         public void OnPointerExit(PointerEventData eventData)
         {
+            if (suppressHoverHighlight)
+            {
+                return;
+            }
+
             isPointerInside = false;
             ApplyHighlightState();
         }
@@ -126,6 +143,11 @@ namespace UI.ClayEditor.View
         /// <inheritdoc/>
         public void OnSelect(BaseEventData eventData)
         {
+            if (suppressHoverHighlight)
+            {
+                return;
+            }
+
             isSelected = true;
             ApplyHighlightState();
         }
@@ -154,7 +176,6 @@ namespace UI.ClayEditor.View
                 paramsText.text = ModelSaveSummaryFormatter.FormatConfirmStatusParameters(slot.status);
             }
 
-            HideAttributeRowDisplay();
             ResolveAttacksPanel()?.ShowForConfirmPrefab(CollectAttackMotions(slot.attackMotions));
         }
 
@@ -179,7 +200,6 @@ namespace UI.ClayEditor.View
                 paramsText.text = ModelSaveSummaryFormatter.FormatConfirmStatusParameters(status);
             }
 
-            HideAttributeRowDisplay();
             ResolveAttacksPanel()?.ShowForConfirmPrefab(CollectAttackMotions(registeredAttackMotions));
         }
 
@@ -201,7 +221,6 @@ namespace UI.ClayEditor.View
                 paramsText.text = string.Empty;
             }
 
-            HideAttributeRowDisplay();
             ResolveAttacksPanel()?.ClearForConfirmPrefab();
         }
 
@@ -242,7 +261,6 @@ namespace UI.ClayEditor.View
                 nameText,
                 paramsText,
                 subText,
-                modelAttributeImage,
                 leftInfoColumn,
                 attacksContainer,
                 thumbnailColumnWidth,
@@ -265,7 +283,6 @@ namespace UI.ClayEditor.View
             nameText = rowElements.NameText;
             paramsText = rowElements.ParamsText;
             subText = rowElements.SubText;
-            modelAttributeImage = rowElements.ModelAttributeImage;
             leftInfoColumn = rowElements.LeftInfoColumn;
             attacksContainer = rowElements.AttacksContainer;
             thumbnailColumnWidth = rowElements.ThumbnailColumnWidth;
@@ -304,6 +321,11 @@ namespace UI.ClayEditor.View
 
         private void ApplyHighlightState()
         {
+            if (suppressHoverHighlight)
+            {
+                return;
+            }
+
             CaptureHighlightTargets();
             bool highlighted = isPointerInside || isSelected;
 
@@ -388,11 +410,6 @@ namespace UI.ClayEditor.View
             isPointerInside = false;
             isSelected = false;
             ApplyHighlightState();
-        }
-
-        private void HideAttributeRowDisplay()
-        {
-            ModelSaveSlotRowUiBuilder.HideAttributeRowDisplay(ToRowElements());
         }
 
         private TrainingResumeAttacksContentView ResolveAttacksPanel()

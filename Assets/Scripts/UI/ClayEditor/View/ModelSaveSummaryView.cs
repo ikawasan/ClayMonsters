@@ -5,7 +5,7 @@ using UnityEngine;
 namespace UI.ClayEditor.View
 {
     /// <summary>
-    /// 属性・パラメータ・攻撃のサマリーをTMPで表示する
+    /// パラメータ・攻撃のサマリーをTMPで表示する
     /// 未設定なら親RectTransform配下に表示用テキストを自動生成する
     /// </summary>
     public sealed class ModelSaveSummaryView : MonoBehaviour

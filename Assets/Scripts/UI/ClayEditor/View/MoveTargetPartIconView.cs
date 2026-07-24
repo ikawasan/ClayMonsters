@@ -8,12 +8,9 @@ namespace UI.ClayEditor.View
 {
     /// <summary>
     /// セーブスロット向け破壊対象部位アイコンUIを組み立てる
-    /// 枠付きアイコンを生成して攻撃チップへ配置する
     /// </summary>
     public static class MoveTargetPartIconView
     {
-        private static readonly Color FrameOutlineColor = new Color(0.58f, 0.66f, 0.78f, 0.55f);
-
         /// <summary>
         /// 使用部位アイコンUIを親へ生成する
         /// </summary>
@@ -58,8 +55,7 @@ namespace UI.ClayEditor.View
             var rootObject = new GameObject(
                 objectName,
                 typeof(RectTransform),
-                typeof(LayoutElement),
-                typeof(Image));
+                typeof(LayoutElement));
             rootObject.transform.SetParent(parent, false);
 
             LayoutElement rootLayout = rootObject.GetComponent<LayoutElement>();
@@ -70,20 +66,14 @@ namespace UI.ClayEditor.View
             rootLayout.flexibleWidth = 0f;
             rootLayout.flexibleHeight = 0f;
 
-            Image frameImage = rootObject.GetComponent<Image>();
-            frameImage.raycastTarget = false;
-            frameImage.type = Image.Type.Simple;
-            frameImage.sprite = CreateFrameSprite();
-
             var iconObject = new GameObject("Icon", typeof(RectTransform), typeof(Image));
             iconObject.transform.SetParent(rootObject.transform, false);
 
             RectTransform iconRect = iconObject.GetComponent<RectTransform>();
             iconRect.anchorMin = Vector2.zero;
             iconRect.anchorMax = Vector2.one;
-            float inset = Mathf.Max(1f, size * 0.06f);
-            iconRect.offsetMin = new Vector2(inset, inset);
-            iconRect.offsetMax = new Vector2(-inset, -inset);
+            iconRect.offsetMin = Vector2.zero;
+            iconRect.offsetMax = Vector2.zero;
 
             Image iconImage = iconObject.GetComponent<Image>();
             iconImage.raycastTarget = false;
@@ -103,7 +93,7 @@ namespace UI.ClayEditor.View
         }
 
         /// <summary>
-        /// 部位アイコン枠の見た目をEditorBakeで適用する
+        /// 部位アイコン枠は使わないため既存枠Imageを無効化する
         /// </summary>
         public static void ApplyFrameVisual(Image frameImage)
         {
@@ -112,59 +102,10 @@ namespace UI.ClayEditor.View
                 return;
             }
 
+            frameImage.enabled = false;
+            frameImage.sprite = null;
+            frameImage.color = new Color(1f, 1f, 1f, 0f);
             frameImage.raycastTarget = false;
-            frameImage.type = Image.Type.Simple;
-            frameImage.sprite = CreateFrameSprite();
-            frameImage.color = Color.white;
-        }
-
-        private static Sprite frameSprite;
-
-        private static Sprite CreateFrameSprite()
-        {
-            if (frameSprite != null)
-            {
-                return frameSprite;
-            }
-
-            const int size = 16;
-            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
-            texture.filterMode = FilterMode.Bilinear;
-            texture.wrapMode = TextureWrapMode.Clamp;
-
-            Color fill = Color.white;
-            Color border = FrameOutlineColor;
-            for (int y = 0; y < size; y++)
-            {
-                for (int x = 0; x < size; x++)
-                {
-                    bool isBorder = x == 0 || y == 0 || x == size - 1 || y == size - 1;
-                    bool isCorner = (x <= 1 || x >= size - 2) && (y <= 1 || y >= size - 2);
-                    if (isBorder)
-                    {
-                        texture.SetPixel(x, y, border);
-                    }
-                    else if (isCorner)
-                    {
-                        texture.SetPixel(x, y, border * 0.65f);
-                    }
-                    else
-                    {
-                        texture.SetPixel(x, y, fill);
-                    }
-                }
-            }
-
-            texture.Apply();
-            frameSprite = Sprite.Create(
-                texture,
-                new Rect(0f, 0f, size, size),
-                new Vector2(0.5f, 0.5f),
-                100f,
-                0,
-                SpriteMeshType.FullRect,
-                new Vector4(4f, 4f, 4f, 4f));
-            return frameSprite;
         }
     }
 }

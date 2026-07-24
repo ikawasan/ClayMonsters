@@ -48,7 +48,6 @@ namespace UI.ClayEditor.View
             public ConfirmLayoutMetrics(
                 float nameFontSize,
                 float paramsFontSize,
-                float attributeSquareSize,
                 float attackChipHeight,
                 float nameThumbnailSpacing,
                 float attackChipNameFontSize,
@@ -59,7 +58,6 @@ namespace UI.ClayEditor.View
             {
                 NameFontSize = nameFontSize;
                 ParamsFontSize = paramsFontSize;
-                AttributeSquareSize = attributeSquareSize;
                 AttackChipHeight = attackChipHeight;
                 NameThumbnailSpacing = nameThumbnailSpacing;
                 AttackChipNameFontSize = attackChipNameFontSize;
@@ -72,8 +70,6 @@ namespace UI.ClayEditor.View
             public float NameFontSize { get; }
 
             public float ParamsFontSize { get; }
-
-            public float AttributeSquareSize { get; }
 
             public float AttackChipHeight { get; }
 
@@ -92,7 +88,6 @@ namespace UI.ClayEditor.View
             public static ConfirmLayoutMetrics Standard { get; } = new ConfirmLayoutMetrics(
                 36f,
                 20f,
-                44f,
                 68f,
                 6f,
                 15f,
@@ -104,7 +99,6 @@ namespace UI.ClayEditor.View
             public static ConfirmLayoutMetrics Preview { get; } = new ConfirmLayoutMetrics(
                 48f,
                 40f,
-                72f,
                 148f,
                 14f,
                 30f,
@@ -129,7 +123,6 @@ namespace UI.ClayEditor.View
         private const int ParamsLineCount = 3;
         private const int ConfirmParamsLineCount = 4;
         private const float StatusTopSpacing = 10f;
-        private const float AttributeSquareSize = 22f;
         private const float ResumeAttackSlotHeight = 108f;
         private const float ResumeAttackSlotSpacing = 8f;
         private const float AttacksStackBottomPadding = 8f;
@@ -166,7 +159,7 @@ namespace UI.ClayEditor.View
 
         private static float NameRowHeight => ResolveTextHeight(NameFontSize);
 
-        private static float NameRowContainerHeight => Mathf.Max(NameRowHeight, AttributeSquareSize);
+        private static float NameRowContainerHeight => NameRowHeight;
 
         private static float StatusBlockHeight => ResolveTextHeight(ParamsFontSize, ParamsLineCount);
 
@@ -177,9 +170,6 @@ namespace UI.ClayEditor.View
 
         private static float ConfirmStatusBlockHeight(ConfirmLayoutMetrics metrics) =>
             ResolveTextHeight(metrics.ParamsFontSize, ConfirmParamsLineCount);
-
-        private static float ConfirmAttributeRowHeight(ConfirmLayoutMetrics metrics) =>
-            Mathf.Max(ResolveTextHeight(metrics.ParamsFontSize), metrics.AttributeSquareSize);
 
         private static float ConfirmParamsSectionHeight(ConfirmLayoutMetrics metrics) =>
             ConfirmStatusBlockHeight(metrics);
@@ -254,7 +244,6 @@ namespace UI.ClayEditor.View
 
             row.ParamsText.gameObject.SetActive(true);
             SetIndexRowVisible(row, false);
-            SetAttributeRowVisible(row, false);
             if (row.SubText != null)
             {
                 row.SubText.gameObject.SetActive(false);
@@ -685,7 +674,6 @@ namespace UI.ClayEditor.View
                 TMP_Text nameText,
                 TMP_Text paramsText,
                 TMP_Text subText,
-                Image modelAttributeImage,
                 RectTransform leftInfoColumn,
                 RectTransform attacksContainer,
                 float thumbnailColumnWidth,
@@ -701,7 +689,6 @@ namespace UI.ClayEditor.View
                 NameText = nameText;
                 ParamsText = paramsText;
                 SubText = subText;
-                ModelAttributeImage = modelAttributeImage;
                 LeftInfoColumn = leftInfoColumn;
                 AttacksContainer = attacksContainer;
                 ThumbnailColumnWidth = thumbnailColumnWidth;
@@ -746,8 +733,6 @@ namespace UI.ClayEditor.View
             public TMP_Text ParamsText { get; }
 
             public TMP_Text SubText { get; }
-
-            public Image ModelAttributeImage { get; }
 
             public RectTransform LeftInfoColumn { get; }
 
@@ -863,8 +848,7 @@ namespace UI.ClayEditor.View
                 metrics,
                 out TMP_Text paramsText,
                 out TMP_Text subText,
-                out TMP_Text indexText,
-                out Image modelAttributeImage);
+                out TMP_Text indexText);
 
             RectTransform attacksContainer = CreateConfirmAttacksContainer(
                 dataRow,
@@ -882,7 +866,6 @@ namespace UI.ClayEditor.View
                 nameText,
                 paramsText,
                 subText,
-                modelAttributeImage,
                 leftInfoColumn,
                 attacksContainer,
                 thumbnailColumnWidth,
@@ -918,11 +901,14 @@ namespace UI.ClayEditor.View
                 thumbnailColumnTransform = thumbnailFrameTransform.parent as RectTransform;
             }
 
-            Image thumbnailImageComponent = thumbnailFrameTransform != null
-                ? thumbnailFrameTransform.Find("Thumbnail")?.GetComponent<Image>()
-                    ?? thumbnailFrameTransform.Find("ThumbnailImage")?.GetComponent<Image>()
-                : FindSlotDescendant(rowContentRoot, "Thumbnail")?.GetComponent<Image>()
+            Image thumbnailImageComponent = TitleClayUiVisualUtility.FindThumbnailImage(
+                thumbnailFrameTransform);
+            if (thumbnailImageComponent == null)
+            {
+                thumbnailImageComponent =
+                    FindSlotDescendant(rowContentRoot, "Thumbnail")?.GetComponent<Image>()
                     ?? FindSlotDescendant(rowContentRoot, "ThumbnailImage")?.GetComponent<Image>();
+            }
             RectTransform leftInfoColumnTransform = FindSlotDescendant(rowContentRoot, "LeftInfoColumn") as RectTransform;
             TMP_Text nameTextComponent = null;
             Transform nameHeaderTransform = rowContentRoot.Find(NameHeaderRowName);
@@ -958,9 +944,6 @@ namespace UI.ClayEditor.View
             TMP_Text subTextComponent = leftInfoColumnTransform != null
                 ? leftInfoColumnTransform.Find("SubText")?.GetComponent<TMP_Text>()
                 : null;
-            Image modelAttributeImageComponent = leftInfoColumnTransform != null
-                ? leftInfoColumnTransform.Find("AttributeRow/ModelAttribute")?.GetComponent<Image>()
-                : null;
             RectTransform attacksContainerTransform = FindSlotDescendant(rowContentRoot, "AttacksContainer") as RectTransform;
             if (attacksContainerTransform == null)
             {
@@ -983,7 +966,6 @@ namespace UI.ClayEditor.View
                 nameTextComponent,
                 paramsTextComponent,
                 subTextComponent,
-                modelAttributeImageComponent,
                 leftInfoColumnTransform,
                 attacksContainerTransform,
                 thumbnailColumnWidth,
@@ -1080,7 +1062,6 @@ namespace UI.ClayEditor.View
 
             SetNameTextVisible(row, true);
             SetParamsTextVisible(row, false);
-            HideAttributeRowDisplay(row);
             if (row.SubText != null)
             {
                 row.SubText.text = string.Empty;
@@ -1099,9 +1080,31 @@ namespace UI.ClayEditor.View
         /// </summary>
         public static void BindScrollListFromSlot(RowElements row, ModelSaveSlot slot, int slotIndex)
         {
+            BindScrollListFromSlot(row, slot, slotIndex, ModelSaveSlotListContentMode.Full);
+        }
+
+        /// <summary>
+        /// スクロール一覧用にセーブ済みスロット内容を指定モードで反映する
+        /// </summary>
+        /// <param name="row">行要素</param>
+        /// <param name="slot">スロット</param>
+        /// <param name="slotIndex">スロット番号</param>
+        /// <param name="contentMode">表示内容</param>
+        public static void BindScrollListFromSlot(
+            RowElements row,
+            ModelSaveSlot slot,
+            int slotIndex,
+            ModelSaveSlotListContentMode contentMode)
+        {
             if (slot == null || string.IsNullOrEmpty(slot.modelName))
             {
                 BindScrollListEmpty(row, "空き", slotIndex);
+                return;
+            }
+
+            if (contentMode == ModelSaveSlotListContentMode.NameAndThumbnail)
+            {
+                BindScrollListNameAndThumbnailFromSlot(row, slot);
                 return;
             }
 
@@ -1109,7 +1112,6 @@ namespace UI.ClayEditor.View
             SetThumbnailColumnVisible(row, true);
             row.ParamsText.text = ModelSaveSummaryFormatter.FormatStatusParameters(slot.status);
             row.ParamsText.gameObject.SetActive(true);
-            SetAttributeRowVisible(row, false);
 
             row.SetActiveAttackCount(ConfirmAttackSlotCount);
             List<MotionType> attacks = CollectAttackMotions(slot.attackMotions);
@@ -1117,6 +1119,24 @@ namespace UI.ClayEditor.View
             if (row.AttacksContainer != null)
             {
                 row.AttacksContainer.gameObject.SetActive(true);
+            }
+        }
+
+        /// <summary>
+        /// 育成済み一覧向けに名前とサムネイルだけ反映する
+        /// </summary>
+        /// <param name="row">行要素</param>
+        /// <param name="slot">スロット</param>
+        public static void BindScrollListNameAndThumbnailFromSlot(RowElements row, ModelSaveSlot slot)
+        {
+            BindScrollListHeader(row, slot.modelName);
+            SetThumbnailColumnVisible(row, true);
+            SetParamsTextVisible(row, false);
+            row.SetActiveAttackCount(0);
+            row.AttacksPanel?.Clear();
+            if (row.AttacksContainer != null)
+            {
+                row.AttacksContainer.gameObject.SetActive(false);
             }
         }
 
@@ -1151,7 +1171,6 @@ namespace UI.ClayEditor.View
             row.NameText.gameObject.SetActive(true);
             row.ParamsText.text = string.Empty;
             row.ParamsText.gameObject.SetActive(false);
-            SetAttributeRowVisible(row, false);
             if (row.SubText != null)
             {
                 row.SubText.text = string.Empty;
@@ -1186,8 +1205,6 @@ namespace UI.ClayEditor.View
                 }
             }
 
-            HideAttributeRowDisplay(row);
-
             row.SetActiveAttackCount(ConfirmAttackSlotCount);
             List<MotionType> attacks = CollectAttackMotions(slot.attackMotions);
             ApplyAttacks(row, attacks);
@@ -1217,8 +1234,6 @@ namespace UI.ClayEditor.View
                     row.ParamsText.gameObject.SetActive(true);
                 }
             }
-
-            HideAttributeRowDisplay(row);
 
             row.SetActiveAttackCount(ConfirmAttackSlotCount);
             List<MotionType> attacks = CollectAttackMotions(registeredAttackMotions);
@@ -1333,19 +1348,6 @@ namespace UI.ClayEditor.View
                 }
             }
 
-            if (row.ModelAttributeImage != null)
-            {
-                LayoutElement attributeLayout = row.ModelAttributeImage.GetComponent<LayoutElement>();
-                if (attributeLayout != null)
-                {
-                    float attributeSize = metrics.AttributeSquareSize;
-                    attributeLayout.minWidth = attributeSize;
-                    attributeLayout.preferredWidth = attributeSize;
-                    attributeLayout.minHeight = attributeSize;
-                    attributeLayout.preferredHeight = attributeSize;
-                }
-            }
-
             EnsureThreeColumnLayout(row);
         }
 
@@ -1405,98 +1407,6 @@ namespace UI.ClayEditor.View
             }
 
             image.sprite = sprite;
-        }
-
-        /// <summary>
-        /// ステータス表示から属性行を非表示にする
-        /// </summary>
-        public static void HideAttributeRowDisplay(RowElements row)
-        {
-            SetAttributeRowVisible(row, false);
-        }
-
-        private static void SetAttributeRowVisible(RowElements row, bool visible)
-        {
-            if (row == null)
-            {
-                return;
-            }
-
-            if (!visible && row.PreservePrefabLayout)
-            {
-                HideAttributeRowGraphics(row);
-                return;
-            }
-
-            if (row.LeftInfoColumn != null)
-            {
-                Transform attributeRow = row.LeftInfoColumn.Find("AttributeRow");
-                if (attributeRow != null)
-                {
-                    attributeRow.gameObject.SetActive(visible);
-                }
-
-                Transform nameRowAttribute = row.LeftInfoColumn.Find("NameRow/ModelAttribute");
-                if (nameRowAttribute != null)
-                {
-                    nameRowAttribute.gameObject.SetActive(visible);
-                }
-            }
-
-            if (row.ThumbnailColumn != null)
-            {
-                Transform thumbnailNameAttribute = row.ThumbnailColumn.Find("NameRow/ModelAttribute");
-                if (thumbnailNameAttribute != null)
-                {
-                    thumbnailNameAttribute.gameObject.SetActive(visible);
-                }
-            }
-
-            if (row.ModelAttributeImage == null)
-            {
-                return;
-            }
-
-            Transform attributeParent = row.ModelAttributeImage.transform.parent;
-            if (attributeParent != null && attributeParent.name == "AttributeRow")
-            {
-                return;
-            }
-
-            row.ModelAttributeImage.gameObject.SetActive(visible);
-        }
-
-        private static void HideAttributeRowGraphics(RowElements row)
-        {
-            if (row.LeftInfoColumn != null)
-            {
-                SetSubtreeGraphicsEnabled(row.LeftInfoColumn.Find("AttributeRow"), false);
-                SetSubtreeGraphicsEnabled(row.LeftInfoColumn.Find("NameRow/ModelAttribute"), false);
-            }
-
-            if (row.ThumbnailColumn != null)
-            {
-                SetSubtreeGraphicsEnabled(row.ThumbnailColumn.Find("NameRow/ModelAttribute"), false);
-            }
-
-            if (row.ModelAttributeImage != null)
-            {
-                row.ModelAttributeImage.enabled = false;
-            }
-        }
-
-        private static void SetSubtreeGraphicsEnabled(Transform root, bool enabled)
-        {
-            if (root == null)
-            {
-                return;
-            }
-
-            Graphic[] graphics = root.GetComponentsInChildren<Graphic>(true);
-            for (int i = 0; i < graphics.Length; i++)
-            {
-                graphics[i].enabled = enabled;
-            }
         }
 
         private static void SetIndexRowVisible(RowElements row, bool visible)
@@ -1857,8 +1767,7 @@ namespace UI.ClayEditor.View
                 out TMP_Text indexText,
                 out TMP_Text nameText,
                 out TMP_Text paramsText,
-                out TMP_Text subText,
-                out Image modelAttributeImage);
+                out TMP_Text subText);
 
             RectTransform attacksContainer = CreateAttacksContainer(parent, rowWidth, thumbnailColumnWidth);
 
@@ -1869,7 +1778,6 @@ namespace UI.ClayEditor.View
                 nameText,
                 paramsText,
                 subText,
-                modelAttributeImage,
                 leftInfoColumn,
                 attacksContainer,
                 thumbnailColumnWidth,
@@ -1883,8 +1791,7 @@ namespace UI.ClayEditor.View
             out TMP_Text indexText,
             out TMP_Text nameText,
             out TMP_Text paramsText,
-            out TMP_Text subText,
-            out Image modelAttributeImage)
+            out TMP_Text subText)
         {
             var columnObject = new GameObject("LeftInfoColumn", typeof(RectTransform), typeof(LayoutElement), typeof(VerticalLayoutGroup));
             columnObject.transform.SetParent(parent, false);
@@ -1912,7 +1819,7 @@ namespace UI.ClayEditor.View
                 columnObject.transform,
                 leftWidth,
                 out indexText);
-            modelAttributeImage = CreateNameRow(
+            CreateNameRow(
                 columnObject.transform,
                 leftWidth,
                 out nameText);
@@ -2155,8 +2062,7 @@ namespace UI.ClayEditor.View
             ConfirmLayoutMetrics metrics,
             out TMP_Text paramsText,
             out TMP_Text subText,
-            out TMP_Text indexText,
-            out Image modelAttributeImage)
+            out TMP_Text indexText)
         {
             var columnObject = new GameObject(
                 "LeftInfoColumn",
@@ -2189,12 +2095,6 @@ namespace UI.ClayEditor.View
                 leftWidth,
                 out indexText);
             indexText.transform.parent.gameObject.SetActive(false);
-
-            modelAttributeImage = CreateConfirmAttributeRow(
-                columnObject.transform,
-                leftWidth,
-                metrics);
-            modelAttributeImage.transform.parent.gameObject.SetActive(false);
 
             float statusBlockHeight = ConfirmStatusBlockHeight(metrics);
             paramsText = CreateRowText(
@@ -2299,52 +2199,8 @@ namespace UI.ClayEditor.View
             nameText.overflowMode = TextOverflowModes.Overflow;
         }
 
-        private static Image CreateConfirmAttributeRow(Transform parent, float columnWidth, ConfirmLayoutMetrics metrics)
-        {
-            float attributeRowHeight = ConfirmAttributeRowHeight(metrics);
-            var attributeRowObject = new GameObject(
-                "AttributeRow",
-                typeof(RectTransform),
-                typeof(LayoutElement),
-                typeof(HorizontalLayoutGroup));
-            attributeRowObject.transform.SetParent(parent, false);
 
-            LayoutElement attributeRowLayout = attributeRowObject.GetComponent<LayoutElement>();
-            attributeRowLayout.minHeight = attributeRowHeight;
-            attributeRowLayout.preferredHeight = attributeRowHeight;
-            attributeRowLayout.flexibleHeight = 0f;
-            attributeRowLayout.minWidth = columnWidth;
-            attributeRowLayout.preferredWidth = columnWidth;
-            attributeRowLayout.flexibleWidth = 1f;
-
-            HorizontalLayoutGroup attributeRowLayoutGroup = attributeRowObject.GetComponent<HorizontalLayoutGroup>();
-            attributeRowLayoutGroup.spacing = 6f;
-            attributeRowLayoutGroup.padding = new RectOffset(0, 0, 0, 0);
-            attributeRowLayoutGroup.childAlignment = TextAnchor.MiddleLeft;
-            attributeRowLayoutGroup.childControlWidth = true;
-            attributeRowLayoutGroup.childControlHeight = true;
-            attributeRowLayoutGroup.childForceExpandWidth = false;
-            attributeRowLayoutGroup.childForceExpandHeight = false;
-
-            TMP_Text attributeLabel = CreateRowText(
-                attributeRowObject.transform,
-                "AttributeLabel",
-                metrics.ParamsFontSize,
-                FontStyles.Normal,
-                new Color(0.82f, 0.86f, 0.92f, 1f),
-                attributeRowHeight);
-            attributeLabel.text = "属性";
-            LayoutElement attributeLabelLayout = attributeLabel.GetComponent<LayoutElement>();
-            attributeLabelLayout.flexibleWidth = 0f;
-            attributeLabelLayout.flexibleHeight = 0f;
-            ApplyTextLayoutHeight(attributeLabelLayout, metrics.ParamsFontSize, attributeRowHeight);
-            attributeLabel.alignment = TextAlignmentOptions.MidlineLeft;
-            attributeLabel.enableWordWrapping = false;
-
-            return CreateAttributeSquare(attributeRowObject.transform, metrics.AttributeSquareSize);
-        }
-
-        private static Image CreateNameRow(
+        private static void CreateNameRow(
             Transform parent,
             float columnWidth,
             out TMP_Text nameText,
@@ -2391,8 +2247,6 @@ namespace UI.ClayEditor.View
             nameText.overflowMode = truncateWithEllipsis
                 ? TextOverflowModes.Ellipsis
                 : TextOverflowModes.Overflow;
-
-            return CreateAttributeSquare(nameRowObject.transform);
         }
 
         private static void SyncHeaderRowWidths(RectTransform leftInfoColumn, float leftWidth)
@@ -2445,23 +2299,6 @@ namespace UI.ClayEditor.View
             gapLayout.preferredHeight = height;
         }
 
-        private static Image CreateAttributeSquare(Transform parent, float size = AttributeSquareSize)
-        {
-            var squareObject = new GameObject("ModelAttribute", typeof(RectTransform), typeof(LayoutElement), typeof(Image));
-            squareObject.transform.SetParent(parent, false);
-
-            LayoutElement squareLayout = squareObject.GetComponent<LayoutElement>();
-            squareLayout.preferredWidth = size;
-            squareLayout.preferredHeight = size;
-            squareLayout.minWidth = size;
-            squareLayout.minHeight = size;
-            squareLayout.flexibleWidth = 0f;
-            squareLayout.flexibleHeight = 0f;
-
-            Image image = squareObject.GetComponent<Image>();
-            image.raycastTarget = false;
-            return image;
-        }
 
         private static RectTransform CreateAttacksContainer(Transform parent, float rowWidth, float thumbnailColumnWidth)
         {
@@ -2555,6 +2392,7 @@ namespace UI.ClayEditor.View
             thumbnailImage = thumbnailObject.GetComponent<Image>();
             thumbnailImage.raycastTarget = false;
             ApplySlotEmptyImage(thumbnailImage);
+            TitleClayUiVisualUtility.EnsureThumbnailUnderRoundedMask(thumbnailImage);
             return frameObject.GetComponent<RectTransform>();
         }
 

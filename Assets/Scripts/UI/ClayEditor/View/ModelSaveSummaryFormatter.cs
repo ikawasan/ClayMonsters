@@ -21,9 +21,15 @@ namespace UI.ClayEditor.View
                 return string.Empty;
             }
 
-            BattleStatusBalance.Normalize(slot.status, out int hp, out int attack, out int defense, out int speed);
+            BattleStatusBalance.Normalize(
+                slot.status,
+                out int hp,
+                out int attack,
+                out int defense,
+                out int speed,
+                out int hit);
             List<MotionType> attacks = CollectAttackMotions(slot.attackMotions);
-            return FormatDetail(hp, attack, defense, speed, attacks, false);
+            return FormatDetail(hp, attack, defense, speed, hit, attacks, false);
         }
 
         /// <summary>
@@ -33,9 +39,15 @@ namespace UI.ClayEditor.View
             ModelStatus status,
             IReadOnlyList<MotionType> registeredAttackMotions)
         {
-            BattleStatusBalance.Normalize(status, out int hp, out int attack, out int defense, out int speed);
+            BattleStatusBalance.Normalize(
+                status,
+                out int hp,
+                out int attack,
+                out int defense,
+                out int speed,
+                out int hit);
             List<MotionType> attacks = CollectAttackMotions(registeredAttackMotions);
-            return FormatDetail(hp, attack, defense, speed, attacks, true);
+            return FormatDetail(hp, attack, defense, speed, hit, attacks, true);
         }
 
         /// <summary>
@@ -48,9 +60,15 @@ namespace UI.ClayEditor.View
                 return string.Empty;
             }
 
-            BattleStatusBalance.Normalize(slot.status, out int hp, out int attack, out int defense, out int speed);
+            BattleStatusBalance.Normalize(
+                slot.status,
+                out int hp,
+                out int attack,
+                out int defense,
+                out int speed,
+                out int hit);
             string attacks = FormatAttacksCompact(CollectAttackMotions(slot.attackMotions));
-            return $"HP{hp} 攻{attack} 防{defense} 速{speed} / {attacks}";
+            return $"HP{hp} 攻撃{attack} 防御{defense} 速度{speed} 命中{hit} / {attacks}";
         }
 
         /// <summary>
@@ -71,8 +89,28 @@ namespace UI.ClayEditor.View
         /// </summary>
         public static string FormatStatusParameters(ModelStatus status)
         {
-            BattleStatusBalance.Normalize(status, out int hp, out int attack, out int defense, out int speed);
-            return $"HP {hp}\n攻 {attack}\n防 {defense}\n速 {speed}";
+            BattleStatusBalance.Normalize(
+                status,
+                out int hp,
+                out int attack,
+                out int defense,
+                out int speed,
+                out int hit);
+            return $"HP {hp}\n攻撃 {attack}\n防御 {defense}\n速度 {speed}\n命中 {hit}";
+        }
+
+        /// <summary>
+        /// 育成中の実ステータスをそのまま整形する
+        /// 作成時上限の丸めは掛けない
+        /// </summary>
+        public static string FormatTrainingStatusParameters(ModelStatus status)
+        {
+            if (status == null)
+            {
+                return string.Empty;
+            }
+
+            return $"HP {status.hp}\n攻撃 {status.attack}\n防御 {status.defense}\n速度 {status.speed}\n命中 {status.hit}";
         }
 
         /// <summary>
@@ -88,12 +126,7 @@ namespace UI.ClayEditor.View
         /// </summary>
         public static string FormatTrainingFinalStatusParameters(ModelStatus status)
         {
-            if (status == null)
-            {
-                return string.Empty;
-            }
-
-            return FormatStatusParameters(status);
+            return FormatTrainingStatusParameters(status);
         }
 
         /// <summary>
@@ -147,6 +180,7 @@ namespace UI.ClayEditor.View
             int attack,
             int defense,
             int speed,
+            int hit,
             IReadOnlyList<MotionType> attacks,
             bool isPreSavePreview)
         {
@@ -155,7 +189,8 @@ namespace UI.ClayEditor.View
             builder.Append("HP ").Append(hp)
                 .Append(" / 攻撃 ").Append(attack)
                 .Append(" / 防御 ").Append(defense)
-                .Append(" / 速度 ").Append(speed);
+                .Append(" / 速度 ").Append(speed)
+                .Append(" / 命中 ").Append(hit);
 
             builder.AppendLine();
             builder.AppendLine();

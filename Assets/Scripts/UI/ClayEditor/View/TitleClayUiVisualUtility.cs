@@ -17,6 +17,7 @@ namespace UI.ClayEditor.View
 
         private static Sprite panelSprite;
         private static Sprite thumbnailFrameSprite;
+        private static Sprite slotInnerSprite;
         private static Sprite buttonNormalSprite;
         private static Sprite buttonHighlightedSprite;
         private static Sprite buttonPressedSprite;
@@ -330,6 +331,102 @@ namespace UI.ClayEditor.View
             image.sprite = sprite;
             image.preserveAspect = true;
             image.type = Image.Type.Simple;
+            image.maskable = true;
+        }
+
+        /// <summary>
+        /// サムネイルImageを角丸Mask配下へ移す
+        /// </summary>
+        /// <param name="thumbnailImage">サムネイルImage</param>
+        public static void EnsureThumbnailUnderRoundedMask(Image thumbnailImage)
+        {
+            if (thumbnailImage == null)
+            {
+                return;
+            }
+
+            Transform currentParent = thumbnailImage.transform.parent;
+            if (currentParent != null && currentParent.name == "ThumbnailMask")
+            {
+                Mask existingMask = currentParent.GetComponent<Mask>();
+                if (existingMask != null)
+                {
+                    existingMask.showMaskGraphic = false;
+                    thumbnailImage.maskable = true;
+                    return;
+                }
+            }
+
+            Transform frameParent = currentParent;
+            if (frameParent == null)
+            {
+                Debug.LogError("[TitleClayUiVisualUtility] thumbnailの親がありません");
+                return;
+            }
+
+            RectTransform thumbRect = thumbnailImage.rectTransform;
+            Vector2 anchorMin = thumbRect.anchorMin;
+            Vector2 anchorMax = thumbRect.anchorMax;
+            Vector2 anchoredPosition = thumbRect.anchoredPosition;
+            Vector2 sizeDelta = thumbRect.sizeDelta;
+            Vector2 pivot = thumbRect.pivot;
+            int siblingIndex = thumbRect.GetSiblingIndex();
+
+            var maskObject = new GameObject(
+                "ThumbnailMask",
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(Image),
+                typeof(Mask));
+            maskObject.layer = frameParent.gameObject.layer;
+            RectTransform maskRect = maskObject.GetComponent<RectTransform>();
+            maskRect.SetParent(frameParent, false);
+            maskRect.SetSiblingIndex(siblingIndex);
+            maskRect.anchorMin = anchorMin;
+            maskRect.anchorMax = anchorMax;
+            maskRect.anchoredPosition = anchoredPosition;
+            maskRect.sizeDelta = sizeDelta;
+            maskRect.pivot = pivot;
+
+            Image maskImage = maskObject.GetComponent<Image>();
+            ApplySlicedSprite(maskImage, LoadSlotInnerSprite());
+            maskImage.raycastTarget = false;
+            maskImage.color = Color.white;
+
+            Mask mask = maskObject.GetComponent<Mask>();
+            mask.showMaskGraphic = false;
+
+            thumbRect.SetParent(maskRect, false);
+            thumbRect.anchorMin = Vector2.zero;
+            thumbRect.anchorMax = Vector2.one;
+            thumbRect.anchoredPosition = Vector2.zero;
+            thumbRect.sizeDelta = Vector2.zero;
+            thumbRect.pivot = new Vector2(0.5f, 0.5f);
+            thumbnailImage.maskable = true;
+        }
+
+        /// <summary>
+        /// 枠配下からサムネイルImageを探す
+        /// </summary>
+        /// <param name="thumbnailFrame">ThumbnailFrame</param>
+        /// <returns>サムネイルImage</returns>
+        public static Image FindThumbnailImage(Transform thumbnailFrame)
+        {
+            if (thumbnailFrame == null)
+            {
+                return null;
+            }
+
+            Transform direct = thumbnailFrame.Find("Thumbnail")
+                ?? thumbnailFrame.Find("ThumbnailImage");
+            if (direct != null)
+            {
+                return direct.GetComponent<Image>();
+            }
+
+            Transform masked = thumbnailFrame.Find("ThumbnailMask/Thumbnail")
+                ?? thumbnailFrame.Find("ThumbnailMask/ThumbnailImage");
+            return masked != null ? masked.GetComponent<Image>() : null;
         }
 
         /// <summary>
@@ -992,6 +1089,9 @@ namespace UI.ClayEditor.View
 
         private static Sprite LoadThumbnailFrameSprite() =>
             LoadGameUiSprite("GameUi_ThumbnailFrame", ref thumbnailFrameSprite);
+
+        private static Sprite LoadSlotInnerSprite() =>
+            LoadGameUiSprite("GameUi_SlotInner", ref slotInnerSprite);
 
         private static Sprite LoadButtonNormalSprite() => LoadSprite("TitleMenuButton_Normal", ref buttonNormalSprite);
 

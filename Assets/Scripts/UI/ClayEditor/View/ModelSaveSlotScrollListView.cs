@@ -278,64 +278,60 @@ namespace UI.ClayEditor.View
 
 
         /// <summary>
-
         /// 各スロットの表示を最新のセーブ内容に更新する
-
         /// </summary>
-
         public void RefreshSlots(
-
             ModelSavePool pool,
-
             IClayModelSaveService saveService,
-
             string emptySlotLabel,
-
             IList<UnityEngine.Object> runtimeThumbnailObjects,
-
             bool allowEmptySlotSelection)
-
         {
-
-            EnsureBuilt();
-
-            if (!isBuilt || saveService == null)
-
-            {
-
-                return;
-
-            }
-
-
-
-            for (int i = 0; i < rows.Count; i++)
-
-            {
-
-                ModelSaveSlot slot = saveService.GetSlot(pool, i);
-
-                bool used = IsLoadableSlot(slot);
-
-                ApplyRowContent(rows[i], slot, used, i, emptySlotLabel);
-
-                ApplyThumbnail(rows[i].Elements, used, pool, i, saveService, runtimeThumbnailObjects);
-
-                rows[i].Button.interactable = used || allowEmptySlotSelection;
-
-                if (rows[i].RowWrapper != null)
-
-                {
-
-                    rows[i].RowWrapper.gameObject.SetActive(true);
-
-                }
-
-            }
-
+            RefreshSlots(
+                pool,
+                saveService,
+                emptySlotLabel,
+                runtimeThumbnailObjects,
+                allowEmptySlotSelection,
+                TrainedSaveSlotListPresentation.ResolveContentMode(pool));
         }
 
+        /// <summary>
+        /// 各スロットの表示を最新のセーブ内容に更新する
+        /// </summary>
+        /// <param name="pool">セーブプール</param>
+        /// <param name="saveService">セーブサービス</param>
+        /// <param name="emptySlotLabel">空スロット文言</param>
+        /// <param name="runtimeThumbnailObjects">実行時サムネイル破棄用</param>
+        /// <param name="allowEmptySlotSelection">空スロット選択を許可するか</param>
+        /// <param name="contentMode">行の表示内容</param>
+        public void RefreshSlots(
+            ModelSavePool pool,
+            IClayModelSaveService saveService,
+            string emptySlotLabel,
+            IList<UnityEngine.Object> runtimeThumbnailObjects,
+            bool allowEmptySlotSelection,
+            ModelSaveSlotListContentMode contentMode)
+        {
+            EnsureBuilt();
+            if (!isBuilt || saveService == null)
+            {
+                return;
+            }
 
+            for (int i = 0; i < rows.Count; i++)
+            {
+                ModelSaveSlot slot = saveService.GetSlot(pool, i);
+                bool used = IsLoadableSlot(slot);
+                ApplyRowContent(rows[i], slot, used, i, emptySlotLabel, contentMode);
+                ApplyThumbnail(rows[i].Elements, used, pool, i, saveService, runtimeThumbnailObjects);
+                rows[i].Button.interactable = used || allowEmptySlotSelection;
+                if (rows[i].RowWrapper != null)
+                {
+                    rows[i].RowWrapper.gameObject.SetActive(true);
+                }
+            }
+        }
 
         private static bool IsLoadableSlot(ModelSaveSlot slot)
         {
@@ -345,57 +341,32 @@ namespace UI.ClayEditor.View
         }
 
         private void Awake()
-
         {
-
             DisableLegacyGridLayout();
-
             HideLegacySlotButtonChildren();
-
         }
-
-
 
         private static void ApplyRowContent(
-
             SlotRow row,
-
             ModelSaveSlot slot,
-
             bool used,
-
             int slotIndex,
-
-            string emptySlotLabel)
-
+            string emptySlotLabel,
+            ModelSaveSlotListContentMode contentMode)
         {
-
             ModelSaveSlotRowUiBuilder.RowElements elements = row.Elements;
-
             if (!used)
-
             {
-
                 ModelSaveSlotRowUiBuilder.BindScrollListEmpty(elements, emptySlotLabel, slotIndex);
-
             }
-
             else
-
             {
-
-                ModelSaveSlotRowUiBuilder.BindScrollListFromSlot(elements, slot, slotIndex);
-
+                ModelSaveSlotRowUiBuilder.BindScrollListFromSlot(elements, slot, slotIndex, contentMode);
             }
-
         }
 
-
-
         private void EnsureBuilt()
-
         {
-
             if (isBuilt && rows.Count > 0)
 
             {

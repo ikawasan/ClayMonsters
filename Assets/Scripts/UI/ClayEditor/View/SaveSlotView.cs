@@ -97,7 +97,7 @@ namespace UI.ClayEditor.View
         [SerializeField] private LHButton nameInputBackButton;
 
         [Header("保存確認キャンバス")]
-        [Tooltip("名前・サムネイル・属性・パラメータ・攻撃をまとめて表示するキャンバス")]
+        [Tooltip("名前・サムネイル・パラメータ・攻撃をまとめて表示するキャンバス")]
         [FormerlySerializedAs("saveCompleteCanvas")]
         [SerializeField] private Canvas saveConfirmCanvas;
 

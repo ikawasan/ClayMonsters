@@ -17,7 +17,7 @@ namespace UI.ClayEditor.View
 {
     /// <summary>
     /// プレイヤー用セーブデータから1つを選んでモデルをロードするView。
-    /// 横長のスクロール一覧でサムネイルと名前・ステータスを表示し、スロットを選ぶと確認Canvasを表示する。
+    /// 育成済みプールでは5×10の名前とサムネイルボタン一覧を表示し選択後に確認Canvasでステータスを表示する。
     /// 「ロードする」でglbを読み込み、「戻る」で確認Canvasを閉じる。
     /// </summary>
     public class LoadSlotView : MonoBehaviour, IMonsterSelection
@@ -32,6 +32,9 @@ namespace UI.ClayEditor.View
         [Header("セーブスロット選択")]
         [Tooltip("横長のスクロールスロット一覧")]
         [SerializeField] private ModelSaveSlotScrollListView slotScrollList;
+
+        [Tooltip("育成済み用5×10グリッド一覧")]
+        [SerializeField] private TrainedSaveSlotGridView trainedSlotGrid;
 
         [Tooltip("全画面入力ブロッカー背景。未設定ならブロッカー設定をスキップする")]
         [SerializeField] private Image inputBlocker;
@@ -205,6 +208,7 @@ namespace UI.ClayEditor.View
         {
             EnsureSelectionCanvas();
             SetConfirmPanelActive(false);
+            trainedSlotGrid?.Hide();
             CanvasVisibilityUtility.SetCanvasEnabled(selectionCanvas, false);
         }
 
@@ -225,6 +229,18 @@ namespace UI.ClayEditor.View
         public void EnsureSelectionReady()
         {
             RestoreSelectionInteractable();
+
+            if (UsesTrainedSlotGrid())
+            {
+                EnsureSelectionInitializedForTrainedGrid();
+                RefreshSlots();
+                Debug.Log(
+                    "[LoadSlotView] EnsureSelectionReady完了"
+                    + $" saveService={(saveService != null)}"
+                    + " mode=TrainedSlotGrid");
+                return;
+            }
+
             EnsureSlotScrollList();
             if (slotScrollList == null)
             {
@@ -275,6 +291,12 @@ namespace UI.ClayEditor.View
 
         private bool TryRefreshWhenHostReady()
         {
+            if (UsesTrainedSlotGrid())
+            {
+                RefreshSlots();
+                return true;
+            }
+
             EnsureSlotScrollList();
             if (slotScrollList == null)
             {
@@ -297,6 +319,38 @@ namespace UI.ClayEditor.View
 
             RefreshSlots();
             return true;
+        }
+
+        private void EnsureSelectionInitializedForTrainedGrid()
+        {
+            if (isInitialized)
+            {
+                return;
+            }
+
+            EnsureLoadConfirmButtons();
+            if (EnsureTrainedSlotGrid())
+            {
+                trainedSlotGrid.Initialize(OnSlotSelected);
+            }
+
+            if (loadButton != null)
+            {
+                loadButton.SubscribeOnClick(OnLoadConfirmed);
+            }
+
+            if (backButton != null)
+            {
+                backButton.SubscribeOnClick(OnBack);
+            }
+
+            SetConfirmPanelActive(false);
+            isInitialized = true;
+        }
+
+        private bool UsesTrainedSlotGrid()
+        {
+            return savePool == ModelSavePool.TrainedPlayer && EnsureTrainedSlotGrid();
         }
 
         // 画面が表示されるたびに最新のセーブ内容を読み直す。
@@ -374,7 +428,11 @@ namespace UI.ClayEditor.View
         /// </summary>
         public void PrepareLayout(bool reparentToUiRoot = false)
         {
-            EnsureSlotScrollList();
+            if (!UsesTrainedSlotGrid())
+            {
+                EnsureSlotScrollList();
+            }
+
             ApplySelectionCanvasSorting();
             EnsureInputBlockerConfigured();
             Canvas canvas = GetComponent<Canvas>();
@@ -398,16 +456,37 @@ namespace UI.ClayEditor.View
         // 各スロットの表示を更新する。データがあれば名前とサムネイル、無ければ空き表示・選択不可にする
         private void RefreshSlots()
         {
-            EnsureSlotScrollList();
-            if (slotScrollList == null)
-            {
-                return;
-            }
-
             if (saveService == null)
             {
                 Debug.LogError("[LoadSlotView] saveService未注入のためスロット内容を更新できません");
-                slotScrollList.RefreshHostLayout();
+                return;
+            }
+
+            if (savePool == ModelSavePool.TrainedPlayer)
+            {
+                if (EnsureTrainedSlotGrid())
+                {
+                    SetScrollListVisible(false);
+                    ClearRuntimeThumbnails();
+                    trainedSlotGrid.Show();
+                    trainedSlotGrid.Initialize(OnSlotSelected);
+                    trainedSlotGrid.Refresh(saveService, emptySlotLabel, allowEmptySlotSelection: false);
+                    return;
+                }
+
+                Debug.LogError(
+                    "[LoadSlotView] trainedSlotGridが未配置ですResources/UI/TrainedSaveSlotGridをHierarchyへ配置してください",
+                    this);
+            }
+            else
+            {
+                trainedSlotGrid?.Hide();
+                SetScrollListVisible(true);
+            }
+
+            EnsureSlotScrollList();
+            if (slotScrollList == null)
+            {
                 return;
             }
 
@@ -417,8 +496,33 @@ namespace UI.ClayEditor.View
                 saveService,
                 emptySlotLabel,
                 runtimeThumbnailObjects,
-                allowEmptySlotSelection: false);
+                allowEmptySlotSelection: false,
+                TrainedSaveSlotListPresentation.ResolveContentMode(savePool));
             slotScrollList.RefreshHostLayout();
+        }
+
+        private bool EnsureTrainedSlotGrid()
+        {
+            if (trainedSlotGrid != null)
+            {
+                return true;
+            }
+
+            trainedSlotGrid = GetComponentInChildren<TrainedSaveSlotGridView>(true);
+            return trainedSlotGrid != null;
+        }
+
+        private void SetScrollListVisible(bool visible)
+        {
+            if (slotScrollList == null)
+            {
+                return;
+            }
+
+            if (slotScrollList.gameObject.activeSelf != visible)
+            {
+                slotScrollList.gameObject.SetActive(visible);
+            }
         }
 
         // スロットが選択されたとき: 確認キャンバスを開く
@@ -637,13 +741,13 @@ namespace UI.ClayEditor.View
 
         private void EnsureSlotScrollList()
         {
-            if (slotScrollList != null)
+            if (slotScrollList != null || UsesTrainedSlotGrid())
             {
                 return;
             }
 
             Debug.LogError(
-                "[LoadSlotView] slotScrollListが未設定です。Editor Wireツールで参照を配線してください",
+                "[LoadSlotView] slotScrollListが未設定ですHierarchyで接続してください",
                 this);
         }
 

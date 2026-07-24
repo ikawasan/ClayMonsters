@@ -227,6 +227,7 @@ namespace UI.ClayEditor.View
             image.sprite = sprite;
             image.preserveAspect = true;
             image.type = Image.Type.Simple;
+            image.maskable = true;
         }
 
         /// <summary>

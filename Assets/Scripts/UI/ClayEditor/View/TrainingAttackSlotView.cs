@@ -123,19 +123,15 @@ namespace UI.ClayEditor.View
             if (requiredPartIcon != null)
             {
                 requiredPartIcon.sprite = null;
-                if (preserveLayoutSpace)
-                {
-                    requiredPartIcon.enabled = false;
-                }
+                requiredPartIcon.enabled = false;
+                requiredPartIcon.color = new Color(1f, 1f, 1f, 0f);
             }
 
             if (targetPartIcon != null)
             {
                 targetPartIcon.sprite = null;
-                if (preserveLayoutSpace)
-                {
-                    targetPartIcon.enabled = false;
-                }
+                targetPartIcon.enabled = false;
+                targetPartIcon.color = new Color(1f, 1f, 1f, 0f);
             }
 
             if (rangeBar != null)
@@ -251,7 +247,7 @@ namespace UI.ClayEditor.View
 
             resolvedIcon.sprite = null;
             resolvedIcon.enabled = false;
-            SetPartIconFrameEnabled(resolvedIcon, false);
+            DisablePartIconFrame(resolvedIcon);
         }
 
         private static Image ResolvePartIconImage(Image iconImage)
@@ -275,7 +271,7 @@ namespace UI.ClayEditor.View
             return iconImage;
         }
 
-        private static void SetPartIconFrameEnabled(Image iconImage, bool enabled)
+        private static void DisablePartIconFrame(Image iconImage)
         {
             if (iconImage == null)
             {
@@ -293,7 +289,9 @@ namespace UI.ClayEditor.View
                 return;
             }
 
-            frameImage.enabled = enabled;
+            frameImage.enabled = false;
+            frameImage.sprite = null;
+            frameImage.color = new Color(1f, 1f, 1f, 0f);
         }
 
         private void RefreshPartInfoRowLayout()

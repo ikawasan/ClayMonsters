@@ -57,30 +57,15 @@ namespace UI.ClayEditor.View
 
             Image iconImage = ResolveIconImage(image);
 
-            if (targetPartId == MoveTargetPartId.None)
-            {
-                iconImage.sprite = null;
-                if (preserveGameObjectActive)
-                {
-                    iconImage.enabled = false;
-                    SetFrameImageEnabled(iconImage, false);
-                }
-                else
-                {
-                    iconImage.gameObject.SetActive(false);
-                }
-
-                return;
-            }
-
             iconImage.sprite = MoveCommandSpriteCatalog.LoadTargetPartIcon(targetPartId);
+            iconImage.color = Color.white;
             iconImage.preserveAspect = true;
             iconImage.type = Image.Type.Simple;
+            DisableFrameImage(iconImage);
 
             if (preserveGameObjectActive)
             {
                 iconImage.enabled = true;
-                SetFrameImageEnabled(iconImage, true);
                 return;
             }
 
@@ -108,7 +93,7 @@ namespace UI.ClayEditor.View
             return image;
         }
 
-        private static void SetFrameImageEnabled(Image iconImage, bool enabled)
+        private static void DisableFrameImage(Image iconImage)
         {
             if (iconImage == null)
             {
@@ -126,7 +111,9 @@ namespace UI.ClayEditor.View
                 return;
             }
 
-            frameImage.enabled = enabled;
+            frameImage.enabled = false;
+            frameImage.sprite = null;
+            frameImage.color = new Color(1f, 1f, 1f, 0f);
         }
 
         private static MoveTargetPartId ToRequiredPartId(BonePart part)
@@ -137,7 +124,7 @@ namespace UI.ClayEditor.View
                 case BonePart.Leg: return MoveTargetPartId.Leg;
                 case BonePart.Front: return MoveTargetPartId.Front;
                 case BonePart.Back: return MoveTargetPartId.Back;
-                case BonePart.Body: return MoveTargetPartId.Body;
+                case BonePart.Body: return MoveTargetPartId.None;
                 default: return MoveTargetPartId.None;
             }
         }
@@ -150,7 +137,7 @@ namespace UI.ClayEditor.View
                 case BonePart.Leg: return MoveTargetPartId.Leg;
                 case BonePart.Front: return MoveTargetPartId.Front;
                 case BonePart.Back: return MoveTargetPartId.Back;
-                case BonePart.Body: return MoveTargetPartId.Any;
+                case BonePart.Body: return MoveTargetPartId.None;
                 default: return MoveTargetPartId.None;
             }
         }
