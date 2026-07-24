@@ -11,14 +11,33 @@ namespace Battle
         public const int MinHp = 400;
         public const int DefaultHp = ModelStatusDefaults.DefaultHp;
         public const int MinAttack = ModelStatusDefaults.MinAttack;
-        public const int MaxAttack = ModelStatusDefaults.MaxAttack;
+        /// <summary>
+        /// 育成後を含む戦闘上限
+        /// 作成時上限(ModelStatusDefaults.MaxAttack)より高い
+        /// </summary>
+        public const int MaxAttack = 999;
         public const int DefaultAttack = ModelStatusDefaults.DefaultAttack;
         public const int MinDefense = ModelStatusDefaults.MinDefense;
-        public const int MaxDefense = ModelStatusDefaults.MaxDefense;
+        /// <summary>
+        /// 育成後を含む戦闘上限
+        /// 作成時上限(ModelStatusDefaults.MaxDefense)より高い
+        /// </summary>
+        public const int MaxDefense = 999;
         public const int DefaultDefense = ModelStatusDefaults.DefaultDefense;
         public const int DefaultSpeed = ModelStatusDefaults.DefaultSpeed;
         public const int MinSpeed = 6;
-        public const int MaxSpeed = 18;
+        /// <summary>
+        /// 育成後を含む戦闘上限
+        /// 作成時上限より高い
+        /// </summary>
+        public const int MaxSpeed = 99;
+        public const int MinHit = ModelStatusDefaults.MinHit;
+        /// <summary>
+        /// 育成後を含む戦闘上限
+        /// 作成時上限(ModelStatusDefaults.MaxHit)より高い
+        /// </summary>
+        public const int MaxHit = 99;
+        public const int DefaultHit = ModelStatusDefaults.DefaultHit;
         public const float MoveSpeedPerPoint = 0.04f;
         public const float MinMoveSpeed = 0.35f;
         public const float MinStepDistanceRatio = 0.45f;
@@ -26,7 +45,13 @@ namespace Battle
         /// <summary>
         /// セーブデータのステータスを戦闘向けに補正する
         /// </summary>
-        public static void Normalize(ModelStatus status, out int hp, out int attack, out int defense, out int speed)
+        public static void Normalize(
+            ModelStatus status,
+            out int hp,
+            out int attack,
+            out int defense,
+            out int speed,
+            out int hit)
         {
             ModelStatus source = status ?? new ModelStatus();
 
@@ -41,6 +66,9 @@ namespace Battle
 
             int rawSpeed = source.speed > 0 ? source.speed : DefaultSpeed;
             speed = Mathf.Clamp(rawSpeed, MinSpeed, MaxSpeed);
+
+            int rawHit = source.hit > 0 ? source.hit : DefaultHit;
+            hit = Mathf.Clamp(rawHit, MinHit, MaxHit);
         }
 
         /// <summary>

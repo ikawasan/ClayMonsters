@@ -45,7 +45,7 @@ namespace Battle
 
         /// <summary>
         /// その攻撃が相手のどの部位を破壊できるかを返す
-        /// Bodyは全身攻撃で残っている部位から選ぶ
+        /// Bodyは破壊部位なし
         /// </summary>
         public static BonePart GetTargetDestroyPart(MotionType motion)
         {
@@ -89,7 +89,7 @@ namespace Battle
                 case BonePart.Leg: return "脚";
                 case BonePart.Front: return "前";
                 case BonePart.Back: return "後";
-                case BonePart.Body: return "任意";
+                case BonePart.Body: return "なし";
                 default: return part.ToString();
             }
         }

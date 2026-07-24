@@ -23,7 +23,7 @@ namespace Battle
 
         public BattleUnit(
             string name,
-            int maxHp, int attack, int defense, int speed,
+            int maxHp, int attack, int defense, int speed, int hit,
             IReadOnlyList<MotionType> attackMotions,
             ProceduralMotionCharacter motion,
             ModelPartLossController partLoss,
@@ -37,6 +37,7 @@ namespace Battle
             Attack = attack;
             Defense = defense;
             Speed = speed;
+            Hit = hit;
 
             MaxGuts = Mathf.Max(1f, maxGuts);
             Guts = 0f;
@@ -108,6 +109,11 @@ namespace Battle
         /// 速度ステータス
         /// </summary>
         public int Speed { get; }
+
+        /// <summary>
+        /// 命中ステータス
+        /// </summary>
+        public int Hit { get; }
 
         /// <summary>
         /// 最大ガッツ
@@ -208,7 +214,7 @@ namespace Battle
             }
 
             AttackMove move = Moves[moveIndex];
-            return BattleCombatRules.ComputeHitRate(move.Accuracy, Guts, MaxGuts);
+            return BattleCombatRules.ComputeHitRate(move.Accuracy, Guts, MaxGuts, Hit);
         }
 
         /// <summary>
@@ -419,12 +425,19 @@ namespace Battle
         }
 
         /// <summary>
-        /// 指定部位(または全身攻撃なら残存部位)から1つ欠損させ・欠損種類をlostPartで返す
+        /// 指定部位から1つ欠損させ・欠損種類をlostPartで返す
+        /// Bodyは破壊対象なしとして欠損しない
         /// </summary>
         public bool TryLosePart(BonePart targetPart, out BonePart lostPart, out int lostLimbIndex)
         {
             lostPart = BonePart.Body;
             lostLimbIndex = -1;
+
+            // Bodyは破壊部位無し
+            if (targetPart == BonePart.Body)
+            {
+                return false;
+            }
 
             var remaining = new List<int>();
             for (int i = 0; i < limbIndices.Count; i++)
@@ -436,7 +449,7 @@ namespace Battle
                 }
 
                 BonePart limbPart = FindLimbPart(limbIndex);
-                if (targetPart == BonePart.Body || limbPart == targetPart)
+                if (limbPart == targetPart)
                 {
                     remaining.Add(limbIndex);
                 }
@@ -498,6 +511,12 @@ namespace Battle
                 return true;
             }
 
+            // Bodyは破壊部位無し
+            if (targetPart == BonePart.Body)
+            {
+                return false;
+            }
+
             var remaining = new List<int>();
             for (int i = 0; i < limbIndices.Count; i++)
             {
@@ -508,7 +527,7 @@ namespace Battle
                 }
 
                 BonePart limbPart = FindLimbPart(currentLimbIndex);
-                if (targetPart == BonePart.Body || limbPart == targetPart)
+                if (limbPart == targetPart)
                 {
                     remaining.Add(currentLimbIndex);
                 }

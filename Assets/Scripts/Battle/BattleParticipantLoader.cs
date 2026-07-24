@@ -131,7 +131,7 @@ namespace Battle
             }
 
             configured.PartLoss?.SuspendMeshRebuild();
-            NormalizeStatus(status, out int hp, out int attack, out int defense, out int speed);
+            NormalizeStatus(status, out int hp, out int attack, out int defense, out int speed, out int hit);
 
             IReadOnlyList<MotionType> motions = attackMotions != null && attackMotions.Count > 0
                 ? attackMotions
@@ -143,6 +143,7 @@ namespace Battle
                 attack,
                 defense,
                 speed,
+                hit,
                 motions,
                 configured.Motion,
                 configured.PartLoss);
@@ -245,11 +246,11 @@ namespace Battle
 
             cfg.PartLoss?.SuspendMeshRebuild();
 
-            NormalizeStatus(slot.status, out int hp, out int attack, out int defense, out int speed);
+            NormalizeStatus(slot.status, out int hp, out int attack, out int defense, out int speed, out int hit);
 
             var unit = new BattleUnit(
                 slot.modelName,
-                hp, attack, defense, speed,
+                hp, attack, defense, speed, hit,
                 ResolveAttackMotions(slot),
                 cfg.Motion,
                 cfg.PartLoss);
@@ -258,9 +259,15 @@ namespace Battle
         }
 
         // 未設定や旧データのステータスを戦闘向けに補正する
-        private static void NormalizeStatus(ModelStatus status, out int hp, out int attack, out int defense, out int speed)
+        private static void NormalizeStatus(
+            ModelStatus status,
+            out int hp,
+            out int attack,
+            out int defense,
+            out int speed,
+            out int hit)
         {
-            BattleStatusBalance.Normalize(status, out hp, out attack, out defense, out speed);
+            BattleStatusBalance.Normalize(status, out hp, out attack, out defense, out speed, out hit);
         }
 
         // 攻撃モーションが空のスロット向けに既定技を返す

@@ -236,7 +236,7 @@ namespace Battle.Presenter
                 case BonePart.Leg: return MoveTargetPartId.Leg;
                 case BonePart.Front: return MoveTargetPartId.Front;
                 case BonePart.Back: return MoveTargetPartId.Back;
-                case BonePart.Body: return MoveTargetPartId.Any;
+                case BonePart.Body: return MoveTargetPartId.None;
                 default: return MoveTargetPartId.None;
             }
         }
@@ -250,7 +250,7 @@ namespace Battle.Presenter
                 case BonePart.Leg: return MoveTargetPartId.Leg;
                 case BonePart.Front: return MoveTargetPartId.Front;
                 case BonePart.Back: return MoveTargetPartId.Back;
-                case BonePart.Body: return MoveTargetPartId.Body;
+                case BonePart.Body: return MoveTargetPartId.None;
                 default: return MoveTargetPartId.None;
             }
         }

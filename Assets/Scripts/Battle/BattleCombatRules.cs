@@ -8,12 +8,16 @@ namespace Battle
     public static class BattleCombatRules
     {
         /// <summary>
-        /// ガッツ量に応じた命中率を返す
+        /// ガッツ量と命中ステータスに応じた命中率を返す
         /// </summary>
-        public static float ComputeHitRate(float baseAccuracy, float guts, float maxGuts)
+        public static float ComputeHitRate(float baseAccuracy, float guts, float maxGuts, int hit)
         {
             float gutsRatio = maxGuts > 0f ? Mathf.Clamp01(guts / maxGuts) : 0f;
-            return Mathf.Clamp01(baseAccuracy * (0.55f + 0.45f * gutsRatio));
+            float hitMultiplier = Mathf.Clamp(
+                hit / (float)BattleStatusBalance.DefaultHit,
+                0.7f,
+                1.4f);
+            return Mathf.Clamp01(baseAccuracy * (0.55f + 0.45f * gutsRatio) * hitMultiplier);
         }
 
         /// <summary>

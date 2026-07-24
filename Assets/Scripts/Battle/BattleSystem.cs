@@ -1585,7 +1585,11 @@ namespace Battle
             float powerMultiplier = 1f,
             int attackSequence = 0)
         {
-            float hitRate = BattleCombatRules.ComputeHitRate(move.Accuracy, attacker.Guts, attacker.MaxGuts);
+            float hitRate = BattleCombatRules.ComputeHitRate(
+                move.Accuracy,
+                attacker.Guts,
+                attacker.MaxGuts,
+                attacker.Hit);
             attacker.PlayMotion(move.Motion, move.Recovery);
             attacker.ConsumeForMove(move);
 
