@@ -39,7 +39,7 @@ namespace SaveData.Service
             byte[] thumbnailPng,
             CancellationToken cancellationToken)
         {
-            if (!IsValidSlotIndex(slotIndex))
+            if (!ModelSavePoolSettings.IsValidSlotIndex(pool, slotIndex))
             {
                 Debug.LogError($"[ClayModelSaveService] スロット番号が範囲外です: {slotIndex}");
                 return false;
@@ -111,7 +111,7 @@ namespace SaveData.Service
         /// <inheritdoc />
         public ModelSaveSlot GetSlot(ModelSavePool pool, int slotIndex)
         {
-            if (!IsValidSlotIndex(slotIndex))
+            if (!ModelSavePoolSettings.IsValidSlotIndex(pool, slotIndex))
             {
                 return null;
             }
@@ -150,7 +150,7 @@ namespace SaveData.Service
         public bool HasAnySavedModel(ModelSavePool pool)
         {
             ClayModelSaveData data = LoadOrCreate(pool);
-            for (int i = 0; i < ClayModelSaveData.SlotCount; i++)
+            for (int i = 0; i < ModelSavePoolSettings.GetSlotCount(pool); i++)
             {
                 ModelSaveSlot slot = data.slots[i];
                 if (!slot.isUsed || string.IsNullOrEmpty(slot.glbFileName))
@@ -170,7 +170,7 @@ namespace SaveData.Service
         /// <inheritdoc />
         public bool UpdateSlotStatus(ModelSavePool pool, int slotIndex, ModelStatus status)
         {
-            if (!IsValidSlotIndex(slotIndex) || status == null)
+            if (!ModelSavePoolSettings.IsValidSlotIndex(pool, slotIndex) || status == null)
             {
                 return false;
             }
@@ -187,7 +187,8 @@ namespace SaveData.Service
                 hp = status.hp,
                 attack = status.attack,
                 defense = status.defense,
-                speed = status.speed
+                speed = status.speed,
+                hit = status.hit
             };
             data.slots[slotIndex] = slot;
             WriteToFile(pool, data);
@@ -197,7 +198,7 @@ namespace SaveData.Service
         /// <inheritdoc />
         public bool UpdateSlotAttackMotions(ModelSavePool pool, int slotIndex, IReadOnlyList<MotionType> attackMotions)
         {
-            if (!IsValidSlotIndex(slotIndex) || attackMotions == null || attackMotions.Count == 0)
+            if (!ModelSavePoolSettings.IsValidSlotIndex(pool, slotIndex) || attackMotions == null || attackMotions.Count == 0)
             {
                 return false;
             }
@@ -231,7 +232,7 @@ namespace SaveData.Service
         /// <inheritdoc />
         public bool SaveTrainingProgress(ModelSavePool pool, int slotIndex, TrainingSlotProgress progress)
         {
-            if (!IsValidSlotIndex(slotIndex) || progress == null || !progress.inProgress)
+            if (!ModelSavePoolSettings.IsValidSlotIndex(pool, slotIndex) || progress == null || !progress.inProgress)
             {
                 return false;
             }
@@ -252,7 +253,7 @@ namespace SaveData.Service
         /// <inheritdoc />
         public void ClearTrainingProgress(ModelSavePool pool, int slotIndex)
         {
-            if (!IsValidSlotIndex(slotIndex))
+            if (!ModelSavePoolSettings.IsValidSlotIndex(pool, slotIndex))
             {
                 return;
             }
@@ -286,8 +287,8 @@ namespace SaveData.Service
             Transform boneRoot,
             CancellationToken cancellationToken)
         {
-            if (!IsValidSlotIndex(trainedSlotIndex)
-                || !IsValidSlotIndex(playerSlotIndex)
+            if (!ModelSavePoolSettings.IsValidSlotIndex(ModelSavePool.TrainedPlayer, trainedSlotIndex)
+                || !ModelSavePoolSettings.IsValidSlotIndex(ModelSavePool.Player, playerSlotIndex)
                 || status == null)
             {
                 return false;
@@ -337,8 +338,8 @@ namespace SaveData.Service
             ModelStatus status,
             IReadOnlyList<MotionType> attackMotions)
         {
-            if (!IsValidSlotIndex(trainedSlotIndex)
-                || !IsValidSlotIndex(playerSlotIndex)
+            if (!ModelSavePoolSettings.IsValidSlotIndex(ModelSavePool.TrainedPlayer, trainedSlotIndex)
+                || !ModelSavePoolSettings.IsValidSlotIndex(ModelSavePool.Player, playerSlotIndex)
                 || status == null)
             {
                 return false;
@@ -429,7 +430,8 @@ namespace SaveData.Service
                         hp = source.status.hp,
                         attack = source.status.attack,
                         defense = source.status.defense,
-                        speed = source.status.speed
+                        speed = source.status.speed,
+                        hit = source.status.hit
                     }
                     : new ModelStatus(),
                 attackMotions = source.attackMotions != null
@@ -442,16 +444,13 @@ namespace SaveData.Service
         /// <inheritdoc />
         public void DeleteSlot(ModelSavePool pool, int slotIndex)
         {
+            // 育成前と育成済みは別プールのため指定プールのみ削除する
             DeleteSlotInternal(pool, slotIndex);
-            if (pool == ModelSavePool.Player)
-            {
-                DeleteSlotInternal(ModelSavePool.TrainedPlayer, slotIndex);
-            }
         }
 
         private void DeleteSlotInternal(ModelSavePool pool, int slotIndex)
         {
-            if (!IsValidSlotIndex(slotIndex))
+            if (!ModelSavePoolSettings.IsValidSlotIndex(pool, slotIndex))
             {
                 return;
             }
@@ -488,9 +487,9 @@ namespace SaveData.Service
             WriteToFile(pool, data);
         }
 
-        private static bool IsValidSlotIndex(int slotIndex)
+        private static bool IsValidSlotIndex(ModelSavePool pool, int slotIndex)
         {
-            return slotIndex >= 0 && slotIndex < ModelSavePoolSettings.SlotCount;
+            return ModelSavePoolSettings.IsValidSlotIndex(pool, slotIndex);
         }
 
         private static string GetSaveFilePath(ModelSavePool pool)
@@ -534,12 +533,13 @@ namespace SaveData.Service
                 data.slots = new List<ModelSaveSlot>();
             }
 
-            while (data.slots.Count < ModelSavePoolSettings.SlotCount)
+            int slotCount = ModelSavePoolSettings.GetSlotCount(pool);
+            while (data.slots.Count < slotCount)
             {
                 data.slots.Add(new ModelSaveSlot());
             }
 
-            while (data.slots.Count > ModelSavePoolSettings.SlotCount)
+            while (data.slots.Count > slotCount)
             {
                 data.slots.RemoveAt(data.slots.Count - 1);
             }

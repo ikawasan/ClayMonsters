@@ -5,7 +5,7 @@ using UnityEngine;
 namespace SaveData
 {
     /// <summary>
-    /// モデルのステータス(HP・攻撃力・防御力・速度)
+    /// モデルのステータス(HP・攻撃力・防御力・速度・命中)
     /// 保存時はModelStatusCalculatorがモデル形状と色から算出した値を保持する
     /// </summary>
     [System.Serializable]
@@ -32,6 +32,11 @@ namespace SaveData
         public int speed;
 
         /// <summary>
+        /// 命中
+        /// </summary>
+        public int hit;
+
+        /// <summary>
         /// ステータスのコピーを返す
         /// </summary>
         /// <returns>コピーしたModelStatus</returns>
@@ -42,7 +47,8 @@ namespace SaveData
                 hp = hp,
                 attack = attack,
                 defense = defense,
-                speed = speed
+                speed = speed,
+                hit = hit
             };
         }
 

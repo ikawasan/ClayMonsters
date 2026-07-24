@@ -63,7 +63,7 @@ namespace SaveData.Interface
 
         /// <summary>
         /// 指定プールのスロットの保存データとglb・サムネイルファイルを削除する
-        /// Playerプールの場合は同番号のTrainedPlayerスロットも削除する
+        /// 他プールの同番号スロットは削除しない
         /// </summary>
         /// <param name="pool">対象プール</param>
         /// <param name="slotIndex">スロット番号</param>

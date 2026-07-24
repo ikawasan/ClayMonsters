@@ -2,6 +2,8 @@ namespace SaveData
 {
     /// <summary>
     /// 新規モデル保存時の既定ステータス
+    /// Max系は作成時の形状反映範囲
+    /// 育成後の戦闘上限はBattleStatusBalanceを使う
     /// </summary>
     public static class ModelStatusDefaults
     {
@@ -13,6 +15,9 @@ namespace SaveData
         public const int MaxDefense = 48;
         public const int DefaultDefense = 36;
         public const int DefaultSpeed = 10;
+        public const int MinHit = 6;
+        public const int MaxHit = 18;
+        public const int DefaultHit = 10;
 
         /// <summary>
         /// 新規保存向けの既定ステータスを返す
@@ -24,7 +29,8 @@ namespace SaveData
                 hp = DefaultHp,
                 attack = DefaultAttack,
                 defense = DefaultDefense,
-                speed = DefaultSpeed
+                speed = DefaultSpeed,
+                hit = DefaultHit
             };
         }
     }

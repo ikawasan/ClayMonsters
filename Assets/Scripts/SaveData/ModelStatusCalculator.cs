@@ -5,7 +5,7 @@ using UnityEngine;
 namespace SaveData
 {
     /// <summary>
-    /// モデルの色・部位数・頂点数からHP・攻撃力・防御力・速度を算出する
+    /// モデルの色・部位数・頂点数からHP・攻撃力・防御力・速度・命中を算出する
     /// </summary>
     public static class ModelStatusCalculator
     {
@@ -60,7 +60,8 @@ namespace SaveData
                 hp = CalculateHp(mesh),
                 attack = CalculateAttack(armCount, legCount, backCount),
                 defense = CalculateDefense(vertexCount),
-                speed = CalculateSpeed(vertexCount)
+                speed = CalculateSpeed(vertexCount),
+                hit = CalculateHit(vertexCount)
             };
         }
 
@@ -128,6 +129,14 @@ namespace SaveData
             float normalized = Mathf.InverseLerp(MinVertexCount, MaxVertexCount, vertexCount);
             int speed = Mathf.RoundToInt(Mathf.Lerp(MaxSpeed, MinSpeed, normalized));
             return Mathf.Clamp(speed, MinSpeed, MaxSpeed);
+        }
+
+        private static int CalculateHit(int vertexCount)
+        {
+            float normalized = Mathf.InverseLerp(MinVertexCount, MaxVertexCount, vertexCount);
+            int hit = Mathf.RoundToInt(
+                Mathf.Lerp(ModelStatusDefaults.MinHit, ModelStatusDefaults.MaxHit, normalized));
+            return Mathf.Clamp(hit, ModelStatusDefaults.MinHit, ModelStatusDefaults.MaxHit);
         }
 
         private static float CalculateBalanceScore(int[] groupCounts, int total)

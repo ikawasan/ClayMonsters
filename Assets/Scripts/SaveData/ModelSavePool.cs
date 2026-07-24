@@ -27,9 +27,45 @@ namespace SaveData
     public static class ModelSavePoolSettings
     {
         /// <summary>
-        /// 各プールのスロット数
+        /// 未育成・敵プールのスロット数
         /// </summary>
         public const int SlotCount = 10;
+
+        /// <summary>
+        /// 育成済みプールのスロット数(5列×10行)
+        /// </summary>
+        public const int TrainedSlotCount = 50;
+
+        /// <summary>
+        /// 育成済み一覧の列数
+        /// </summary>
+        public const int TrainedGridColumnCount = 5;
+
+        /// <summary>
+        /// 育成済み一覧の行数
+        /// </summary>
+        public const int TrainedGridRowCount = 10;
+
+        /// <summary>
+        /// プールごとのスロット数を返す
+        /// </summary>
+        /// <param name="pool">セーブプール</param>
+        public static int GetSlotCount(ModelSavePool pool)
+        {
+            return pool == ModelSavePool.TrainedPlayer
+                ? TrainedSlotCount
+                : SlotCount;
+        }
+
+        /// <summary>
+        /// スロット番号が有効か返す
+        /// </summary>
+        /// <param name="pool">セーブプール</param>
+        /// <param name="slotIndex">スロット番号</param>
+        public static bool IsValidSlotIndex(ModelSavePool pool, int slotIndex)
+        {
+            return slotIndex >= 0 && slotIndex < GetSlotCount(pool);
+        }
 
         /// <summary>
         /// メタデータJSONのファイル名を返す
