@@ -54,6 +54,7 @@ public sealed class TrainingLocationCameraViewEditor : UnityEditor.Editor
         EditorGUILayout.LabelField("実行中キャプチャ", EditorStyles.boldLabel);
         EditorGUILayout.HelpBox(
             "Play中にカメラを調整してから反映先を選び「現在のカメラ構図を反映」を押してください。"
+            + " RoamBackground用は反映先をRoamにしてください。"
             + " Play終了後もシーンへ書き戻します。",
             MessageType.Info);
 
@@ -67,6 +68,11 @@ public sealed class TrainingLocationCameraViewEditor : UnityEditor.Editor
 
         if (Application.isPlaying)
         {
+            if (GUILayout.Button("選択中の背景と構図を適用", GUILayout.Height(24f)))
+            {
+                ApplySelectedPresentation();
+            }
+
             EditorGUI.BeginChangeCheck();
             enableCameraTuning = EditorGUILayout.ToggleLeft(
                 "調整用にカメラ操作を有効化",
@@ -106,7 +112,8 @@ public sealed class TrainingLocationCameraViewEditor : UnityEditor.Editor
 
     private bool CanCapture()
     {
-        return target is TrainingLocationCameraView view && TryReadCapture(view, out _);
+        return target is TrainingLocationCameraView view
+            && TryReadCapture(view, captureTarget, out _);
     }
 
     private void CaptureCurrentOrbit()
@@ -116,7 +123,7 @@ public sealed class TrainingLocationCameraViewEditor : UnityEditor.Editor
             return;
         }
 
-        if (!TryReadCapture(view, out TrainingLocationOrbitCapture capture))
+        if (!TryReadCapture(view, captureTarget, out TrainingLocationOrbitCapture capture))
         {
             EditorUtility.DisplayDialog(
                 "育成カメラ構図",
@@ -136,10 +143,12 @@ public sealed class TrainingLocationCameraViewEditor : UnityEditor.Editor
         }
 
         EditorUtility.SetDirty(view);
-        serializedObject.Update();
 
+        // 反映後の実適用結果をその場で確認する
         if (Application.isPlaying)
         {
+            ApplySelectedPresentation();
+
             TrainingLocationCameraPlayModeBridge.QueueCapture(
                 view,
                 captureTarget,
@@ -151,14 +160,16 @@ public sealed class TrainingLocationCameraViewEditor : UnityEditor.Editor
             MarkSceneDirty(view);
         }
 
+        serializedObject.Update();
         Debug.Log(BuildCaptureLog(captureTarget, captureLocation, capture));
     }
 
     private static bool TryReadCapture(
         TrainingLocationCameraView view,
+        TrainingLocationCameraTarget captureTarget,
         out TrainingLocationOrbitCapture capture)
     {
-        if (view.TryCaptureCurrentOrbit(out capture))
+        if (view.TryCaptureCurrentOrbit(captureTarget, out capture))
         {
             return true;
         }
@@ -177,22 +188,32 @@ public sealed class TrainingLocationCameraViewEditor : UnityEditor.Editor
         Vector3 center = Vector3.zero;
         TrainingDisplay display = view.GetComponentInParent<TrainingDisplay>()
             ?? UnityEngine.Object.FindFirstObjectByType<TrainingDisplay>(FindObjectsInactive.Include);
-        if (display != null)
+        if (captureTarget == TrainingLocationCameraTarget.Roam
+            && display != null
+            && display.DisplayAnchor != null)
+        {
+            center = display.DisplayAnchor.position;
+        }
+        else if (display != null)
         {
             display.TryGetDisplayFocusCenter(out center);
         }
 
         Vector3 delta = focus - center;
         float focusHeightOffset = delta.y;
-        Vector3 screenRight = Battle.BattleFieldScreenAxis.ResolveScreenRight(horizontalAngle);
+        float normalizedHorizontal = Mathf.DeltaAngle(0f, horizontalAngle);
+        Vector3 screenRight = Battle.BattleFieldScreenAxis.ResolveScreenRight(normalizedHorizontal);
+        Vector3 screenForward = Battle.BattleFieldScreenAxis.ResolveCameraForward(normalizedHorizontal);
         Vector3 planar = delta - Vector3.up * focusHeightOffset;
         float focusSideOffset = Vector3.Dot(planar, screenRight);
+        float focusForwardOffset = Vector3.Dot(planar, screenForward);
         capture = new TrainingLocationOrbitCapture(
-            horizontalAngle,
+            normalizedHorizontal,
             verticalAngle,
             distance,
             focusHeightOffset,
-            focusSideOffset);
+            focusSideOffset,
+            focusForwardOffset);
         return true;
     }
 
@@ -204,6 +225,46 @@ public sealed class TrainingLocationCameraViewEditor : UnityEditor.Editor
         }
 
         view.SetTuningEnabled(enabled);
+    }
+
+    private void ApplySelectedPresentation()
+    {
+        if (target is not TrainingLocationCameraView view)
+        {
+            return;
+        }
+
+        TrainingBackgroundView backgroundView =
+            view.GetComponentInParent<TrainingBackgroundView>()
+            ?? UnityEngine.Object.FindFirstObjectByType<TrainingBackgroundView>(
+                FindObjectsInactive.Include);
+
+        switch (captureTarget)
+        {
+            case TrainingLocationCameraTarget.Default:
+                backgroundView?.ShowDefaultBackground();
+                view.ApplyDefaultView();
+                break;
+            case TrainingLocationCameraTarget.Rest:
+                backgroundView?.ShowRestBackground();
+                view.ApplyRestView();
+                break;
+            case TrainingLocationCameraTarget.Roam:
+                backgroundView?.ShowRoamBackground();
+                view.ApplyRoamView();
+                break;
+            case TrainingLocationCameraTarget.Inheritance:
+                backgroundView?.ShowInheritanceBackground();
+                view.ApplyInheritanceView();
+                break;
+            case TrainingLocationCameraTarget.Location:
+                backgroundView?.ShowLocationBackground(captureLocation);
+                view.ApplyLocationView(captureLocation);
+                break;
+            default:
+                view.ApplyDefaultView();
+                break;
+        }
     }
 
     private static ClayEditCameraView FindClayEditCameraView()
@@ -220,6 +281,8 @@ public sealed class TrainingLocationCameraViewEditor : UnityEditor.Editor
         {
             TrainingLocationCameraTarget.Default => "Default",
             TrainingLocationCameraTarget.Rest => "Rest",
+            TrainingLocationCameraTarget.Roam => "Roam",
+            TrainingLocationCameraTarget.Inheritance => "Inheritance",
             TrainingLocationCameraTarget.Location =>
                 $"{TrainingLocationCatalog.GetDisplayName(location)}({location})",
             _ => target.ToString()
@@ -228,7 +291,8 @@ public sealed class TrainingLocationCameraViewEditor : UnityEditor.Editor
         return "[TrainingLocationCamera] 反映完了 "
             + $"{targetName} "
             + $"H={capture.HorizontalAngle:F1} V={capture.VerticalAngle:F1} D={capture.Distance:F2} "
-            + $"FocusH={capture.FocusHeightOffset:F2} FocusS={capture.FocusSideOffset:F2}";
+            + $"FocusH={capture.FocusHeightOffset:F2} FocusS={capture.FocusSideOffset:F2}"
+            + $" FocusF={capture.FocusForwardOffset:F2}";
     }
 
     private static void MarkSceneDirty(Component component)
