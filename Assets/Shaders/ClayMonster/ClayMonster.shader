@@ -2,110 +2,37 @@ Shader "Custom/ClayMonster"
 {
     Properties
     {
-        _BaseColor ("Base Color", Color) = (0.94, 0.86, 0.74, 1)
-        _VertexColorStrength ("Vertex Color Strength", Range(0,1)) = 1
+        [MainTexture] _BaseMap ("Base Texture (Matte)", 2D) = "white" {}
+        [MainColor] _BaseColor ("Base Color", Color) = (0.6, 0.5, 0.4, 1.0)
+        _VertexColorStrength ("Vertex Color Strength", Range(0, 1)) = 1
 
-        [Space(10)]
-        [Header(Clay Surface)]
-        _ClayNoiseScale ("Clay Noise Scale", Range(0.1, 24)) = 4.8
-        _ClayNoiseStrength ("Clay Color Variation", Range(0, 0.35)) = 0.08
-        _FingerprintScale ("Fingerprint Scale", Range(1, 48)) = 16
-        _FingerprintStrength ("Fingerprint Strength", Range(0, 0.3)) = 0.1
-        _NormalPerturb ("Surface Bump", Range(0, 0.6)) = 0.18
-        _CavityStrength ("Cavity Darken", Range(0, 1)) = 0.42
+        // 粘土の凹凸（スカルプト）設定
+        _SculptNoiseTex ("Sculpt Noise (Greyscale)", 2D) = "gray" {}
+        _SculptStrength ("Sculpt Strength", Range(0.0, 0.1)) = 0.02
+        _SculptScale ("Sculpt Scale", Range(0.1, 10.0)) = 1.0
 
-        [Space(10)]
-        [Header(Clay Lighting)]
-        _ShadowColor ("Shadow Tint", Color) = (0.55, 0.48, 0.46, 1)
-        _DiffuseSoftness ("Diffuse Softness", Range(0.2, 2)) = 0.82
-        _ShadowDepth ("Shadow Depth", Range(0, 1)) = 0.38
-        _Wrap ("Light Wrap", Range(0, 1)) = 0.62
-        _AmbientIntensity ("Ambient Intensity", Range(0, 1)) = 0.48
+        // 階調（トーン）ライティング設定
+        _LightSteps ("Lighting Steps (Clay Bands)", Range(1, 10)) = 3.0
+        _AmbientColor ("Ambient Color", Color) = (0.2, 0.2, 0.2, 1.0)
 
-        [Space(10)]
-        [Header(Clay Highlight)]
-        [HDR] _SpecularColor ("Specular Color", Color) = (0.42, 0.4, 0.38, 1)
-        _SpecularStrength ("Specular Strength", Range(0, 1)) = 0.22
-        _SpecularSmoothness ("Specular Softness", Range(0, 1)) = 0.72
-
-        [Space(10)]
-        [Header(Subsurface)]
-        [HDR] _SubsurfaceColor ("Subsurface Tint", Color) = (1, 0.72, 0.55, 1)
-        _SubsurfaceStrength ("Subsurface Strength", Range(0, 2)) = 0.9
-        _SubsurfacePower ("Subsurface Power", Range(0.5, 8)) = 1.6
-
-        [Space(10)]
-        [Header(Rim Light)]
-        [HDR] _RimColor ("Rim Color", Color) = (1.0, 0.92, 0.82, 1)
-        _RimPower ("Rim Power", Range(0.1, 10)) = 3.2
-        _RimStrength ("Rim Strength", Range(0, 2)) = 0.48
-
-        [Space(10)]
-        [Header(Outline)]
-        _OutlineDarkness ("Outline Darkness", Range(0, 1)) = 0.32
-        _OutlineWidth ("Outline Width", Range(0, 0.1)) = 0.018
+        // 粘土のこね直しアニメーション（0で静止）
+        _Animate ("Animate Sculpt (0-1)", Range(0.0, 1.0)) = 0.0
     }
+
     SubShader
     {
-        Tags { "RenderType"="Opaque" "RenderPipeline"="UniversalPipeline" }
-
-        Pass
+        Tags
         {
-            Name "Outline"
-            Tags { "LightMode" = "SRPDefaultUnlit" }
-
-            Cull Front
-            ZWrite Off
-            ZTest LEqual
-
-            HLSLPROGRAM
-            #pragma vertex OutlineVert
-            #pragma fragment OutlineFrag
-
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-            #include "ClayMonsterSurface.hlsl"
-
-            struct Attributes
-            {
-                float4 positionOS : POSITION;
-                float3 normalOS   : NORMAL;
-                float4 color      : COLOR;
-            };
-
-            struct Varyings
-            {
-                float4 positionHCS : SV_POSITION;
-                float3 positionWS  : TEXCOORD0;
-                float4 color       : COLOR;
-            };
-
-            Varyings OutlineVert(Attributes IN)
-            {
-                Varyings OUT;
-                float3 normalWS = normalize(TransformObjectToWorldNormal(IN.normalOS));
-                float3 positionWS = TransformObjectToWorld(IN.positionOS.xyz);
-                positionWS += normalWS * _OutlineWidth;
-                OUT.positionWS = positionWS;
-                OUT.positionHCS = TransformWorldToHClip(positionWS);
-                OUT.color = IN.color;
-                return OUT;
-            }
-
-            half4 OutlineFrag(Varyings IN) : SV_Target
-            {
-                half3 albedo = ClayMonsterSampleAlbedo(IN.positionWS, float3(0, 1, 0), IN.color);
-                return half4(ClayMonsterClampOutput(albedo * (1.0h - _OutlineDarkness)), 1.0);
-            }
-            ENDHLSL
+            "RenderType" = "Opaque"
+            "RenderPipeline" = "UniversalPipeline"
+            "Queue" = "Geometry"
         }
+        LOD 100
 
         Pass
         {
             Name "ForwardLit"
-            Tags { "LightMode"="UniversalForward" }
-
-            ZWrite On
-            Cull Back
+            Tags { "LightMode" = "UniversalForward" }
 
             HLSLPROGRAM
             #pragma vertex vert
@@ -114,118 +41,93 @@ Shader "Custom/ClayMonster"
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS_CASCADE
             #pragma multi_compile _ _SHADOWS_SOFT
-            #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
-            #pragma multi_compile_fog
             #pragma multi_compile_instancing
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
-            #include "ClayMonsterSurface.hlsl"
 
             struct Attributes
             {
                 float4 positionOS : POSITION;
                 float3 normalOS   : NORMAL;
+                float2 uv         : TEXCOORD0;
                 float4 color      : COLOR;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct Varyings
             {
-                float4 positionHCS : SV_POSITION;
-                float3 positionWS  : TEXCOORD0;
-                float3 normalWS    : TEXCOORD1;
-                float4 color       : COLOR;
-                float fogCoord     : TEXCOORD2;
+                float4 positionCS : SV_POSITION;
+                float2 uv         : TEXCOORD0;
+                float3 normalWS   : TEXCOORD1;
+                float3 positionWS : TEXCOORD2;
+                float4 color      : COLOR;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+                UNITY_VERTEX_OUTPUT_STEREO
             };
 
-            half3 ClayMonsterSoftAdditionalDiffuse(float3 positionWS, float3 normalWS, half3 albedo)
+            TEXTURE2D(_BaseMap);        SAMPLER(sampler_BaseMap);
+            TEXTURE2D(_SculptNoiseTex); SAMPLER(sampler_SculptNoiseTex);
+
+            CBUFFER_START(UnityPerMaterial)
+                float4 _BaseMap_ST;
+                float4 _SculptNoiseTex_ST;
+                float4 _BaseColor;
+                float4 _AmbientColor;
+                float _VertexColorStrength;
+                float _SculptStrength;
+                float _SculptScale;
+                float _LightSteps;
+                float _Animate;
+            CBUFFER_END
+
+            float3 ClayMonsterDisplaceOS(float3 positionOS, float3 normalOS, float2 uv)
             {
-                half3 additionalDiffuse = 0;
-#if defined(_ADDITIONAL_LIGHTS)
-                uint lightCount = GetAdditionalLightsCount();
-                for (uint lightIndex = 0u; lightIndex < lightCount; lightIndex++)
-                {
-                    Light light = GetAdditionalLight(lightIndex, positionWS);
-                    half halfLambert = saturate(dot(normalWS, light.direction) * 0.5h + 0.5h);
-                    half wrapLight = saturate((halfLambert + _Wrap) / (1.0h + _Wrap));
-                    half lightAmount = pow(wrapLight, _DiffuseSoftness);
-                    additionalDiffuse += albedo * light.color * light.distanceAttenuation * lightAmount * 0.55h;
-                }
-#endif
-                return additionalDiffuse;
+                float2 noiseUV = uv * _SculptScale + (_Time.y * _Animate * 0.1);
+                float noise = SAMPLE_TEXTURE2D_LOD(_SculptNoiseTex, sampler_SculptNoiseTex, noiseUV, 0).r;
+                float sculptOffset = (noise * 2.0 - 1.0) * _SculptStrength;
+                return positionOS + normalOS * sculptOffset;
             }
 
-            Varyings vert (Attributes IN)
+            Varyings vert(Attributes input)
             {
-                Varyings OUT;
-                OUT.positionWS = TransformObjectToWorld(IN.positionOS.xyz);
-                OUT.positionHCS = TransformWorldToHClip(OUT.positionWS);
-                OUT.normalWS = TransformObjectToWorldNormal(IN.normalOS);
-                OUT.color = IN.color;
-                OUT.fogCoord = ComputeFogFactor(OUT.positionHCS.z);
-                return OUT;
+                Varyings output = (Varyings)0;
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_TRANSFER_INSTANCE_ID(input, output);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
+
+                float3 displacedPositionOS = ClayMonsterDisplaceOS(input.positionOS.xyz, input.normalOS, input.uv);
+                VertexPositionInputs positionInputs = GetVertexPositionInputs(displacedPositionOS);
+
+                output.positionCS = positionInputs.positionCS;
+                output.positionWS = positionInputs.positionWS;
+                output.normalWS = TransformObjectToWorldNormal(input.normalOS);
+                output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
+                output.color = input.color;
+                return output;
             }
 
-            half4 frag (Varyings IN) : SV_Target
+            half4 frag(Varyings input) : SV_Target
             {
-                float3 normalWS = ClayMonsterPerturbNormal(IN.positionWS, normalize(IN.normalWS));
-                float3 viewDirWS = GetWorldSpaceNormalizeViewDir(IN.positionWS);
-                half3 albedo = ClayMonsterSampleAlbedo(IN.positionWS, normalWS, IN.color);
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
 
-                float4 shadowCoord = TransformWorldToShadowCoord(IN.positionWS);
+                half4 baseMap = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv);
+                half3 tint = lerp(_BaseColor.rgb, saturate(input.color.rgb), _VertexColorStrength);
+                half4 albedo = half4(baseMap.rgb * tint, baseMap.a * _BaseColor.a);
+
+                float4 shadowCoord = TransformWorldToShadowCoord(input.positionWS);
                 Light mainLight = GetMainLight(shadowCoord);
-                float3 lightDirWS = normalize(mainLight.direction);
-                half3 lightColor = mainLight.color;
-                half shadowAttenuation = mainLight.shadowAttenuation;
+                float3 normalWS = normalize(input.normalWS);
 
-                float ndotl = dot(normalWS, lightDirWS);
-                half halfLambert = ndotl * 0.5h + 0.5h;
-                half wrapLight = saturate((halfLambert + _Wrap) / (1.0h + _Wrap));
-                half lightAmount = pow(wrapLight * shadowAttenuation, _DiffuseSoftness);
+                float NdotL = saturate(dot(normalWS, mainLight.direction));
+                float steps = max(1.0, _LightSteps);
+                float bandedNdotL = floor(NdotL * steps) / max(1.0, steps - 1.0);
 
-                half cavity = ClayMonsterSampleCavity(IN.positionWS, normalWS);
-                half3 litColor = albedo * lightColor;
-                half shadowMix = lerp(1.0h - _ShadowDepth, 1.0h, lightAmount);
-                half3 shadowTint = albedo * _ShadowColor.rgb;
-                half3 diffuseColor = lerp(shadowTint * shadowMix, litColor, lightAmount);
-                diffuseColor *= lerp(1.0h, 0.68h, cavity * _CavityStrength);
-                diffuseColor += ClayMonsterSoftAdditionalDiffuse(IN.positionWS, normalWS, albedo);
+                half3 lighting = mainLight.color * (bandedNdotL * mainLight.distanceAttenuation * mainLight.shadowAttenuation);
+                half3 finalColor = albedo.rgb * (lighting + _AmbientColor.rgb);
 
-                half glossMask = ClayMonsterGlossMask(IN.color.a);
-
-                float3 halfVector = normalize(lightDirWS + viewDirWS);
-                float ndoth = max(0.0, dot(normalWS, halfVector));
-                half specPower = lerp(48.0h, 6.0h, _SpecularSmoothness);
-                half specIntensity = pow(ndoth, specPower) * _SpecularStrength;
-                specIntensity *= glossMask;
-                specIntensity *= 1.0h - cavity * 0.75h;
-                half3 specularColor = specIntensity * saturate(_SpecularColor.rgb) * lightColor;
-
-                float ndotv = max(0.0, dot(normalWS, viewDirWS));
-                float rim = 1.0 - ndotv;
-                half rimIntensity = pow(rim, _RimPower);
-                rimIntensity *= glossMask;
-                half3 rimTint = lerp(albedo, saturate(_RimColor.rgb), 0.55h);
-                half3 rimLight = rimIntensity * rimTint * _RimStrength * 0.38h;
-
-                half backScatter = pow(saturate(dot(viewDirWS, -lightDirWS) * 0.5h + 0.5h), _SubsurfacePower);
-                half edgeScatter = pow(rim, _SubsurfacePower * 0.55h);
-                half3 subsurfaceTint = albedo * saturate(_SubsurfaceColor.rgb);
-                half3 subsurface = (backScatter * 0.42h + edgeScatter * 0.58h)
-                    * subsurfaceTint
-                    * _SubsurfaceStrength
-                    * lightColor
-                    * glossMask
-                    * lerp(0.35h, 1.0h, lightAmount);
-
-                half3 ambient = albedo * SampleSH(normalWS) * _AmbientIntensity;
-                ambient *= lerp(1.0h, 0.72h, cavity * _CavityStrength);
-
-                half3 finalColor = ClayMonsterClampOutput(
-                    diffuseColor + specularColor + rimLight + subsurface + ambient);
-                finalColor = MixFog(finalColor, IN.fogCoord);
-
-                return half4(finalColor, 1.0);
+                return half4(finalColor, albedo.a);
             }
             ENDHLSL
         }
@@ -241,11 +143,89 @@ Shader "Custom/ClayMonster"
             Cull Back
 
             HLSLPROGRAM
-            #pragma vertex ShadowPassVertex
-            #pragma fragment ShadowPassFragment
+            #pragma vertex ShadowVert
+            #pragma fragment ShadowFrag
+            #pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
             #pragma multi_compile_instancing
 
-            #include "Packages/com.unity.render-pipelines.universal/Shaders/ShadowCasterPass.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
+
+            float3 _LightDirection;
+            float3 _LightPosition;
+
+            TEXTURE2D(_SculptNoiseTex); SAMPLER(sampler_SculptNoiseTex);
+
+            CBUFFER_START(UnityPerMaterial)
+                float4 _BaseMap_ST;
+                float4 _SculptNoiseTex_ST;
+                float4 _BaseColor;
+                float4 _AmbientColor;
+                float _VertexColorStrength;
+                float _SculptStrength;
+                float _SculptScale;
+                float _LightSteps;
+                float _Animate;
+            CBUFFER_END
+
+            struct Attributes
+            {
+                float4 positionOS : POSITION;
+                float3 normalOS   : NORMAL;
+                float2 uv         : TEXCOORD0;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+            };
+
+            struct Varyings
+            {
+                float4 positionCS : SV_POSITION;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+                UNITY_VERTEX_OUTPUT_STEREO
+            };
+
+            float3 ClayMonsterDisplaceOS(float3 positionOS, float3 normalOS, float2 uv)
+            {
+                float2 noiseUV = uv * _SculptScale + (_Time.y * _Animate * 0.1);
+                float noise = SAMPLE_TEXTURE2D_LOD(_SculptNoiseTex, sampler_SculptNoiseTex, noiseUV, 0).r;
+                float sculptOffset = (noise * 2.0 - 1.0) * _SculptStrength;
+                return positionOS + normalOS * sculptOffset;
+            }
+
+            float4 GetShadowPositionHClip(Attributes input)
+            {
+                float3 displacedPositionOS = ClayMonsterDisplaceOS(input.positionOS.xyz, input.normalOS, input.uv);
+                float3 positionWS = TransformObjectToWorld(displacedPositionOS);
+                float3 normalWS = TransformObjectToWorldNormal(input.normalOS);
+
+#if _CASTING_PUNCTUAL_LIGHT_SHADOW
+                float3 lightDirectionWS = normalize(_LightPosition - positionWS);
+#else
+                float3 lightDirectionWS = _LightDirection;
+#endif
+
+                float4 positionCS = TransformWorldToHClip(ApplyShadowBias(positionWS, normalWS, lightDirectionWS));
+#if UNITY_REVERSED_Z
+                positionCS.z = min(positionCS.z, UNITY_NEAR_CLIP_VALUE);
+#else
+                positionCS.z = max(positionCS.z, UNITY_NEAR_CLIP_VALUE);
+#endif
+                return positionCS;
+            }
+
+            Varyings ShadowVert(Attributes input)
+            {
+                Varyings output = (Varyings)0;
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_TRANSFER_INSTANCE_ID(input, output);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
+                output.positionCS = GetShadowPositionHClip(input);
+                return output;
+            }
+
+            half4 ShadowFrag(Varyings input) : SV_TARGET
+            {
+                return 0;
+            }
             ENDHLSL
         }
 
@@ -260,11 +240,61 @@ Shader "Custom/ClayMonster"
             Cull Back
 
             HLSLPROGRAM
-            #pragma vertex ClayDepthVertex
-            #pragma fragment ClayDepthOnlyFragment
+            #pragma vertex DepthVert
+            #pragma fragment DepthFrag
             #pragma multi_compile_instancing
 
-            #include "../Common/OpaqueDepthPasses.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+            TEXTURE2D(_SculptNoiseTex); SAMPLER(sampler_SculptNoiseTex);
+
+            CBUFFER_START(UnityPerMaterial)
+                float4 _BaseMap_ST;
+                float4 _SculptNoiseTex_ST;
+                float4 _BaseColor;
+                float4 _AmbientColor;
+                float _VertexColorStrength;
+                float _SculptStrength;
+                float _SculptScale;
+                float _LightSteps;
+                float _Animate;
+            CBUFFER_END
+
+            struct Attributes
+            {
+                float4 positionOS : POSITION;
+                float3 normalOS   : NORMAL;
+                float2 uv         : TEXCOORD0;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+            };
+
+            struct Varyings
+            {
+                float4 positionCS : SV_POSITION;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+                UNITY_VERTEX_OUTPUT_STEREO
+            };
+
+            Varyings DepthVert(Attributes input)
+            {
+                Varyings output = (Varyings)0;
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_TRANSFER_INSTANCE_ID(input, output);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
+
+                float2 noiseUV = input.uv * _SculptScale + (_Time.y * _Animate * 0.1);
+                float noise = SAMPLE_TEXTURE2D_LOD(_SculptNoiseTex, sampler_SculptNoiseTex, noiseUV, 0).r;
+                float sculptOffset = (noise * 2.0 - 1.0) * _SculptStrength;
+                float3 displacedPositionOS = input.positionOS.xyz + input.normalOS * sculptOffset;
+
+                output.positionCS = TransformObjectToHClip(displacedPositionOS);
+                return output;
+            }
+
+            half DepthFrag(Varyings input) : SV_TARGET
+            {
+                return input.positionCS.z;
+            }
             ENDHLSL
         }
 
@@ -278,11 +308,63 @@ Shader "Custom/ClayMonster"
             Cull Back
 
             HLSLPROGRAM
-            #pragma vertex ClayDepthVertex
-            #pragma fragment ClayDepthNormalsFragment
+            #pragma vertex DepthNormalsVert
+            #pragma fragment DepthNormalsFrag
             #pragma multi_compile_instancing
 
-            #include "../Common/OpaqueDepthPasses.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+            TEXTURE2D(_SculptNoiseTex); SAMPLER(sampler_SculptNoiseTex);
+
+            CBUFFER_START(UnityPerMaterial)
+                float4 _BaseMap_ST;
+                float4 _SculptNoiseTex_ST;
+                float4 _BaseColor;
+                float4 _AmbientColor;
+                float _VertexColorStrength;
+                float _SculptStrength;
+                float _SculptScale;
+                float _LightSteps;
+                float _Animate;
+            CBUFFER_END
+
+            struct Attributes
+            {
+                float4 positionOS : POSITION;
+                float3 normalOS   : NORMAL;
+                float2 uv         : TEXCOORD0;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+            };
+
+            struct Varyings
+            {
+                float4 positionCS : SV_POSITION;
+                float3 normalWS   : TEXCOORD0;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+                UNITY_VERTEX_OUTPUT_STEREO
+            };
+
+            Varyings DepthNormalsVert(Attributes input)
+            {
+                Varyings output = (Varyings)0;
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_TRANSFER_INSTANCE_ID(input, output);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
+
+                float2 noiseUV = input.uv * _SculptScale + (_Time.y * _Animate * 0.1);
+                float noise = SAMPLE_TEXTURE2D_LOD(_SculptNoiseTex, sampler_SculptNoiseTex, noiseUV, 0).r;
+                float sculptOffset = (noise * 2.0 - 1.0) * _SculptStrength;
+                float3 displacedPositionOS = input.positionOS.xyz + input.normalOS * sculptOffset;
+
+                output.positionCS = TransformObjectToHClip(displacedPositionOS);
+                output.normalWS = TransformObjectToWorldNormal(input.normalOS);
+                return output;
+            }
+
+            half4 DepthNormalsFrag(Varyings input) : SV_TARGET
+            {
+                return half4(normalize(input.normalWS), 0.0h);
+            }
             ENDHLSL
         }
     }
