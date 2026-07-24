@@ -43,6 +43,7 @@ namespace ClayEditor.Rigging
         /// </summary>
         public struct Result
         {
+            public Animator Animator;
             public SkinnedMeshRenderer Renderer;
             public ProceduralMotionCharacter Motion;
             public ModelPartLossController PartLoss;
@@ -68,6 +69,16 @@ namespace ClayEditor.Rigging
                 return result;
             }
             result.Renderer = skinned;
+
+            Animator animator =
+                importedRoot.GetComponentInChildren<Animator>(true);
+            if (animator == null)
+            {
+                animator = importedRoot.AddComponent<Animator>();
+            }
+
+            animator.applyRootMotion = false;
+            result.Animator = animator;
 
             // マテリアル適用
             ApplyMaterial(importedRoot);
