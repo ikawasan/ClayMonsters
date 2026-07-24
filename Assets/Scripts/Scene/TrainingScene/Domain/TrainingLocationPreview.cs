@@ -126,13 +126,7 @@ namespace Scene.TrainingScene.Domain
         /// </summary>
         public static string FormatRestDisplayText()
         {
-            TrainingLocationPreview preview = ResolveRest();
-            var builder = new StringBuilder();
-            builder.Append("休憩");
-            builder.Append('\n');
-            builder.Append($"体力+{preview.ExpectedStaminaDelta}");
-            builder.Append($" (大成功+{preview.RestRecoveryMax})");
-            return builder.ToString();
+            return "休憩\n体力を全回復する";
         }
 
         private static TrainingStatGain ResolveSuccessGain(TrainingLocation location)
@@ -147,7 +141,8 @@ namespace Scene.TrainingScene.Domain
                 ComputePrincipalOfficeExpected(gain.Hp),
                 ComputePrincipalOfficeExpected(gain.Attack),
                 ComputePrincipalOfficeExpected(gain.Defense),
-                ComputePrincipalOfficeExpected(gain.Speed));
+                ComputePrincipalOfficeExpected(gain.Speed),
+                ComputePrincipalOfficeExpected(gain.Hit));
         }
 
         private static int ComputePrincipalOfficeExpected(int baseValue)
@@ -162,16 +157,18 @@ namespace Scene.TrainingScene.Domain
                 Mathf.RoundToInt(gain.Hp * multiplier),
                 Mathf.RoundToInt(gain.Attack * multiplier),
                 Mathf.RoundToInt(gain.Defense * multiplier),
-                Mathf.RoundToInt(gain.Speed * multiplier));
+                Mathf.RoundToInt(gain.Speed * multiplier),
+                Mathf.RoundToInt(gain.Hit * multiplier));
         }
 
         private static string FormatStatGain(TrainingStatGain gain)
         {
             var builder = new StringBuilder();
             AppendStatPart(builder, "HP", gain.Hp);
-            AppendStatPart(builder, "攻", gain.Attack);
-            AppendStatPart(builder, "防", gain.Defense);
-            AppendStatPart(builder, "速", gain.Speed);
+            AppendStatPart(builder, "攻撃", gain.Attack);
+            AppendStatPart(builder, "防御", gain.Defense);
+            AppendStatPart(builder, "速度", gain.Speed);
+            AppendStatPart(builder, "命中", gain.Hit);
             if (builder.Length == 0)
             {
                 return "なし";

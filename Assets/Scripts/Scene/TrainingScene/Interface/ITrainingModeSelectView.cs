@@ -12,8 +12,7 @@ namespace Scene.TrainingScene.Interface
         /// <summary>
         /// 育成方式選択を表示する
         /// </summary>
-        /// <param name="modelName">モデル名</param>
-        void Show(string modelName);
+        void Show();
 
         /// <summary>
         /// ウィンドウを隠す

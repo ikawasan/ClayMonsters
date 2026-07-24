@@ -8,12 +8,13 @@ namespace Scene.TrainingScene.Domain
     /// </summary>
     public readonly struct TrainingStatGain
     {
-        public TrainingStatGain(int hp, int attack, int defense, int speed)
+        public TrainingStatGain(int hp, int attack, int defense, int speed, int hit)
         {
             Hp = hp;
             Attack = attack;
             Defense = defense;
             Speed = speed;
+            Hit = hit;
         }
 
         /// <summary>
@@ -37,6 +38,11 @@ namespace Scene.TrainingScene.Domain
         public int Speed { get; }
 
         /// <summary>
+        /// 命中上昇量
+        /// </summary>
+        public int Hit { get; }
+
+        /// <summary>
         /// 別の上昇量を加算した結果を返す
         /// </summary>
         public TrainingStatGain Add(TrainingStatGain other)
@@ -45,7 +51,8 @@ namespace Scene.TrainingScene.Domain
                 Hp + other.Hp,
                 Attack + other.Attack,
                 Defense + other.Defense,
-                Speed + other.Speed);
+                Speed + other.Speed,
+                Hit + other.Hit);
         }
     }
 
@@ -81,13 +88,13 @@ namespace Scene.TrainingScene.Domain
         {
             return location switch
             {
-                TrainingLocation.ScienceLab => new TrainingStatGain(0, 4, 1, 0),
-                TrainingLocation.HomeEcRoom => new TrainingStatGain(6, 0, 2, 0),
-                TrainingLocation.CraftRoom => new TrainingStatGain(0, 1, 4, 0),
-                TrainingLocation.Library => new TrainingStatGain(0, 0, 2, 2),
-                TrainingLocation.MusicRoom => new TrainingStatGain(0, 0, 0, 4),
-                TrainingLocation.Gymnasium => new TrainingStatGain(4, 3, 0, 2),
-                TrainingLocation.PrincipalOffice => new TrainingStatGain(3, 3, 3, 3),
+                TrainingLocation.ScienceLab => new TrainingStatGain(0, 4, 1, 0, 1),
+                TrainingLocation.HomeEcRoom => new TrainingStatGain(6, 0, 2, 0, 0),
+                TrainingLocation.CraftRoom => new TrainingStatGain(0, 1, 4, 0, 0),
+                TrainingLocation.Library => new TrainingStatGain(0, 0, 2, 1, 4),
+                TrainingLocation.MusicRoom => new TrainingStatGain(0, 0, 0, 4, 2),
+                TrainingLocation.Gymnasium => new TrainingStatGain(4, 3, 0, 2, 1),
+                TrainingLocation.PrincipalOffice => new TrainingStatGain(3, 3, 3, 3, 3),
                 _ => default
             };
         }
@@ -99,6 +106,7 @@ namespace Scene.TrainingScene.Domain
         {
             TrainingLocation.ScienceLab,
             TrainingLocation.HomeEcRoom,
+            TrainingLocation.CraftRoom,
             TrainingLocation.Library,
             TrainingLocation.MusicRoom,
             TrainingLocation.Gymnasium,
@@ -134,12 +142,34 @@ namespace Scene.TrainingScene.Domain
 
         /// <summary>
         /// 休憩時間かどうかを返す
-        /// 常にfalse
         /// </summary>
         /// <param name="period">時間割</param>
         public static bool IsRestPeriod(TrainingPeriod period)
         {
-            return false;
+            return period == TrainingPeriod.LunchBreak;
+        }
+
+        /// <summary>
+        /// 売店が使える時間かどうかを返す
+        /// </summary>
+        /// <param name="period">時間割</param>
+        public static bool IsShopPeriod(TrainingPeriod period)
+        {
+            return period == TrainingPeriod.LunchBreak;
+        }
+
+        /// <summary>
+        /// 訓練コマンドを選ぶ時間かどうかを返す
+        /// </summary>
+        /// <param name="period">時間割</param>
+        public static bool IsCommandPeriod(TrainingPeriod period)
+        {
+            return period == TrainingPeriod.FirstHour
+                || period == TrainingPeriod.SecondHour
+                || period == TrainingPeriod.ThirdHour
+                || period == TrainingPeriod.FourthHour
+                || period == TrainingPeriod.FifthHour
+                || period == TrainingPeriod.SixthHour;
         }
 
         /// <summary>
@@ -148,7 +178,7 @@ namespace Scene.TrainingScene.Domain
         /// <param name="period">時間割</param>
         public static bool RequiresLocationChoice(TrainingPeriod period)
         {
-            return !IsBattlePeriod(period);
+            return IsCommandPeriod(period);
         }
 
         /// <summary>

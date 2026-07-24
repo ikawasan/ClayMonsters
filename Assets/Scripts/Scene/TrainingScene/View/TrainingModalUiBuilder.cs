@@ -176,6 +176,7 @@ namespace Scene.TrainingScene.View
             Image thumbnailImage = thumbnailObject.GetComponent<Image>();
             thumbnailImage.raycastTarget = false;
             thumbnailImage.gameObject.SetActive(false);
+            TitleClayUiVisualUtility.EnsureThumbnailUnderRoundedMask(thumbnailImage);
             return thumbnailImage;
         }
 

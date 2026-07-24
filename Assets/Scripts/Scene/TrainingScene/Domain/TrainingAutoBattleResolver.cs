@@ -47,7 +47,8 @@ namespace Scene.TrainingScene.Domain
             return status.hp
                 + status.attack * 2.2f
                 + status.defense * 1.4f
-                + status.speed * 1.1f;
+                + status.speed * 1.1f
+                + status.hit * 1.2f;
         }
     }
 }

@@ -19,6 +19,8 @@ namespace Scene.TrainingScene.Domain
         [SerializeField] private float focusHeightOffset;
         [Tooltip("モデル中心から画面上の左右へずらす距離。正で右寄りの空間を注視する")]
         [SerializeField] private float focusSideOffset;
+        [Tooltip("モデル中心から画面奥行きへずらす距離。正でカメラから遠ざかる")]
+        [SerializeField] private float focusForwardOffset;
 
         /// <summary>
         /// 水平回転角
@@ -46,6 +48,11 @@ namespace Scene.TrainingScene.Domain
         public float FocusSideOffset => focusSideOffset;
 
         /// <summary>
+        /// 注視点の奥行きオフセット
+        /// </summary>
+        public float FocusForwardOffset => focusForwardOffset;
+
+        /// <summary>
         /// スナップショットの値を書き込む
         /// </summary>
         /// <param name="capture">反映する構図</param>
@@ -56,6 +63,7 @@ namespace Scene.TrainingScene.Domain
             distance = capture.Distance;
             focusHeightOffset = capture.FocusHeightOffset;
             focusSideOffset = capture.FocusSideOffset;
+            focusForwardOffset = capture.FocusForwardOffset;
         }
     }
 }

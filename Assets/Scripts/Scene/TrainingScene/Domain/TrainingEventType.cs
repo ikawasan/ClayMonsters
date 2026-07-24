@@ -18,6 +18,11 @@ namespace Scene.TrainingScene.Domain
         /// <summary>
         /// 攻撃の習得
         /// </summary>
-        LearnAttack
+        LearnAttack,
+
+        /// <summary>
+        /// 強敵急襲
+        /// </summary>
+        Ambush
     }
 }

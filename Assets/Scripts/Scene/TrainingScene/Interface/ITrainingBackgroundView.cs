@@ -19,9 +19,19 @@ namespace Scene.TrainingScene.Interface
         void ShowRestBackground();
 
         /// <summary>
+        /// 訓練後の徘徊用背景オブジェクトへ切り替える
+        /// </summary>
+        void ShowRoamBackground();
+
+        /// <summary>
         /// 選択待ちなどで使う既定の背景オブジェクトへ切り替える
         /// </summary>
         void ShowDefaultBackground();
+
+        /// <summary>
+        /// 継承演出用の黒背景へ切り替える
+        /// </summary>
+        void ShowInheritanceBackground();
 
         /// <summary>
         /// シーン退場時に背景表示を止める

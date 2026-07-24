@@ -75,10 +75,38 @@ namespace Scene.TrainingScene.Domain
             outcome = new TrainingEventOutcome(
                 TrainingEventType.StatBoost,
                 "特訓イベント",
-                $"HP+{gain.Hp} 攻+{gain.Attack} 防+{gain.Defense} 速+{gain.Speed}",
+                $"HP+{gain.Hp} 攻撃+{gain.Attack} 防御+{gain.Defense} 速度+{gain.Speed} 命中+{gain.Hit}",
                 gain,
                 default);
             return true;
+        }
+
+        /// <summary>
+        /// 強敵急襲イベントの発生を抽選する
+        /// </summary>
+        /// <param name="random">乱数</param>
+        /// <returns>発生したらtrue</returns>
+        public static bool TryRollAmbushEvent(System.Random random)
+        {
+            if (random == null)
+            {
+                return false;
+            }
+
+            return random.NextDouble() * 100d < TrainingSettings.AmbushEventTriggerPercent;
+        }
+
+        /// <summary>
+        /// 強敵急襲勝利時のステータス上昇を返す
+        /// </summary>
+        public static TrainingStatGain CreateAmbushVictoryGain()
+        {
+            return new TrainingStatGain(
+                TrainingSettings.AmbushVictoryHpGain,
+                TrainingSettings.AmbushVictoryAttackGain,
+                TrainingSettings.AmbushVictoryDefenseGain,
+                TrainingSettings.AmbushVictorySpeedGain,
+                TrainingSettings.AmbushVictoryHitGain);
         }
 
         private static TrainingStatGain RollStatBoost(System.Random random)
@@ -87,7 +115,8 @@ namespace Scene.TrainingScene.Domain
             int attack = random.Next(TrainingSettings.EventStatAttackMin, TrainingSettings.EventStatAttackMax + 1);
             int defense = random.Next(TrainingSettings.EventStatDefenseMin, TrainingSettings.EventStatDefenseMax + 1);
             int speed = random.Next(TrainingSettings.EventStatSpeedMin, TrainingSettings.EventStatSpeedMax + 1);
-            return new TrainingStatGain(hp, attack, defense, speed);
+            int hit = random.Next(TrainingSettings.EventStatHitMin, TrainingSettings.EventStatHitMax + 1);
+            return new TrainingStatGain(hp, attack, defense, speed, hit);
         }
     }
 }

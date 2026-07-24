@@ -24,8 +24,7 @@ namespace Scene.TrainingScene.Domain
                 return false;
             }
 
-            if (progress.day < (int)TrainingDayOfWeek.Monday
-                || progress.day > (int)TrainingDayOfWeek.Friday)
+            if (progress.day < 1 || progress.day > TrainingSettings.TotalDays)
             {
                 return false;
             }
@@ -57,12 +56,18 @@ namespace Scene.TrainingScene.Domain
                 day = (int)session.CurrentDay,
                 turnIndexInDay = session.TurnIndexInDay,
                 stamina = session.Stamina,
+                money = session.Money,
+                trainGreatSuccessBonusPercent = session.TrainGreatSuccessBonusPercent,
+                trainGreatSuccessBonusWeeks = session.TrainGreatSuccessBonusWeeks,
+                inventory = session.CloneInventoryForSave(),
+                shopOfferItemIds = session.CloneShopOfferForSave(),
                 status = new ModelStatus
                 {
                     hp = session.CurrentStatus.hp,
                     attack = session.CurrentStatus.attack,
                     defense = session.CurrentStatus.defense,
-                    speed = session.CurrentStatus.speed
+                    speed = session.CurrentStatus.speed,
+                    hit = session.CurrentStatus.hit
                 },
                 attackMotions = new List<MotionType>(session.AttackMotions)
             };
@@ -82,11 +87,6 @@ namespace Scene.TrainingScene.Domain
         /// <summary>
         /// 再開可能なプレイヤースロットを検索する
         /// </summary>
-        /// <param name="saveService">セーブサービス</param>
-        /// <param name="slotIndex">見つかったスロット番号</param>
-        /// <param name="slot">見つかったスロット</param>
-        /// <param name="progress">育成途中データ</param>
-        /// <returns>見つかったらtrue</returns>
         public static bool TryFindResumablePlayerSlot(
             IClayModelSaveService saveService,
             out int slotIndex,
@@ -103,7 +103,8 @@ namespace Scene.TrainingScene.Domain
 
             for (int i = 0; i < ModelSavePoolSettings.SlotCount; i++)
             {
-                TrainingSlotProgress candidate = saveService.GetTrainingProgress(ModelSavePool.Player, i);
+                TrainingSlotProgress candidate =
+                    saveService.GetTrainingProgress(ModelSavePool.Player, i);
                 if (!IsResumable(candidate))
                 {
                     continue;
@@ -127,9 +128,6 @@ namespace Scene.TrainingScene.Domain
         /// <summary>
         /// 再開確認ウィンドウ向けの表示データを返す
         /// </summary>
-        /// <param name="slot">対象スロット</param>
-        /// <param name="progress">育成途中データ</param>
-        /// <returns>表示データ</returns>
         public static TrainingResumeProgressPresentation BuildResumePresentation(
             ModelSaveSlot slot,
             TrainingSlotProgress progress)
@@ -140,42 +138,52 @@ namespace Scene.TrainingScene.Domain
                     slot != null ? slot.modelName : string.Empty,
                     string.Empty,
                     string.Empty,
-                    string.Empty,
                     System.Array.Empty<MotionType>(),
                     null);
             }
 
-            var day = (TrainingDayOfWeek)Mathf.Clamp(progress.day, 1, (int)TrainingDayOfWeek.Friday);
-            int turnNumber = Mathf.Clamp(progress.turnIndexInDay + 1, 1, TrainingDailySchedule.TurnsPerDay);
-            TrainingPeriod period = TrainingDailySchedule.AllPeriods[
-                Mathf.Clamp(progress.turnIndexInDay, 0, TrainingDailySchedule.TurnsPerDay - 1)];
-
-            string dayPeriodTurnLabel =
-                $"{TrainingDayCatalog.GetDisplayName(day)}"
-                + $"  {TrainingPeriodCatalog.GetDisplayName(period)}"
-                + $"\nターン {turnNumber}/{TrainingDailySchedule.TurnsPerDay}";
-
+            string periodLabel = ResolvePeriodDisplayName(progress.turnIndexInDay);
+            string progressLabel =
+                $"{TrainingDayCatalog.GetDisplayName((TrainingDayOfWeek)progress.day)}"
+                + (string.IsNullOrEmpty(periodLabel) ? string.Empty : $" {periodLabel}")
+                + $", 所持金 {progress.money}G"
+                + $", 体力 {progress.stamina} / {TrainingSettings.MaxStamina}";
             ModelStatus status = progress.status ?? new ModelStatus();
             string statsText =
                 $"HP {status.hp}\n"
-                + $"攻 {status.attack}\n"
-                + $"防 {status.defense}\n"
-                + $"速 {status.speed}";
+                + $"攻撃 {status.attack}\n"
+                + $"防御 {status.defense}\n"
+                + $"速度 {status.speed}\n"
+                + $"命中 {status.hit}";
 
             return new TrainingResumeProgressPresentation(
                 slot != null ? slot.modelName : string.Empty,
-                dayPeriodTurnLabel,
-                $"体力 {progress.stamina} / {TrainingSettings.MaxStamina}",
+                progressLabel,
                 statsText,
-                progress.attackMotions,
+                ModelAttackMotionUtility.Normalize(
+                    progress.attackMotions,
+                    TrainingSettings.AttackSlotCount),
                 ModelSaveStorage.ReadThumbnailPng(slot));
+        }
+
+        /// <summary>
+        /// 途中データの時間割表示名を返す
+        /// </summary>
+        /// <param name="turnIndexInDay">日内ターン位置</param>
+        private static string ResolvePeriodDisplayName(int turnIndexInDay)
+        {
+            TrainingPeriod[] periods = TrainingDailySchedule.AllPeriods;
+            if (turnIndexInDay < 0 || turnIndexInDay >= periods.Length)
+            {
+                return string.Empty;
+            }
+
+            return TrainingPeriodCatalog.GetDisplayName(periods[turnIndexInDay]);
         }
 
         /// <summary>
         /// 再開確認用の概要文を返す
         /// </summary>
-        /// <param name="progress">育成途中データ</param>
-        /// <returns>概要文</returns>
         public static string FormatResumeSummary(TrainingSlotProgress progress)
         {
             if (progress == null)
@@ -183,24 +191,20 @@ namespace Scene.TrainingScene.Domain
                 return string.Empty;
             }
 
-            var day = (TrainingDayOfWeek)Mathf.Clamp(progress.day, 1, (int)TrainingDayOfWeek.Friday);
-            int turnNumber = Mathf.Clamp(progress.turnIndexInDay + 1, 1, TrainingDailySchedule.TurnsPerDay);
-            TrainingPeriod period = TrainingDailySchedule.AllPeriods[
-                Mathf.Clamp(progress.turnIndexInDay, 0, TrainingDailySchedule.TurnsPerDay - 1)];
-            return $"{TrainingDayCatalog.GetDisplayName(day)}"
-                + $" {TrainingPeriodCatalog.GetDisplayName(period)}"
-                + $"({turnNumber}/{TrainingDailySchedule.TurnsPerDay}ターン目)"
-                + $"\n体力 {progress.stamina}/{TrainingSettings.MaxStamina}"
-                + $"\nHP {progress.status.hp} 攻 {progress.status.attack}"
-                + $" 防 {progress.status.defense} 速 {progress.status.speed}";
+            ModelStatus status = progress.status ?? new ModelStatus();
+            string periodLabel = ResolvePeriodDisplayName(progress.turnIndexInDay);
+            return $"{TrainingDayCatalog.GetDisplayName((TrainingDayOfWeek)progress.day)}"
+                + (string.IsNullOrEmpty(periodLabel) ? string.Empty : $" {periodLabel}")
+                + $" 体力{progress.stamina}/{TrainingSettings.MaxStamina}"
+                + $" {progress.money}G"
+                + $"\nHP {status.hp} 攻撃 {status.attack}"
+                + $" 防御 {status.defense} 速度 {status.speed}"
+                + $" 命中 {status.hit}";
         }
 
         /// <summary>
         /// 再開確認用の概要文を返す
         /// </summary>
-        /// <param name="slot">対象スロット</param>
-        /// <param name="progress">育成途中データ</param>
-        /// <returns>概要文</returns>
         public static string FormatResumeSummary(ModelSaveSlot slot, TrainingSlotProgress progress)
         {
             string body = FormatResumeSummary(progress);
@@ -215,14 +219,6 @@ namespace Scene.TrainingScene.Domain
         /// <summary>
         /// 育成完了リザルト向けの表示データを返す
         /// </summary>
-        /// <param name="modelName">モデル名</param>
-        /// <param name="status">最終ステータス</param>
-        /// <param name="attacks">技構成</param>
-        /// <param name="saveResultMessage">保存結果</param>
-        /// <param name="continueButtonLabel">続行ボタンラベル</param>
-        /// <param name="thumbnailPng">モデルサムネイルPNG</param>
-        /// <param name="titleText">ウィンドウタイトル</param>
-        /// <returns>表示データ</returns>
         public static TrainingAutoResultPresentation BuildAutoResultPresentation(
             string modelName,
             ModelStatus status,
@@ -233,7 +229,8 @@ namespace Scene.TrainingScene.Domain
             string titleText = "育成完了")
         {
             ModelStatus resolvedStatus = status ?? new ModelStatus();
-            string statsText = ModelSaveSummaryFormatter.FormatTrainingFinalStatusParameters(resolvedStatus);
+            string statsText =
+                ModelSaveSummaryFormatter.FormatTrainingFinalStatusParameters(resolvedStatus);
 
             return new TrainingAutoResultPresentation(
                 modelName ?? string.Empty,

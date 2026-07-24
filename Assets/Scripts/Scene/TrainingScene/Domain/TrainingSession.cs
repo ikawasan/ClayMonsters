@@ -10,20 +10,27 @@ namespace Scene.TrainingScene.Domain
     /// </summary>
     public readonly struct TrainingActionResult
     {
+        /// <summary>
+        /// 行動結果を生成する
+        /// </summary>
         public TrainingActionResult(
-            TrainingLocation location,
+            TrainingCommandType command,
+            TrainingFocus focus,
+            TrainingLocation presentationLocation,
             bool succeeded,
             bool failedByLowStamina,
-            bool isRestAction,
             bool isGreatSuccess,
             int staminaBefore,
             int staminaAfter,
             TrainingStatGain appliedGain)
         {
-            Location = location;
+            Command = command;
+            Focus = focus;
+            PresentationLocation = presentationLocation;
+            Location = presentationLocation;
             Succeeded = succeeded;
             FailedByLowStamina = failedByLowStamina;
-            IsRestAction = isRestAction;
+            IsRestAction = command == TrainingCommandType.Rest;
             IsGreatSuccess = isGreatSuccess;
             StaminaBefore = staminaBefore;
             StaminaAfter = staminaAfter;
@@ -31,7 +38,22 @@ namespace Scene.TrainingScene.Domain
         }
 
         /// <summary>
-        /// 選択した行き先
+        /// 実行したコマンド
+        /// </summary>
+        public TrainingCommandType Command { get; }
+
+        /// <summary>
+        /// 訓練系の主ステ
+        /// </summary>
+        public TrainingFocus Focus { get; }
+
+        /// <summary>
+        /// 背景用の行き先
+        /// </summary>
+        public TrainingLocation PresentationLocation { get; }
+
+        /// <summary>
+        /// 互換用の行き先
         /// </summary>
         public TrainingLocation Location { get; }
 
@@ -76,18 +98,27 @@ namespace Scene.TrainingScene.Domain
     /// </summary>
     public sealed class TrainingSession
     {
+        private readonly List<TrainingInventoryEntry> inventory =
+            new List<TrainingInventoryEntry>();
+        private readonly List<string> shopOfferItemIds = new List<string>();
+
         /// <summary>
         /// 育成対象スロット番号
         /// </summary>
         public int PlayerSlotIndex { get; }
 
         /// <summary>
-        /// 現在の曜日
+        /// 現在曜日(月〜金)
         /// </summary>
         public TrainingDayOfWeek CurrentDay { get; private set; }
 
         /// <summary>
-        /// 当日の完了ターン数
+        /// 互換用の週番号表現(1始まりの曜日番号)
+        /// </summary>
+        public int CurrentWeek => (int)CurrentDay;
+
+        /// <summary>
+        /// 互換用のターン位置
         /// </summary>
         public int TurnIndexInDay { get; private set; }
 
@@ -95,6 +126,11 @@ namespace Scene.TrainingScene.Domain
         /// 行動体力
         /// </summary>
         public int Stamina { get; private set; }
+
+        /// <summary>
+        /// 所持金
+        /// </summary>
+        public int Money { get; private set; }
 
         /// <summary>
         /// 現在のステータス
@@ -105,6 +141,26 @@ namespace Scene.TrainingScene.Domain
         /// 現在の攻撃構成
         /// </summary>
         public List<MotionType> AttackMotions { get; }
+
+        /// <summary>
+        /// 訓練大成功率の加算(百分率)
+        /// </summary>
+        public float TrainGreatSuccessBonusPercent { get; private set; }
+
+        /// <summary>
+        /// 訓練大成功ボーナスの残り週数
+        /// </summary>
+        public int TrainGreatSuccessBonusWeeks { get; private set; }
+
+        /// <summary>
+        /// 所持アイテム一覧
+        /// </summary>
+        public IReadOnlyList<TrainingInventoryEntry> Inventory => inventory;
+
+        /// <summary>
+        /// 売店に並んでいる商品ID
+        /// </summary>
+        public IReadOnlyList<string> ShopOfferItemIds => shopOfferItemIds;
 
         /// <summary>
         /// 育成完了済みか
@@ -125,14 +181,20 @@ namespace Scene.TrainingScene.Domain
         /// <param name="playerSlotIndex">対象スロット</param>
         /// <param name="baseStatus">開始時ステータス</param>
         /// <param name="attackMotions">開始時攻撃</param>
-        public TrainingSession(int playerSlotIndex, ModelStatus baseStatus, IReadOnlyList<MotionType> attackMotions)
+        public TrainingSession(
+            int playerSlotIndex,
+            ModelStatus baseStatus,
+            IReadOnlyList<MotionType> attackMotions)
         {
             PlayerSlotIndex = playerSlotIndex;
             CurrentDay = TrainingDayOfWeek.Monday;
             TurnIndexInDay = 0;
             Stamina = TrainingSettings.MaxStamina;
+            Money = TrainingSettings.StartingMoney;
             CurrentStatus = ModelStatus.CloneOrDefault(baseStatus);
-            AttackMotions = ModelAttackMotionUtility.Normalize(attackMotions, TrainingSettings.AttackSlotCount);
+            AttackMotions = ModelAttackMotionUtility.Normalize(
+                attackMotions,
+                TrainingSettings.AttackSlotCount);
         }
 
         /// <summary>
@@ -150,13 +212,240 @@ namespace Scene.TrainingScene.Domain
             session.CurrentDay = (TrainingDayOfWeek)Mathf.Clamp(
                 progress.day,
                 (int)TrainingDayOfWeek.Monday,
-                (int)TrainingDayOfWeek.Friday);
+                TrainingSettings.TotalDays);
             session.TurnIndexInDay = Mathf.Clamp(
                 progress.turnIndexInDay,
                 0,
                 TrainingDailySchedule.TurnsPerDay);
             session.Stamina = Mathf.Clamp(progress.stamina, 0, TrainingSettings.MaxStamina);
+            session.Money = Mathf.Max(0, progress.money);
+            session.TrainGreatSuccessBonusPercent =
+                Mathf.Max(0f, progress.trainGreatSuccessBonusPercent);
+            session.TrainGreatSuccessBonusWeeks =
+                Mathf.Max(0, progress.trainGreatSuccessBonusWeeks);
+            session.LoadInventory(progress.inventory);
+            session.LoadShopOffer(progress.shopOfferItemIds);
             return session;
+        }
+
+        /// <summary>
+        /// 売店陳列をランダムに入れ替える
+        /// </summary>
+        /// <param name="random">乱数</param>
+        public void RefreshShopOffer(System.Random random)
+        {
+            shopOfferItemIds.Clear();
+            List<string> rolled = TrainingShopCatalog.RollOfferItemIds(
+                TrainingSettings.ShopPageSize,
+                random);
+            for (int i = 0; i < rolled.Count; i++)
+            {
+                shopOfferItemIds.Add(rolled[i]);
+            }
+        }
+
+        /// <summary>
+        /// 売店陳列が空なら抽選する
+        /// </summary>
+        /// <param name="random">乱数</param>
+        public void EnsureShopOffer(System.Random random)
+        {
+            if (shopOfferItemIds.Count > 0)
+            {
+                return;
+            }
+
+            RefreshShopOffer(random);
+        }
+
+        /// <summary>
+        /// 現在の売店陳列を返す
+        /// </summary>
+        public List<TrainingShopItem> GetShopOfferItems()
+        {
+            return TrainingShopCatalog.ResolveItems(shopOfferItemIds);
+        }
+
+        /// <summary>
+        /// 売店陳列を保存用に複製する
+        /// </summary>
+        public List<string> CloneShopOfferForSave()
+        {
+            return new List<string>(shopOfferItemIds);
+        }
+
+        private void LoadShopOffer(List<string> source)
+        {
+            shopOfferItemIds.Clear();
+            if (source == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < source.Count && shopOfferItemIds.Count < TrainingSettings.ShopPageSize; i++)
+            {
+                string itemId = source[i];
+                if (string.IsNullOrEmpty(itemId)
+                    || !TrainingShopCatalog.TryGetById(itemId, out _))
+                {
+                    continue;
+                }
+
+                bool duplicate = false;
+                for (int j = 0; j < shopOfferItemIds.Count; j++)
+                {
+                    if (shopOfferItemIds[j] == itemId)
+                    {
+                        duplicate = true;
+                        break;
+                    }
+                }
+
+                if (duplicate)
+                {
+                    continue;
+                }
+
+                shopOfferItemIds.Add(itemId);
+            }
+        }
+
+        /// <summary>
+        /// アイテムを1個追加する
+        /// </summary>
+        /// <param name="itemId">商品ID</param>
+        public void AddInventoryItem(string itemId)
+        {
+            if (string.IsNullOrEmpty(itemId))
+            {
+                return;
+            }
+
+            for (int i = 0; i < inventory.Count; i++)
+            {
+                TrainingInventoryEntry entry = inventory[i];
+                if (entry == null || entry.itemId != itemId)
+                {
+                    continue;
+                }
+
+                entry.count = Mathf.Max(1, entry.count) + 1;
+                return;
+            }
+
+            inventory.Add(new TrainingInventoryEntry
+            {
+                itemId = itemId,
+                count = 1
+            });
+        }
+
+        /// <summary>
+        /// アイテムを1個消費する
+        /// </summary>
+        /// <param name="itemId">商品ID</param>
+        public bool TryConsumeInventoryItem(string itemId)
+        {
+            if (string.IsNullOrEmpty(itemId))
+            {
+                return false;
+            }
+
+            for (int i = 0; i < inventory.Count; i++)
+            {
+                TrainingInventoryEntry entry = inventory[i];
+                if (entry == null || entry.itemId != itemId || entry.count <= 0)
+                {
+                    continue;
+                }
+
+                entry.count--;
+                if (entry.count <= 0)
+                {
+                    inventory.RemoveAt(i);
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// 所持アイテムの表示一覧を返す
+        /// </summary>
+        public List<TrainingInventoryEntryView> BuildInventoryViews()
+        {
+            var views = new List<TrainingInventoryEntryView>(inventory.Count);
+            for (int i = 0; i < inventory.Count; i++)
+            {
+                TrainingInventoryEntry entry = inventory[i];
+                if (entry == null
+                    || entry.count <= 0
+                    || !TrainingShopCatalog.TryGetById(entry.itemId, out TrainingShopItem item))
+                {
+                    continue;
+                }
+
+                views.Add(new TrainingInventoryEntryView(
+                    item.Id,
+                    item.DisplayName,
+                    item.Description,
+                    entry.count));
+            }
+
+            return views;
+        }
+
+        /// <summary>
+        /// 所持アイテムを保存用に複製する
+        /// </summary>
+        public List<TrainingInventoryEntry> CloneInventoryForSave()
+        {
+            var clone = new List<TrainingInventoryEntry>(inventory.Count);
+            for (int i = 0; i < inventory.Count; i++)
+            {
+                TrainingInventoryEntry entry = inventory[i];
+                if (entry == null || string.IsNullOrEmpty(entry.itemId) || entry.count <= 0)
+                {
+                    continue;
+                }
+
+                clone.Add(new TrainingInventoryEntry
+                {
+                    itemId = entry.itemId,
+                    count = entry.count
+                });
+            }
+
+            return clone;
+        }
+
+        private void LoadInventory(List<TrainingInventoryEntry> source)
+        {
+            inventory.Clear();
+            if (source == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < source.Count; i++)
+            {
+                TrainingInventoryEntry entry = source[i];
+                if (entry == null
+                    || string.IsNullOrEmpty(entry.itemId)
+                    || entry.count <= 0
+                    || !TrainingShopCatalog.TryGetById(entry.itemId, out _))
+                {
+                    continue;
+                }
+
+                inventory.Add(new TrainingInventoryEntry
+                {
+                    itemId = entry.itemId,
+                    count = entry.count
+                });
+            }
         }
 
         /// <summary>
@@ -171,7 +460,81 @@ namespace Scene.TrainingScene.Domain
                 ApplyGain(result.AppliedGain);
             }
 
-            TurnIndexInDay++;
+            CompletePeriod();
+        }
+
+        /// <summary>
+        /// 所持金を加算する
+        /// </summary>
+        /// <param name="amount">加算額</param>
+        public void AddMoney(int amount)
+        {
+            if (amount <= 0)
+            {
+                return;
+            }
+
+            Money += amount;
+        }
+
+        /// <summary>
+        /// 所持金を消費する
+        /// </summary>
+        /// <param name="amount">消費額</param>
+        public bool TrySpendMoney(int amount)
+        {
+            if (amount <= 0)
+            {
+                return true;
+            }
+
+            if (Money < amount)
+            {
+                return false;
+            }
+
+            Money -= amount;
+            return true;
+        }
+
+        /// <summary>
+        /// 体力を回復する
+        /// </summary>
+        /// <param name="amount">回復量</param>
+        public void RecoverStamina(int amount)
+        {
+            if (amount <= 0)
+            {
+                return;
+            }
+
+            Stamina = Mathf.Min(TrainingSettings.MaxStamina, Stamina + amount);
+        }
+
+        /// <summary>
+        /// 訓練効率アップ効果を適用する
+        /// </summary>
+        /// <param name="bonusPercent">大成功率加算</param>
+        /// <param name="weeks">継続週数</param>
+        public void ApplyTrainEfficiencyBoost(float bonusPercent, int weeks)
+        {
+            if (bonusPercent <= 0f || weeks <= 0)
+            {
+                return;
+            }
+
+            if (bonusPercent >= TrainGreatSuccessBonusPercent)
+            {
+                TrainGreatSuccessBonusPercent = bonusPercent;
+                TrainGreatSuccessBonusWeeks = weeks;
+                return;
+            }
+
+            if (TrainGreatSuccessBonusWeeks <= 0)
+            {
+                TrainGreatSuccessBonusPercent = bonusPercent;
+                TrainGreatSuccessBonusWeeks = weeks;
+            }
         }
 
         /// <summary>
@@ -180,6 +543,14 @@ namespace Scene.TrainingScene.Domain
         public void AdvanceDay()
         {
             TurnIndexInDay = 0;
+            if (TrainGreatSuccessBonusWeeks > 0)
+            {
+                TrainGreatSuccessBonusWeeks--;
+                if (TrainGreatSuccessBonusWeeks <= 0)
+                {
+                    TrainGreatSuccessBonusPercent = 0f;
+                }
+            }
 
             if ((int)CurrentDay >= TrainingSettings.TotalDays)
             {
@@ -188,6 +559,14 @@ namespace Scene.TrainingScene.Domain
             }
 
             CurrentDay = (TrainingDayOfWeek)((int)CurrentDay + 1);
+        }
+
+        /// <summary>
+        /// 互換用の翌週進行
+        /// </summary>
+        public void AdvanceWeek()
+        {
+            AdvanceDay();
         }
 
         /// <summary>
@@ -207,7 +586,9 @@ namespace Scene.TrainingScene.Domain
         /// <returns>入れ替えに成功したか</returns>
         public bool TryReplaceAttack(int slotIndex, MotionType newAttack)
         {
-            if (slotIndex < 0 || slotIndex >= TrainingSettings.AttackSlotCount || slotIndex >= AttackMotions.Count)
+            if (slotIndex < 0
+                || slotIndex >= TrainingSettings.AttackSlotCount
+                || slotIndex >= AttackMotions.Count)
             {
                 return false;
             }
@@ -217,7 +598,7 @@ namespace Scene.TrainingScene.Domain
         }
 
         /// <summary>
-        /// 時間割ターンを完了する
+        /// 時間割スロットを1つ進める
         /// </summary>
         public void CompletePeriod()
         {
@@ -231,7 +612,7 @@ namespace Scene.TrainingScene.Domain
         {
             Stamina = System.Math.Min(
                 TrainingSettings.MaxStamina,
-                Stamina + TrainingSettings.AfterSchoolVictoryStaminaRecovery);
+                Stamina + TrainingSettings.TournamentVictoryStaminaRecovery);
         }
 
         private void ApplyGain(TrainingStatGain gain)
@@ -240,7 +621,7 @@ namespace Scene.TrainingScene.Domain
             CurrentStatus.attack += gain.Attack;
             CurrentStatus.defense += gain.Defense;
             CurrentStatus.speed += gain.Speed;
+            CurrentStatus.hit += gain.Hit;
         }
-
     }
 }

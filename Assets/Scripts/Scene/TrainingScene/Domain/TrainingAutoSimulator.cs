@@ -6,17 +6,13 @@ using System.Collections.Generic;
 namespace Scene.TrainingScene.Domain
 {
     /// <summary>
-    /// 自動育成の5日間進行をシミュレートする
+    /// 自動育成の日次進行をシミュレートする
     /// </summary>
     public static class TrainingAutoSimulator
     {
         /// <summary>
         /// セッションを完了まで自動進行する
         /// </summary>
-        /// <param name="session">育成セッション</param>
-        /// <param name="saveService">セーブサービス</param>
-        /// <param name="usableAttacks">骨格で使用可能な攻撃</param>
-        /// <param name="random">乱数</param>
         public static void Run(
             TrainingSession session,
             IClayModelSaveService saveService,
@@ -30,6 +26,7 @@ namespace Scene.TrainingScene.Domain
 
             while (!session.IsCompleted)
             {
+                session.EnsureShopOffer(random);
                 RunSingleDay(session, saveService, usableAttacks, random);
                 if (session.IsCompleted)
                 {
@@ -47,30 +44,84 @@ namespace Scene.TrainingScene.Domain
             System.Random random)
         {
             TrainingPeriod[] periods = TrainingDailySchedule.AllPeriods;
-            for (int i = 0; i < periods.Length; i++)
+            int startPeriodIndex = UnityEngine.Mathf.Clamp(
+                session.TurnIndexInDay,
+                0,
+                periods.Length);
+            for (int i = startPeriodIndex; i < periods.Length; i++)
             {
                 TrainingPeriod period = periods[i];
+                int turnNumber = i + 1;
                 if (TrainingPeriodCatalog.IsBattlePeriod(period))
                 {
                     SimulateAfterSchoolBattle(session, saveService, random);
                     continue;
                 }
 
-                TrainingLocation[] choices = TrainingActionResolver.PickLocationChoices(
-                    TrainingSettings.LocationChoiceCount,
-                    random);
-                TrainingTurnChoice turnChoice = TrainingAutoPolicy.PickTurnChoice(session, choices);
-                TrainingActionResult result = turnChoice.IsRest
-                    ? TrainingActionResolver.ExecuteRest(session.Stamina, random)
-                    : TrainingActionResolver.ExecuteAction(turnChoice.Location, session.Stamina, random);
-                session.ApplyAction(result);
-
-                if (!result.Succeeded)
+                if (TrainingPeriodCatalog.IsShopPeriod(period))
                 {
+                    RunLunchBreak(session);
                     continue;
                 }
 
-                TryApplyRandomEvent(session, usableAttacks, random);
+                RunCommandPeriod(session, usableAttacks, random, turnNumber);
+            }
+        }
+
+        private static void RunLunchBreak(TrainingSession session)
+        {
+            if (TrainingAutoPolicy.TryPickShopItem(session, out TrainingShopItem shopItem))
+            {
+                TrainingShopResolver.TryPurchase(session, shopItem);
+                TrainingShopResolver.TryUseItem(session, shopItem.Id);
+            }
+
+            session.CompletePeriod();
+        }
+
+        private static void RunCommandPeriod(
+            TrainingSession session,
+            IReadOnlyList<MotionType> usableAttacks,
+            System.Random random,
+            int turnNumber)
+        {
+            while (session.TurnIndexInDay < turnNumber)
+            {
+                TrainingWeekChoice choice = TrainingAutoPolicy.PickWeekChoice(session);
+                switch (choice.Command)
+                {
+                    case TrainingCommandType.Rest:
+                        session.ApplyAction(TrainingActionResolver.ExecuteRest(session.Stamina));
+                        return;
+                    case TrainingCommandType.SpecialTrain:
+                    {
+                        TrainingActionResult special = TrainingActionResolver.ExecuteSpecialTrain(
+                            choice.Focus,
+                            session,
+                            random);
+                        session.ApplyAction(special);
+                        if (special.Succeeded)
+                        {
+                            TryApplyRandomEvent(session, usableAttacks, random);
+                        }
+
+                        return;
+                    }
+                    default:
+                    {
+                        TrainingActionResult train = TrainingActionResolver.ExecuteTrain(
+                            choice.Focus,
+                            session,
+                            random);
+                        session.ApplyAction(train);
+                        if (train.Succeeded)
+                        {
+                            TryApplyRandomEvent(session, usableAttacks, random);
+                        }
+
+                        return;
+                    }
+                }
             }
         }
 
@@ -79,13 +130,17 @@ namespace Scene.TrainingScene.Domain
             IClayModelSaveService saveService,
             System.Random random)
         {
-            if (!TrainingEnemyResolver.TryPickEnemySlotIndex(saveService, session.CurrentDay, out int enemySlotIndex))
+            if (!TrainingEnemyResolver.TryPickEnemySlotIndex(
+                    saveService,
+                    session.CurrentDay,
+                    out int enemySlotIndex))
             {
                 session.CompletePeriod();
                 return;
             }
 
-            ModelStatus enemyStatus = saveService.GetSlot(ModelSavePool.Enemy, enemySlotIndex)?.status;
+            ModelStatus enemyStatus =
+                saveService.GetSlot(ModelSavePool.Enemy, enemySlotIndex)?.status;
             bool playerWon = TrainingAutoBattleResolver.TrySimulateVictory(
                 session.CurrentStatus,
                 enemyStatus,
@@ -93,8 +148,11 @@ namespace Scene.TrainingScene.Domain
             if (playerWon)
             {
                 session.ApplyAfterSchoolVictoryRecovery();
+                session.AddMoney(
+                    TrainingShopResolver.ResolveTournamentReward((int)session.CurrentDay));
             }
 
+            session.RefreshShopOffer(random);
             session.CompletePeriod();
         }
 
@@ -104,12 +162,14 @@ namespace Scene.TrainingScene.Domain
             System.Random random)
         {
             if (TrainingEventResolver.TryRollLearnAttackEvent(
-                random,
-                session.AttackMotions,
-                usableAttacks,
-                out TrainingEventOutcome learnOutcome))
+                    random,
+                    session.AttackMotions,
+                    usableAttacks,
+                    out TrainingEventOutcome learnOutcome))
             {
-                int replaceIndex = TrainingAutoPolicy.PickAttackSwapSlot(session, learnOutcome.LearnedAttack);
+                int replaceIndex = TrainingAutoPolicy.PickAttackSwapSlot(
+                    session,
+                    learnOutcome.LearnedAttack);
                 if (replaceIndex >= 0)
                 {
                     session.TryReplaceAttack(replaceIndex, learnOutcome.LearnedAttack);
@@ -118,10 +178,14 @@ namespace Scene.TrainingScene.Domain
                 return;
             }
 
-            if (TrainingEventResolver.TryRollStatBoostEvent(random, out TrainingEventOutcome statOutcome))
+            if (!TrainingEventResolver.TryRollStatBoostEvent(
+                    random,
+                    out TrainingEventOutcome statOutcome))
             {
-                session.ApplyEventStatGain(statOutcome.StatGain);
+                return;
             }
+
+            session.ApplyEventStatGain(statOutcome.StatGain);
         }
     }
 }

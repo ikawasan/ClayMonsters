@@ -6,12 +6,12 @@ namespace Scene.TrainingScene.Domain
     public enum TrainingPlayMode
     {
         /// <summary>
-        /// 手動で行き先を選ぶ通常育成
+        /// 毎日6時間目の行動を手動で選ぶ通常育成
         /// </summary>
         Manual,
 
         /// <summary>
-        /// 自動で5日間を進行する育成
+        /// 全日程を自動で進行する育成
         /// </summary>
         Auto
     }

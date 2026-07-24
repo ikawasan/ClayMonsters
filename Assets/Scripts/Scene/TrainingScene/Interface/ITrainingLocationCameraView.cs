@@ -18,9 +18,19 @@ namespace Scene.TrainingScene.Interface
         void ApplyRestView();
 
         /// <summary>
+        /// 訓練後の徘徊背景用のカメラ構図を適用する
+        /// </summary>
+        void ApplyRoamView();
+
+        /// <summary>
         /// 行き先に対応するカメラ構図を適用する
         /// </summary>
         /// <param name="location">切り替え先の行き先</param>
         void ApplyLocationView(TrainingLocation location);
+
+        /// <summary>
+        /// 継承演出用に正面からモンスターを映すカメラ構図を適用する
+        /// </summary>
+        void ApplyInheritanceView();
     }
 }

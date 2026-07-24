@@ -38,7 +38,7 @@ namespace Scene.TrainingScene.View
         private bool uiBound;
 
         /// <inheritdoc/>
-        public void Show(string modelName)
+        public void Show()
         {
             EnsureUiBound();
             CanvasVisibilityUtility.SetPanelActive(GetWindowRoot(), true);
@@ -50,14 +50,14 @@ namespace Scene.TrainingScene.View
 
             if (modelNameText != null)
             {
-                bool hasModelName = !string.IsNullOrEmpty(modelName);
-                modelNameText.text = hasModelName ? modelName : string.Empty;
-                modelNameText.enabled = hasModelName;
+                modelNameText.text = string.Empty;
+                modelNameText.enabled = false;
             }
 
             if (descriptionText != null)
             {
-                descriptionText.text = "じっくり育成は行き先を自分で選びます\n自動育成は5日間を自動で進行します";
+                descriptionText.text =
+                    $"じっくり育成は1〜6時間目の行動を自分で選びます\n昼休みは売店放課後は戦闘です\n自動育成は{TrainingSettings.TotalDays}日間を自動で進行します";
             }
 
             if (manualButton != null)

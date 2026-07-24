@@ -7,8 +7,8 @@ using UnityEngine;
 namespace Scene.TrainingScene.View
 {
     /// <summary>
-    /// 育成シーンの背景オブジェクトを行き先ごとに切り替える
-    /// モンスターは常に画面中心へ据え置き背景側だけを差し替える
+    /// 育成シーンの背景オブジェクトを切り替える
+    /// 初期と戦闘後はDefault訓練後は徘徊用背景を使う
     /// </summary>
     public sealed class TrainingBackgroundView : MonoBehaviour, ITrainingBackgroundView
     {
@@ -35,6 +35,9 @@ namespace Scene.TrainingScene.View
         [SerializeField] private Transform backgroundRoot;
         [SerializeField] private GameObject defaultBackground;
         [SerializeField] private GameObject restBackground;
+        [Tooltip("訓練後の徘徊用背景未設定時はRestBackgroundを使う")]
+        [SerializeField] private GameObject roamBackground;
+        [SerializeField] private GameObject inheritanceBackground;
         [SerializeField] private LocationBackground[] locationBackgrounds = Array.Empty<LocationBackground>();
 
         private void Awake()
@@ -56,9 +59,40 @@ namespace Scene.TrainingScene.View
         }
 
         /// <inheritdoc/>
+        public void ShowRoamBackground()
+        {
+            GameObject target = ResolveRoamBackground();
+            if (target == null)
+            {
+                Debug.LogError(
+                    "[TrainingBackgroundView] roamBackgroundが未配線ですHierarchyで専用背景を接続してください",
+                    this);
+                Activate(defaultBackground);
+                return;
+            }
+
+            Activate(target);
+        }
+
+        /// <inheritdoc/>
         public void ShowDefaultBackground()
         {
             Activate(defaultBackground);
+        }
+
+        /// <inheritdoc/>
+        public void ShowInheritanceBackground()
+        {
+            if (inheritanceBackground == null)
+            {
+                Debug.LogError(
+                    "[TrainingBackgroundView] inheritanceBackgroundが未配線ですHierarchyで黒背景を接続してください",
+                    this);
+                HideForLeave();
+                return;
+            }
+
+            Activate(inheritanceBackground);
         }
 
         /// <inheritdoc/>
@@ -119,6 +153,21 @@ namespace Scene.TrainingScene.View
             return null;
         }
 
+        private GameObject ResolveRoamBackground()
+        {
+            if (roamBackground != null)
+            {
+                return roamBackground;
+            }
+
+            if (restBackground != null && restBackground != defaultBackground)
+            {
+                return restBackground;
+            }
+
+            return null;
+        }
+
         private void Activate(GameObject target)
         {
             foreach (GameObject background in EnumerateBackgrounds())
@@ -142,6 +191,16 @@ namespace Scene.TrainingScene.View
             if (restBackground != null)
             {
                 yield return restBackground;
+            }
+
+            if (roamBackground != null)
+            {
+                yield return roamBackground;
+            }
+
+            if (inheritanceBackground != null)
+            {
+                yield return inheritanceBackground;
             }
 
             for (int i = 0; i < locationBackgrounds.Length; i++)

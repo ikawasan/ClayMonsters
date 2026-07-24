@@ -34,10 +34,8 @@ namespace Scene.TrainingScene.View
         [SerializeField] private TMP_Text titleText;
         [Tooltip("モデル名")]
         [SerializeField] private TMP_Text modelNameText;
-        [Tooltip("曜日・時間・ターン")]
+        [Tooltip("曜日・時間割・所持金・体力")]
         [SerializeField] private TMP_Text progressText;
-        [Tooltip("体力")]
-        [SerializeField] private TMP_Text staminaText;
         [Tooltip("ステータス")]
         [SerializeField] private TMP_Text statsText;
         [Tooltip("技構成パネル")]
@@ -79,12 +77,8 @@ namespace Scene.TrainingScene.View
 
             if (progressText != null)
             {
-                progressText.text = presentation.DayPeriodTurnLabel;
-            }
-
-            if (staminaText != null)
-            {
-                staminaText.text = presentation.StaminaLabel;
+                progressText.text = presentation.ProgressLabel;
+                progressText.enabled = !string.IsNullOrEmpty(presentation.ProgressLabel);
             }
 
             if (statsText != null)

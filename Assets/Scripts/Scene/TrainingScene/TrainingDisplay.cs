@@ -36,6 +36,11 @@ namespace Scene.TrainingScene
         private static readonly Quaternion TrainingDisplayFacingRotation = Quaternion.Euler(0f, 180f, 0f);
 
         /// <summary>
+        /// ロードモデルのセットアップに使うConfigurator
+        /// </summary>
+        public LoadedModelConfigurator Configurator => configurator;
+
+        /// <summary>
         /// 骨格で使用可能な攻撃
         /// </summary>
         public IReadOnlyList<MotionType> UsableAttacks => usableAttacks;
@@ -98,6 +103,18 @@ namespace Scene.TrainingScene
         /// 表示中モデル
         /// </summary>
         public GameObject LoadedModel => loadedModel;
+
+        /// <summary>
+        /// 表示アンカー
+        /// </summary>
+        public Transform DisplayAnchor
+        {
+            get
+            {
+                EnsureDisplayAnchor();
+                return displayAnchor;
+            }
+        }
 
         /// <summary>
         /// 表示中のプレイヤースロット番号 未表示時は-1
@@ -331,6 +348,19 @@ namespace Scene.TrainingScene
                 Destroy(loadedModel);
                 loadedModel = null;
             }
+        }
+
+        /// <summary>
+        /// 表示中モデルの足元を地面へ合わせる
+        /// </summary>
+        public void SnapDisplayedModelToGround()
+        {
+            if (loadedModel == null)
+            {
+                return;
+            }
+
+            SnapModelToGround(loadedModel.transform);
         }
 
         private async UniTask<bool> SetupDisplayedModelAsync(

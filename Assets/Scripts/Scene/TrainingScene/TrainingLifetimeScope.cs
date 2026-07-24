@@ -45,6 +45,8 @@ namespace Scene.TrainingScene
         [SerializeField] private TrainingDisplay trainingDisplay;
         [SerializeField] private TrainingBackgroundView backgroundView;
         [SerializeField] private TrainingLocationCameraView locationCameraView;
+        [SerializeField] private TrainingMonsterRoamController monsterRoamController;
+        [SerializeField] private TrainingInheritancePresentationView inheritancePresentation;
 
         [Header("Post Process")]
         [SerializeField] private BattleNpcPostProcessView postProcessView;
@@ -55,6 +57,7 @@ namespace Scene.TrainingScene
         [SerializeField] private TrainingTrainedSaveView trainedSaveView;
         [SerializeField] private TrainingModeSelectView modeSelectView;
         [SerializeField] private TrainingAutoResultView autoResultView;
+        [SerializeField] private TrainingAmbushView ambushView;
 
         protected override void Awake()
         {
@@ -89,11 +92,45 @@ namespace Scene.TrainingScene
             VContainerComponentRegistration.RegisterComponentAsInterfaces(builder, trainedSaveView, ScopeTag);
             VContainerComponentRegistration.RegisterComponentAsInterfaces(builder, modeSelectView, ScopeTag);
             VContainerComponentRegistration.RegisterComponentAsInterfaces(builder, autoResultView, ScopeTag);
+            VContainerComponentRegistration.RegisterComponentAsInterfaces(builder, ambushView, ScopeTag);
             VContainerComponentRegistration.RegisterComponent(builder, flowRunner, ScopeTag);
             VContainerComponentRegistration.RegisterComponent(builder, battleRunner, ScopeTag);
             VContainerComponentRegistration.RegisterComponent(builder, trainingDisplay, ScopeTag);
+            if (trainingDisplay != null && trainingDisplay.Configurator != null)
+            {
+                builder.RegisterInstance(trainingDisplay.Configurator);
+            }
+            else
+            {
+                Debug.LogError(
+                    "[TrainingLifetimeScope] TrainingDisplay.configuratorが未配線ですHierarchyで接続してください",
+                    this);
+            }
+
             VContainerComponentRegistration.RegisterComponentAsInterfaces(builder, backgroundView, ScopeTag);
             VContainerComponentRegistration.RegisterComponentAsInterfaces(builder, locationCameraView, ScopeTag);
+            if (monsterRoamController != null)
+            {
+                VContainerComponentRegistration.RegisterComponentAsInterfaces(
+                    builder,
+                    monsterRoamController,
+                    ScopeTag);
+            }
+
+            if (inheritancePresentation != null)
+            {
+                VContainerComponentRegistration.RegisterComponentAsInterfaces(
+                    builder,
+                    inheritancePresentation,
+                    ScopeTag);
+            }
+            else
+            {
+                Debug.LogError(
+                    "[TrainingLifetimeScope] inheritancePresentationが未配線ですHierarchyで接続してください",
+                    this);
+            }
+
             VContainerComponentRegistration.RegisterComponent(builder, loadSlotView, ScopeTag);
 
             VContainerComponentRegistration.RegisterComponentAsInterfaces(builder, cameraView, ScopeTag);
@@ -254,7 +291,8 @@ namespace Scene.TrainingScene
                 || loadSlotView == null
                 || trainedSaveView == null
                 || modeSelectView == null
-                || autoResultView == null)
+                || autoResultView == null
+                || ambushView == null)
             {
                 Debug.LogError(
                     "[TrainingLifetimeScope] 必須SerializeFieldが未配線ですHierarchyで接続してください",

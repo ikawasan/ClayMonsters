@@ -35,6 +35,11 @@ namespace Scene.TrainingScene.Domain
         public float FocusSideOffset { get; }
 
         /// <summary>
+        /// 注視点の奥行きオフセット
+        /// </summary>
+        public float FocusForwardOffset { get; }
+
+        /// <summary>
         /// スナップショットを生成する
         /// </summary>
         public TrainingLocationOrbitCapture(
@@ -42,13 +47,15 @@ namespace Scene.TrainingScene.Domain
             float verticalAngle,
             float distance,
             float focusHeightOffset,
-            float focusSideOffset)
+            float focusSideOffset,
+            float focusForwardOffset)
         {
             HorizontalAngle = horizontalAngle;
             VerticalAngle = verticalAngle;
             Distance = distance;
             FocusHeightOffset = focusHeightOffset;
             FocusSideOffset = focusSideOffset;
+            FocusForwardOffset = focusForwardOffset;
         }
     }
 }

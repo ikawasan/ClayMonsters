@@ -18,6 +18,16 @@ namespace Scene.TrainingScene.Domain
         /// <summary>
         /// 行き先別構図
         /// </summary>
-        Location
+        Location,
+
+        /// <summary>
+        /// 継承演出構図
+        /// </summary>
+        Inheritance,
+
+        /// <summary>
+        /// 徘徊構図
+        /// </summary>
+        Roam
     }
 }

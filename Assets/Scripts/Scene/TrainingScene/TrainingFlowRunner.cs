@@ -36,28 +36,38 @@ namespace Scene.TrainingScene
         [SerializeField] private TrainingDisplay trainingDisplay;
         [SerializeField] private TrainingBackgroundView backgroundView;
         [SerializeField] private TrainingLocationCameraView locationCameraView;
+        [SerializeField] private TrainingMonsterRoamController monsterRoamController;
+        [SerializeField] private TrainingInheritancePresentationView inheritancePresentationView;
 
         private IClayModelSaveService saveService;
         private ITrainingHudView hudView;
         private ITrainingTrainedSaveView trainedSaveView;
+        private ITrainingInheritanceSelectView inheritanceSelectView;
         private ITrainingModeSelectView modeSelectView;
         private ITrainingAutoResultView autoResultView;
+        private ITrainingAmbushView ambushView;
         private IClayMonsterSceneManager sceneManager;
         private IBattleCanvasTransition canvasTransition;
         private TrainingBattleRunner battleRunner;
-
         private CancellationTokenSource flowCts;
         private bool isRunning;
         private System.Random random = new System.Random();
         private TrainingSession activeSession;
+
+        private ITrainingInheritancePresentation InheritancePresentation =>
+            inheritancePresentationView != null
+                ? inheritancePresentationView
+                : null;
 
         [Inject]
         public void Construct(
             IClayModelSaveService saveService,
             ITrainingHudView hudView,
             ITrainingTrainedSaveView trainedSaveView,
+            ITrainingInheritanceSelectView inheritanceSelectView,
             ITrainingModeSelectView modeSelectView,
             ITrainingAutoResultView autoResultView,
+            ITrainingAmbushView ambushView,
             IClayMonsterSceneManager sceneManager,
             IBattleCanvasTransition canvasTransition,
             TrainingBattleRunner battleRunner)
@@ -65,8 +75,10 @@ namespace Scene.TrainingScene
             this.saveService = saveService;
             this.hudView = hudView;
             this.trainedSaveView = trainedSaveView;
+            this.inheritanceSelectView = inheritanceSelectView;
             this.modeSelectView = modeSelectView;
             this.autoResultView = autoResultView;
+            this.ambushView = ambushView;
             this.sceneManager = sceneManager;
             this.canvasTransition = canvasTransition;
             this.battleRunner = battleRunner;
@@ -101,6 +113,7 @@ namespace Scene.TrainingScene
         public void StopFlow()
         {
             flowCts?.Cancel();
+            StopMonsterRoam();
             if (activeRunner == this)
             {
                 activeRunner = null;
@@ -132,6 +145,8 @@ namespace Scene.TrainingScene
             modeSelectView?.Hide();
             autoResultView?.Hide();
             trainedSaveView?.HideForLeave();
+            inheritanceSelectView?.HideForLeave();
+            InheritancePresentation?.HideForLeave();
         }
 
         /// <summary>
@@ -148,6 +163,8 @@ namespace Scene.TrainingScene
             modeSelectView?.Hide();
             autoResultView?.Hide();
             trainedSaveView?.HideForLeave();
+            inheritanceSelectView?.HideForLeave();
+            InheritancePresentation?.HideForLeave();
             ModelSaveSlotScrollListView.ExitFullscreenSelectionLayout();
         }
 
@@ -239,38 +256,54 @@ namespace Scene.TrainingScene
                     return;
                 }
 
-                (int slotIndex, GameObject selectedModel) = await WaitForMonsterSelectionAsync(cancellationToken);
-                if (slotIndex < 0 || selectedModel == null)
+                while (true)
                 {
-                    await EnsureSceneVisibleAfterSelectionFailureAsync(cancellationToken);
+                    (int slotIndex, GameObject selectedModel) =
+                        await WaitForMonsterSelectionAsync(cancellationToken);
+                    if (slotIndex < 0 || selectedModel == null)
+                    {
+                        await EnsureSceneVisibleAfterSelectionFailureAsync(cancellationToken);
+                        return;
+                    }
+
+                    ModelSaveSlot slot = saveService.GetSlot(ModelSavePool.Player, slotIndex);
+                    if (slot == null)
+                    {
+                        await EnsureSceneVisibleAfterSelectionFailureAsync(cancellationToken);
+                        return;
+                    }
+
+                    PreparePostSelectionPresentation();
+                    bool loaded = await trainingDisplay.AdoptLoadedModelAsync(
+                        selectedModel,
+                        slotIndex,
+                        cancellationToken);
+                    if (!loaded)
+                    {
+                        await PresentLoadFailureAsync(cancellationToken);
+                        return;
+                    }
+
+                    ApplyDefaultDestinationPresentation();
+                    TrainingInheritanceResult inheritance =
+                        await ResolveInheritanceAsync(slot, cancellationToken);
+                    if (inheritance == null)
+                    {
+                        await ReturnToMonsterSelectionAsync(cancellationToken);
+                        continue;
+                    }
+
+                    TrainingSession session = CreateFreshSession(slotIndex, slot, inheritance);
+                    TrainingPlayMode playMode = await WaitForPlayModeAsync(slot.modelName, cancellationToken);
+                    if (playMode == TrainingPlayMode.Auto)
+                    {
+                        await RunAutoTrainingAsync(session, slot.modelName, cancellationToken);
+                        return;
+                    }
+
+                    await RunActiveTrainingAsync(session, slot.modelName, cancellationToken);
                     return;
                 }
-
-                ModelSaveSlot slot = saveService.GetSlot(ModelSavePool.Player, slotIndex);
-                if (slot == null)
-                {
-                    await EnsureSceneVisibleAfterSelectionFailureAsync(cancellationToken);
-                    return;
-                }
-
-                PreparePostSelectionPresentation();
-                bool loaded = await trainingDisplay.AdoptLoadedModelAsync(selectedModel, slotIndex, cancellationToken);
-                if (!loaded)
-                {
-                    await PresentLoadFailureAsync(cancellationToken);
-                    return;
-                }
-
-                ApplyDefaultDestinationPresentation();
-                TrainingSession session = CreateFreshSession(slotIndex, slot);
-                TrainingPlayMode playMode = await WaitForPlayModeAsync(slot.modelName, cancellationToken);
-                if (playMode == TrainingPlayMode.Auto)
-                {
-                    await RunAutoTrainingAsync(session, slot.modelName, cancellationToken);
-                    return;
-                }
-
-                await RunActiveTrainingAsync(session, slot.modelName, cancellationToken);
             }
             catch (OperationCanceledException)
             {
@@ -374,7 +407,7 @@ namespace Scene.TrainingScene
             ApplyDefaultDestinationPresentation();
             autoResultView?.Hide();
             hudView.ShowOverlayHost();
-            modeSelectView.Show(modelName);
+            modeSelectView.Show();
             await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate, cancellationToken);
             Canvas.ForceUpdateCanvases();
 
@@ -571,9 +604,13 @@ namespace Scene.TrainingScene
                 return;
             }
 
+            session.EnsureShopOffer(random);
+            CheckpointSave(session);
             activeSession = session;
             hudView.Show();
             hudView.SetInterruptButtonVisible(true);
+            hudView.BindSession(session);
+
             if (canvasTransition != null)
             {
                 await canvasTransition.FadeInAsync(cancellationToken);
@@ -585,7 +622,10 @@ namespace Scene.TrainingScene
             }
         }
 
-        private TrainingSession CreateFreshSession(int slotIndex, ModelSaveSlot slot)
+        private TrainingSession CreateFreshSession(
+            int slotIndex,
+            ModelSaveSlot slot,
+            TrainingInheritanceResult inheritance)
         {
             TrainingSlotProgress savedProgress = saveService.GetTrainingProgress(ModelSavePool.Player, slotIndex);
             if (savedProgress != null)
@@ -593,7 +633,298 @@ namespace Scene.TrainingScene
                 saveService.ClearTrainingProgress(ModelSavePool.Player, slotIndex);
             }
 
+            if (inheritance != null && inheritance.Applied)
+            {
+                return new TrainingSession(slotIndex, inheritance.Status, inheritance.AttackMotions);
+            }
+
             return new TrainingSession(slotIndex, slot.status, slot.attackMotions);
+        }
+
+        private async UniTask<TrainingInheritanceResult> ResolveInheritanceAsync(
+            ModelSaveSlot traineeSlot,
+            CancellationToken cancellationToken)
+        {
+            if (traineeSlot == null)
+            {
+                return TrainingInheritanceResult.None(null, null);
+            }
+
+            int trainedCount = TrainingInheritanceResolver.CountUsedTrainedSlots(saveService);
+            if (trainedCount < TrainingSettings.InheritanceParentCount
+                || inheritanceSelectView == null)
+            {
+                if (canvasTransition != null)
+                {
+                    await canvasTransition.FadeInAsync(cancellationToken);
+                }
+
+                return TrainingInheritanceResult.None(traineeSlot.status, traineeSlot.attackMotions);
+            }
+
+            // モンスター決定後の暗転を維持し背景とモデルを隠してから継承UIを出す
+            if (canvasTransition != null)
+            {
+                await canvasTransition.FadeOutAsync(cancellationToken);
+            }
+
+            SetWorldVisibleForInheritanceSelect(false);
+
+            UniTask<(int parentSlotA, int parentSlotB)> waitParentsTask =
+                inheritanceSelectView.WaitForParentsAsync(cancellationToken);
+
+            if (canvasTransition != null)
+            {
+                await canvasTransition.FadeInAsync(cancellationToken);
+            }
+
+            (int parentSlotA, int parentSlotB) = await waitParentsTask;
+
+            if (canvasTransition != null)
+            {
+                await canvasTransition.FadeOutAsync(cancellationToken);
+            }
+
+            inheritanceSelectView.HideForLeave();
+
+            // 継承元選択の戻る操作はモンスター選択へ戻す
+            if (parentSlotA < 0 || parentSlotB < 0)
+            {
+                return null;
+            }
+
+            if (parentSlotA == parentSlotB)
+            {
+                SetWorldVisibleForInheritanceSelect(true);
+                if (canvasTransition != null)
+                {
+                    await canvasTransition.FadeInAsync(cancellationToken);
+                }
+
+                return TrainingInheritanceResult.None(traineeSlot.status, traineeSlot.attackMotions);
+            }
+
+            ModelSaveSlot parentA = saveService.GetSlot(ModelSavePool.TrainedPlayer, parentSlotA);
+            ModelSaveSlot parentB = saveService.GetSlot(ModelSavePool.TrainedPlayer, parentSlotB);
+            if (parentA == null || !parentA.isUsed || parentB == null || !parentB.isUsed)
+            {
+                SetWorldVisibleForInheritanceSelect(true);
+                if (canvasTransition != null)
+                {
+                    await canvasTransition.FadeInAsync(cancellationToken);
+                }
+
+                return TrainingInheritanceResult.None(traineeSlot.status, traineeSlot.attackMotions);
+            }
+
+            if (InheritancePresentation != null && trainingDisplay != null)
+            {
+                if (trainingDisplay.LoadedModel != null)
+                {
+                    trainingDisplay.LoadedModel.SetActive(true);
+                }
+
+                TrainingInheritanceResult resolved = TrainingInheritanceResolver.Resolve(
+                    traineeSlot.status,
+                    traineeSlot.attackMotions,
+                    parentA,
+                    parentB,
+                    trainingDisplay.UsableAttacks,
+                    random);
+
+                await InheritancePresentation.PrepareAsync(
+                    trainingDisplay.LoadedModel,
+                    parentSlotA,
+                    parentSlotB,
+                    cancellationToken);
+
+                if (canvasTransition != null)
+                {
+                    await canvasTransition.FadeInAsync(cancellationToken);
+                }
+
+                // 明転後に1フレーム待ってから構図と表示を確定する
+                await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate, cancellationToken);
+
+                try
+                {
+                    await InheritancePresentation.PlayAsync(cancellationToken);
+                    resolved = await PresentInheritanceResultAsync(resolved, cancellationToken);
+                }
+                finally
+                {
+                    await InheritancePresentation.FinishAsync(
+                        trainingDisplay.LoadedModel,
+                        cancellationToken);
+                }
+
+                if (canvasTransition != null)
+                {
+                    await canvasTransition.FadeOutAsync(cancellationToken);
+                }
+
+                return resolved;
+            }
+
+            SetWorldVisibleForInheritanceSelect(true);
+            if (canvasTransition != null)
+            {
+                await canvasTransition.FadeInAsync(cancellationToken);
+            }
+
+            TrainingInheritanceResult fallbackResolved = TrainingInheritanceResolver.Resolve(
+                traineeSlot.status,
+                traineeSlot.attackMotions,
+                parentA,
+                parentB,
+                trainingDisplay != null ? trainingDisplay.UsableAttacks : null,
+                random);
+            fallbackResolved = await PresentInheritanceResultAsync(fallbackResolved, cancellationToken);
+
+            if (canvasTransition != null)
+            {
+                await canvasTransition.FadeOutAsync(cancellationToken);
+            }
+
+            return fallbackResolved;
+        }
+
+        private async UniTask<TrainingInheritanceResult> PresentInheritanceResultAsync(
+            TrainingInheritanceResult result,
+            CancellationToken cancellationToken)
+        {
+            if (result == null || !result.Applied || hudView == null)
+            {
+                return result;
+            }
+
+            string summary = TrainingInheritanceResolver.FormatSummary(result);
+            hudView.ShowOverlayMessage(summary);
+            await hudView.WaitContinueAsync(cancellationToken);
+            hudView.ClearOverlayMessage();
+
+            List<MotionType> attacks = ModelAttackMotionUtility.Normalize(
+                result.AttackMotions,
+                TrainingSettings.AttackSlotCount);
+            MotionType? acceptedA = await OfferInheritedAttackSwapAsync(
+                attacks,
+                result.InheritedAttackFromParentA,
+                cancellationToken);
+            MotionType? acceptedB = await OfferInheritedAttackSwapAsync(
+                attacks,
+                result.InheritedAttackFromParentB,
+                cancellationToken);
+
+            hudView.Hide();
+            return new TrainingInheritanceResult(
+                result.Status,
+                attacks,
+                result.StatGain,
+                acceptedA,
+                acceptedB,
+                true);
+        }
+
+        private async UniTask<MotionType?> OfferInheritedAttackSwapAsync(
+            List<MotionType> attacks,
+            MotionType? candidate,
+            CancellationToken cancellationToken)
+        {
+            if (!candidate.HasValue || hudView == null || attacks == null)
+            {
+                return null;
+            }
+
+            MotionType learned = candidate.Value;
+            if (ContainsAttackMotion(attacks, learned))
+            {
+                return learned;
+            }
+
+            hudView.ShowOverlayMessage(
+                $"技「{TrainingAttackTeacher.FormatAttackLabel(learned)}」を覚えるスロットを選んでください");
+            await hudView.WaitContinueAsync(cancellationToken);
+            hudView.ClearOverlayMessage();
+
+            hudView.ShowAttackSwapChoices(learned, attacks, showSessionPanels: false);
+            int replaceIndex = await hudView.WaitAttackSwapChoiceAsync(cancellationToken);
+            if (replaceIndex < 0)
+            {
+                hudView.ShowOverlayMessage(
+                    $"「{TrainingAttackTeacher.FormatAttackLabel(learned)}」は覚えませんでした");
+                await hudView.WaitContinueAsync(cancellationToken);
+                hudView.ClearOverlayMessage();
+                return null;
+            }
+
+            if (replaceIndex >= attacks.Count)
+            {
+                hudView.ShowOverlayMessage("入れ替えスロットが無効です");
+                await hudView.WaitContinueAsync(cancellationToken);
+                hudView.ClearOverlayMessage();
+                return null;
+            }
+
+            MotionType oldAttack = attacks[replaceIndex];
+            attacks[replaceIndex] = learned;
+            hudView.ShowOverlayMessage(
+                $"技を入れ替えました\nスロット{replaceIndex + 1}: {TrainingAttackTeacher.FormatAttackLabel(oldAttack)}"
+                + $" → {TrainingAttackTeacher.FormatAttackLabel(learned)}");
+            await hudView.WaitContinueAsync(cancellationToken);
+            hudView.ClearOverlayMessage();
+            return learned;
+        }
+
+        private static bool ContainsAttackMotion(
+            IReadOnlyList<MotionType> attacks,
+            MotionType motion)
+        {
+            if (attacks == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < attacks.Count; i++)
+            {
+                if (attacks[i] == motion)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void SetWorldVisibleForInheritanceSelect(bool visible)
+        {
+            GameObject loadedModel = trainingDisplay != null ? trainingDisplay.LoadedModel : null;
+            if (loadedModel != null)
+            {
+                loadedModel.SetActive(visible);
+            }
+
+            if (visible)
+            {
+                backgroundView?.ShowDefaultBackground();
+                return;
+            }
+
+            backgroundView?.HideForLeave();
+        }
+
+        private async UniTask ReturnToMonsterSelectionAsync(CancellationToken cancellationToken)
+        {
+            InheritancePresentation?.HideForLeave();
+            inheritanceSelectView?.HideForLeave();
+            trainingDisplay?.Clear();
+            loadSlotView?.ClearLoadedModelForNewSelection();
+
+            if (canvasTransition != null)
+            {
+                await canvasTransition.FadeOutAsync(cancellationToken);
+            }
+
+            await RevealSelectionAsync(cancellationToken);
         }
 
         private void OnInterruptRequested()
@@ -753,7 +1084,6 @@ namespace Scene.TrainingScene
                     break;
                 }
 
-                // 金曜終了後は次の日開始メッセージを出さず完了フローへ進む
                 if ((int)session.CurrentDay >= TrainingSettings.TotalDays)
                 {
                     session.AdvanceDay();
@@ -825,7 +1155,7 @@ namespace Scene.TrainingScene
 
         private static bool IsValidTrainedSlotIndex(int slotIndex)
         {
-            return slotIndex >= 0 && slotIndex < ModelSavePoolSettings.SlotCount;
+            return ModelSavePoolSettings.IsValidSlotIndex(ModelSavePool.TrainedPlayer, slotIndex);
         }
 
         private async UniTask RunSingleDayAsync(
@@ -840,7 +1170,9 @@ namespace Scene.TrainingScene
                 return;
             }
 
-            for (int i = startPeriodIndex; i < periods.Length && !cancellationToken.IsCancellationRequested; i++)
+            for (int i = startPeriodIndex;
+                i < periods.Length && !cancellationToken.IsCancellationRequested;
+                i++)
             {
                 TrainingPeriod period = periods[i];
                 int turnNumber = i + 1;
@@ -853,46 +1185,425 @@ namespace Scene.TrainingScene
                         {
                             hudView.HideLocationChoices();
                             hudView.HideAttackSwapChoices();
+                            ApplyDefaultDestinationPresentation();
                         });
                 }
 
                 if (TrainingPeriodCatalog.IsBattlePeriod(period))
                 {
-                    await RunAfterSchoolPeriodAsync(session, modelName, period, turnNumber, cancellationToken);
+                    await RunAfterSchoolPeriodAsync(
+                        session,
+                        modelName,
+                        period,
+                        turnNumber,
+                        cancellationToken);
                     CheckpointSave(session);
                     continue;
                 }
 
-                hudView.BindSession(session, period, turnNumber);
-                TrainingLocation[] choices = TrainingActionResolver.PickLocationChoices(
-                    TrainingSettings.LocationChoiceCount,
-                    random);
-                hudView.ShowLocationChoices(choices, session.Stamina);
-                TrainingTurnChoice turnChoice = await hudView.WaitTurnChoiceAsync(cancellationToken);
-                TrainingActionResult result = turnChoice.IsRest
-                    ? TrainingActionResolver.ExecuteRest(session.Stamina, random)
-                    : TrainingActionResolver.ExecuteAction(turnChoice.Location, session.Stamina, random);
-                session.ApplyAction(result);
-                CheckpointSave(session);
-
-                await TransitionTurnAsync(
-                    cancellationToken,
-                    () =>
-                    {
-                        hudView.HideLocationChoices();
-                        hudView.HideAttackSwapChoices();
-                        ApplyDestinationBackground(turnChoice);
-                        hudView.BindSession(session, period, turnNumber);
-                        hudView.SetLogMessage(BuildActionLog(result));
-                    });
-                await hudView.WaitContinueAsync(cancellationToken);
-
-                if (result.Succeeded)
+                if (TrainingPeriodCatalog.IsShopPeriod(period))
                 {
-                    await TryRunRandomEventAsync(session, period, turnNumber, cancellationToken);
+                    await RunLunchBreakAsync(session, period, turnNumber, cancellationToken);
                     CheckpointSave(session);
+                    continue;
+                }
+
+                await RunCommandPeriodAsync(session, modelName, period, turnNumber, cancellationToken);
+                CheckpointSave(session);
+            }
+        }
+
+        private async UniTask RunLunchBreakAsync(
+            TrainingSession session,
+            TrainingPeriod period,
+            int turnNumber,
+            CancellationToken cancellationToken)
+        {
+            hudView.BindSession(session, period, turnNumber);
+            hudView.HideLocationChoices();
+            hudView.SetLogMessage("昼休みになった\n売店で買い物ができる");
+            await hudView.WaitContinueAsync(cancellationToken);
+            await RunShopVisitAsync(session, cancellationToken);
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
+
+            session.CompletePeriod();
+            hudView.BindSession(session, period, turnNumber);
+            hudView.SetLogMessage("昼休みが終わった");
+            await hudView.WaitContinueAsync(cancellationToken);
+        }
+
+        private async UniTask RunCommandPeriodAsync(
+            TrainingSession session,
+            string modelName,
+            TrainingPeriod period,
+            int turnNumber,
+            CancellationToken cancellationToken)
+        {
+            while (session.TurnIndexInDay < turnNumber
+                && !cancellationToken.IsCancellationRequested)
+            {
+                hudView.BindSession(session, period, turnNumber);
+                System.Collections.Generic.List<TrainingCommandType> commands =
+                    TrainingSchedule.BuildHudCommands(session);
+                hudView.ShowCommandChoices(commands, session.Stamina);
+                TrainingCommandType command =
+                    await hudView.WaitCommandChoiceAsync(cancellationToken);
+
+                if (command == TrainingCommandType.Shop)
+                {
+                    hudView.SetLogMessage("売店は昼休みにだけ利用できる");
+                    await hudView.WaitContinueAsync(cancellationToken);
+                    continue;
+                }
+
+                if (command == TrainingCommandType.UseItem)
+                {
+                    await RunInventoryVisitAsync(session, cancellationToken);
+                    continue;
+                }
+
+                TrainingFocus focus = default;
+                if (TrainingCommandCatalog.RequiresFocus(command))
+                {
+                    hudView.ShowFocusChoices(command);
+                    TrainingFocus? focusChoice =
+                        await hudView.WaitFocusChoiceAsync(cancellationToken);
+                    if (focusChoice == null)
+                    {
+                        continue;
+                    }
+
+                    focus = focusChoice.Value;
+                }
+
+                TrainingWeekChoice weekChoice = TrainingCommandCatalog.RequiresFocus(command)
+                    ? TrainingWeekChoice.FromFocus(command, focus)
+                    : TrainingWeekChoice.FromCommand(command);
+
+                switch (weekChoice.Command)
+                {
+                    case TrainingCommandType.Rest:
+                        await RunRestWeekAsync(session, cancellationToken);
+                        break;
+                    case TrainingCommandType.SpecialTrain:
+                        await RunFocusCommandWeekAsync(
+                            session,
+                            modelName,
+                            weekChoice,
+                            isSpecial: true,
+                            cancellationToken);
+                        break;
+                    default:
+                        await RunFocusCommandWeekAsync(
+                            session,
+                            modelName,
+                            weekChoice,
+                            isSpecial: false,
+                            cancellationToken);
+                        break;
                 }
             }
+        }
+
+        private async UniTask RunShopVisitAsync(
+            TrainingSession session,
+            CancellationToken cancellationToken)
+        {
+            session.EnsureShopOffer(random);
+
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                System.Collections.Generic.List<TrainingShopItem> offerItems =
+                    session.GetShopOfferItems();
+                hudView.BindSession(session);
+                hudView.ShowShopChoices(
+                    offerItems,
+                    hasNextPage: false,
+                    session.Money,
+                    showOpenInventory: true);
+                int choice = await hudView.WaitShopChoiceAsync(cancellationToken);
+                if (choice == TrainingShopChoiceCodes.Back)
+                {
+                    return;
+                }
+
+                if (choice == TrainingShopChoiceCodes.OpenInventory)
+                {
+                    await RunInventoryVisitAsync(session, cancellationToken);
+                    continue;
+                }
+
+                if (choice < 0 || choice >= offerItems.Count)
+                {
+                    continue;
+                }
+
+                TrainingShopPurchaseResult purchase =
+                    TrainingShopResolver.TryPurchase(session, offerItems[choice]);
+                CheckpointSave(session);
+                hudView.BindSession(session);
+                hudView.SetLogMessage(purchase.Message);
+                await hudView.WaitContinueAsync(cancellationToken);
+            }
+        }
+
+        private async UniTask RunInventoryVisitAsync(
+            TrainingSession session,
+            CancellationToken cancellationToken)
+        {
+            int page = 0;
+            int pageSize = TrainingSettings.ShopPageSize;
+
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                System.Collections.Generic.List<TrainingInventoryEntryView> allEntries =
+                    session.BuildInventoryViews();
+                int pageCount = pageSize <= 0
+                    ? 0
+                    : (allEntries.Count + pageSize - 1) / pageSize;
+                if (pageCount <= 0)
+                {
+                    pageCount = 1;
+                }
+
+                if (page >= pageCount)
+                {
+                    page = 0;
+                }
+
+                var pageEntries = new System.Collections.Generic.List<TrainingInventoryEntryView>(
+                    pageSize);
+                int start = page * pageSize;
+                for (int i = start; i < allEntries.Count && pageEntries.Count < pageSize; i++)
+                {
+                    pageEntries.Add(allEntries[i]);
+                }
+
+                bool hasNext = allEntries.Count > pageSize;
+                hudView.BindSession(session);
+                hudView.ShowInventoryChoices(pageEntries, hasNext);
+                int choice = await hudView.WaitInventoryChoiceAsync(cancellationToken);
+                if (choice == TrainingInventoryChoiceCodes.Back)
+                {
+                    return;
+                }
+
+                if (choice == TrainingInventoryChoiceCodes.NextPage)
+                {
+                    page = (page + 1) % pageCount;
+                    continue;
+                }
+
+                if (choice < 0 || choice >= pageEntries.Count)
+                {
+                    continue;
+                }
+
+                TrainingItemUseResult useResult =
+                    TrainingShopResolver.TryUseItem(session, pageEntries[choice].ItemId);
+                CheckpointSave(session);
+                hudView.BindSession(session);
+                hudView.SetLogMessage(useResult.Message);
+                await hudView.WaitContinueAsync(cancellationToken);
+            }
+        }
+
+        private async UniTask RunRestWeekAsync(
+            TrainingSession session,
+            CancellationToken cancellationToken)
+        {
+            TrainingActionResult result = TrainingActionResolver.ExecuteRest(session.Stamina);
+            StopMonsterRoam();
+            await TransitionTurnAsync(
+                cancellationToken,
+                () =>
+                {
+                    hudView.HideLocationChoices();
+                    ApplyDefaultDestinationPresentation();
+                });
+            session.ApplyAction(result);
+            CheckpointSave(session);
+            hudView.BindSession(session);
+            hudView.SetLogMessage(BuildActionLog(result));
+            await hudView.WaitContinueAsync(cancellationToken);
+        }
+
+        private async UniTask RunFocusCommandWeekAsync(
+            TrainingSession session,
+            string modelName,
+            TrainingWeekChoice weekChoice,
+            bool isSpecial,
+            CancellationToken cancellationToken)
+        {
+            TrainingActionResult result = isSpecial
+                ? TrainingActionResolver.ExecuteSpecialTrain(
+                    weekChoice.Focus,
+                    session,
+                    random)
+                : TrainingActionResolver.ExecuteTrain(
+                    weekChoice.Focus,
+                    session,
+                    random);
+
+            await TransitionTurnAsync(
+                cancellationToken,
+                () =>
+                {
+                    hudView.HideLocationChoices();
+                    ApplyRoamDestinationPresentation();
+                    hudView.Hide();
+                });
+
+            StartMonsterRoam(cancellationToken);
+            hudView.Show();
+            session.ApplyAction(result);
+            CheckpointSave(session);
+            hudView.BindSession(session);
+            hudView.SetLogMessage(BuildActionLog(result));
+            await hudView.WaitContinueAsync(cancellationToken);
+
+            if (result.Succeeded)
+            {
+                bool ambushRan = await TryRunAmbushEventAsync(
+                    session,
+                    modelName,
+                    cancellationToken);
+                if (!ambushRan)
+                {
+                    await TryRunRandomEventAsync(session, cancellationToken);
+                }
+
+                CheckpointSave(session);
+            }
+        }
+
+        private async UniTask<bool> TryRunAmbushEventAsync(
+            TrainingSession session,
+            string modelName,
+            CancellationToken cancellationToken)
+        {
+            if (!TrainingEventResolver.TryRollAmbushEvent(random))
+            {
+                return false;
+            }
+
+            if (ambushView == null)
+            {
+                Debug.LogError("[TrainingFlowRunner] ITrainingAmbushViewが未注入です");
+                return false;
+            }
+
+            if (!TrainingEnemyResolver.TryPickAmbushEnemySlotIndex(
+                    saveService,
+                    out int enemySlotIndex))
+            {
+                return false;
+            }
+
+            string enemyName = saveService.GetSlot(ModelSavePool.Enemy, enemySlotIndex)?.modelName
+                ?? "強敵";
+
+            await ambushView.PlayAlertAsync(cancellationToken);
+            ambushView.ShowChoice(enemyName);
+            TrainingAmbushChoice choice = await ambushView.WaitChoiceAsync(cancellationToken);
+            ambushView.Hide();
+
+            if (choice == TrainingAmbushChoice.Flee)
+            {
+                hudView.SetLogMessage($"【強敵急襲】\n{enemyName}から逃げ出した");
+                await hudView.WaitContinueAsync(cancellationToken);
+                return true;
+            }
+
+            await RunAmbushBattleAsync(
+                session,
+                modelName,
+                enemySlotIndex,
+                enemyName,
+                cancellationToken);
+            return true;
+        }
+
+        private async UniTask RunAmbushBattleAsync(
+            TrainingSession session,
+            string modelName,
+            int enemySlotIndex,
+            string enemyName,
+            CancellationToken cancellationToken)
+        {
+            GameObject playerModel = trainingDisplay != null ? trainingDisplay.LoadedModel : null;
+            if (battleRunner == null || playerModel == null)
+            {
+                Debug.LogError("[TrainingFlowRunner] 強敵急襲の戦闘を開始できませんでした");
+                hudView.SetLogMessage("強敵急襲の戦闘を開始できませんでした");
+                await hudView.WaitContinueAsync(cancellationToken);
+                return;
+            }
+
+            if (canvasTransition != null)
+            {
+                await canvasTransition.FadeOutAsync(cancellationToken);
+            }
+
+            SetSelectionUiVisible(false);
+            if (loadSlotView != null)
+            {
+                CanvasVisibilityUtility.SetCanvasEnabled(loadSlotView.SelectionCanvas, false);
+            }
+
+            StopMonsterRoam();
+            trainingDisplay?.PrepareModelForBattle(battleRunner.BattlePlayerSpawn);
+            hudView.Hide();
+
+            TrainingBattleResult battleResult;
+            try
+            {
+                battleResult = await battleRunner.RunAfterSchoolBattleAsync(
+                    session,
+                    playerModel,
+                    modelName,
+                    enemySlotIndex,
+                    cancellationToken);
+            }
+            finally
+            {
+                if (!cancellationToken.IsCancellationRequested)
+                {
+                    hudView.Show();
+                }
+            }
+
+            hudView.BindSession(session);
+            ApplyDefaultDestinationPresentation();
+
+            if (!battleResult.Played)
+            {
+                hudView.SetLogMessage("強敵急襲の戦闘を開始できませんでした");
+                await hudView.WaitContinueAsync(cancellationToken);
+                return;
+            }
+
+            if (battleResult.PlayerWon)
+            {
+                TrainingStatGain victoryGain = TrainingEventResolver.CreateAmbushVictoryGain();
+                session.ApplyEventStatGain(victoryGain);
+                session.AddMoney(TrainingSettings.AmbushVictoryReward);
+                hudView.BindSession(session);
+                hudView.SetLogMessage(
+                    $"【強敵急襲】\n{enemyName}に勝利した"
+                    + $"\n賞金+{TrainingSettings.AmbushVictoryReward}G"
+                    + $"\nHP+{victoryGain.Hp} 攻撃+{victoryGain.Attack} 防御+{victoryGain.Defense}"
+                    + $" 速度+{victoryGain.Speed} 命中+{victoryGain.Hit}");
+            }
+            else
+            {
+                hudView.SetLogMessage($"【強敵急襲】\n{enemyName}に敗北した");
+            }
+
+            await hudView.WaitContinueAsync(cancellationToken);
         }
 
         private async UniTask RunAfterSchoolPeriodAsync(
@@ -905,7 +1616,10 @@ namespace Scene.TrainingScene
             hudView.BindSession(session, period, turnNumber);
             hudView.HideLocationChoices();
 
-            if (!TrainingEnemyResolver.TryPickEnemySlotIndex(saveService, session.CurrentDay, out int enemySlotIndex))
+            if (!TrainingEnemyResolver.TryPickEnemySlotIndex(
+                    saveService,
+                    session.CurrentDay,
+                    out int enemySlotIndex))
             {
                 hudView.SetLogMessage("放課後の対戦相手が見つかりませんでした");
                 session.CompletePeriod();
@@ -947,6 +1661,7 @@ namespace Scene.TrainingScene
                 CanvasVisibilityUtility.SetCanvasEnabled(loadSlotView.SelectionCanvas, false);
             }
 
+            StopMonsterRoam();
             trainingDisplay?.PrepareModelForBattle(battleRunner.BattlePlayerSpawn);
             hudView.Hide();
 
@@ -981,14 +1696,19 @@ namespace Scene.TrainingScene
 
             if (battleResult.PlayerWon)
             {
+                int reward = TrainingShopResolver.ResolveTournamentReward((int)session.CurrentDay);
                 session.ApplyAfterSchoolVictoryRecovery();
+                session.AddMoney(reward);
                 hudView.BindSession(session, period, turnNumber);
+                session.RefreshShopOffer(random);
                 hudView.SetLogMessage(
-                    $"放課後の戦闘に勝利しました\n体力+{TrainingSettings.AfterSchoolVictoryStaminaRecovery}");
+                    $"放課後の戦闘に勝利した\n体力+{TrainingSettings.AfterSchoolVictoryStaminaRecovery}"
+                    + $" 賞金+{reward}G\n売店の商品が入れ替わった");
             }
             else
             {
-                hudView.SetLogMessage("放課後の戦闘に敗北しました");
+                session.RefreshShopOffer(random);
+                hudView.SetLogMessage("放課後の戦闘に敗北した\n売店の商品が入れ替わった");
             }
 
             await hudView.WaitContinueAsync(cancellationToken);
@@ -997,8 +1717,6 @@ namespace Scene.TrainingScene
 
         private async UniTask TryRunRandomEventAsync(
             TrainingSession session,
-            TrainingPeriod period,
-            int turnNumber,
             CancellationToken cancellationToken)
         {
             IReadOnlyList<MotionType> usableAttacks = ResolveUsableAttacks(session);
@@ -1009,7 +1727,7 @@ namespace Scene.TrainingScene
                 usableAttacks,
                 out TrainingEventOutcome learnOutcome))
             {
-                await RunLearnAttackEventAsync(session, period, turnNumber, learnOutcome, cancellationToken);
+                await RunLearnAttackEventAsync(session, learnOutcome, cancellationToken);
                 return;
             }
 
@@ -1021,13 +1739,45 @@ namespace Scene.TrainingScene
             hudView.SetLogMessage($"【{statOutcome.Title}】\n{statOutcome.Message}");
             await hudView.WaitContinueAsync(cancellationToken);
             session.ApplyEventStatGain(statOutcome.StatGain);
-            hudView.BindSession(session, period, turnNumber);
+            hudView.BindSession(session);
+        }
+
+        private async UniTask TryRunLearnAttackOnlyAsync(
+            TrainingSession session,
+            CancellationToken cancellationToken)
+        {
+            IReadOnlyList<MotionType> usableAttacks = ResolveUsableAttacks(session);
+            if (!TrainingEventResolver.TryRollLearnAttackEvent(
+                    random,
+                    session.AttackMotions,
+                    usableAttacks,
+                    out TrainingEventOutcome learnOutcome))
+            {
+                // 出会いマスは必ず技候補を出す
+                if (!TrainingAttackTeacher.TryPickLearnableAttack(
+                        session.AttackMotions,
+                        usableAttacks,
+                        random,
+                        out MotionType learned))
+                {
+                    hudView.SetLogMessage("出会いがあったが新しい技はなかった");
+                    await hudView.WaitContinueAsync(cancellationToken);
+                    return;
+                }
+
+                learnOutcome = new TrainingEventOutcome(
+                    TrainingEventType.LearnAttack,
+                    "出会い",
+                    $"新しい技「{TrainingAttackTeacher.FormatAttackLabel(learned)}」を覚えるチャンスです",
+                    default,
+                    learned);
+            }
+
+            await RunLearnAttackEventAsync(session, learnOutcome, cancellationToken);
         }
 
         private async UniTask RunLearnAttackEventAsync(
             TrainingSession session,
-            TrainingPeriod period,
-            int turnNumber,
             TrainingEventOutcome outcome,
             CancellationToken cancellationToken)
         {
@@ -1052,6 +1802,7 @@ namespace Scene.TrainingScene
             }
 
             await hudView.WaitContinueAsync(cancellationToken);
+            hudView.BindSession(session);
         }
 
         private IReadOnlyList<MotionType> ResolveUsableAttacks(TrainingSession session)
@@ -1101,41 +1852,98 @@ namespace Scene.TrainingScene
 
         private static string BuildActionLog(TrainingActionResult result)
         {
-            string locationName = TrainingLocationCatalog.GetDisplayName(result.Location);
+            string commandName = TrainingCommandCatalog.GetDisplayName(result.Command);
             if (!result.Succeeded)
             {
                 return result.FailedByLowStamina
-                    ? $"{locationName}の行動は体力不足で失敗しました"
-                    : $"{locationName}の行動は失敗しました";
+                    ? $"{commandName}は体力不足で失敗した"
+                    : $"{commandName}は失敗した";
             }
 
             if (result.IsRestAction)
             {
-                string outcome = result.IsGreatSuccess ? "大成功" : "成功";
-                return $"休憩{outcome} 体力 {result.StaminaBefore}→{result.StaminaAfter}";
+                return $"休憩で体力全回復 {result.StaminaBefore}→{result.StaminaAfter}";
             }
 
             TrainingStatGain gain = result.AppliedGain;
-            return $"{locationName}で育成成功 HP+{gain.Hp} 攻+{gain.Attack} 防+{gain.Defense} 速+{gain.Speed}";
+            string outcome = result.IsGreatSuccess ? "大成功" : "成功";
+            if (result.Command == TrainingCommandType.Train
+                || result.Command == TrainingCommandType.SpecialTrain)
+            {
+                return $"{commandName}{outcome} {TrainingFocusCatalog.GetDisplayName(result.Focus)}"
+                    + $"\nHP+{gain.Hp} 攻撃+{gain.Attack} 防御+{gain.Defense} 速度+{gain.Speed} 命中+{gain.Hit}";
+            }
+
+            return $"{commandName}{outcome}"
+                + $"\nHP+{gain.Hp} 攻撃+{gain.Attack} 防御+{gain.Defense} 速度+{gain.Speed} 命中+{gain.Hit}";
         }
 
         private void ApplyDefaultDestinationPresentation()
         {
+            StopMonsterRoam();
             backgroundView?.ShowDefaultBackground();
             locationCameraView?.ApplyDefaultView();
         }
 
-        private void ApplyDestinationBackground(TrainingTurnChoice turnChoice)
+        private void ApplyRoamDestinationPresentation()
         {
-            if (turnChoice.IsRest)
+            backgroundView?.ShowRoamBackground();
+            locationCameraView?.ApplyRoamView();
+        }
+
+        private void StartMonsterRoam(CancellationToken cancellationToken)
+        {
+            EnsureMonsterRoamController();
+            monsterRoamController?.StartRoam(cancellationToken);
+        }
+
+        private void StopMonsterRoam()
+        {
+            EnsureMonsterRoamController();
+            monsterRoamController?.StopRoam();
+        }
+
+        private void EnsureMonsterRoamController()
+        {
+            if (monsterRoamController != null)
+            {
+                return;
+            }
+
+            if (trainingDisplay == null)
+            {
+                Debug.LogError(
+                    "[TrainingFlowRunner] TrainingDisplayが未配線のため徘徊を開始できません",
+                    this);
+                return;
+            }
+
+            monsterRoamController = trainingDisplay.GetComponent<TrainingMonsterRoamController>();
+            if (monsterRoamController == null)
+            {
+                Debug.LogError(
+                    "[TrainingFlowRunner] TrainingMonsterRoamControllerが未配線です"
+                    + " TrainingDisplayへ追加して接続してください",
+                    this);
+            }
+        }
+
+        private void ApplyDestinationBackground(TrainingLocation location, bool isRest)
+        {
+            if (isRest)
             {
                 backgroundView?.ShowRestBackground();
                 locationCameraView?.ApplyRestView();
                 return;
             }
 
-            backgroundView?.ShowLocationBackground(turnChoice.Location);
-            locationCameraView?.ApplyLocationView(turnChoice.Location);
+            backgroundView?.ShowLocationBackground(location);
+            locationCameraView?.ApplyLocationView(location);
+        }
+
+        private void ApplyDestinationBackground(TrainingTurnChoice turnChoice)
+        {
+            ApplyDestinationBackground(turnChoice.Location, turnChoice.IsRest);
         }
 
         private async UniTask TransitionTurnAsync(CancellationToken cancellationToken, Action applyWhileBlack = null)

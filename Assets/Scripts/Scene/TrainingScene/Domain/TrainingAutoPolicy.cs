@@ -6,55 +6,134 @@ namespace Scene.TrainingScene.Domain
 {
     /// <summary>
     /// 自動育成の行動方針
-    /// 体力管理と育成効率を優先して選択する
     /// </summary>
     public static class TrainingAutoPolicy
     {
         /// <summary>
-        /// 行き先または休憩を選ぶ
+        /// 授業時間のコマンドを選ぶ
         /// </summary>
         /// <param name="session">育成セッション</param>
-        /// <param name="choices">提示された行き先</param>
-        public static TrainingTurnChoice PickTurnChoice(
-            TrainingSession session,
-            IReadOnlyList<TrainingLocation> choices)
+        public static TrainingWeekChoice PickWeekChoice(TrainingSession session)
         {
             if (session == null)
             {
-                return TrainingTurnChoice.Rest();
+                return TrainingWeekChoice.Rest();
             }
 
             if (ShouldRest(session))
             {
-                return TrainingTurnChoice.Rest();
+                return TrainingWeekChoice.Rest();
             }
 
-            if (choices == null || choices.Count == 0)
+            if (TrainingSchedule.IsSpecialTrainDay(session.CurrentDay)
+                && session.Stamina >= TrainingSettings.SpecialTrainStaminaCost)
             {
-                return TrainingTurnChoice.Rest();
+                return TrainingWeekChoice.FromFocus(
+                    TrainingCommandType.SpecialTrain,
+                    PickBestFocus());
             }
 
-            TrainingLocation bestLocation = choices[0];
-            int bestScore = ScoreLocation(choices[0]);
-            for (int i = 1; i < choices.Count; i++)
+            if (session.Stamina >= TrainingSettings.TrainStaminaCost)
             {
-                int score = ScoreLocation(choices[i]);
-                if (score > bestScore)
+                return TrainingWeekChoice.FromFocus(
+                    TrainingCommandType.Train,
+                    PickBestFocus());
+            }
+
+            return TrainingWeekChoice.Rest();
+        }
+
+        /// <summary>
+        /// 売店で買う商品を選ぶ
+        /// 陳列中の商品から選ぶ
+        /// </summary>
+        /// <param name="session">育成セッション</param>
+        public static bool TryPickShopItem(TrainingSession session, out TrainingShopItem item)
+        {
+            item = default;
+            if (session == null)
+            {
+                return false;
+            }
+
+            List<TrainingShopItem> offer = session.GetShopOfferItems();
+            if (offer.Count == 0)
+            {
+                return false;
+            }
+
+            if (session.Stamina <= TrainingSettings.TrainStaminaCost
+                && TryFindInOffer(offer, TrainingShopItemType.StaminaRecover, out item))
+            {
+                return session.Money >= item.Price;
+            }
+
+            if (session.Stamina <= TrainingSettings.TrainStaminaCost
+                && TryFindInOffer(offer, TrainingShopItemType.StaminaFullRecover, out item))
+            {
+                return session.Money >= item.Price;
+            }
+
+            if (session.TrainGreatSuccessBonusWeeks <= 0
+                && TryFindInOffer(offer, TrainingShopItemType.TrainEfficiency, out item))
+            {
+                return session.Money >= item.Price;
+            }
+
+            if (session.Money >= TrainingSettings.ShopStatBoostPrice
+                && TryFindInOffer(offer, TrainingShopItemType.StatBoost, out item))
+            {
+                return session.Money >= item.Price;
+            }
+
+            for (int i = 0; i < offer.Count; i++)
+            {
+                if (session.Money >= offer[i].Price)
                 {
-                    bestScore = score;
-                    bestLocation = choices[i];
+                    item = offer[i];
+                    return true;
                 }
             }
 
-            return TrainingTurnChoice.FromLocation(bestLocation);
+            return false;
+        }
+
+        /// <summary>
+        /// 互換用の旧選択
+        /// </summary>
+        public static TrainingTurnChoice PickTurnChoice(
+            TrainingSession session,
+            IReadOnlyList<TrainingLocation> choices)
+        {
+            TrainingWeekChoice weekChoice = PickWeekChoice(session);
+            if (weekChoice.Command == TrainingCommandType.Rest)
+            {
+                return TrainingTurnChoice.Rest();
+            }
+
+            TrainingLocation location =
+                TrainingFocusCatalog.GetPresentationLocation(weekChoice.Focus);
+            if (choices != null && choices.Count > 0)
+            {
+                location = choices[0];
+                int bestScore = ScoreLocation(choices[0]);
+                for (int i = 1; i < choices.Count; i++)
+                {
+                    int score = ScoreLocation(choices[i]);
+                    if (score > bestScore)
+                    {
+                        bestScore = score;
+                        location = choices[i];
+                    }
+                }
+            }
+
+            return TrainingTurnChoice.FromLocation(location);
         }
 
         /// <summary>
         /// 習得技の入れ替え先スロットを選ぶ
-        /// 威力が上がる場合のみ入れ替える
         /// </summary>
-        /// <param name="session">育成セッション</param>
-        /// <param name="learnedAttack">習得候補</param>
         public static int PickAttackSwapSlot(TrainingSession session, MotionType learnedAttack)
         {
             if (session == null || session.AttackMotions == null || session.AttackMotions.Count == 0)
@@ -87,18 +166,52 @@ namespace Scene.TrainingScene.Domain
 
         private static bool ShouldRest(TrainingSession session)
         {
-            if (session.Stamina <= TrainingSettings.LowStaminaThreshold)
+            return session.Stamina < TrainingSettings.TrainStaminaCost;
+        }
+
+        private static bool TryFindInOffer(
+            IReadOnlyList<TrainingShopItem> offer,
+            TrainingShopItemType itemType,
+            out TrainingShopItem item)
+        {
+            item = default;
+            for (int i = 0; i < offer.Count; i++)
             {
+                if (offer[i].ItemType != itemType)
+                {
+                    continue;
+                }
+
+                item = offer[i];
                 return true;
             }
 
-            return session.Stamina < TrainingSettings.StaminaCostPerAction + 8;
+            return false;
+        }
+
+        private static TrainingFocus PickBestFocus()
+        {
+            TrainingFocus best = TrainingFocus.Attack;
+            int bestScore = int.MinValue;
+            TrainingFocus[] focuses = TrainingFocusCatalog.AllFocuses;
+            for (int i = 0; i < focuses.Length; i++)
+            {
+                TrainingStatGain gain = TrainingFocusCatalog.GetBaseGain(focuses[i]);
+                int score = gain.Hp + gain.Attack * 2 + gain.Defense + gain.Speed * 2 + gain.Hit * 2;
+                if (score > bestScore)
+                {
+                    bestScore = score;
+                    best = focuses[i];
+                }
+            }
+
+            return best;
         }
 
         private static int ScoreLocation(TrainingLocation location)
         {
             TrainingStatGain gain = TrainingLocationCatalog.GetBaseGain(location);
-            return gain.Hp + gain.Attack * 2 + gain.Defense + gain.Speed * 2;
+            return gain.Hp + gain.Attack * 2 + gain.Defense + gain.Speed * 2 + gain.Hit * 2;
         }
     }
 }

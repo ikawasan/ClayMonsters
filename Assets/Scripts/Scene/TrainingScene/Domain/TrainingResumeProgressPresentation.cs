@@ -12,22 +12,19 @@ namespace Scene.TrainingScene.Domain
         /// 表示データを生成する
         /// </summary>
         /// <param name="modelName">モデル名</param>
-        /// <param name="dayPeriodTurnLabel">曜日・時間・ターン</param>
-        /// <param name="staminaLabel">体力表示</param>
+        /// <param name="progressLabel">曜日・時間割・所持金・体力</param>
         /// <param name="statsText">ステータス表示</param>
         /// <param name="attacks">技構成</param>
         /// <param name="thumbnailPng">モデルサムネイルPNG</param>
         public TrainingResumeProgressPresentation(
             string modelName,
-            string dayPeriodTurnLabel,
-            string staminaLabel,
+            string progressLabel,
             string statsText,
             IReadOnlyList<MotionType> attacks,
             byte[] thumbnailPng)
         {
             ModelName = modelName ?? string.Empty;
-            DayPeriodTurnLabel = dayPeriodTurnLabel ?? string.Empty;
-            StaminaLabel = staminaLabel ?? string.Empty;
+            ProgressLabel = progressLabel ?? string.Empty;
             StatsText = statsText ?? string.Empty;
             Attacks = attacks ?? System.Array.Empty<MotionType>();
             ThumbnailPng = thumbnailPng;
@@ -39,14 +36,9 @@ namespace Scene.TrainingScene.Domain
         public string ModelName { get; }
 
         /// <summary>
-        /// 曜日・時間・ターン
+        /// 曜日・時間割・所持金・体力
         /// </summary>
-        public string DayPeriodTurnLabel { get; }
-
-        /// <summary>
-        /// 体力表示
-        /// </summary>
-        public string StaminaLabel { get; }
+        public string ProgressLabel { get; }
 
         /// <summary>
         /// ステータス表示
