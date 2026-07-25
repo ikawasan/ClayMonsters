@@ -1268,7 +1268,9 @@ namespace Scene.TrainingScene
                 TrainingFocus focus = default;
                 if (TrainingCommandCatalog.RequiresFocus(command))
                 {
-                    hudView.ShowFocusChoices(command);
+                    IReadOnlyList<TrainingFocus> offeredFocuses =
+                        session.GetOrRollOfferedFocuses(random);
+                    hudView.ShowFocusChoices(command, offeredFocuses);
                     TrainingFocus? focusChoice =
                         await hudView.WaitFocusChoiceAsync(cancellationToken);
                     if (focusChoice == null)

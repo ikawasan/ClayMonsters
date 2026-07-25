@@ -17,6 +17,8 @@ namespace Battle.Presenter
         private readonly Transform playerModel;
         private readonly Transform enemyModel;
         private readonly BattleFieldCameraProfile profile;
+        private readonly BattleModelVisualExtents playerExtents;
+        private readonly BattleModelVisualExtents enemyExtents;
         private readonly CompositeDisposable disposables = new CompositeDisposable();
 
         private readonly Vector3 battleCenterFlat;
@@ -32,6 +34,12 @@ namespace Battle.Presenter
         private float attackCameraRemaining;
         private float idleOrbitPhase;
         private float smoothedVerticalAngle;
+
+        private Vector3 attackFocusTarget;
+        private float attackOrbitDistanceTarget;
+        private float attackHorizontalTarget;
+        private float attackVerticalTarget;
+        private bool hasAttackFraming;
 
         private float shakeRemaining;
         private float shakeDuration;
@@ -49,13 +57,17 @@ namespace Battle.Presenter
             Transform enemyModel,
             Transform playerSpawn,
             Transform enemySpawn,
-            BattleFieldCameraProfile profile)
+            BattleFieldCameraProfile profile,
+            BattleModelVisualExtents playerExtents = default,
+            BattleModelVisualExtents enemyExtents = default)
         {
             this.cameraView = cameraView;
             this.system = system;
             this.playerModel = playerModel;
             this.enemyModel = enemyModel;
             this.profile = profile ?? BattleFieldCameraProfile.Default;
+            this.playerExtents = playerExtents;
+            this.enemyExtents = enemyExtents;
 
             Vector3 playerHome = playerSpawn != null ? playerSpawn.position : playerModel.position;
             Vector3 enemyHome = enemySpawn != null ? enemySpawn.position : enemyModel.position;
@@ -181,9 +193,19 @@ namespace Battle.Presenter
             attackTargetModel = ResolveModel(target);
             if (attackAttackerModel == null)
             {
+                hasAttackFraming = false;
                 return;
             }
 
+            // 攻撃開始時に1回だけ構図を確定しTickでは補間のみにする
+            attackHorizontalTarget = ResolveAttackHorizontalAngle();
+            attackVerticalTarget = profile.AttackVerticalAngle;
+            attackFocusTarget = ResolveAttackFocusPoint();
+            attackOrbitDistanceTarget = ResolveAttackOrbitDistance(
+                attackFocusTarget,
+                attackHorizontalTarget,
+                attackVerticalTarget);
+            hasAttackFraming = true;
             attackCameraRemaining = Mathf.Max(attackCameraRemaining, holdDuration);
         }
 
@@ -204,9 +226,10 @@ namespace Battle.Presenter
 
         private void TickAttackCamera()
         {
-            if (attackAttackerModel == null)
+            if (attackAttackerModel == null || !hasAttackFraming)
             {
                 attackCameraRemaining = 0f;
+                hasAttackFraming = false;
                 TickDefaultCamera();
                 return;
             }
@@ -215,15 +238,10 @@ namespace Battle.Presenter
             float distanceBlend = 1f - Mathf.Exp(-profile.AttackDistanceSmoothing * Time.deltaTime);
             float angleBlend = 1f - Mathf.Exp(-profile.AttackAngleSmoothing * Time.deltaTime);
 
-            Vector3 targetFocus = ResolveAttackFocusPoint();
-            float targetDistance = profile.AttackOrbitDistance;
-            float targetHorizontal = ResolveAttackHorizontalAngle();
-            float targetVertical = profile.AttackVerticalAngle;
-
-            smoothedFocus = Vector3.Lerp(smoothedFocus, targetFocus, focusBlend);
-            smoothedOrbitDistance = Mathf.Lerp(smoothedOrbitDistance, targetDistance, distanceBlend);
-            smoothedHorizontalAngle = Mathf.LerpAngle(smoothedHorizontalAngle, targetHorizontal, angleBlend);
-            smoothedVerticalAngle = Mathf.LerpAngle(smoothedVerticalAngle, targetVertical, angleBlend);
+            smoothedFocus = Vector3.Lerp(smoothedFocus, attackFocusTarget, focusBlend);
+            smoothedOrbitDistance = Mathf.Lerp(smoothedOrbitDistance, attackOrbitDistanceTarget, distanceBlend);
+            smoothedHorizontalAngle = Mathf.LerpAngle(smoothedHorizontalAngle, attackHorizontalTarget, angleBlend);
+            smoothedVerticalAngle = Mathf.LerpAngle(smoothedVerticalAngle, attackVerticalTarget, angleBlend);
 
             ApplyCamera(
                 smoothedFocus,
@@ -236,6 +254,7 @@ namespace Battle.Presenter
         {
             attackAttackerModel = null;
             attackTargetModel = null;
+            hasAttackFraming = false;
 
             float focusBlend = 1f - Mathf.Exp(-profile.FocusSmoothing * Time.deltaTime);
             float distanceBlend = 1f - Mathf.Exp(-profile.DistanceSmoothing * Time.deltaTime);
@@ -283,12 +302,139 @@ namespace Battle.Presenter
 
         private Vector3 ResolveAttackFocusPoint()
         {
+            if (TryResolveAttackCombinedBounds(out Bounds combinedBounds))
+            {
+                Vector3 attackerCenter = ResolveModelVisualCenter(attackAttackerModel);
+                Vector3 targetCenter = attackTargetModel != null
+                    ? ResolveModelVisualCenter(attackTargetModel)
+                    : attackerCenter;
+
+                // 結合境界中心を基準に攻撃側へ寄せ巨大な相手でも攻撃側が画角に残るようにする
+                Vector3 pairMid = Vector3.Lerp(
+                    attackerCenter,
+                    targetCenter,
+                    profile.AttackFocusTowardTargetRatio);
+                Vector3 focus = Vector3.Lerp(combinedBounds.center, pairMid, 0.55f);
+                focus.y = combinedBounds.center.y;
+                return focus;
+            }
+
             return BattleFieldFocusResolver.ResolveAttackFocus(
                 attackAttackerModel,
                 attackTargetModel,
                 battleGroundY,
                 profile.AttackFocusHeightOffset,
                 profile.AttackFocusTowardTargetRatio);
+        }
+
+        private float ResolveAttackOrbitDistance(
+            Vector3 focus,
+            float horizontalAngle,
+            float verticalAngle)
+        {
+            float baseline = profile.AttackOrbitDistance;
+            if (!TryResolveAttackCombinedBounds(out Bounds combinedBounds))
+            {
+                return baseline;
+            }
+
+            float aspect = (float)Screen.width / Mathf.Max(1, Screen.height);
+            float framed = BattleFieldFocusResolver.ResolveOrbitDistanceForBoundsAroundFocus(
+                combinedBounds,
+                focus,
+                horizontalAngle,
+                verticalAngle,
+                profile.VerticalFovDegrees,
+                aspect,
+                profile.AttackFramePadding,
+                profile.AttackMinOrbitDistance,
+                profile.AttackMaxOrbitDistance);
+            return Mathf.Max(baseline, framed);
+        }
+
+        private bool TryResolveAttackCombinedBounds(out Bounds combinedBounds)
+        {
+            combinedBounds = default;
+            if (attackAttackerModel == null)
+            {
+                return false;
+            }
+
+            bool hasBounds = false;
+            if (TryResolveModelWorldBounds(attackAttackerModel, out Bounds attackerBounds))
+            {
+                combinedBounds = attackerBounds;
+                hasBounds = true;
+            }
+
+            if (attackTargetModel != null
+                && TryResolveModelWorldBounds(attackTargetModel, out Bounds targetBounds))
+            {
+                if (hasBounds)
+                {
+                    combinedBounds.Encapsulate(targetBounds);
+                }
+                else
+                {
+                    combinedBounds = targetBounds;
+                    hasBounds = true;
+                }
+            }
+
+            return hasBounds;
+        }
+
+        private bool TryResolveModelWorldBounds(Transform model, out Bounds worldBounds)
+        {
+            worldBounds = default;
+            if (model == null)
+            {
+                return false;
+            }
+
+            BattleModelVisualExtents extents = ResolveExtents(model);
+            if (extents.IsValid)
+            {
+                worldBounds = extents.ToWorldBounds(model);
+                return true;
+            }
+
+            // 攻撃中のBakeMeshを避けルート周辺の既定箱で代用する
+            worldBounds = new Bounds(
+                model.position + Vector3.up * profile.AttackFocusHeightOffset,
+                new Vector3(1.2f, 1.7f, 1.2f));
+            return true;
+        }
+
+        private Vector3 ResolveModelVisualCenter(Transform model)
+        {
+            if (model == null)
+            {
+                return Vector3.zero;
+            }
+
+            BattleModelVisualExtents extents = ResolveExtents(model);
+            if (extents.IsValid)
+            {
+                return model.TransformPoint(extents.LocalCenter);
+            }
+
+            return model.position + Vector3.up * profile.AttackFocusHeightOffset;
+        }
+
+        private BattleModelVisualExtents ResolveExtents(Transform model)
+        {
+            if (model == playerModel)
+            {
+                return playerExtents;
+            }
+
+            if (model == enemyModel)
+            {
+                return enemyExtents;
+            }
+
+            return default;
         }
 
         private float ResolveAttackHorizontalAngle()

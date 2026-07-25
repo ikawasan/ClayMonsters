@@ -87,7 +87,7 @@ namespace Scene.TrainingScene.Domain
         {
             while (session.TurnIndexInDay < turnNumber)
             {
-                TrainingWeekChoice choice = TrainingAutoPolicy.PickWeekChoice(session);
+                TrainingWeekChoice choice = TrainingAutoPolicy.PickWeekChoice(session, random);
                 switch (choice.Command)
                 {
                     case TrainingCommandType.Rest:

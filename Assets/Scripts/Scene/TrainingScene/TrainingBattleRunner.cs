@@ -446,6 +446,18 @@ namespace Scene.TrainingScene
 
                 {
 
+                    BattleModelVisualExtents.TryCapture(
+
+                        player.Model.transform,
+
+                        out BattleModelVisualExtents playerExtents);
+
+                    BattleModelVisualExtents.TryCapture(
+
+                        enemy.Model.transform,
+
+                        out BattleModelVisualExtents enemyExtents);
+
                     cameraPresenter = new BattleFieldCameraPresenter(
 
                         battleCamera,
@@ -460,7 +472,11 @@ namespace Scene.TrainingScene
 
                         enemySpawn,
 
-                        cameraProfile);
+                        cameraProfile,
+
+                        playerExtents,
+
+                        enemyExtents);
 
                 }
 
@@ -504,7 +520,9 @@ namespace Scene.TrainingScene
 
                     player.Model.transform,
 
-                    enemy.Model.transform);
+                    enemy.Model.transform,
+
+                    seService);
 
 
 

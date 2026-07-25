@@ -1,5 +1,6 @@
 using ClayEditor.Rigging;
 using SaveData;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -101,6 +102,8 @@ namespace Scene.TrainingScene.Domain
         private readonly List<TrainingInventoryEntry> inventory =
             new List<TrainingInventoryEntry>();
         private readonly List<string> shopOfferItemIds = new List<string>();
+        private TrainingFocus[] offeredFocuses;
+        private int offeredFocusesTurnKey = int.MinValue;
 
         /// <summary>
         /// 育成対象スロット番号
@@ -603,6 +606,26 @@ namespace Scene.TrainingScene.Domain
         public void CompletePeriod()
         {
             TurnIndexInDay++;
+        }
+
+        /// <summary>
+        /// 今ターンの訓練主ステ候補を返す
+        /// ターンが変わっていれば再抽選する
+        /// </summary>
+        /// <param name="random">乱数</param>
+        public IReadOnlyList<TrainingFocus> GetOrRollOfferedFocuses(System.Random random)
+        {
+            int turnKey = ((int)CurrentDay * 100) + TurnIndexInDay;
+            if (offeredFocuses != null && offeredFocusesTurnKey == turnKey)
+            {
+                return offeredFocuses;
+            }
+
+            offeredFocuses = TrainingFocusCatalog.PickRandomFocuses(
+                TrainingSettings.OfferedTrainFocusCount,
+                random);
+            offeredFocusesTurnKey = turnKey;
+            return offeredFocuses;
         }
 
         /// <summary>

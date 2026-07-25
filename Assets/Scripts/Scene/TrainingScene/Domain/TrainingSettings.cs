@@ -41,6 +41,11 @@ namespace Scene.TrainingScene.Domain
         public const int TrainStaminaCost = 20;
 
         /// <summary>
+        /// 1ターンに提示する訓練主ステ候補数
+        /// </summary>
+        public const int OfferedTrainFocusCount = 3;
+
+        /// <summary>
         /// 特訓の体力消費
         /// </summary>
         public const int SpecialTrainStaminaCost = 40;

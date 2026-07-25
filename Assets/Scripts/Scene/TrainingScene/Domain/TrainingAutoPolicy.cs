@@ -1,5 +1,6 @@
 using Battle;
 using ClayEditor.Rigging;
+using System;
 using System.Collections.Generic;
 
 namespace Scene.TrainingScene.Domain
@@ -13,7 +14,8 @@ namespace Scene.TrainingScene.Domain
         /// 授業時間のコマンドを選ぶ
         /// </summary>
         /// <param name="session">育成セッション</param>
-        public static TrainingWeekChoice PickWeekChoice(TrainingSession session)
+        /// <param name="random">乱数</param>
+        public static TrainingWeekChoice PickWeekChoice(TrainingSession session, System.Random random)
         {
             if (session == null)
             {
@@ -25,19 +27,20 @@ namespace Scene.TrainingScene.Domain
                 return TrainingWeekChoice.Rest();
             }
 
+            TrainingFocus focus = PickBestFocus(session.GetOrRollOfferedFocuses(random));
             if (TrainingSchedule.IsSpecialTrainDay(session.CurrentDay)
                 && session.Stamina >= TrainingSettings.SpecialTrainStaminaCost)
             {
                 return TrainingWeekChoice.FromFocus(
                     TrainingCommandType.SpecialTrain,
-                    PickBestFocus());
+                    focus);
             }
 
             if (session.Stamina >= TrainingSettings.TrainStaminaCost)
             {
                 return TrainingWeekChoice.FromFocus(
                     TrainingCommandType.Train,
-                    PickBestFocus());
+                    focus);
             }
 
             return TrainingWeekChoice.Rest();
@@ -105,7 +108,7 @@ namespace Scene.TrainingScene.Domain
             TrainingSession session,
             IReadOnlyList<TrainingLocation> choices)
         {
-            TrainingWeekChoice weekChoice = PickWeekChoice(session);
+            TrainingWeekChoice weekChoice = PickWeekChoice(session, null);
             if (weekChoice.Command == TrainingCommandType.Rest)
             {
                 return TrainingTurnChoice.Rest();
@@ -189,12 +192,16 @@ namespace Scene.TrainingScene.Domain
             return false;
         }
 
-        private static TrainingFocus PickBestFocus()
+        private static TrainingFocus PickBestFocus(IReadOnlyList<TrainingFocus> focuses)
         {
             TrainingFocus best = TrainingFocus.Attack;
             int bestScore = int.MinValue;
-            TrainingFocus[] focuses = TrainingFocusCatalog.AllFocuses;
-            for (int i = 0; i < focuses.Length; i++)
+            if (focuses == null || focuses.Count == 0)
+            {
+                focuses = TrainingFocusCatalog.AllFocuses;
+            }
+
+            for (int i = 0; i < focuses.Count; i++)
             {
                 TrainingStatGain gain = TrainingFocusCatalog.GetBaseGain(focuses[i]);
                 int score = gain.Hp + gain.Attack * 2 + gain.Defense + gain.Speed * 2 + gain.Hit * 2;

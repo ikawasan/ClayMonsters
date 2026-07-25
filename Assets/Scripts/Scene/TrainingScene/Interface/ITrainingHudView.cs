@@ -91,7 +91,10 @@ namespace Scene.TrainingScene.Interface
         /// 訓練主ステ候補を表示する
         /// </summary>
         /// <param name="command">訓練または特訓</param>
-        void ShowFocusChoices(TrainingCommandType command);
+        /// <param name="focuses">今ターンの主ステ候補</param>
+        void ShowFocusChoices(
+            TrainingCommandType command,
+            IReadOnlyList<TrainingFocus> focuses);
 
         /// <summary>
         /// 互換用の行き先候補表示

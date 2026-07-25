@@ -305,6 +305,68 @@ namespace Battle
             return Mathf.Clamp(distance, minDistance, maxDistance);
         }
 
+        /// <summary>
+        /// 指定注視点まわりで境界の8頂点が収まるオービット距離を返す
+        /// 注視点が境界中心とずれる攻撃構図向け
+        /// </summary>
+        /// <param name="bounds">対象境界</param>
+        /// <param name="focus">注視点</param>
+        /// <param name="horizontalAngleDegrees">水平オービット角</param>
+        /// <param name="verticalAngleDegrees">垂直オービット角</param>
+        /// <param name="verticalFovDegrees">垂直FOV</param>
+        /// <param name="aspect">アスペクト比</param>
+        /// <param name="padding">余白係数(小さいほど寄る)</param>
+        /// <param name="minDistance">最小距離</param>
+        /// <param name="maxDistance">最大距離</param>
+        /// <returns>オービット距離</returns>
+        public static float ResolveOrbitDistanceForBoundsAroundFocus(
+            Bounds bounds,
+            Vector3 focus,
+            float horizontalAngleDegrees,
+            float verticalAngleDegrees,
+            float verticalFovDegrees,
+            float aspect,
+            float padding,
+            float minDistance,
+            float maxDistance)
+        {
+            Quaternion orbit = Quaternion.Euler(verticalAngleDegrees, horizontalAngleDegrees, 0f);
+            Vector3 right = orbit * Vector3.right;
+            Vector3 up = orbit * Vector3.up;
+            Vector3 forward = orbit * Vector3.forward;
+
+            Vector3 extents = bounds.extents;
+            Vector3 center = bounds.center;
+            float halfWidth = 0f;
+            float halfHeight = 0f;
+            float halfDepth = 0f;
+
+            for (int x = -1; x <= 1; x += 2)
+            {
+                for (int y = -1; y <= 1; y += 2)
+                {
+                    for (int z = -1; z <= 1; z += 2)
+                    {
+                        Vector3 worldCorner = center + Vector3.Scale(extents, new Vector3(x, y, z));
+                        Vector3 offset = worldCorner - focus;
+                        halfWidth = Mathf.Max(halfWidth, Mathf.Abs(Vector3.Dot(offset, right)));
+                        halfHeight = Mathf.Max(halfHeight, Mathf.Abs(Vector3.Dot(offset, up)));
+                        halfDepth = Mathf.Max(halfDepth, Mathf.Abs(Vector3.Dot(offset, forward)));
+                    }
+                }
+            }
+
+            float verticalRadians = Mathf.Max(1f, verticalFovDegrees) * Mathf.Deg2Rad;
+            float safeAspect = Mathf.Max(0.1f, aspect);
+            float horizontalRadians = 2f * Mathf.Atan(Mathf.Tan(verticalRadians * 0.5f) * safeAspect);
+
+            float distanceVertical = halfHeight / Mathf.Tan(verticalRadians * 0.5f);
+            float distanceHorizontal = halfWidth / Mathf.Tan(horizontalRadians * 0.5f);
+            float distance =
+                (Mathf.Max(distanceVertical, distanceHorizontal) * Mathf.Max(0.01f, padding)) + halfDepth;
+            return Mathf.Clamp(distance, minDistance, maxDistance);
+        }
+
         private static void EncapsulatePosedRenderers(Transform model, ref Bounds bounds, ref bool hasBounds)
         {
             if (model == null)

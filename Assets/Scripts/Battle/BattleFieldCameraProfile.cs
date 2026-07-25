@@ -56,6 +56,10 @@ namespace Battle
         [SerializeField] private float attackAngleSmoothing = 16f;
         [SerializeField] private float attackHoldRecoveryMultiplier = 0.9f;
         [SerializeField] private float attackMinimumHoldSeconds = 0.35f;
+        [Tooltip("攻撃カメラのフレーミング余白係数(小さいほど寄る1以上で余白増)")]
+        [SerializeField] private float attackFramePadding = 1.08f;
+        [SerializeField] private float attackMinOrbitDistance = 3.4f;
+        [SerializeField] private float attackMaxOrbitDistance = 14f;
         [SerializeField] private float enemyTelegraphDurationEstimate = 0.65f;
         [SerializeField] private float enemyTelegraphHoldPadding = 0.15f;
 
@@ -202,6 +206,22 @@ namespace Battle
         /// 攻撃演出の最短保持秒数
         /// </summary>
         public float AttackMinimumHoldSeconds => attackMinimumHoldSeconds;
+
+        /// <summary>
+        /// 攻撃カメラのフレーミング余白係数
+        /// </summary>
+        public float AttackFramePadding => attackFramePadding > 0.01f ? attackFramePadding : 1.08f;
+
+        /// <summary>
+        /// 攻撃カメラ距離の下限
+        /// </summary>
+        public float AttackMinOrbitDistance => attackMinOrbitDistance > 0.01f ? attackMinOrbitDistance : 3.4f;
+
+        /// <summary>
+        /// 攻撃カメラ距離の上限
+        /// </summary>
+        public float AttackMaxOrbitDistance =>
+            attackMaxOrbitDistance > AttackMinOrbitDistance ? attackMaxOrbitDistance : 14f;
 
         /// <summary>
         /// 敵予告時間の推定秒数

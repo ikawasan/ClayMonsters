@@ -611,7 +611,9 @@ namespace Scene.TrainingScene.View
         }
 
         /// <inheritdoc/>
-        public void ShowFocusChoices(TrainingCommandType command)
+        public void ShowFocusChoices(
+            TrainingCommandType command,
+            IReadOnlyList<TrainingFocus> focuses)
         {
             ApplyTrainingLayout();
             HideLocationChoices();
@@ -622,21 +624,28 @@ namespace Scene.TrainingScene.View
             focusChoiceCancelled = false;
             pendingFocusCommand = command;
             SetLogMessage(FocusChoicePrompt);
-            BindFocusChoices();
+            BindFocusChoices(focuses);
         }
 
-        private void BindFocusChoices()
+        private void BindFocusChoices(IReadOnlyList<TrainingFocus> focuses)
         {
-            TrainingFocus[] focuses = TrainingFocusCatalog.AllFocuses;
             if (locationButtons == null)
             {
                 return;
             }
 
-            if (locationButtons.Length < focuses.Length)
+            int focusCount = focuses != null ? focuses.Count : 0;
+            if (focusCount <= 0)
             {
                 Debug.LogError(
-                    $"[TrainingHudView] 訓練ボタンが不足しています必要数{focuses.Length} 現在{locationButtons.Length}"
+                    "[TrainingHudView] 訓練主ステ候補が空です",
+                    this);
+            }
+
+            if (locationButtons.Length < focusCount)
+            {
+                Debug.LogError(
+                    $"[TrainingHudView] 訓練ボタンが不足しています必要数{focusCount} 現在{locationButtons.Length}"
                     + " LocationButtonをPrefabで追加しlocationButtonsへ配線してください",
                     this);
             }
@@ -650,7 +659,7 @@ namespace Scene.TrainingScene.View
                 }
 
                 button.onClick.RemoveAllListeners();
-                if (i < focuses.Length)
+                if (i < focusCount)
                 {
                     BindFocusButton(button, i, focuses[i], pendingFocusCommand);
                     continue;
@@ -1481,14 +1490,14 @@ namespace Scene.TrainingScene.View
                 || statsText == null
                 || continueButton == null
                 || locationButtons == null
-                || locationButtons.Length < TrainingFocusCatalog.AllFocuses.Length
+                || locationButtons.Length < TrainingSettings.OfferedTrainFocusCount
                 || locationButtonLabels == null
-                || locationButtonLabels.Length < TrainingFocusCatalog.AllFocuses.Length
+                || locationButtonLabels.Length < TrainingSettings.OfferedTrainFocusCount
                 || restButton == null)
             {
                 Debug.LogError(
                     "[TrainingHudView] SerializeFieldが未配線ですHierarchy/Inspectorで手動接続してください"
-                    + $" (訓練ボタンは{TrainingFocusCatalog.AllFocuses.Length}個必要)",
+                    + $" (訓練ボタンは{TrainingSettings.OfferedTrainFocusCount}個必要)",
                     this);
             }
 

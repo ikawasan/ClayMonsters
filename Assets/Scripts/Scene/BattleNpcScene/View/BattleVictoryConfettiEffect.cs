@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.SceneManagement;
 
 namespace Scene.BattleNpcScene.View
 {
@@ -12,7 +13,9 @@ namespace Scene.BattleNpcScene.View
         private const float EmitterHeight = 6.5f;
         private const float EmitterWidth = 10f;
         private const float EmitterDepth = 4.5f;
-        private const float CameraHeightOffset = 1.2f;
+        private const float EmitterViewDistance = 6f;
+        private const float EmitterTopMargin = 0.6f;
+        private const float EmitterSideMargin = 2f;
 
         private static Material sharedParticleMaterial;
 
@@ -72,10 +75,10 @@ namespace Scene.BattleNpcScene.View
             }
 
             root = new GameObject("VictoryConfetti");
-            // シーンオブジェクト配下に置きアンロード時に確実に破棄する
-            if (anchor != null)
+            // UIキャンバス配下だと駆動スケールで粒子が潰れるため親付けせずシーンだけ合わせる
+            if (anchor != null && anchor.gameObject.scene.IsValid())
             {
-                root.transform.SetParent(anchor, false);
+                SceneManager.MoveGameObjectToScene(root, anchor.gameObject.scene);
             }
 
             AlignToAnchor(anchor);
@@ -88,6 +91,8 @@ namespace Scene.BattleNpcScene.View
             main.loop = true;
             main.duration = 6f;
             main.startDelay = 0f;
+            // 演出開始時点で画面いっぱいに舞っている状態にする
+            main.prewarm = true;
             main.startLifetime = new ParticleSystem.MinMaxCurve(8f, 13f);
             main.startSpeed = new ParticleSystem.MinMaxCurve(0.02f, 0.12f);
             main.startSize3D = true;
@@ -108,7 +113,8 @@ namespace Scene.BattleNpcScene.View
             main.scalingMode = ParticleSystemScalingMode.Hierarchy;
             main.maxParticles = 320;
             main.useUnscaledTime = true;
-            main.cullingMode = ParticleSystemCullingMode.PauseAndCatchup;
+            // 発生源は画角の外にあるため停止させず常に落下を進める
+            main.cullingMode = ParticleSystemCullingMode.AlwaysSimulate;
 
             ParticleSystem.EmissionModule emission = particleSystem.emission;
             emission.enabled = true;
@@ -196,25 +202,48 @@ namespace Scene.BattleNpcScene.View
                 return;
             }
 
-            Vector3 center = anchor != null ? anchor.position : Vector3.zero;
             UnityEngine.Camera camera = UnityEngine.Camera.main;
-            if (camera != null)
+            if (camera == null)
             {
-                Vector3 forward = camera.transform.forward;
-                forward.y = 0f;
-                if (forward.sqrMagnitude < 1e-4f)
-                {
-                    forward = Vector3.forward;
-                }
-
-                forward.Normalize();
-                center = camera.transform.position + forward * 4.5f;
-                center.y = camera.transform.position.y + CameraHeightOffset;
+                Vector3 fallbackCenter = anchor != null ? anchor.position : Vector3.zero;
+                root.transform.SetPositionAndRotation(
+                    fallbackCenter + Vector3.up * EmitterHeight,
+                    Quaternion.identity);
+                ApplyEmitterWidth(EmitterWidth);
+                return;
             }
 
-            // 親付きでもワールド位置で前方やや上方に置きシーン退場で親ごと破棄する
-            root.transform.position = center + Vector3.up * EmitterHeight;
-            root.transform.rotation = Quaternion.identity;
+            Transform cameraTransform = camera.transform;
+            Vector3 flatForward = cameraTransform.forward;
+            flatForward.y = 0f;
+            if (flatForward.sqrMagnitude < 1e-4f)
+            {
+                flatForward = Vector3.forward;
+            }
+
+            flatForward.Normalize();
+
+            // 画角上端のすぐ外側から降らせ必ず画面内を通過させる
+            Vector3 viewCenter = cameraTransform.position + cameraTransform.forward * EmitterViewDistance;
+            float halfHeight = EmitterViewDistance
+                * Mathf.Tan(Mathf.Max(1f, camera.fieldOfView) * 0.5f * Mathf.Deg2Rad);
+            float width = (halfHeight * Mathf.Max(0.1f, camera.aspect) * 2f) + EmitterSideMargin;
+
+            root.transform.SetPositionAndRotation(
+                viewCenter + Vector3.up * (halfHeight + EmitterTopMargin),
+                Quaternion.LookRotation(flatForward, Vector3.up));
+            ApplyEmitterWidth(width);
+        }
+
+        private void ApplyEmitterWidth(float width)
+        {
+            if (particleSystem == null)
+            {
+                return;
+            }
+
+            ParticleSystem.ShapeModule shape = particleSystem.shape;
+            shape.scale = new Vector3(width, 0.2f, EmitterDepth);
         }
 
         private static Gradient BuildConfettiGradient()

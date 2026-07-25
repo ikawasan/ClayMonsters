@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace Scene.TrainingScene.Domain
@@ -18,6 +19,41 @@ namespace Scene.TrainingScene.Domain
             TrainingFocus.Speed,
             TrainingFocus.Hit
         };
+
+        /// <summary>
+        /// 主ステ候補から指定数を重複なしでランダム抽選する
+        /// </summary>
+        /// <param name="count">抽選数</param>
+        /// <param name="random">乱数</param>
+        /// <returns>抽選結果</returns>
+        public static TrainingFocus[] PickRandomFocuses(int count, System.Random random)
+        {
+            TrainingFocus[] source = AllFocuses;
+            int take = Mathf.Clamp(count, 0, source.Length);
+            if (take <= 0)
+            {
+                return Array.Empty<TrainingFocus>();
+            }
+
+            if (random == null)
+            {
+                random = new System.Random();
+            }
+
+            var pool = new TrainingFocus[source.Length];
+            Array.Copy(source, pool, source.Length);
+            for (int i = pool.Length - 1; i > 0; i--)
+            {
+                int swapIndex = random.Next(i + 1);
+                TrainingFocus temp = pool[i];
+                pool[i] = pool[swapIndex];
+                pool[swapIndex] = temp;
+            }
+
+            var result = new TrainingFocus[take];
+            Array.Copy(pool, result, take);
+            return result;
+        }
 
         /// <summary>
         /// 表示名を返す
