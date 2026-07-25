@@ -75,12 +75,17 @@ namespace SaveData.Service
                 return false;
             }
 
+            if (!ModelSaveStorage.CompressWritableFile(glbFileName))
+            {
+                Debug.LogError("[ClayModelSaveService] glbの圧縮に失敗しました");
+                return false;
+            }
+
             string thumbnailFileName = null;
             if (thumbnailPng != null && thumbnailPng.Length > 0)
             {
                 thumbnailFileName = ModelSavePoolSettings.GetThumbnailFileName(pool, slotIndex);
-                string thumbnailFilePath = Path.Combine(Application.persistentDataPath, thumbnailFileName);
-                File.WriteAllBytes(thumbnailFilePath, thumbnailPng);
+                ModelSaveStorage.WriteAllBytes(thumbnailFileName, thumbnailPng);
             }
 
             List<MotionType> attacks = attackMotions != null
@@ -351,28 +356,26 @@ namespace SaveData.Service
                 return false;
             }
 
-            string sourceGlbPath = Path.Combine(Application.persistentDataPath, playerSlot.glbFileName);
-            if (!File.Exists(sourceGlbPath))
+            byte[] sourceGlb = ModelSaveStorage.ReadAllBytes(playerSlot.glbFileName);
+            if (sourceGlb == null)
             {
-                Debug.LogError($"[ClayModelSaveService] 未育成glbが見つかりません: {sourceGlbPath}");
+                Debug.LogError($"[ClayModelSaveService] 未育成glbが見つかりません: {playerSlot.glbFileName}");
                 return false;
             }
 
             string trainedGlbFileName = ModelSavePoolSettings.GetGlbFileName(ModelSavePool.TrainedPlayer, trainedSlotIndex);
-            string trainedGlbPath = Path.Combine(Application.persistentDataPath, trainedGlbFileName);
-            File.Copy(sourceGlbPath, trainedGlbPath, true);
+            ModelSaveStorage.WriteAllBytes(trainedGlbFileName, sourceGlb);
 
             string trainedThumbnailFileName = null;
             if (!string.IsNullOrEmpty(playerSlot.thumbnailFileName))
             {
-                string sourceThumbnailPath = Path.Combine(Application.persistentDataPath, playerSlot.thumbnailFileName);
-                if (File.Exists(sourceThumbnailPath))
+                byte[] sourceThumbnail = ModelSaveStorage.ReadAllBytes(playerSlot.thumbnailFileName);
+                if (sourceThumbnail != null)
                 {
                     trainedThumbnailFileName = ModelSavePoolSettings.GetThumbnailFileName(
                         ModelSavePool.TrainedPlayer,
                         trainedSlotIndex);
-                    string trainedThumbnailPath = Path.Combine(Application.persistentDataPath, trainedThumbnailFileName);
-                    File.Copy(sourceThumbnailPath, trainedThumbnailPath, true);
+                    ModelSaveStorage.WriteAllBytes(trainedThumbnailFileName, sourceThumbnail);
                 }
             }
 
@@ -460,28 +463,16 @@ namespace SaveData.Service
 
             if (!string.IsNullOrEmpty(slot.glbFileName))
             {
-                string glbPath = Path.Combine(Application.persistentDataPath, slot.glbFileName);
-                if (File.Exists(glbPath))
-                {
-                    File.Delete(glbPath);
-                }
+                ModelSaveStorage.Delete(slot.glbFileName);
             }
 
             if (!string.IsNullOrEmpty(slot.thumbnailFileName))
             {
-                string thumbnailPath = Path.Combine(Application.persistentDataPath, slot.thumbnailFileName);
-                if (File.Exists(thumbnailPath))
-                {
-                    File.Delete(thumbnailPath);
-                }
+                ModelSaveStorage.Delete(slot.thumbnailFileName);
             }
 
             string voxelFileName = ModelSavePoolSettings.GetVoxelFileName(pool, slotIndex);
-            string voxelPath = Path.Combine(Application.persistentDataPath, voxelFileName);
-            if (File.Exists(voxelPath))
-            {
-                File.Delete(voxelPath);
-            }
+            ModelSaveStorage.Delete(voxelFileName);
 
             data.slots[slotIndex] = new ModelSaveSlot();
             WriteToFile(pool, data);
@@ -490,11 +481,6 @@ namespace SaveData.Service
         private static bool IsValidSlotIndex(ModelSavePool pool, int slotIndex)
         {
             return ModelSavePoolSettings.IsValidSlotIndex(pool, slotIndex);
-        }
-
-        private static string GetSaveFilePath(ModelSavePool pool)
-        {
-            return ModelSaveStorage.GetWritablePath(ModelSavePoolSettings.GetMetadataFileName(pool));
         }
 
         /// <summary>
@@ -544,13 +530,37 @@ namespace SaveData.Service
                 data.slots.RemoveAt(data.slots.Count - 1);
             }
 
+            MigrateLegacyWritableFiles(pool, data);
             return data;
+        }
+
+        /// <summary>
+        /// 旧形式の書込可能なモデルセーブを圧縮形式へ移行する
+        /// 読み込み互換を維持しながら初回ロード時に一度だけ実行する
+        /// </summary>
+        /// <param name="pool">対象プール</param>
+        /// <param name="data">読み込んだメタデータ</param>
+        private static void MigrateLegacyWritableFiles(ModelSavePool pool, ClayModelSaveData data)
+        {
+            ModelSaveStorage.MigrateLegacyWritableFile(ModelSavePoolSettings.GetMetadataFileName(pool));
+            for (int i = 0; i < data.slots.Count; i++)
+            {
+                ModelSaveSlot slot = data.slots[i];
+                if (!slot.isUsed)
+                {
+                    continue;
+                }
+
+                ModelSaveStorage.MigrateLegacyWritableFile(slot.glbFileName);
+                ModelSaveStorage.MigrateLegacyWritableFile(slot.thumbnailFileName);
+                ModelSaveStorage.MigrateLegacyWritableFile(ModelSavePoolSettings.GetVoxelFileName(pool, i));
+            }
         }
 
         private void WriteToFile(ModelSavePool pool, ClayModelSaveData data)
         {
             string json = JsonUtility.ToJson(data, true);
-            File.WriteAllText(GetSaveFilePath(pool), json);
+            ModelSaveStorage.WriteAllText(ModelSavePoolSettings.GetMetadataFileName(pool), json);
         }
     }
 }

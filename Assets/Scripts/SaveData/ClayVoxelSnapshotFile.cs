@@ -66,7 +66,8 @@ namespace SaveData
 
             try
             {
-                using var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None);
+                string fileName = Path.GetFileName(filePath);
+                using Stream stream = ModelSaveStorage.CreateCompressedWriteStream(fileName);
                 using var writer = new BinaryWriter(stream);
                 writer.Write(Magic);
                 writer.Write(VersionWithColors);
@@ -106,7 +107,7 @@ namespace SaveData
             snapshot = default;
             errorMessage = string.Empty;
 
-            if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
+            if (string.IsNullOrEmpty(filePath))
             {
                 errorMessage = "ボクセルスナップショットが見つかりません";
                 return false;
@@ -114,7 +115,14 @@ namespace SaveData
 
             try
             {
-                using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                string fileName = Path.GetFileName(filePath);
+                using Stream stream = ModelSaveStorage.OpenRead(fileName);
+                if (stream == null)
+                {
+                    errorMessage = "ボクセルスナップショットが見つかりません";
+                    return false;
+                }
+
                 using var reader = new BinaryReader(stream);
                 byte[] magic = reader.ReadBytes(Magic.Length);
                 for (int i = 0; i < Magic.Length; i++)
