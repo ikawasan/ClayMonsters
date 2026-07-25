@@ -9,24 +9,76 @@ namespace Audio.Service
     /// </summary>
     public sealed class SeService : ISeService
     {
-        private readonly AudioSource source;
+        private const float MinTimedPitch = 0.35f;
+        private const float MaxTimedPitch = 3f;
+
+        private readonly AudioSource oneShotSource;
+        private readonly AudioSource timedSource;
         private readonly Dictionary<SeTrackId, AudioClip> clipCache = new();
         private float soundEffectVolume = 0.5f;
+        private SeTrackId? timedTrackId;
 
         public SeService()
         {
             var root = new GameObject("SeService");
             Object.DontDestroyOnLoad(root);
-            source = root.AddComponent<AudioSource>();
-            source.playOnAwake = false;
-            source.loop = false;
-            source.spatialBlend = 0f;
+
+            oneShotSource = root.AddComponent<AudioSource>();
+            oneShotSource.playOnAwake = false;
+            oneShotSource.loop = false;
+            oneShotSource.spatialBlend = 0f;
+
+            timedSource = root.AddComponent<AudioSource>();
+            timedSource.playOnAwake = false;
+            timedSource.loop = false;
+            timedSource.spatialBlend = 0f;
         }
 
         /// <inheritdoc />
         public void Play(SeTrackId trackId)
         {
-            PlayClip(LoadClip(trackId), trackId);
+            PlayOneShotClip(LoadClip(trackId), trackId);
+        }
+
+        /// <inheritdoc />
+        public void PlayTimed(SeTrackId trackId, float durationSeconds)
+        {
+            AudioClip clip = LoadClip(trackId);
+            if (clip == null)
+            {
+                Debug.LogWarning($"[SeService] SEが見つかりません: {SeCatalog.GetResourcePath(trackId)}");
+                return;
+            }
+
+            if (soundEffectVolume <= 0f || timedSource == null)
+            {
+                return;
+            }
+
+            float safeDuration = Mathf.Max(0.05f, durationSeconds);
+            float pitch = Mathf.Clamp(clip.length / safeDuration, MinTimedPitch, MaxTimedPitch);
+
+            timedSource.Stop();
+            timedSource.clip = clip;
+            timedSource.volume = soundEffectVolume;
+            timedSource.pitch = pitch;
+            timedSource.time = 0f;
+            timedSource.Play();
+            timedTrackId = trackId;
+        }
+
+        /// <inheritdoc />
+        public void Stop(SeTrackId trackId)
+        {
+            if (timedSource == null || !timedTrackId.HasValue || timedTrackId.Value != trackId)
+            {
+                return;
+            }
+
+            timedSource.Stop();
+            timedSource.clip = null;
+            timedSource.pitch = 1f;
+            timedTrackId = null;
         }
 
         /// <inheritdoc />
@@ -51,6 +103,10 @@ namespace Audio.Service
         public void SetSoundEffectVolume(float volume)
         {
             soundEffectVolume = Mathf.Clamp01(volume);
+            if (timedSource != null && timedSource.isPlaying)
+            {
+                timedSource.volume = soundEffectVolume;
+            }
         }
 
         private AudioClip LoadClip(SeTrackId trackId)
@@ -75,7 +131,7 @@ namespace Audio.Service
             return clip;
         }
 
-        private void PlayClip(AudioClip clip, SeTrackId trackId)
+        private void PlayOneShotClip(AudioClip clip, SeTrackId trackId)
         {
             if (clip == null)
             {
@@ -83,12 +139,13 @@ namespace Audio.Service
                 return;
             }
 
-            if (soundEffectVolume <= 0f || source == null)
+            if (soundEffectVolume <= 0f || oneShotSource == null)
             {
                 return;
             }
 
-            source.PlayOneShot(clip, soundEffectVolume);
+            oneShotSource.pitch = 1f;
+            oneShotSource.PlayOneShot(clip, soundEffectVolume);
         }
     }
 }

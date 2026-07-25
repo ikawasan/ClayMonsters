@@ -426,6 +426,13 @@ namespace Battle
 
                 if (context.BattleCamera != null)
                 {
+                    // 本番配置後に1回だけ採寸し攻撃カメラで再利用する
+                    BattleModelVisualExtents.TryCapture(
+                        player.Model.transform,
+                        out BattleModelVisualExtents playerExtents);
+                    BattleModelVisualExtents.TryCapture(
+                        enemy.Model.transform,
+                        out BattleModelVisualExtents enemyExtents);
                     cameraPresenter = new BattleFieldCameraPresenter(
                         context.BattleCamera,
                         system,
@@ -433,7 +440,9 @@ namespace Battle
                         enemy.Model.transform,
                         context.PlayerSpawn,
                         context.EnemySpawn,
-                        context.CameraProfile);
+                        context.CameraProfile,
+                        playerExtents,
+                        enemyExtents);
                 }
 
                 presenter = new BattlePresenter(battleView);
@@ -473,7 +482,8 @@ namespace Battle
                         context.ChargeEffect,
                         system,
                         player.Model.transform,
-                        enemy.Model.transform);
+                        enemy.Model.transform,
+                        seService);
                 }
 
                 if (context.FinishPresentation != null)

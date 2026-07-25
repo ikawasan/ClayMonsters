@@ -18,6 +18,11 @@ namespace Audio
         /// <summary>
         /// パーツ破壊ととどめ
         /// </summary>
-        PartsBreak
+        PartsBreak,
+
+        /// <summary>
+        /// 攻撃溜めチャージ
+        /// </summary>
+        PowerCharge
     }
 }

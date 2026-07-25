@@ -19,6 +19,7 @@ namespace Audio
                 SeTrackId.AttackHit => ResourceRoot + "AttackHit",
                 SeTrackId.AttackMiss => ResourceRoot + "AttackMiss",
                 SeTrackId.PartsBreak => ResourceRoot + "PartsBreak",
+                SeTrackId.PowerCharge => ResourceRoot + "PowerCharge",
                 _ => string.Empty
             };
         }

@@ -12,6 +12,19 @@ namespace Audio.Interface
         void Play(SeTrackId trackId);
 
         /// <summary>
+        /// 指定SEを目標尺に合わせてピッチ調整して再生する
+        /// </summary>
+        /// <param name="trackId">SEトラック</param>
+        /// <param name="durationSeconds">目標再生秒数</param>
+        void PlayTimed(SeTrackId trackId, float durationSeconds);
+
+        /// <summary>
+        /// 指定SEの再生を停止する
+        /// </summary>
+        /// <param name="trackId">SEトラック</param>
+        void Stop(SeTrackId trackId);
+
+        /// <summary>
         /// 攻撃ヒットSEを再生する
         /// </summary>
         void PlayAttackHit();

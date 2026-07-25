@@ -16,6 +16,11 @@ namespace Battle.View
         // 攻撃開始前に発生を止めフェードへ入る余裕
         private const float StopBeforeWindUpEnd = 0.42f;
 
+        /// <summary>
+        /// 溜めエフェクト発生を攻撃直前に止める秒数
+        /// </summary>
+        public static float ChargeEmissionLeadOutSeconds => StopBeforeWindUpEnd;
+
         [SerializeField] private float heightFallback = 1.1f;
         [SerializeField] private float baseAbsorbRadius = 1.2f;
         [SerializeField] private float maxAbsorbRadius = 1.6f;

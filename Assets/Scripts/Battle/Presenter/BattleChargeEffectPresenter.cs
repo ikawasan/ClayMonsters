@@ -1,3 +1,5 @@
+using Audio;
+using Audio.Interface;
 using Battle.Interface;
 using Battle.View;
 using R3;
@@ -15,9 +17,11 @@ namespace Battle.Presenter
         private readonly BattleSystem system;
         private readonly Transform playerRoot;
         private readonly Transform enemyRoot;
+        private readonly ISeService seService;
         private readonly CompositeDisposable disposables = new CompositeDisposable();
 
         private BattleUnit activeAttacker;
+        private bool isChargeSePlaying;
 
         /// <summary>
         /// 溜めイベントを購読して演出を再生する
@@ -26,12 +30,14 @@ namespace Battle.Presenter
             IBattleChargeEffect chargeEffect,
             BattleSystem system,
             Transform playerRoot,
-            Transform enemyRoot)
+            Transform enemyRoot,
+            ISeService seService = null)
         {
             this.chargeEffect = chargeEffect;
             this.system = system;
             this.playerRoot = playerRoot;
             this.enemyRoot = enemyRoot;
+            this.seService = seService;
 
             if (chargeEffect == null || system == null)
             {
@@ -66,6 +72,7 @@ namespace Battle.Presenter
             activeAttacker = started.Attacker;
             chargeEffect.Play(modelRoot, started.WindUpDuration);
             chargeEffect.SetIntensity(started.Attacker != null ? started.Attacker.ChargeIntensity : 0f);
+            PlayChargeSe(started.WindUpDuration);
         }
 
         private void OnMoveUsed(MoveUsedResult result)
@@ -97,9 +104,36 @@ namespace Battle.Presenter
             chargeEffect.SetIntensity(activeAttacker.ChargeIntensity);
         }
 
+        private void PlayChargeSe(float windUpDuration)
+        {
+            if (seService == null)
+            {
+                return;
+            }
+
+            // エフェクトの発生停止タイミング(攻撃直前のフェード開始)に尺を合わせる
+            float effectDuration = Mathf.Max(
+                0.05f,
+                windUpDuration - BattleChargeEffectView.ChargeEmissionLeadOutSeconds);
+            seService.PlayTimed(SeTrackId.PowerCharge, effectDuration);
+            isChargeSePlaying = true;
+        }
+
+        private void StopChargeSe()
+        {
+            if (!isChargeSePlaying || seService == null)
+            {
+                return;
+            }
+
+            seService.Stop(SeTrackId.PowerCharge);
+            isChargeSePlaying = false;
+        }
+
         private void StopActive()
         {
             activeAttacker = null;
+            StopChargeSe();
             chargeEffect?.Stop();
         }
 
