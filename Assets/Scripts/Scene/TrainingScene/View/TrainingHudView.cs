@@ -60,8 +60,11 @@ namespace Scene.TrainingScene.View
         [SerializeField] private TrainingAutoResultView autoResultView;
 
         [Header("Item Windows")]
-        [Tooltip("売店と所持アイテムの一覧ウィンドウ")]
-        [SerializeField] private TrainingItemListWindowView itemListWindowView;
+        [Tooltip("売店のアイテム購入ウィンドウ")]
+        [FormerlySerializedAs("itemListWindowView")]
+        [SerializeField] private TrainingItemListWindowView shopWindowView;
+        [Tooltip("所持アイテムの使用ウィンドウ")]
+        [SerializeField] private TrainingItemListWindowView inventoryWindowView;
 
         [Header("Location Choice")]
         [Tooltip("行き先3択ボタン。インデックス0〜2に選択肢を割り当てる")]
@@ -372,16 +375,17 @@ namespace Scene.TrainingScene.View
             hasChoice = false;
             SetLogMessage($"{ShopChoicePrompt}\n所持金 {currentMoney}G");
 
-            bool windowHandlesNext = itemListWindowView != null
-                && itemListWindowView.HasNextPageButton;
-            bool windowHandlesInventory = itemListWindowView != null
-                && itemListWindowView.HasOpenInventoryButton;
-            bool windowHandlesClose = itemListWindowView != null
-                && itemListWindowView.HasCloseButton;
-            bool windowHandlesItems = itemListWindowView != null
-                && itemListWindowView.HasItemSlots;
+            bool windowHandlesNext = shopWindowView != null
+                && shopWindowView.HasNextPageButton;
+            bool windowHandlesInventory = shopWindowView != null
+                && shopWindowView.HasOpenInventoryButton;
+            bool windowHandlesClose = shopWindowView != null
+                && shopWindowView.HasCloseButton;
+            bool windowHandlesItems = shopWindowView != null
+                && shopWindowView.HasItemSlots;
 
-            itemListWindowView?.ShowShop(
+            inventoryWindowView?.Hide();
+            shopWindowView?.ShowShop(
                 items,
                 currentMoney,
                 hasNextPage && windowHandlesNext,
@@ -509,14 +513,15 @@ namespace Scene.TrainingScene.View
             hasChoice = false;
             SetLogMessage(InventoryChoicePrompt);
 
-            bool windowHandlesNext = itemListWindowView != null
-                && itemListWindowView.HasNextPageButton;
-            bool windowHandlesClose = itemListWindowView != null
-                && itemListWindowView.HasCloseButton;
-            bool windowHandlesItems = itemListWindowView != null
-                && itemListWindowView.HasItemSlots;
+            bool windowHandlesNext = inventoryWindowView != null
+                && inventoryWindowView.HasNextPageButton;
+            bool windowHandlesClose = inventoryWindowView != null
+                && inventoryWindowView.HasCloseButton;
+            bool windowHandlesItems = inventoryWindowView != null
+                && inventoryWindowView.HasItemSlots;
 
-            itemListWindowView?.ShowInventory(
+            shopWindowView?.Hide();
+            inventoryWindowView?.ShowInventory(
                 entries,
                 hasNextPage && windowHandlesNext);
 
@@ -768,7 +773,8 @@ namespace Scene.TrainingScene.View
         public void HideLocationChoices()
         {
             choiceMode = ChoiceMode.None;
-            itemListWindowView?.Hide();
+            shopWindowView?.Hide();
+            inventoryWindowView?.Hide();
             HideRestButton();
             HideLocationChoiceButtonsOnly();
             SetLocationChoicePanelVisible(false);
@@ -841,10 +847,10 @@ namespace Scene.TrainingScene.View
             hasChoice = false;
             using (var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
             {
-                if (itemListWindowView != null)
+                if (shopWindowView != null)
                 {
                     ForwardWindowChoiceAsync(
-                        itemListWindowView,
+                        shopWindowView,
                         OnShopClicked,
                         linkedCts.Token).Forget();
                 }
@@ -863,10 +869,10 @@ namespace Scene.TrainingScene.View
             hasChoice = false;
             using (var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
             {
-                if (itemListWindowView != null)
+                if (inventoryWindowView != null)
                 {
                     ForwardWindowChoiceAsync(
-                        itemListWindowView,
+                        inventoryWindowView,
                         OnInventoryClicked,
                         linkedCts.Token).Forget();
                 }
@@ -1500,10 +1506,17 @@ namespace Scene.TrainingScene.View
                     this);
             }
 
-            if (itemListWindowView == null)
+            if (shopWindowView == null)
             {
                 Debug.LogError(
-                    "[TrainingHudView] itemListWindowViewが未配線です",
+                    "[TrainingHudView] shopWindowViewが未配線です",
+                    this);
+            }
+
+            if (inventoryWindowView == null)
+            {
+                Debug.LogError(
+                    "[TrainingHudView] inventoryWindowViewが未配線です",
                     this);
             }
         }

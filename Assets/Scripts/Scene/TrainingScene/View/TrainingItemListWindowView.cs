@@ -28,8 +28,6 @@ namespace Scene.TrainingScene.View
         [SerializeField] private TMP_Text titleText;
         [FormerlySerializedAs("modelNameText")]
         [SerializeField] private TMP_Text moneyText;
-        [FormerlySerializedAs("saveResultText")]
-        [SerializeField] private TMP_Text messageText;
 
         [Header("Item Slots")]
         [SerializeField] private TrainingItemSlotView[] itemSlots = new TrainingItemSlotView[SlotCount];
@@ -82,7 +80,6 @@ namespace Scene.TrainingScene.View
             SetTitle("売店");
             SetMoney(currentMoney);
             BindShopSlots(items);
-            SetMessage("買いたい商品を選んでください");
             ConfigureCloseButton("戻る");
             ConfigureNextPageButton(hasNextPage);
             ConfigureOpenInventoryButton(showOpenInventory);
@@ -107,9 +104,6 @@ namespace Scene.TrainingScene.View
             }
 
             BindInventorySlots(entries);
-            SetMessage(entries != null && entries.Count > 0
-                ? "使うアイテムを選んでください"
-                : "使えるアイテムがない");
             ConfigureCloseButton("戻る");
             ConfigureNextPageButton(hasNextPage);
             ConfigureOpenInventoryButton(false);
@@ -340,18 +334,6 @@ namespace Scene.TrainingScene.View
 
             moneyText.enabled = true;
             moneyText.text = $"{currentMoney}G";
-        }
-
-        private void SetMessage(string message)
-        {
-            if (messageText == null)
-            {
-                return;
-            }
-
-            bool hasMessage = !string.IsNullOrEmpty(message);
-            messageText.enabled = hasMessage;
-            messageText.text = hasMessage ? message : string.Empty;
         }
 
         private void SetWindowVisible(bool visible)

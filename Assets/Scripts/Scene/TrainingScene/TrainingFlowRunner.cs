@@ -1179,13 +1179,13 @@ namespace Scene.TrainingScene
 
                 if (i > startPeriodIndex)
                 {
+                    // 訓練後のRoam背景は維持するDefaultへ戻すのは休憩や戦闘後のみ
                     await TransitionTurnAsync(
                         cancellationToken,
                         () =>
                         {
                             hudView.HideLocationChoices();
                             hudView.HideAttackSwapChoices();
-                            ApplyDefaultDestinationPresentation();
                         });
                 }
 
