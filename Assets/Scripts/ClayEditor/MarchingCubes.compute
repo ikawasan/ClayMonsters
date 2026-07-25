@@ -116,10 +116,15 @@ float3 InterpolateColor(uint3 cornerA, uint3 cornerB, float valA, float valB)
     bool paintedA = !IsDefaultColor(colorA);
     bool paintedB = !IsDefaultColor(colorB);
 
-    // 塗り色と未塗りの境界では補間せず近いコーナー色をそのまま使う
-    if (paintedA != paintedB)
+    // 未塗装の既定色(白っぽいクリーム)を表面に出さない
+    if (paintedA && !paintedB)
     {
-        return t < 0.5 ? colorA : colorB;
+        return colorA;
+    }
+
+    if (!paintedA && paintedB)
+    {
+        return colorB;
     }
 
     return lerp(colorA, colorB, t);

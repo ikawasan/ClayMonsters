@@ -1597,17 +1597,18 @@ namespace ClayEditor
         /// <param name="mesh">変換元メッシュ</param>
         /// <param name="engineSpaceTransform">造形ローカル座標の基準Transform</param>
         /// <param name="meshTransform">メッシュのTransform</param>
-        /// <param name="meshVertexColors">未使用。作り直し時は形状のみ復元し色は既定の粘土色を使う</param>
+        /// <param name="meshVertexColors">頂点カラーnull時は形状のみ復元し既定の粘土色を使う</param>
         /// <param name="cancellationToken">キャンセルトークン</param>
+        /// <param name="applyAutoOrientation">trueのときY-up自動補正を行う</param>
         /// <returns>成功した場合trueと空文字失敗時はfalseと理由</returns>
         public async UniTask<(bool success, string errorMessage)> TryImportFromWorldMeshAsync(
             Mesh mesh,
             Transform engineSpaceTransform,
             Transform meshTransform,
             Color[] meshVertexColors,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            bool applyAutoOrientation = true)
         {
-            _ = meshVertexColors;
             if (!IsBackendReady || mesh == null || engineSpaceTransform == null || meshTransform == null)
             {
                 return (false, "ボクセル化の準備ができていません");
@@ -1620,7 +1621,17 @@ namespace ClayEditor
                 return (false, "メッシュの頂点または三角形がありません");
             }
 
+            bool useVertexColors = meshVertexColors != null && meshVertexColors.Length == vertices.Length;
             Color[] vertexColors = null;
+            if (useVertexColors)
+            {
+                vertexColors = new Color[meshVertexColors.Length];
+                for (int i = 0; i < meshVertexColors.Length; i++)
+                {
+                    vertexColors[i] = PaintColorUtility.ToStorageColor(meshVertexColors[i]);
+                }
+            }
+
             Matrix4x4 meshLocalToEngine = engineSpaceTransform.worldToLocalMatrix * meshTransform.localToWorldMatrix;
             Color defaultStorageColor = PaintColorUtility.ToStorageColor(defaultVertexColor);
             Vector3 defaultColorVector = new Vector3(defaultStorageColor.r, defaultStorageColor.g, defaultStorageColor.b);
@@ -1629,7 +1640,8 @@ namespace ClayEditor
                 vertices,
                 triangles,
                 meshLocalToEngine,
-                boundsSize);
+                boundsSize,
+                applyAutoOrientation);
             Vector3 gridHalf = Vector3.one * CenterOffset.x;
             Vector3 gridMin = -gridHalf;
             Vector3 gridMax = gridHalf;
@@ -1659,7 +1671,15 @@ namespace ClayEditor
 
             ClearDisplayedMesh();
             SetVoxelData(result.Voxels);
-            ResetVoxelColors();
+            if (useVertexColors && result.Colors != null && result.Colors.Length == TotalVoxelCount)
+            {
+                SetVoxelColors(result.Colors);
+            }
+            else
+            {
+                ResetVoxelColors();
+            }
+
             FlushShape();
             return (HasMesh(), HasMesh() ? string.Empty : "メッシュをボクセル化できませんでした");
         }

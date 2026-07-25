@@ -31,6 +31,10 @@ namespace ClayEditor.Rigging
         [Tooltip("脚を振るローカル軸(前後に振るので通常はX)")]
         [SerializeField] private Vector3 legRunSwingAxis = Vector3.right;
 
+        [Header("歩行共通")]
+        [Tooltip("歩行中に胴体をY軸まわりへひねる角(度)")]
+        [SerializeField] private float locomotionYawAmplitude = 4f;
+
         [Header("Attack 共通")]
         [Tooltip("攻撃1回の長さ(秒)・硬直と揃えないときの既定値")]
         [SerializeField] private float attackDuration = 0.72f;
@@ -184,6 +188,7 @@ namespace ClayEditor.Rigging
         public float LegRunArmAmplitude => legRunArmAmplitude;
         public float LegRunBodyAmplitude => legRunBodyAmplitude;
         public Vector3 LegRunSwingAxis => legRunSwingAxis;
+        public float LocomotionYawAmplitude => locomotionYawAmplitude;
         public float AttackDuration => attackDuration;
         public float AttackAmplitude => attackAmplitude;
         public float AttackAnticipationRatio => attackAnticipationRatio;

@@ -29,12 +29,14 @@ namespace ClayEditor
         /// <param name="triangles">三角形インデックス</param>
         /// <param name="meshLocalToEngine">メッシュローカルから造形ローカルへの変換</param>
         /// <param name="boundsSize">造形グリッドのワールドサイズ</param>
+        /// <param name="applyAutoOrientation">trueのときY-up自動補正を行う</param>
         /// <returns>フィット済み造形ローカルメッシュ</returns>
         internal static PreparedMesh Prepare(
             Vector3[] meshVertices,
             int[] triangles,
             Matrix4x4 meshLocalToEngine,
-            float boundsSize)
+            float boundsSize,
+            bool applyAutoOrientation = true)
         {
             var engineVertices = new Vector3[meshVertices.Length];
             for (int i = 0; i < meshVertices.Length; i++)
@@ -42,7 +44,11 @@ namespace ClayEditor
                 engineVertices[i] = meshLocalToEngine.MultiplyPoint3x4(meshVertices[i]);
             }
 
-            ClayVoxelMeshImportOrientation.AlignToClayEditConvention(engineVertices);
+            if (applyAutoOrientation)
+            {
+                ClayVoxelMeshImportOrientation.AlignToClayEditConvention(engineVertices);
+            }
+
             ClayVoxelMeshImportFitter.FitParams fitParams = ClayVoxelMeshImportFitter.ComputeFromVertices(
                 engineVertices,
                 boundsSize);

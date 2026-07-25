@@ -130,9 +130,15 @@ namespace ClayEditor.Backend.Jobs
 
             bool paintedA = !IsDefaultColor(colorA);
             bool paintedB = !IsDefaultColor(colorB);
-            if (paintedA != paintedB)
+            // 未塗装の既定色(白っぽいクリーム)を表面に出さない
+            if (paintedA && !paintedB)
             {
-                return t < 0.5f ? colorA : colorB;
+                return colorA;
+            }
+
+            if (!paintedA && paintedB)
+            {
+                return colorB;
             }
 
             return math.lerp(colorA, colorB, t);

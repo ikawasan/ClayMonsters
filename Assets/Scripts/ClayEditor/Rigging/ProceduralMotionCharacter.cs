@@ -159,6 +159,7 @@ namespace ClayEditor.Rigging
             public bool isFront;      // 前(頭)に属するか
             public int limbIndex;     // 何番目の付属肢か(左右交互の位相に使う)
             public float lateralSign; // ボーンの左右位置(+1=右 -1=左)左右で逆向きに振るのに使う
+            public bool isSharedLimbTrunk; // 左右分岐とその上流の共有幹(振ると両足同相になる)
         }
 
         private readonly List<BoneInfo> infos = new();
@@ -639,11 +640,11 @@ namespace ClayEditor.Rigging
         }
 
         /// <summary>
-        /// 指定部位のボーンを分岐(fork)ごとの独立枝に分け枝ごとに交互の符号を割り当てる
-        /// 共有トランク(枝が1本しかない幹)は振らないよう符号0にする
+        /// 指定部位のボーンを分岐ごとの独立枝に分け枝ごとに交互の符号を割り当てる
+        /// 共有トランク(分岐親)は符号0にし左右位置で全枝の逆位相を保証する
         /// </summary>
         /// <param name="isTargetPart">対象部位か判定する関数</param>
-        /// <param name="firstSign">先頭枝に与える符号</param>
+        /// <param name="firstSign">符号の基準(絶対値を使う)</param>
         private void AssignAlternatingSwingByBranch(System.Func<BoneInfo, bool> isTargetPart, float firstSign)
         {
             // ボーンからinfosの添字を引く辞書
@@ -738,30 +739,96 @@ namespace ClayEditor.Rigging
                 list.Add(head);
             }
 
-            // 区間頭ごとの符号を決める
-            Vector3 forwardWorld = ResolveLocomotionForwardWorldAxis();
-            Vector3 centerWorld = rootBone != null ? rootBone.position : transform.position;
-            var signOfHead = new Dictionary<int, float>();
-
-            foreach (var pair in headsByAttach)
+            // 分岐親とその上流の一本道は共有幹(振ると両足同相)
+            var isSharedTrunk = new bool[infos.Count];
+            for (int i = 0; i < infos.Count; i++)
             {
-                List<int> heads = pair.Value;
-                if (heads.Count < 2)
+                if (!isTarget[i])
                 {
-                    // 単一枝でも左右位置の符号を残して振る(0にすると手足が停止する)
-                    int head = heads[0];
-                    float existing = infos[head].lateralSign;
-                    signOfHead[head] = Mathf.Abs(existing) > 0.01f ? Mathf.Sign(existing) : firstSign;
                     continue;
                 }
 
-                // 同じ接続先から複数の肢が出るので前後位置で並べて交互に振る
-                heads.Sort((a, b) =>
-                    Vector3.Dot(infos[a].transform.position - centerWorld, forwardWorld)
-                        .CompareTo(Vector3.Dot(infos[b].transform.position - centerWorld, forwardWorld)));
-                for (int h = 0; h < heads.Count; h++)
+                isSharedTrunk[i] = targetChildCount[i] >= 2
+                    || HasTargetForkDescendant(i, isTarget, targetChildCount, indexOf);
+            }
+
+            // 区間頭ごとの符号を決める(共有幹は除外し枝の先頭だけ逆位相にする)
+            Vector3 rightWorld = ResolveLocomotionSwingWorldAxis();
+            Vector3 forwardWorld = ResolveLocomotionForwardWorldAxis();
+            Vector3 centerWorld = rootBone != null ? rootBone.position : transform.position;
+            var signOfHead = new Dictionary<int, float>();
+            var swingHeads = new List<int>();
+
+            foreach (int head in distinctHeads)
+            {
+                // 分岐親と分岐より上の共有幹はスイング対象外
+                if (isSharedTrunk[head])
                 {
-                    signOfHead[heads[h]] = h % 2 == 0 ? firstSign : -firstSign;
+                    continue;
+                }
+
+                swingHeads.Add(head);
+            }
+
+            if (swingHeads.Count == 2)
+            {
+                // 二足は左右位置で必ず逆位相にする
+                swingHeads.Sort((a, b) =>
+                    Vector3.Dot(infos[a].transform.position - centerWorld, rightWorld)
+                        .CompareTo(Vector3.Dot(infos[b].transform.position - centerWorld, rightWorld)));
+                signOfHead[swingHeads[0]] = -Mathf.Abs(firstSign);
+                signOfHead[swingHeads[1]] = Mathf.Abs(firstSign);
+            }
+            else if (swingHeads.Count > 2)
+            {
+                // 多肢は接続先ごとに前後で交互にし足りない枝は左右位置で補う
+                var assigned = new HashSet<int>();
+                foreach (var pair in headsByAttach)
+                {
+                    List<int> heads = pair.Value.FindAll(h => !isSharedTrunk[h]);
+                    if (heads.Count < 2)
+                    {
+                        continue;
+                    }
+
+                    heads.Sort((a, b) =>
+                        Vector3.Dot(infos[a].transform.position - centerWorld, forwardWorld)
+                            .CompareTo(Vector3.Dot(infos[b].transform.position - centerWorld, forwardWorld)));
+                    for (int h = 0; h < heads.Count; h++)
+                    {
+                        signOfHead[heads[h]] = h % 2 == 0 ? -Mathf.Abs(firstSign) : Mathf.Abs(firstSign);
+                        assigned.Add(heads[h]);
+                    }
+                }
+
+                for (int h = 0; h < swingHeads.Count; h++)
+                {
+                    int head = swingHeads[h];
+                    if (assigned.Contains(head))
+                    {
+                        continue;
+                    }
+
+                    float lateral = Vector3.Dot(infos[head].transform.position - centerWorld, rightWorld);
+                    signOfHead[head] = lateral >= 0f ? Mathf.Abs(firstSign) : -Mathf.Abs(firstSign);
+                }
+            }
+            else
+            {
+                foreach (var pair in headsByAttach)
+                {
+                    List<int> heads = pair.Value;
+                    for (int h = 0; h < heads.Count; h++)
+                    {
+                        int head = heads[h];
+                        if (isSharedTrunk[head])
+                        {
+                            continue;
+                        }
+
+                        float existing = infos[head].lateralSign;
+                        signOfHead[head] = Mathf.Abs(existing) > 0.01f ? Mathf.Sign(existing) : firstSign;
+                    }
                 }
             }
 
@@ -773,13 +840,67 @@ namespace ClayEditor.Rigging
                     continue;
                 }
 
+                BoneInfo info = infos[i];
+
+                // 共有幹は振らないので符号0
+                if (isSharedTrunk[i])
+                {
+                    info.lateralSign = 0f;
+                    info.isSharedLimbTrunk = true;
+                    infos[i] = info;
+                    continue;
+                }
+
+                info.isSharedLimbTrunk = false;
                 if (signOfHead.TryGetValue(segmentHead[i], out float sign))
                 {
-                    BoneInfo info = infos[i];
                     info.lateralSign = sign;
-                    infos[i] = info;
+                }
+
+                infos[i] = info;
+            }
+        }
+
+        /// <summary>
+        /// 同部位の子孫に分岐点があるか(自身の分岐は含めず下流のみ)
+        /// </summary>
+        /// <param name="boneIndex">起点ボーン添字</param>
+        /// <param name="isTarget">対象部位フラグ</param>
+        /// <param name="targetChildCount">同部位の子の数</param>
+        /// <param name="indexOf">Transformから添字</param>
+        /// <returns>下流に分岐があればtrue</returns>
+        private bool HasTargetForkDescendant(
+            int boneIndex,
+            bool[] isTarget,
+            int[] targetChildCount,
+            Dictionary<Transform, int> indexOf)
+        {
+            Transform bone = infos[boneIndex].transform;
+            if (bone == null)
+            {
+                return false;
+            }
+
+            for (int c = 0; c < bone.childCount; c++)
+            {
+                Transform child = bone.GetChild(c);
+                if (!indexOf.TryGetValue(child, out int childIndex) || !isTarget[childIndex])
+                {
+                    continue;
+                }
+
+                if (targetChildCount[childIndex] >= 2)
+                {
+                    return true;
+                }
+
+                if (HasTargetForkDescendant(childIndex, isTarget, targetChildCount, indexOf))
+                {
+                    return true;
                 }
             }
+
+            return false;
         }
 
         /// <summary>
@@ -1156,16 +1277,14 @@ namespace ClayEditor.Rigging
             Vector3 sagittalAxis = ResolveLocomotionSwingWorldAxis();
             LogLocomotionDiagnostics("Run", sagittalAxis);
 
+            // 手足より先にルートを回して子の振り基準をそろえる
+            ApplyLocomotionBodyYaw(w);
+
             for (int i = 0; i < infos.Count; i++)
             {
                 BoneInfo info = infos[i];
                 if (info.transform == null || info.transform == rootBone)
                 {
-                    if (info.transform != null)
-                    {
-                        info.transform.localRotation = info.baseLocalRotation;
-                    }
-
                     continue;
                 }
 
@@ -1179,6 +1298,31 @@ namespace ClayEditor.Rigging
                 {
                     info.transform.localRotation = info.baseLocalRotation;
                 }
+            }
+        }
+
+        /// <summary>
+        /// 歩行の胴体ひねりを適用しルートボーンをワールドY軸まわりへ小さく回す
+        /// 手足の前後スイングと同じ位相にして腰が振れる歩きに見せる
+        /// </summary>
+        /// <param name="phase">歩行サイクルの位相</param>
+        private void ApplyLocomotionBodyYaw(float phase)
+        {
+            if (rootBone == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < infos.Count; i++)
+            {
+                if (infos[i].transform != rootBone)
+                {
+                    continue;
+                }
+
+                float yaw = Mathf.Sin(phase) * MotionSettings.LocomotionYawAmplitude;
+                rootBone.localRotation = WorldSwingLocalRotation(infos[i], Vector3.up, yaw);
+                return;
             }
         }
 
@@ -1204,16 +1348,14 @@ namespace ClayEditor.Rigging
             Vector3 sagittalAxis = ResolveLocomotionSwingWorldAxis();
             LogLocomotionDiagnostics("LegRun", sagittalAxis);
 
+            // 手足より先にルートを回して子の振り基準をそろえる
+            ApplyLocomotionBodyYaw(w);
+
             for (int i = 0; i < infos.Count; i++)
             {
                 BoneInfo info = infos[i];
                 if (info.transform == null || info.transform == rootBone)
                 {
-                    if (info.transform != null)
-                    {
-                        info.transform.localRotation = info.baseLocalRotation;
-                    }
-
                     continue;
                 }
 
@@ -1249,16 +1391,27 @@ namespace ClayEditor.Rigging
         }
 
         /// <summary>
-        /// 歩行で振る付け根ボーンか親が同部位でないときだけtrue
+        /// 歩行で振る付け根か共有幹は除外し分岐直下の各枝先頭だけをtrueにする
         /// </summary>
         private bool IsLocomotionSwingRoot(BoneInfo info, System.Func<BoneInfo, bool> isSamePart)
         {
-            if (info.transform == null || info.transform.parent == null)
+            if (info.transform == null || !isSamePart(info))
+            {
+                return false;
+            }
+
+            // 分岐親とその上流の共有幹を振ると両足が同相になる
+            if (info.isSharedLimbTrunk || CountSamePartChildBones(info.transform, isSamePart) >= 2)
+            {
+                return false;
+            }
+
+            Transform parent = info.transform.parent;
+            if (parent == null)
             {
                 return true;
             }
 
-            Transform parent = info.transform.parent;
             for (int i = 0; i < infos.Count; i++)
             {
                 if (infos[i].transform != parent)
@@ -1266,10 +1419,53 @@ namespace ClayEditor.Rigging
                     continue;
                 }
 
-                return !isSamePart(infos[i]);
+                if (!isSamePart(infos[i]))
+                {
+                    return true;
+                }
+
+                // 親が同部位の分岐点ならこのボーンが枝の先頭
+                return infos[i].isSharedLimbTrunk
+                    || CountSamePartChildBones(parent, isSamePart) >= 2;
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// 指定ボーン直下の同部位ボーン数を返す
+        /// </summary>
+        /// <param name="bone">親候補のボーン</param>
+        /// <param name="isSamePart">同部位判定</param>
+        /// <returns>同部位の子の数</returns>
+        private int CountSamePartChildBones(Transform bone, System.Func<BoneInfo, bool> isSamePart)
+        {
+            if (bone == null)
+            {
+                return 0;
+            }
+
+            int count = 0;
+            for (int c = 0; c < bone.childCount; c++)
+            {
+                Transform child = bone.GetChild(c);
+                for (int i = 0; i < infos.Count; i++)
+                {
+                    if (infos[i].transform != child)
+                    {
+                        continue;
+                    }
+
+                    if (isSamePart(infos[i]))
+                    {
+                        count++;
+                    }
+
+                    break;
+                }
+            }
+
+            return count;
         }
 
         /// <summary>
@@ -1318,7 +1514,8 @@ namespace ClayEditor.Rigging
                 if (info.transform != null && info.isLeg)
                 {
                     Transform p = info.transform.parent;
-                    sb.Append($"\n  脚 {info.transform.name} parent={(p != null ? p.name : "null")} sign={info.lateralSign} pos={info.transform.position}");
+                    bool swingRoot = IsLocomotionSwingRoot(info, b => b.isLeg);
+                    sb.Append($"\n  脚 {info.transform.name} parent={(p != null ? p.name : "null")} sign={info.lateralSign} swingRoot={swingRoot} trunk={info.isSharedLimbTrunk} pos={info.transform.position}");
                 }
             }
 
