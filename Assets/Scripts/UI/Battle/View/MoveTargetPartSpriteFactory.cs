@@ -76,8 +76,7 @@ namespace UI.Battle.View
             var texture = new Texture2D(Size, Size, TextureFormat.RGBA32, false)
             {
                 filterMode = FilterMode.Bilinear,
-                wrapMode = TextureWrapMode.Clamp,
-                alphaIsTransparency = true
+                wrapMode = TextureWrapMode.Clamp
             };
             texture.SetPixels32(pixels);
             texture.Apply(updateMipmaps: false, makeNoLongerReadable: false);

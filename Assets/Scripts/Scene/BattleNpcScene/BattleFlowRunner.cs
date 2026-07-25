@@ -6,14 +6,15 @@ using Camera.View;
 using ClayEditor.Rigging;
 using Cysharp.Threading.Tasks;
 using Extensions;
-using LighthouseExtends.UIComponent.Button;
 using Lighthouse.Scene;
+using LighthouseExtends.UIComponent.Button;
 using SaveData.Interface;
 using Scene.BattleNpcScene.Interface;
 using Scene.BattleNpcScene.View;
 using Scene.Core;
 using Scene.Core.Interface;
 using System.Threading;
+using TMPro;
 using UI.Battle.View;
 using UnityEngine;
 using VContainer;
@@ -119,9 +120,20 @@ namespace Scene.BattleNpcScene
             this.selectionSession = selectionSession;
 
             titleReturnSubscription?.Dispose();
-            titleReturnSubscription = titleReturnButton != null
-                ? titleReturnButton.SubscribeOnClick(OnClickTitleReturn)
-                : null;
+            if (titleReturnButton != null)
+            {
+                TMP_Text label = titleReturnButton.GetComponentInChildren<TMP_Text>(true);
+                if (label != null)
+                {
+                    label.text = "戻る";
+                }
+
+                titleReturnSubscription = titleReturnButton.SubscribeOnClick(OnClickTitleReturn);
+            }
+            else
+            {
+                titleReturnSubscription = null;
+            }
         }
 
         private void OnDestroy()

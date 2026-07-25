@@ -19,6 +19,7 @@ using Scene.Core.Interface;
 using Scene.PvpLobby.Interface;
 using System.Threading;
 using static Scene.TitleScene.TitleScene;
+using TMPro;
 using UI.Battle.View;
 using UI.ClayEditor.View;
 using UnityEngine;
@@ -71,6 +72,7 @@ namespace Scene.BattlePvpArena
 
         private CancellationTokenSource flowCts;
         private bool isRunning;
+        private int flowVersion;
         private System.IDisposable titleReturnSubscription;
         private GameObject trackedPlayerModel;
         private GameObject trackedEnemyModel;
@@ -110,10 +112,7 @@ namespace Scene.BattlePvpArena
                 ReturnToTitleAsync,
                 () => this.GetCancellationTokenOnDestroy());
 
-            titleReturnSubscription?.Dispose();
-            titleReturnSubscription = titleReturnButton != null
-                ? titleReturnButton.SubscribeOnClick(OnClickTitleReturn)
-                : null;
+            BindSelectionLeaveButton();
         }
 
         private void OnDestroy()
@@ -157,15 +156,6 @@ namespace Scene.BattlePvpArena
             if (selectionCanvas == null)
             {
                 selectionCanvas = FindCanvasInHierarchy(sceneRoot, "LoadSlotCanvas");
-            }
-
-            if (titleReturnButton == null)
-            {
-                Transform titleReturnTransform = FindTransformByName(sceneRoot, "TitleReturnButton");
-                if (titleReturnTransform != null)
-                {
-                    titleReturnButton = titleReturnTransform.GetComponentInChildren<LHButton>(true);
-                }
             }
 
             if (battleView == null)
@@ -218,10 +208,13 @@ namespace Scene.BattlePvpArena
         /// </summary>
         public void PrepareSelectionLayout()
         {
+            // 選択UIが出るまで暗転を保ち背景だけが見える時間をなくす
+            sceneFade?.EnsureOpaque();
             selectionSession?.PrepareEntry();
             staging?.PrepareSelectionEntry();
             battleCamera?.SetCameraEnable(false);
             loadSlotView?.PrepareLayout();
+            BindSelectionLeaveButton();
             CanvasVisibilityUtility.SetCanvasEnabled(selectionCanvas, false);
             CanvasVisibilityUtility.SetCanvasEnabled(battleUiCanvas, false);
             pvpVictoryReturnView?.SetDualButtonsVisible(false);
@@ -237,11 +230,9 @@ namespace Scene.BattlePvpArena
             disconnectHandler?.SuppressNotifications();
             pvpSessionController?.EndSession();
             StopFlow();
-            DestroyTrackedParticipants();
+            ClearPreviousSpawnedModels();
             selectionSession?.HideForLeave();
             loadSlotView?.HideForLeave();
-            ClearSpawnedModels(playerSpawn);
-            ClearSpawnedModels(enemySpawn);
             CanvasVisibilityUtility.SetCanvasEnabled(selectionCanvas, false);
             CanvasVisibilityUtility.SetCanvasEnabled(battleUiCanvas, false);
             pvpVictoryReturnView?.SetDualButtonsVisible(false);
@@ -259,6 +250,7 @@ namespace Scene.BattlePvpArena
         {
             Debug.Log("[BattlePvpArena] RevealSelectionAsync開始");
             EnsureSceneReferences(transform);
+            BindSelectionLeaveButton();
             staging?.PrepareSelectionEntry();
             battleCamera?.SetCameraEnable(false);
             loadSlotView?.PrepareLayout(reparentToUiRoot: false);
@@ -313,9 +305,9 @@ namespace Scene.BattlePvpArena
             flowCts?.Dispose();
             flowCts = CancellationTokenSource.CreateLinkedTokenSource(this.GetCancellationTokenOnDestroy());
             isRunning = true;
-            Debug.Log("[BattlePvpArena] StartFlow");
-            disconnectHandler?.BeginMonitoring();
-            RunAsync(flowCts.Token).Forget();
+            int version = ++flowVersion;
+            Debug.Log($"[BattlePvpArena] StartFlow version={version}");
+            RunAsync(flowCts.Token, version).Forget();
         }
 
         /// <summary>
@@ -324,7 +316,8 @@ namespace Scene.BattlePvpArena
         public void StopFlow()
         {
             flowCts?.Cancel();
-            isRunning = false;
+            // isRunningはRunAsyncのfinallyで解除する
+            // キャンセル処理中の再Startによる二重生成を防ぐ
             BattleHitStopClock.Clear();
         }
 
@@ -366,14 +359,19 @@ namespace Scene.BattlePvpArena
             return effectsObject.transform;
         }
 
-        private async UniTask RunAsync(CancellationToken cancellationToken)
+        private async UniTask RunAsync(CancellationToken cancellationToken, int version)
         {
             try
             {
-                Debug.Log("[BattlePvpArena] 戦闘フロー開始");
+                Debug.Log($"[BattlePvpArena] 戦闘フロー開始 version={version}");
                 EnsureBattleComponents();
+                EnsureSceneReferences(transform);
+                // 中断で残った前回フローのモデルを破棄し二重生成を防ぐ
+                ClearPreviousSpawnedModels();
                 await WaitForSceneCanvasReadyAsync(cancellationToken);
+                ThrowIfFlowSuperseded(version);
                 await RevealSelectionAsync(cancellationToken);
+                ThrowIfFlowSuperseded(version);
 
                 BattlePvpSessionSpawner sessionSpawner = FindSessionSpawner();
                 sessionSpawner?.TrySpawnPlayersIfNeeded();
@@ -399,6 +397,7 @@ namespace Scene.BattlePvpArena
                 };
                 context.EnemyLoader = async token =>
                 {
+                    ThrowIfFlowSuperseded(version);
                     sessionSpawner?.TrySpawnPlayersIfNeeded();
                     inputRelay = sessionSpawner != null
                         ? await sessionSpawner.WaitForLocalRelayAsync(token)
@@ -409,6 +408,9 @@ namespace Scene.BattlePvpArena
                         return default;
                     }
 
+                    ThrowIfFlowSuperseded(version);
+                    // リレー取得後に切断監視を開始し入場直後の誤検知を避ける
+                    disconnectHandler?.BeginMonitoring();
                     context.EnemyAi = new NetworkBattleRemoteEnemyAi(inputRelay);
                     context.CombatSync = new BattlePvpCombatSync(inputRelay);
                     inputRelay.ResetSessionState();
@@ -422,6 +424,7 @@ namespace Scene.BattlePvpArena
                 var flow = new BattleFlow(selectionSession, battleView, staging, loader, context, bgmService, seService);
                 while (!cancellationToken.IsCancellationRequested)
                 {
+                    ThrowIfFlowSuperseded(version);
                     BattleVictoryReturnChoice choice = await flow.RunAsync(cancellationToken);
                     if (choice == BattleVictoryReturnChoice.Rematch)
                     {
@@ -435,15 +438,25 @@ namespace Scene.BattlePvpArena
             }
             catch (System.OperationCanceledException)
             {
-                Debug.LogWarning("[BattlePvpArena] RunAsyncキャンセル");
+                Debug.LogWarning($"[BattlePvpArena] RunAsyncキャンセル version={version}");
+                ClearPreviousSpawnedModels();
             }
             catch (System.Exception exception)
             {
                 Debug.LogException(exception);
+                ClearPreviousSpawnedModels();
+                // 明転前に失敗すると暗転のまま操作不能になるため明転させる
+                if (sceneFade != null)
+                {
+                    await sceneFade.FadeInAsync(this.GetCancellationTokenOnDestroy());
+                }
             }
             finally
             {
-                isRunning = false;
+                if (version == flowVersion)
+                {
+                    isRunning = false;
+                }
             }
         }
 
@@ -493,9 +506,7 @@ namespace Scene.BattlePvpArena
             CancellationToken cancellationToken)
         {
             inputRelay?.ResetForRematch();
-            DestroyTrackedParticipants();
-            ClearSpawnedModels(playerSpawn);
-            ClearSpawnedModels(enemySpawn);
+            ClearPreviousSpawnedModels();
             CanvasVisibilityUtility.SetCanvasEnabled(battleUiCanvas, false);
             pvpVictoryReturnView?.SetDualButtonsVisible(false);
 
@@ -513,16 +524,31 @@ namespace Scene.BattlePvpArena
             trackedEnemyModel = enemyModel;
         }
 
+        /// <summary>
+        /// 前回フローで生成し残ったモデルを破棄する
+        /// 中断後の再開でモデルが二重生成されるのを防ぐ
+        /// </summary>
+        private void ClearPreviousSpawnedModels()
+        {
+            DestroyTrackedParticipants();
+            ClearSpawnedModels(playerSpawn);
+            ClearSpawnedModels(enemySpawn);
+            // LoadSlotViewの一時親に残ったプレビューも破棄する
+            ClearNamedRootChildren("TrainingModelImportRoot");
+        }
+
         private void DestroyTrackedParticipants()
         {
             if (trackedPlayerModel != null)
             {
+                trackedPlayerModel.SetActive(false);
                 Object.Destroy(trackedPlayerModel);
                 trackedPlayerModel = null;
             }
 
             if (trackedEnemyModel != null)
             {
+                trackedEnemyModel.SetActive(false);
                 Object.Destroy(trackedEnemyModel);
                 trackedEnemyModel = null;
             }
@@ -537,7 +563,33 @@ namespace Scene.BattlePvpArena
 
             for (int i = spawn.childCount - 1; i >= 0; i--)
             {
-                Object.Destroy(spawn.GetChild(i).gameObject);
+                Transform child = spawn.GetChild(i);
+                if (child == null)
+                {
+                    continue;
+                }
+
+                child.gameObject.SetActive(false);
+                Object.Destroy(child.gameObject);
+            }
+        }
+
+        private static void ClearNamedRootChildren(string rootName)
+        {
+            GameObject rootObject = GameObject.Find(rootName);
+            if (rootObject == null)
+            {
+                return;
+            }
+
+            ClearSpawnedModels(rootObject.transform);
+        }
+
+        private void ThrowIfFlowSuperseded(int version)
+        {
+            if (version != flowVersion)
+            {
+                throw new System.OperationCanceledException("BattlePvpArena flow superseded");
             }
         }
 
@@ -723,6 +775,110 @@ namespace Scene.BattlePvpArena
             disconnectHandler?.SuppressNotifications();
             StopFlow();
             ReturnToTitleAsync(CancellationToken.None).Forget();
+        }
+
+        /// <summary>
+        /// 選択画面の退出は「戻る」のみにする
+        /// TitleReturnButtonは切断UI用のため選択Canvas上では非表示にする
+        /// </summary>
+        private void BindSelectionLeaveButton()
+        {
+            EnsureSceneReferences(transform);
+            HideSelectionTitleReturnButton();
+
+            titleReturnSubscription?.Dispose();
+            titleReturnSubscription = null;
+
+            LHButton leaveButton = ResolveSelectionLeaveButton();
+            if (leaveButton == null)
+            {
+                Debug.LogError("[BattlePvpArena] 選択画面の戻るボタンが見つかりません");
+                return;
+            }
+
+            ApplyLeaveButtonLabel(leaveButton, "戻る");
+            titleReturnSubscription = leaveButton.SubscribeOnClick(OnClickTitleReturn);
+        }
+
+        private void HideSelectionTitleReturnButton()
+        {
+            if (selectionCanvas == null)
+            {
+                return;
+            }
+
+            Transform titleReturn = selectionCanvas.transform.Find("TitleReturnButton");
+            if (titleReturn != null && titleReturn.gameObject.activeSelf)
+            {
+                titleReturn.gameObject.SetActive(false);
+            }
+        }
+
+        private LHButton ResolveSelectionLeaveButton()
+        {
+            if (selectionCanvas != null)
+            {
+                LHButton[] buttons = selectionCanvas.GetComponentsInChildren<LHButton>(true);
+                for (int i = 0; i < buttons.Length; i++)
+                {
+                    LHButton button = buttons[i];
+                    if (button == null || button.gameObject.name == "TitleReturnButton")
+                    {
+                        continue;
+                    }
+
+                    if (IsUnderConfirmPanel(button.transform))
+                    {
+                        continue;
+                    }
+
+                    TMP_Text label = button.GetComponentInChildren<TMP_Text>(true);
+                    if (label != null && label.text == "戻る")
+                    {
+                        return button;
+                    }
+                }
+            }
+
+            // 選択Canvas配下のTitleReturnだけをフォールバックにする(切断UIのボタンは使わない)
+            if (titleReturnButton != null
+                && selectionCanvas != null
+                && titleReturnButton.transform.IsChildOf(selectionCanvas.transform))
+            {
+                return titleReturnButton;
+            }
+
+            return null;
+        }
+
+        private static bool IsUnderConfirmPanel(Transform target)
+        {
+            Transform current = target;
+            while (current != null)
+            {
+                if (current.name == "ConfirmSaveSlotCanvas")
+                {
+                    return true;
+                }
+
+                current = current.parent;
+            }
+
+            return false;
+        }
+
+        private static void ApplyLeaveButtonLabel(LHButton button, string label)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            TMP_Text text = button.GetComponentInChildren<TMP_Text>(true);
+            if (text != null)
+            {
+                text.text = label;
+            }
         }
 
         private async UniTask ReturnToTitleAsync(CancellationToken cancellationToken)

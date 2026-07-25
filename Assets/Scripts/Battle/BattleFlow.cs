@@ -267,6 +267,9 @@ namespace Battle
                             selectionSession.SavePool,
                             selectionSession.SelectedSlotIndex,
                             context.PlayerSpawn);
+                        // 敵ロード待ち中の中断でも破棄できるよう先に登録する
+                        spawnedPlayerModel = player.Model;
+                        context.RegisterSpawnedParticipants?.Invoke(spawnedPlayerModel, null);
 
                         enemy = context.EnemyLoader != null
                             ? await context.EnemyLoader(cancellationToken)
@@ -327,6 +330,12 @@ namespace Battle
                 spawnedPlayerModel = player.Model;
                 spawnedEnemyModel = enemy.Model;
                 context.RegisterSpawnedParticipants?.Invoke(spawnedPlayerModel, spawnedEnemyModel);
+                // 見せ合い前に追跡外の重複モデルを破棄する
+                DestroyUntrackedBattleModels(
+                    spawnedPlayerModel,
+                    spawnedEnemyModel,
+                    context.PlayerSpawn,
+                    context.EnemySpawn);
 
                 BattleSettings battleSettings = BattleLevelDesignSettings.Resolve(context.LevelDesignSettings);
 
@@ -603,16 +612,104 @@ namespace Battle
         {
             if (playerModel != null)
             {
+                playerModel.SetActive(false);
                 UnityEngine.Object.Destroy(playerModel);
             }
 
             if (enemyModel != null)
             {
+                enemyModel.SetActive(false);
                 UnityEngine.Object.Destroy(enemyModel);
             }
         }
 
+        /// <summary>
+        /// スポーン地点と一時インポート親に残った追跡外モデルを破棄する
+        /// </summary>
+        private static void DestroyUntrackedBattleModels(
+            GameObject keepPlayer,
+            GameObject keepEnemy,
+            Transform playerSpawn,
+            Transform enemySpawn)
+        {
+            DestroyChildrenExcept(playerSpawn, keepPlayer, keepEnemy);
+            DestroyChildrenExcept(enemySpawn, keepPlayer, keepEnemy);
 
+            GameObject importRootObject = GameObject.Find("TrainingModelImportRoot");
+            if (importRootObject != null)
+            {
+                DestroyChildrenExcept(importRootObject.transform, keepPlayer, keepEnemy);
+            }
+
+            DestroyOrphanImportedRoots(keepPlayer, keepEnemy);
+        }
+
+        private static void DestroyChildrenExcept(Transform parent, GameObject keepA, GameObject keepB)
+        {
+            if (parent == null)
+            {
+                return;
+            }
+
+            for (int i = parent.childCount - 1; i >= 0; i--)
+            {
+                Transform child = parent.GetChild(i);
+                if (child == null)
+                {
+                    continue;
+                }
+
+                GameObject childObject = child.gameObject;
+                if (childObject == keepA || childObject == keepB)
+                {
+                    continue;
+                }
+
+                Debug.LogWarning(
+                    "[BattleFlow] 追跡外モデルを破棄します"
+                    + $" name={childObject.name}"
+                    + $" parent={parent.name}");
+                childObject.SetActive(false);
+                UnityEngine.Object.Destroy(childObject);
+            }
+        }
+
+        private static void DestroyOrphanImportedRoots(GameObject keepPlayer, GameObject keepEnemy)
+        {
+            // 親なしで残ったglbインポートルートを破棄する
+            ProceduralMotionCharacter[] motions = UnityEngine.Object.FindObjectsByType<ProceduralMotionCharacter>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < motions.Length; i++)
+            {
+                ProceduralMotionCharacter motion = motions[i];
+                if (motion == null)
+                {
+                    continue;
+                }
+
+                GameObject root = motion.gameObject;
+                if (root == keepPlayer || root == keepEnemy)
+                {
+                    continue;
+                }
+
+                // Configurator上のテンプレートはシーン配置の正なので残す
+                if (root.GetComponent<LoadedModelConfigurator>() != null)
+                {
+                    continue;
+                }
+
+                if (root.transform.parent != null)
+                {
+                    continue;
+                }
+
+                Debug.LogWarning($"[BattleFlow] 孤児インポートモデルを破棄します name={root.name}");
+                root.SetActive(false);
+                UnityEngine.Object.Destroy(root);
+            }
+        }
 
         private static void SetCanvasEnabled(Canvas canvas, bool isEnabled)
 

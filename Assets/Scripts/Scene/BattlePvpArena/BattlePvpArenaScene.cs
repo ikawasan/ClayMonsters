@@ -33,9 +33,10 @@ namespace Scene.BattlePvpArena
         }
 
         /// <summary>
-        /// 遷移暗転オーバーレイを解除してから選択UIを表示する
+        /// 明転は選択UI表示後にRevealSelectionAsyncで行う
+        /// 暗転のまま入場することで背景だけが見える時間をなくす
         /// </summary>
-        protected override bool PerformEntryFadeIn => true;
+        protected override bool PerformEntryFadeIn => false;
 
         [Inject]
         public void Construct(
