@@ -133,14 +133,14 @@ namespace Scene.BattleNpcScene
                 await context.ScreenFade.FadeOutAsync(cancellationToken);
             }
 
-            PrepareCamera(context);
-            ApplyMatchupLayout(context);
+            // 採寸前に表示しないとRenderer境界が取れず既定値で寄ってしまう
+            EnsureMatchupModelsVisible(context);
+            PrepareCamera();
             context.Player?.PlayMotion(MotionType.Idle);
             context.Enemy?.PlayMotion(MotionType.Idle);
 
-            Vector3 focus = ResolveMatchupFocus(context);
-            cameraView?.SetFocusPosition(focus);
-            EnsureMatchupModelsVisible(context);
+            ApplyMatchupLayout(context);
+            Vector3 focus = ApplyMatchupCamera(context);
 
             if (matchupBackground != null)
             {
@@ -154,8 +154,6 @@ namespace Scene.BattleNpcScene
             }
 
             matchupBackground?.ShowFlame(focus);
-
-            ApplyMatchupCamera(context);
 
             if (context.ScreenFade != null)
             {
@@ -342,8 +340,7 @@ namespace Scene.BattleNpcScene
                 return;
             }
 
-            bool hasBounds = BattleFieldFocusResolver.TryGetCombinedRendererBounds(
-                winnerModel,
+            bool hasBounds = BattleFieldFocusResolver.TryGetPosedModelBounds(
                 winnerModel,
                 out Bounds bounds);
 
@@ -361,6 +358,8 @@ namespace Scene.BattleNpcScene
                 float aspect = camera != null ? camera.aspect : 16f / 9f;
                 distance = BattleFieldFocusResolver.ResolveOrbitDistanceForBounds(
                     bounds,
+                    battleHorizontalAngle,
+                    victoryVerticalAngle,
                     verticalFov,
                     aspect,
                     victoryFramePadding,
@@ -428,6 +427,17 @@ namespace Scene.BattleNpcScene
                 return;
             }
 
+            // 先に既定間隔で並べて向きを確定させる
+            BattleMatchupLayout.ApplyFromSpawns(
+                context.PlayerModel,
+                context.EnemyModel,
+                context.PlayerSpawn,
+                context.EnemySpawn,
+                matchupSideSeparation,
+                matchupHorizontalAngle,
+                matchupModelTowardCameraDegrees);
+
+            // 確定した向きでの見た目の幅から間隔を決め直す
             float sideSeparation = ResolveMatchupIntroSideSeparation(context);
             BattleMatchupLayout.ApplyFromSpawns(
                 context.PlayerModel,
@@ -480,16 +490,16 @@ namespace Scene.BattleNpcScene
             SyncMotionLayout(context);
         }
 
-        private void PrepareCamera(BattleStagingContext context)
+        private void PrepareCamera()
         {
             if (cameraView == null)
             {
                 return;
             }
 
+            // 注視点は配置確定後にApplyMatchupCameraで採寸して決める
             cameraView.SetCameraEnable(true);
             cameraView.SetCameraOperatable(false);
-            cameraView.SetFocusPosition(ResolveMatchupFocus(context));
         }
 
         private Vector3 ResolveBattleFocus(BattleStagingContext context)
@@ -522,18 +532,8 @@ namespace Scene.BattleNpcScene
             return (playerY + enemyY) * 0.5f;
         }
 
-        private Vector3 ResolveMatchupFocus(BattleStagingContext context)
+        private Vector3 ResolveMatchupFallbackFocus(BattleStagingContext context)
         {
-            if (context.PlayerModel != null
-                && context.EnemyModel != null
-                && BattleFieldFocusResolver.TryGetCombinedRendererBounds(
-                    context.PlayerModel,
-                    context.EnemyModel,
-                    out Bounds bounds))
-            {
-                return bounds.center;
-            }
-
             if (matchupPlayerPoint != null && matchupEnemyPoint != null)
             {
                 Vector3 focus = (matchupPlayerPoint.position + matchupEnemyPoint.position) * 0.5f;
@@ -555,27 +555,36 @@ namespace Scene.BattleNpcScene
             return center;
         }
 
-        private void ApplyMatchupCamera(BattleStagingContext context)
+        // 注視点と距離は同一の採寸結果から決めないと構図がずれて隅に寄る
+        private Vector3 ApplyMatchupCamera(BattleStagingContext context)
         {
+            Bounds bounds = default;
+            bool hasBounds = context.PlayerModel != null
+                && context.EnemyModel != null
+                && BattleFieldFocusResolver.TryGetPosedCombinedBounds(
+                    context.PlayerModel,
+                    context.EnemyModel,
+                    out bounds);
+
+            Vector3 focus = hasBounds
+                ? bounds.center
+                : ResolveMatchupFallbackFocus(context);
+
             if (cameraView == null)
             {
-                return;
+                return focus;
             }
 
             float distance = matchupDistance;
-            if (matchupAutoFrame
-                && context.PlayerModel != null
-                && context.EnemyModel != null
-                && BattleFieldFocusResolver.TryGetCombinedRendererBounds(
-                    context.PlayerModel,
-                    context.EnemyModel,
-                    out Bounds bounds))
+            if (matchupAutoFrame && hasBounds)
             {
                 UnityEngine.Camera camera = UnityEngine.Camera.main;
                 float verticalFov = camera != null ? camera.fieldOfView : 45f;
                 float aspect = camera != null ? camera.aspect : 16f / 9f;
                 distance = BattleFieldFocusResolver.ResolveOrbitDistanceForBounds(
                     bounds,
+                    matchupHorizontalAngle,
+                    matchupVerticalAngle,
                     verticalFov,
                     aspect,
                     matchupFramePadding,
@@ -583,7 +592,10 @@ namespace Scene.BattleNpcScene
                     matchupMaxDistance);
             }
 
+            cameraView.SetCameraOperatable(false);
+            cameraView.SetFocusPosition(focus);
             cameraView.SetOrbitView(matchupHorizontalAngle, matchupVerticalAngle, distance);
+            return focus;
         }
     }
 }

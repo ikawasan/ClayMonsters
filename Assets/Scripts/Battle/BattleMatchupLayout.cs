@@ -86,6 +86,12 @@ namespace Battle
                 enemyModel.position,
                 cameraHorizontalAngle,
                 towardCameraDegrees);
+
+            // 回転確定後にピボットずれを補正しないと見た目が片側へ寄る
+            BattleSpawnPlacement.RecenterHorizontallyTo(playerModel, playerPosition);
+            BattleSpawnPlacement.RecenterHorizontallyTo(enemyModel, enemyPosition);
+            BattleSpawnPlacement.SnapBottomToGroundY(playerModel, groundY);
+            BattleSpawnPlacement.SnapBottomToGroundY(enemyModel, groundY);
         }
 
         private static void Place(Transform model, Transform point)

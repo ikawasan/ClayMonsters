@@ -53,25 +53,10 @@ namespace Battle
                 : Quaternion.identity;
 
             BattleSpawnPlacement.ApplyAt(winnerModel, center, facing, groundY);
-            RecenterHorizontally(winnerModel, center);
+            BattleSpawnPlacement.RecenterHorizontallyTo(winnerModel, center);
             BattleSpawnPlacement.SnapBottomToGroundY(winnerModel, groundY);
             winner.SyncMotionLayoutPosition();
             BattleVictoryWalkSpin.BeginWalk(winner);
-        }
-
-        // モデルのピボットずれを補正し見た目の中心を目標へ合わせる
-        private static void RecenterHorizontally(Transform model, Vector3 targetCenter)
-        {
-            if (model == null
-                || !BattleFieldFocusResolver.TryGetCombinedRendererBounds(model, model, out Bounds bounds))
-            {
-                return;
-            }
-
-            Vector3 offset = model.position - bounds.center;
-            Vector3 corrected = targetCenter + offset;
-            corrected.y = model.position.y;
-            model.position = corrected;
         }
 
         private static Transform ResolveModel(BattleStagingContext context, BattleUnit unit)

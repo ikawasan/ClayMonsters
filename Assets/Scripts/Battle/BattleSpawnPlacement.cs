@@ -73,6 +73,26 @@ namespace Battle
         }
 
         /// <summary>
+        /// ピボットずれを補正し見た目の中心を水平目標へ合わせる
+        /// glTF由来モデルは原点が中心とは限らないため描画基準で寄せ直す
+        /// </summary>
+        /// <param name="model">対象モデル</param>
+        /// <param name="targetCenter">合わせたい水平中心</param>
+        public static void RecenterHorizontallyTo(Transform model, Vector3 targetCenter)
+        {
+            if (model == null
+                || !BattleFieldFocusResolver.TryGetPosedModelBounds(model, out Bounds bounds))
+            {
+                return;
+            }
+
+            Vector3 offset = model.position - bounds.center;
+            Vector3 corrected = targetCenter + offset;
+            corrected.y = model.position.y;
+            model.position = corrected;
+        }
+
+        /// <summary>
         /// モデル下端を指定Yへ合わせる
         /// </summary>
         /// <param name="model">対象モデル</param>

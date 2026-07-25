@@ -7,6 +7,9 @@ namespace Battle
     /// </summary>
     public static class BattleFieldFocusResolver
     {
+        // ベイク結果の使い回し用で毎回のMesh確保を避ける
+        private static Mesh bakeMesh;
+
         /// <summary>
         /// 両モデル間の注視点を返す(高さは地面基準+オフセット)
         /// </summary>
@@ -130,11 +133,46 @@ namespace Battle
         }
 
         /// <summary>
+        /// 実姿勢のメッシュから単一モデルの境界を返す
+        /// スキンメッシュをベイクするため既定境界の誤りに影響されない
+        /// </summary>
+        /// <param name="model">対象モデル</param>
+        /// <param name="bounds">実姿勢の境界</param>
+        /// <returns>境界を取得できたか</returns>
+        public static bool TryGetPosedModelBounds(Transform model, out Bounds bounds)
+        {
+            bounds = default;
+            bool hasBounds = false;
+            EncapsulatePosedRenderers(model, ref bounds, ref hasBounds);
+            return hasBounds;
+        }
+
+        /// <summary>
+        /// 実姿勢のメッシュから両モデルの結合境界を返す
+        /// スキンメッシュをベイクするため既定境界の誤りに影響されない
+        /// </summary>
+        /// <param name="playerModel">プレイヤーモデル</param>
+        /// <param name="enemyModel">敵モデル</param>
+        /// <param name="bounds">実姿勢の結合境界</param>
+        /// <returns>境界を取得できたか</returns>
+        public static bool TryGetPosedCombinedBounds(
+            Transform playerModel,
+            Transform enemyModel,
+            out Bounds bounds)
+        {
+            bounds = default;
+            bool hasBounds = false;
+            EncapsulatePosedRenderers(playerModel, ref bounds, ref hasBounds);
+            EncapsulatePosedRenderers(enemyModel, ref bounds, ref hasBounds);
+            return hasBounds;
+        }
+
+        /// <summary>
         /// 画面上の左右方向へ投影したモデル半幅を返す
         /// </summary>
         public static float ResolveHorizontalHalfExtent(Transform model, float cameraHorizontalAngle)
         {
-            if (!TryGetModelRendererBounds(model, out Bounds bounds))
+            if (!TryGetPosedModelBounds(model, out Bounds bounds))
             {
                 return 0.75f;
             }
@@ -206,6 +244,154 @@ namespace Battle
             float distanceHorizontal = halfWidth / Mathf.Tan(horizontalRadians * 0.5f);
             float distance = Mathf.Max(distanceVertical, distanceHorizontal) * padding;
             return Mathf.Clamp(distance, minDistance, maxDistance);
+        }
+
+        /// <summary>
+        /// カメラ角度を考慮し境界全体が収まるオービット距離を返す
+        /// 境界の8頂点を画面右上奥へ投影し必要距離と奥行き余裕を足す
+        /// </summary>
+        /// <param name="bounds">対象境界</param>
+        /// <param name="horizontalAngleDegrees">水平オービット角</param>
+        /// <param name="verticalAngleDegrees">垂直オービット角</param>
+        /// <param name="verticalFovDegrees">垂直FOV</param>
+        /// <param name="aspect">アスペクト比</param>
+        /// <param name="padding">余白係数(小さいほど寄る)</param>
+        /// <param name="minDistance">最小距離</param>
+        /// <param name="maxDistance">最大距離</param>
+        /// <returns>オービット距離</returns>
+        public static float ResolveOrbitDistanceForBounds(
+            Bounds bounds,
+            float horizontalAngleDegrees,
+            float verticalAngleDegrees,
+            float verticalFovDegrees,
+            float aspect,
+            float padding,
+            float minDistance,
+            float maxDistance)
+        {
+            Quaternion orbit = Quaternion.Euler(verticalAngleDegrees, horizontalAngleDegrees, 0f);
+            Vector3 right = orbit * Vector3.right;
+            Vector3 up = orbit * Vector3.up;
+            Vector3 forward = orbit * Vector3.forward;
+
+            Vector3 extents = bounds.extents;
+            float halfWidth = 0f;
+            float halfHeight = 0f;
+            float halfDepth = 0f;
+
+            for (int x = -1; x <= 1; x += 2)
+            {
+                for (int y = -1; y <= 1; y += 2)
+                {
+                    for (int z = -1; z <= 1; z += 2)
+                    {
+                        Vector3 offset = Vector3.Scale(extents, new Vector3(x, y, z));
+                        halfWidth = Mathf.Max(halfWidth, Mathf.Abs(Vector3.Dot(offset, right)));
+                        halfHeight = Mathf.Max(halfHeight, Mathf.Abs(Vector3.Dot(offset, up)));
+                        halfDepth = Mathf.Max(halfDepth, Mathf.Abs(Vector3.Dot(offset, forward)));
+                    }
+                }
+            }
+
+            float verticalRadians = Mathf.Max(1f, verticalFovDegrees) * Mathf.Deg2Rad;
+            float safeAspect = Mathf.Max(0.1f, aspect);
+            float horizontalRadians = 2f * Mathf.Atan(Mathf.Tan(verticalRadians * 0.5f) * safeAspect);
+
+            float distanceVertical = halfHeight / Mathf.Tan(verticalRadians * 0.5f);
+            float distanceHorizontal = halfWidth / Mathf.Tan(horizontalRadians * 0.5f);
+            // 手前側の膨らみが画角から外れないよう奥行き半分を足す
+            float distance =
+                (Mathf.Max(distanceVertical, distanceHorizontal) * Mathf.Max(0.01f, padding)) + halfDepth;
+            return Mathf.Clamp(distance, minDistance, maxDistance);
+        }
+
+        private static void EncapsulatePosedRenderers(Transform model, ref Bounds bounds, ref bool hasBounds)
+        {
+            if (model == null)
+            {
+                return;
+            }
+
+            SkinnedMeshRenderer[] skinnedRenderers = model.GetComponentsInChildren<SkinnedMeshRenderer>(false);
+            for (int i = 0; i < skinnedRenderers.Length; i++)
+            {
+                SkinnedMeshRenderer skinnedRenderer = skinnedRenderers[i];
+                if (skinnedRenderer == null || !skinnedRenderer.enabled)
+                {
+                    continue;
+                }
+
+                EncapsulateBakedSkinned(skinnedRenderer, ref bounds, ref hasBounds);
+            }
+
+            MeshRenderer[] meshRenderers = model.GetComponentsInChildren<MeshRenderer>(false);
+            for (int i = 0; i < meshRenderers.Length; i++)
+            {
+                MeshRenderer meshRenderer = meshRenderers[i];
+                if (meshRenderer == null || !meshRenderer.enabled)
+                {
+                    continue;
+                }
+
+                EncapsulateBounds(meshRenderer.bounds, ref bounds, ref hasBounds);
+            }
+        }
+
+        private static void EncapsulateBakedSkinned(
+            SkinnedMeshRenderer skinnedRenderer,
+            ref Bounds bounds,
+            ref bool hasBounds)
+        {
+            Mesh posedMesh = GetBakeMesh();
+            // useScaleをfalseにしTransformPointとのスケール二重適用を避ける
+            skinnedRenderer.BakeMesh(posedMesh, false);
+            Vector3[] vertices = posedMesh.vertices;
+            if (vertices.Length == 0)
+            {
+                EncapsulateBounds(skinnedRenderer.bounds, ref bounds, ref hasBounds);
+                return;
+            }
+
+            Transform rendererTransform = skinnedRenderer.transform;
+            for (int i = 0; i < vertices.Length; i++)
+            {
+                Vector3 world = rendererTransform.TransformPoint(vertices[i]);
+                if (!hasBounds)
+                {
+                    bounds = new Bounds(world, Vector3.zero);
+                    hasBounds = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(world);
+                }
+            }
+        }
+
+        private static void EncapsulateBounds(Bounds source, ref Bounds bounds, ref bool hasBounds)
+        {
+            if (!hasBounds)
+            {
+                bounds = source;
+                hasBounds = true;
+                return;
+            }
+
+            bounds.Encapsulate(source);
+        }
+
+        private static Mesh GetBakeMesh()
+        {
+            if (bakeMesh == null)
+            {
+                bakeMesh = new Mesh
+                {
+                    name = "BattleFieldFocusResolverBake",
+                    hideFlags = HideFlags.HideAndDontSave
+                };
+            }
+
+            return bakeMesh;
         }
 
         private static bool EncapsulateRenderers(Transform model, ref Bounds bounds, ref bool hasBounds)
