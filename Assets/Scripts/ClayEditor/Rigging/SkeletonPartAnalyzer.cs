@@ -7,7 +7,7 @@ namespace ClayEditor.Rigging
     /// 生成済みボーン階層を解析し、各枝(分岐点または末端までの一本道)を脚、腕、前(頭)、後ろ(尻尾)、胴体に分類して
     /// 実行可能なモーションを判定する、また各ボーンの部位分類も返す
     /// 前提として、モデルは立ち姿勢(上がワールドY)かつ正面がワールド+Zで造形される
-    /// 脚は下方向(-Y)、腕は左右方向(X)、頭は前方(+Z)、尻尾は後方(-Z)に伸びるものとして分類する
+    /// 脚は下方向(-Y)、腕は左右方向(X)、頭は前方(+Z)または上方向(+Y)、尻尾は後方(-Z)に伸びるものとして分類する
     /// ルート直下に限らず、胴体の途中から分岐する腕や脚も枝として個別に評価する
     /// </summary>
     public class SkeletonPartAnalyzer : MonoBehaviour
@@ -16,6 +16,10 @@ namespace ClayEditor.Rigging
         [Tooltip("枝を脚とみなす下方向(-Y)成分のしきい値、向きベクトルのy成分がこの値より小さいと脚")]
         [Range(-1f, 0f)]
         [SerializeField] private float legDownThreshold = -0.5f;
+
+        [Tooltip("枝を頭とみなす上方向(+Y)成分のしきい値、向きベクトルのy成分がこの値より大きいと頭")]
+        [Range(0f, 1f)]
+        [SerializeField] private float headUpThreshold = 0.5f;
 
         [Tooltip("枝を腕とみなす左右(X)成分のしきい値、向きベクトルの|x|がこの値より大きいと腕候補")]
         [Range(0f, 1f)]
@@ -281,6 +285,12 @@ namespace ClayEditor.Rigging
             if (dir.y < legDownThreshold)
             {
                 return BonePart.Leg;
+            }
+
+            // 上方向に伸びていれば頭
+            if (dir.y > headUpThreshold)
+            {
+                return BonePart.Front;
             }
 
             float absX = Mathf.Abs(dir.x);
