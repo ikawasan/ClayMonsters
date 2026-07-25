@@ -60,6 +60,10 @@ namespace Scene.ClayEditScene
         [SerializeField] ClayEditRemakeLoadSlotView clayEditRemakeLoadSlotView;
         [SerializeField] ClayEditEditorUiGate clayEditEditorUiGate;
 
+        [Header("Editor Only")]
+        [Tooltip("FBX頂点カラースポーンEditor専用ROMには含めない")]
+        [SerializeField] ClayEditFbxVertexColorSpawner fbxVertexColorSpawner;
+
         [Header("Visualizer")]
         [SerializeField] ClayBoneVisualizer clayBoneVisualizer;
         [SerializeField] SkeletonPartAnalyzer skeletonPartAnalyzer;
@@ -127,6 +131,14 @@ namespace Scene.ClayEditScene
 
             builder.RegisterComponent(clayBoneVisualizer);
             builder.RegisterComponent(skeletonPartAnalyzer);
+
+#if UNITY_EDITOR
+            builder.Register<ClayEditFbxVertexColorImporter>(Lifetime.Singleton);
+            if (fbxVertexColorSpawner != null)
+            {
+                builder.RegisterComponent(fbxVertexColorSpawner);
+            }
+#endif
         }
 
         private void PrepareClayEditPresentation()

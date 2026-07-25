@@ -25690,6 +25690,7 @@ GameObject:
   - component: {fileID: 559890490}
   - component: {fileID: 2888800203}
   - component: {fileID: 2888800204}
+  - component: {fileID: 2888800301}
   m_Layer: 0
   m_Name: ClayEditScene
   m_TagString: Untagged
@@ -25734,8 +25735,26 @@ MonoBehaviour:
   clayEditEntryView: {fileID: 308875486}
   clayEditRemakeLoadSlotView: {fileID: 342097873}
   clayEditEditorUiGate: {fileID: 2888800204}
+  fbxVertexColorSpawner: {fileID: 2888800301}
   clayBoneVisualizer: {fileID: 1797157980}
   skeletonPartAnalyzer: {fileID: 1797157981}
+--- !u!114 &2888800301
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 559890489}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9f5dcf38c7af4526992ab7e9c0283074, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Scene::Scene.ClayEditScene.ClayEditFbxVertexColorSpawner
+  fbxModel: {fileID: 0}
+  spawnParent: {fileID: 310977140}
+  clayMaterial: {fileID: 2100000, guid: 0e7962f18c7a2884da9712516f584949, type: 2}
+  defaultVertexColor: {r: 0.94, g: 0.86, b: 0.74, a: 1}
+  keepSpawnedMeshPreview: 0
 --- !u!114 &559890491
 MonoBehaviour:
   m_ObjectHideFlags: 0
