@@ -122,16 +122,12 @@ namespace UI.ClayEditor.View
 
             if (requiredPartIcon != null)
             {
-                requiredPartIcon.sprite = null;
-                requiredPartIcon.enabled = false;
-                requiredPartIcon.color = new Color(1f, 1f, 1f, 0f);
+                ClearPartIcon(requiredPartIcon);
             }
 
             if (targetPartIcon != null)
             {
-                targetPartIcon.sprite = null;
-                targetPartIcon.enabled = false;
-                targetPartIcon.color = new Color(1f, 1f, 1f, 0f);
+                ClearPartIcon(targetPartIcon);
             }
 
             if (rangeBar != null)
@@ -235,6 +231,19 @@ namespace UI.ClayEditor.View
                     usable: false,
                     preserveSegmentHierarchy: true);
             }
+        }
+
+        private void ClearPartIcon(Image iconImage)
+        {
+            Image resolvedIcon = ResolvePartIconImage(iconImage);
+            if (resolvedIcon == null)
+            {
+                return;
+            }
+
+            resolvedIcon.sprite = null;
+            resolvedIcon.enabled = false;
+            resolvedIcon.color = new Color(1f, 1f, 1f, 0f);
         }
 
         private void ClearPartIconForConfirmPrefab(Image iconImage)

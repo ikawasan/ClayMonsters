@@ -61,15 +61,13 @@ namespace UI.ClayEditor.View
             iconImage.color = Color.white;
             iconImage.preserveAspect = true;
             iconImage.type = Image.Type.Simple;
+            iconImage.enabled = true;
             DisableFrameImage(iconImage);
 
-            if (preserveGameObjectActive)
+            if (!preserveGameObjectActive)
             {
-                iconImage.enabled = true;
-                return;
+                iconImage.gameObject.SetActive(true);
             }
-
-            iconImage.gameObject.SetActive(true);
         }
 
         private static Image ResolveIconImage(Image image)
