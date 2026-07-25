@@ -47,6 +47,8 @@ namespace SaveData
 
             // 組み立てたRootのみをシーンのルートとして追加する
             var bonesInHierarchy = CloneBonesHierarchy(boneRoot);
+            // ボーン階層に元メッシュが含まれるとglbへ二重に書き出されるため複製側から取り除く
+            StripRenderers(bonesInHierarchy);
             var meshObject = CreateMeshObject(runtimeRenderer, exportMesh, bonesInHierarchy.transform);
             export.AddScene(new[] { bonesInHierarchy, meshObject });
 
@@ -59,6 +61,25 @@ namespace SaveData
             Object.Destroy(exportMesh);
 
             return success;
+        }
+
+        /// <summary>
+        /// 複製ボーン階層からレンダラーを取り除く
+        /// AddSceneが同フレームで参照するためDestroyImmediateを使う
+        /// </summary>
+        private static void StripRenderers(GameObject clonedRoot)
+        {
+            Renderer[] renderers = clonedRoot.GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Object.DestroyImmediate(renderers[i]);
+            }
+
+            MeshFilter[] meshFilters = clonedRoot.GetComponentsInChildren<MeshFilter>(true);
+            for (int i = 0; i < meshFilters.Length; i++)
+            {
+                Object.DestroyImmediate(meshFilters[i]);
+            }
         }
 
         /// <summary>
