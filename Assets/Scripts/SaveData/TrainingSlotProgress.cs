@@ -41,6 +41,11 @@ namespace SaveData
         public int stamina;
 
         /// <summary>
+        /// やる気(0〜3)
+        /// </summary>
+        public int motivation = 2;
+
+        /// <summary>
         /// 所持金
         /// </summary>
         public int money;

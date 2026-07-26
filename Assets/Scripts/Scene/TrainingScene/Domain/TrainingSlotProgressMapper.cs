@@ -77,6 +77,7 @@ namespace Scene.TrainingScene.Domain
                 day = (int)session.CurrentDay,
                 turnIndexInDay = session.TurnIndexInDay,
                 stamina = session.Stamina,
+                motivation = (int)session.Motivation,
                 money = session.Money,
                 trainGreatSuccessBonusPercent = session.TrainGreatSuccessBonusPercent,
                 trainGreatSuccessBonusWeeks = session.TrainGreatSuccessBonusWeeks,
@@ -168,7 +169,8 @@ namespace Scene.TrainingScene.Domain
                 $"{TrainingDayCatalog.GetDisplayName((TrainingDayOfWeek)progress.day)}"
                 + (string.IsNullOrEmpty(periodLabel) ? string.Empty : $" {periodLabel}")
                 + $", 所持金 {progress.money}G"
-                + $", 体力 {progress.stamina} / {TrainingSettings.MaxStamina}";
+                + $", 体力 {progress.stamina} / {TrainingSettings.MaxStamina}"
+                + $", やる気 {TrainingMotivationCatalog.GetDisplayName(TrainingMotivationCatalog.Clamp(progress.motivation))}";
             ModelStatus status = progress.status ?? new ModelStatus();
             string statsText =
                 $"HP {status.hp}\n"
@@ -217,6 +219,7 @@ namespace Scene.TrainingScene.Domain
             return $"{TrainingDayCatalog.GetDisplayName((TrainingDayOfWeek)progress.day)}"
                 + (string.IsNullOrEmpty(periodLabel) ? string.Empty : $" {periodLabel}")
                 + $" 体力{progress.stamina}/{TrainingSettings.MaxStamina}"
+                + $" やる気{TrainingMotivationCatalog.GetDisplayName(TrainingMotivationCatalog.Clamp(progress.motivation))}"
                 + $" {progress.money}G"
                 + $"\nHP {status.hp} 攻撃 {status.attack}"
                 + $" 防御 {status.defense} 速度 {status.speed}"
