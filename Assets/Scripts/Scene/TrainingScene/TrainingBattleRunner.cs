@@ -660,7 +660,12 @@ namespace Scene.TrainingScene
                 {
                     await FadeOutForTrainingRestoreAsync(cancellationToken);
                     DestroyEnemyModel();
-                    await RestoreTrainingViewAsync(playerModel, cancellationToken, skipInitialFade: true);
+                    // 結果テキスト準備まで黒画面を維持するためここではフェード明けしない
+                    await RestoreTrainingViewAsync(
+                        playerModel,
+                        cancellationToken,
+                        skipInitialFade: true,
+                        skipFadeIn: true);
                     SetBattleSceneActive(false);
                 }
             }
@@ -792,7 +797,8 @@ namespace Scene.TrainingScene
         private async UniTask RestoreTrainingViewAsync(
             GameObject playerModel,
             CancellationToken cancellationToken,
-            bool skipInitialFade = false)
+            bool skipInitialFade = false,
+            bool skipFadeIn = false)
         {
             if (!skipInitialFade)
             {
@@ -836,13 +842,16 @@ namespace Scene.TrainingScene
 
             hudView?.Show();
 
-            if (canvasTransition != null)
+            if (!skipFadeIn)
             {
-                await canvasTransition.FadeInAsync(cancellationToken);
-            }
-            else if (sceneFade != null)
-            {
-                await sceneFade.FadeInAsync(cancellationToken);
+                if (canvasTransition != null)
+                {
+                    await canvasTransition.FadeInAsync(cancellationToken);
+                }
+                else if (sceneFade != null)
+                {
+                    await sceneFade.FadeInAsync(cancellationToken);
+                }
             }
 
             if (bgmService != null)

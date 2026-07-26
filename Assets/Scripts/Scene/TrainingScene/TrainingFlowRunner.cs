@@ -1384,8 +1384,14 @@ namespace Scene.TrainingScene
                     continue;
                 }
 
+                TrainingShopItem selectedItem = offerItems[choice];
+                if (string.IsNullOrEmpty(selectedItem.Id))
+                {
+                    continue;
+                }
+
                 TrainingShopPurchaseResult purchase =
-                    TrainingShopResolver.TryPurchase(session, offerItems[choice]);
+                    TrainingShopResolver.TryPurchase(session, selectedItem);
                 CheckpointSave(session);
                 hudView.BindSession(session);
                 hudView.SetLogMessage(purchase.Message);
@@ -1628,6 +1634,7 @@ namespace Scene.TrainingScene
             if (!battleResult.Played)
             {
                 hudView.SetLogMessage("強敵急襲の戦闘を開始できませんでした");
+                await FadeInAfterBattleResultReadyAsync(cancellationToken);
                 await hudView.WaitContinueAsync(cancellationToken);
                 return;
             }
@@ -1651,6 +1658,7 @@ namespace Scene.TrainingScene
                 hudView.SetLogMessage($"【強敵急襲】\n{enemyName}に敗北した\nやる気が下がった");
             }
 
+            await FadeInAfterBattleResultReadyAsync(cancellationToken);
             await hudView.WaitContinueAsync(cancellationToken);
         }
 
@@ -1734,8 +1742,10 @@ namespace Scene.TrainingScene
 
             if (!battleResult.Played)
             {
+                ApplyDefaultDestinationPresentation();
                 hudView.SetLogMessage("放課後の戦闘を開始できませんでした");
                 session.CompletePeriod();
+                await FadeInAfterBattleResultReadyAsync(cancellationToken);
                 await hudView.WaitContinueAsync(cancellationToken);
                 return;
             }
@@ -1769,6 +1779,7 @@ namespace Scene.TrainingScene
                     "放課後の戦闘に敗北した\nやる気が下がった\n売店の商品が入れ替わった");
             }
 
+            await FadeInAfterBattleResultReadyAsync(cancellationToken);
             await hudView.WaitContinueAsync(cancellationToken);
             session.CompletePeriod();
         }
@@ -2008,6 +2019,18 @@ namespace Scene.TrainingScene
             StopMonsterRoam();
             backgroundView?.ShowDefaultBackground();
             locationCameraView?.ApplyDefaultView();
+        }
+
+        /// <summary>
+        /// 戦闘復帰後に結果テキストとカメラを揃えてからフェード明けする
+        /// </summary>
+        private async UniTask FadeInAfterBattleResultReadyAsync(CancellationToken cancellationToken)
+        {
+            await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate, cancellationToken);
+            if (canvasTransition != null)
+            {
+                await canvasTransition.FadeInAsync(cancellationToken);
+            }
         }
 
         private void ApplyRoamDestinationPresentation()
