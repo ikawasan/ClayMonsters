@@ -8629,6 +8629,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ClayEditor.Rigging::ClayEditor.Rigging.SkeletonPartAnalyzer
   legDownThreshold: -0.5
+  headUpThreshold: 0.5
   armSideThreshold: 0.5
   frontBackThreshold: 0.5
   minLegsForWalk: 2
@@ -8766,13 +8767,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2100000302}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.073386915, y: 0.89253896, z: -0.41619772, w: 0.15737876}
+  m_LocalRotation: {x: 0.42261827, y: 0, z: 0, w: 0.9063079}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2100000301}
-  m_LocalEulerAnglesHint: {x: 50, y: 160, z: 0}
+  m_LocalEulerAnglesHint: {x: 50, y: 0, z: 0}
 --- !u!108 &2100000304
 Light:
   m_ObjectHideFlags: 0
