@@ -66,7 +66,7 @@ namespace SaveData
         public List<TrainingInventoryEntry> inventory = new List<TrainingInventoryEntry>();
 
         /// <summary>
-        /// 売店に並んでいる商品ID(常に最大3件)
+        /// 売店に並んでいる商品ID(常に最大3件空文字は売り切れ枠)
         /// </summary>
         public List<string> shopOfferItemIds = new List<string>();
 

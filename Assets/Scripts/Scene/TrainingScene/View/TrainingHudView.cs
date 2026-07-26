@@ -541,9 +541,9 @@ namespace Scene.TrainingScene.View
                     continue;
                 }
 
-                bool visible = i < visibleItemCount;
-                button.gameObject.SetActive(visible);
-                if (!visible)
+                bool hasItem = i < visibleItemCount && !string.IsNullOrEmpty(items[i].Id);
+                button.gameObject.SetActive(hasItem);
+                if (!hasItem)
                 {
                     continue;
                 }

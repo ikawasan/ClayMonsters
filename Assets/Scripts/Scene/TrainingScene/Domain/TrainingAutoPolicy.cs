@@ -186,7 +186,7 @@ namespace Scene.TrainingScene.Domain
             item = default;
             for (int i = 0; i < offer.Count; i++)
             {
-                if (offer[i].ItemType != itemType)
+                if (string.IsNullOrEmpty(offer[i].Id) || offer[i].ItemType != itemType)
                 {
                     continue;
                 }

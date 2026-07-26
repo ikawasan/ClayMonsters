@@ -277,8 +277,8 @@ namespace Scene.TrainingScene.Domain
         }
 
         /// <summary>
-        /// 購入した商品を陳列から外す
-        /// 同じ来店中は空枠へ補充しない
+        /// 購入した商品を売り切れ枠にする
+        /// 同じ来店中は空枠へ補充せず位置も詰めない
         /// </summary>
         /// <param name="itemId">商品ID</param>
         public bool TryRemoveShopOfferItem(string itemId)
@@ -295,7 +295,7 @@ namespace Scene.TrainingScene.Domain
                     continue;
                 }
 
-                shopOfferItemIds.RemoveAt(i);
+                shopOfferItemIds[i] = string.Empty;
                 return true;
             }
 
@@ -304,10 +304,25 @@ namespace Scene.TrainingScene.Domain
 
         /// <summary>
         /// 現在の売店陳列を返す
+        /// 売り切れ枠は空IDの要素として位置を保つ
         /// </summary>
         public List<TrainingShopItem> GetShopOfferItems()
         {
-            return TrainingShopCatalog.ResolveItems(shopOfferItemIds);
+            var items = new List<TrainingShopItem>(shopOfferItemIds.Count);
+            for (int i = 0; i < shopOfferItemIds.Count; i++)
+            {
+                string itemId = shopOfferItemIds[i];
+                if (string.IsNullOrEmpty(itemId)
+                    || !TrainingShopCatalog.TryGetById(itemId, out TrainingShopItem item))
+                {
+                    items.Add(default);
+                    continue;
+                }
+
+                items.Add(item);
+            }
+
+            return items;
         }
 
         /// <summary>
@@ -332,6 +347,8 @@ namespace Scene.TrainingScene.Domain
                 if (string.IsNullOrEmpty(itemId)
                     || !TrainingShopCatalog.TryGetById(itemId, out _))
                 {
+                    // 売り切れや不正IDも枠位置を保つ
+                    shopOfferItemIds.Add(string.Empty);
                     continue;
                 }
 
@@ -347,6 +364,7 @@ namespace Scene.TrainingScene.Domain
 
                 if (duplicate)
                 {
+                    shopOfferItemIds.Add(string.Empty);
                     continue;
                 }
 

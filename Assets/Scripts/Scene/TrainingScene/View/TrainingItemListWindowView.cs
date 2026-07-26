@@ -198,8 +198,9 @@ namespace Scene.TrainingScene.View
                     continue;
                 }
 
-                if (i >= count)
+                if (i >= count || string.IsNullOrEmpty(items[i].Id))
                 {
+                    // 売り切れ枠は隠すがスロット位置は維持する
                     slot.Hide();
                     continue;
                 }
