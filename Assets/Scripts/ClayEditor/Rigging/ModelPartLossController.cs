@@ -8,7 +8,7 @@ namespace ClayEditor.Rigging
     /// ロードしたモデルに「部位欠損」を行うコントローラ。
     /// SkeletonPartAnalyzer でボーンを部位(腕/脚/前/後/胴)に分類し、
     /// 指定部位のボーンにウェイトが乗った頂点を除去してメッシュを作り直す。
-    /// 除去で開いた切断面は扇状の三角形で塞ぐ(傷口キャップ)。
+    /// 除去で開いた切断面は平滑化した境界を内側へへこませて塞ぐ。
     /// 欠損は累積し、RestoreAll で元に戻せる。
     /// 戦闘中もメッシュ再構築で傷口を塞ぎリムの発光を抑える。
     ///
@@ -38,6 +38,26 @@ namespace ClayEditor.Rigging
 
         [Tooltip("キャップ三角形を追加するサブメッシュ番号")]
         [SerializeField] private int capSubMeshIndex = 0;
+
+        [Tooltip("切断面境界の平滑化回数")]
+        [Range(0, 8)]
+        [SerializeField] private int woundLoopSmoothPasses = 4;
+
+        [Tooltip("切断面境界の平滑化強度")]
+        [Range(0f, 1f)]
+        [SerializeField] private float woundLoopSmoothStrength = 0.7f;
+
+        [Tooltip("へこみ深さ(断面半径に対する比率)")]
+        [Range(0.05f, 1.2f)]
+        [SerializeField] private float woundRecessDepthScale = 0.42f;
+
+        [Tooltip("縁のわずかなへこみ(断面半径に対する比率)")]
+        [Range(0f, 0.4f)]
+        [SerializeField] private float woundRimInsetScale = 0.1f;
+
+        [Tooltip("へこみの中間リング数多いほど滑らかな凹みになる")]
+        [Range(0, 3)]
+        [SerializeField] private int woundConcentricRings = 1;
 
         [Tooltip("戦闘中に断面の発光を抑える頂点色アルファしきい値")]
         [Range(0f, 1f)]
@@ -1082,7 +1102,7 @@ namespace ClayEditor.Rigging
             skinnedRenderer.sharedMesh = newMesh;
         }
 
-        // 除去で新たに開いた境界エッジをループ化し、扇状三角形で塞ぐ
+        // 除去で新たに開いた境界エッジをループ化しへこんだ断面で塞ぐ
         private void BuildCaps(
             Vector3[] srcVertices, Vector3[] srcNormals, Vector4[] srcTangents,
             Vector2[] srcUv, Vector2[] srcUv2, Color[] srcColors, BoneWeight[] srcWeights,
@@ -1165,7 +1185,7 @@ namespace ClayEditor.Rigging
             }
         }
 
-        // 1つの境界ループを中心点からの扇で塞ぐ
+        // 1つの境界ループを平滑化し内側へへこませて塞ぐ
         private void CapLoop(
             List<int> loop,
             Vector3[] srcVertices, Vector3[] srcNormals, Vector4[] srcTangents,
@@ -1174,21 +1194,26 @@ namespace ClayEditor.Rigging
             Vector3 bodyCenter, MeshBuffers buf, List<int> capTriangles)
         {
             int count = loop.Count;
+            var positions = new Vector3[count];
+            for (int i = 0; i < count; i++)
+            {
+                positions[i] = srcVertices[loop[i]];
+            }
 
-            // 中心点
+            SmoothClosedLoop(positions, woundLoopSmoothPasses, woundLoopSmoothStrength);
+
             Vector3 centroid = Vector3.zero;
             for (int i = 0; i < count; i++)
             {
-                centroid += srcVertices[loop[i]];
+                centroid += positions[i];
             }
             centroid /= count;
 
-            // ループ平面の法線(Newell法)を外向きにそろえる
             Vector3 normal = Vector3.zero;
             for (int i = 0; i < count; i++)
             {
-                Vector3 c0 = srcVertices[loop[i]];
-                Vector3 c1 = srcVertices[loop[(i + 1) % count]];
+                Vector3 c0 = positions[i];
+                Vector3 c1 = positions[(i + 1) % count];
                 normal.x += (c0.y - c1.y) * (c0.z + c1.z);
                 normal.y += (c0.z - c1.z) * (c0.x + c1.x);
                 normal.z += (c0.x - c1.x) * (c0.y + c1.y);
@@ -1199,48 +1224,114 @@ namespace ClayEditor.Rigging
                 normal = -normal;
             }
 
-            Color capColor = woundColor;
-            bool hasSourceColors = srcColors.Length == srcVertices.Length;
-
-            // ループ各頂点を複製して追加(平らなキャップにするため法線はキャップ法線)
-            int capStart = buf.vertices.Count;
             for (int i = 0; i < count; i++)
             {
-                int s = loop[i];
-                Color capVertexColor = useWoundColor ? capColor : (hasSourceColors ? srcColors[s] : Color.white);
-                capVertexColor.a = 0f;
-                AppendVertex(buf, srcVertices[s], normal,
-                    hasTangents ? srcTangents[s] : default,
-                    hasUv ? srcUv[s] : default,
-                    hasUv2 ? srcUv2[s] : default,
-                    capVertexColor,
-                    hasWeights ? srcWeights[s] : default,
-                    hasNormals, hasTangents, hasUv, hasUv2, true, hasWeights);
+                positions[i] = ProjectOntoPlane(positions[i], centroid, normal);
             }
 
-            // 中心頂点(属性はループ先頭から流用)
-            int s0 = loop[0];
+            float radius = 0f;
+            for (int i = 0; i < count; i++)
+            {
+                radius += Vector3.Distance(positions[i], centroid);
+            }
+            radius = Mathf.Max(radius / count, 1e-4f);
+
+            float recessDepth = radius * woundRecessDepthScale;
+            float rimInset = radius * woundRimInsetScale;
+            Vector3 inward = -normal;
+            int ringCount = Mathf.Max(0, woundConcentricRings);
+            int ringLayerCount = ringCount + 1;
+
+            Color capColor = woundColor;
+            bool hasSourceColors = srcColors.Length == srcVertices.Length;
+            BoneWeight averagedWeight = AverageLoopWeights(loop, srcWeights, hasWeights);
+
+            int firstRingStart = buf.vertices.Count;
+            for (int ring = 0; ring < ringLayerCount; ring++)
+            {
+                float ringT = ringCount == 0 ? 0f : ring / (float)(ringCount + 1);
+                float inset = Mathf.Lerp(rimInset, recessDepth, ringT);
+
+                for (int i = 0; i < count; i++)
+                {
+                    int sourceIndex = loop[i];
+                    Vector3 ringPos = Vector3.Lerp(positions[i], centroid, ringT) + inward * inset;
+                    Vector3 radial = Vector3.ProjectOnPlane(positions[i] - centroid, normal);
+                    Vector3 ringNormal = normal;
+                    if (radial.sqrMagnitude > 1e-8f)
+                    {
+                        // 凹み内壁が見えるよう軸側へ少し傾ける
+                        float tilt = 0.12f + ringT * 0.55f;
+                        ringNormal = Vector3.Normalize(normal - radial.normalized * tilt);
+                    }
+
+                    Color capVertexColor = useWoundColor
+                        ? capColor
+                        : (hasSourceColors ? srcColors[sourceIndex] : Color.white);
+                    capVertexColor.a = 0f;
+                    AppendVertex(
+                        buf,
+                        ringPos,
+                        ringNormal,
+                        hasTangents ? srcTangents[sourceIndex] : default,
+                        hasUv ? srcUv[sourceIndex] : default,
+                        hasUv2 ? srcUv2[sourceIndex] : default,
+                        capVertexColor,
+                        hasWeights ? srcWeights[sourceIndex] : default,
+                        hasNormals,
+                        hasTangents,
+                        hasUv,
+                        hasUv2,
+                        true,
+                        hasWeights);
+                }
+            }
+
             int centerIndex = buf.vertices.Count;
+            int s0 = loop[0];
             Color centerColor = useWoundColor ? capColor : (hasSourceColors ? srcColors[s0] : Color.white);
             centerColor.a = 0f;
-            AppendVertex(buf, centroid, normal,
+            AppendVertex(
+                buf,
+                centroid + inward * recessDepth,
+                normal,
                 hasTangents ? srcTangents[s0] : default,
                 hasUv ? srcUv[s0] : default,
                 hasUv2 ? srcUv2[s0] : default,
                 centerColor,
-                hasWeights ? srcWeights[s0] : default,
-                hasNormals, hasTangents, hasUv, hasUv2, true, hasWeights);
+                averagedWeight,
+                hasNormals,
+                hasTangents,
+                hasUv,
+                hasUv2,
+                true,
+                hasWeights);
 
-            // 扇の巻き方向を法線に合わせて決める
-            Vector3 a0 = buf.vertices[capStart];
-            Vector3 b0 = buf.vertices[capStart + 1 % count];
-            Vector3 faceNormal = Vector3.Cross(a0 - centroid, b0 - centroid);
+            int outerStart = firstRingStart;
+            Vector3 a0 = buf.vertices[outerStart];
+            Vector3 b0 = buf.vertices[outerStart + 1];
+            Vector3 faceNormal = Vector3.Cross(a0 - (centroid + inward * recessDepth), b0 - (centroid + inward * recessDepth));
             bool flip = Vector3.Dot(faceNormal, normal) < 0f;
 
+            for (int ring = 0; ring < ringCount; ring++)
+            {
+                int ringA = firstRingStart + ring * count;
+                int ringB = firstRingStart + (ring + 1) * count;
+                for (int i = 0; i < count; i++)
+                {
+                    int a0i = ringA + i;
+                    int a1i = ringA + (i + 1) % count;
+                    int b0i = ringB + i;
+                    int b1i = ringB + (i + 1) % count;
+                    AddCapQuad(capTriangles, a0i, a1i, b0i, b1i, flip);
+                }
+            }
+
+            int innerRingStart = firstRingStart + ringCount * count;
             for (int i = 0; i < count; i++)
             {
-                int a = capStart + i;
-                int b = capStart + (i + 1) % count;
+                int a = innerRingStart + i;
+                int b = innerRingStart + (i + 1) % count;
                 if (flip)
                 {
                     capTriangles.Add(centerIndex);
@@ -1253,6 +1344,136 @@ namespace ClayEditor.Rigging
                     capTriangles.Add(a);
                     capTriangles.Add(b);
                 }
+            }
+        }
+
+        private static void SmoothClosedLoop(Vector3[] positions, int passes, float strength)
+        {
+            if (positions == null || positions.Length < 3 || passes <= 0 || strength <= 0f)
+            {
+                return;
+            }
+
+            float t = Mathf.Clamp01(strength);
+            var next = new Vector3[positions.Length];
+            for (int pass = 0; pass < passes; pass++)
+            {
+                for (int i = 0; i < positions.Length; i++)
+                {
+                    Vector3 prev = positions[(i - 1 + positions.Length) % positions.Length];
+                    Vector3 cur = positions[i];
+                    Vector3 nxt = positions[(i + 1) % positions.Length];
+                    next[i] = Vector3.Lerp(cur, (prev + nxt) * 0.5f, t);
+                }
+
+                for (int i = 0; i < positions.Length; i++)
+                {
+                    positions[i] = next[i];
+                }
+            }
+        }
+
+        private static Vector3 ProjectOntoPlane(Vector3 point, Vector3 planePoint, Vector3 planeNormal)
+        {
+            return point - planeNormal * Vector3.Dot(point - planePoint, planeNormal);
+        }
+
+        private static BoneWeight AverageLoopWeights(List<int> loop, BoneWeight[] srcWeights, bool hasWeights)
+        {
+            if (!hasWeights || srcWeights == null || loop == null || loop.Count == 0)
+            {
+                return default;
+            }
+
+            var boneAccum = new Dictionary<int, float>(8);
+            for (int i = 0; i < loop.Count; i++)
+            {
+                int vertexIndex = loop[i];
+                if (vertexIndex < 0 || vertexIndex >= srcWeights.Length)
+                {
+                    continue;
+                }
+
+                BoneWeight weight = srcWeights[vertexIndex];
+                AccumulateBoneWeight(boneAccum, weight.boneIndex0, weight.weight0);
+                AccumulateBoneWeight(boneAccum, weight.boneIndex1, weight.weight1);
+                AccumulateBoneWeight(boneAccum, weight.boneIndex2, weight.weight2);
+                AccumulateBoneWeight(boneAccum, weight.boneIndex3, weight.weight3);
+            }
+
+            if (boneAccum.Count == 0)
+            {
+                return srcWeights[loop[0]];
+            }
+
+            var ranked = new List<KeyValuePair<int, float>>(boneAccum);
+            ranked.Sort((a, b) => b.Value.CompareTo(a.Value));
+
+            float w0 = ranked.Count > 0 ? ranked[0].Value : 0f;
+            float w1 = ranked.Count > 1 ? ranked[1].Value : 0f;
+            float w2 = ranked.Count > 2 ? ranked[2].Value : 0f;
+            float w3 = ranked.Count > 3 ? ranked[3].Value : 0f;
+            float sum = w0 + w1 + w2 + w3;
+            if (sum <= 1e-6f)
+            {
+                return srcWeights[loop[0]];
+            }
+
+            return new BoneWeight
+            {
+                boneIndex0 = ranked.Count > 0 ? ranked[0].Key : 0,
+                boneIndex1 = ranked.Count > 1 ? ranked[1].Key : 0,
+                boneIndex2 = ranked.Count > 2 ? ranked[2].Key : 0,
+                boneIndex3 = ranked.Count > 3 ? ranked[3].Key : 0,
+                weight0 = w0 / sum,
+                weight1 = w1 / sum,
+                weight2 = w2 / sum,
+                weight3 = w3 / sum
+            };
+        }
+
+        private static void AccumulateBoneWeight(Dictionary<int, float> boneAccum, int boneIndex, float weight)
+        {
+            if (weight <= 0f)
+            {
+                return;
+            }
+
+            if (boneAccum.TryGetValue(boneIndex, out float existing))
+            {
+                boneAccum[boneIndex] = existing + weight;
+            }
+            else
+            {
+                boneAccum[boneIndex] = weight;
+            }
+        }
+
+        private static void AddCapQuad(
+            List<int> triangles,
+            int a0,
+            int a1,
+            int b0,
+            int b1,
+            bool flip)
+        {
+            if (flip)
+            {
+                triangles.Add(a0);
+                triangles.Add(b0);
+                triangles.Add(a1);
+                triangles.Add(a1);
+                triangles.Add(b0);
+                triangles.Add(b1);
+            }
+            else
+            {
+                triangles.Add(a0);
+                triangles.Add(a1);
+                triangles.Add(b0);
+                triangles.Add(a1);
+                triangles.Add(b1);
+                triangles.Add(b0);
             }
         }
 
