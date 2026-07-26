@@ -38,7 +38,14 @@ namespace Battle
         /// </summary>
         public const int MaxHit = 99;
         public const int DefaultHit = ModelStatusDefaults.DefaultHit;
-        public const float MoveSpeedPerPoint = 0.04f;
+        /// <summary>
+        /// 既定速度時の通常移動速度
+        /// </summary>
+        public const float BaseMoveSpeed = 0.4f;
+        /// <summary>
+        /// 既定速度からの1上昇あたりの移動速度加算
+        /// </summary>
+        public const float MoveSpeedPerPointAboveDefault = 0.008f;
         public const float MinMoveSpeed = 0.35f;
         public const float MinStepDistanceRatio = 0.45f;
 
@@ -78,7 +85,10 @@ namespace Battle
         /// <param name="speedFactor">部位欠損などの速度倍率</param>
         public static float ComputeMoveSpeed(int speed, float speedFactor)
         {
-            float baseSpeed = Mathf.Max(MinMoveSpeed, speed * MoveSpeedPerPoint);
+            float offset = speed - DefaultSpeed;
+            float baseSpeed = Mathf.Max(
+                MinMoveSpeed,
+                BaseMoveSpeed + offset * MoveSpeedPerPointAboveDefault);
             return baseSpeed * Mathf.Max(1f, speedFactor);
         }
 
@@ -90,7 +100,9 @@ namespace Battle
         /// <param name="referenceStepDistance">既定速度時のステップ距離</param>
         public static float ComputeStepDistance(int speed, float speedFactor, float referenceStepDistance)
         {
-            float ratio = speed / (float)DefaultSpeed;
+            float referenceMove = ComputeMoveSpeed(DefaultSpeed, 1f);
+            float currentMove = ComputeMoveSpeed(speed, 1f);
+            float ratio = currentMove / Mathf.Max(0.01f, referenceMove);
             float distance = referenceStepDistance * ratio * Mathf.Max(1f, speedFactor);
             float minimum = referenceStepDistance * MinStepDistanceRatio;
             return Mathf.Max(minimum, distance);
