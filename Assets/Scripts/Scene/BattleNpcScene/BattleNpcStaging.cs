@@ -34,9 +34,9 @@ namespace Scene.BattleNpcScene
 
         [Header("対戦紹介")]
         [SerializeField] private float matchupSideGapPadding = 0.55f;
-        [SerializeField] private float matchupMinSideSeparation = 1.5f;
-        [SerializeField] private float matchupMaxSideSeparation = 12f;
-        [SerializeField] private float matchupSideSeparation = 2.2f;
+        [SerializeField] private float matchupMinSideSeparation = 1.2f;
+        [SerializeField] private float matchupMaxSideSeparation = 24f;
+        [SerializeField] private float matchupSideSeparation = 1.5f;
         [SerializeField] private float matchupHorizontalAngle = 0f;
         [SerializeField] private float matchupVerticalAngle = 4f;
         [SerializeField] private float matchupDistance = 5.5f;
@@ -433,19 +433,12 @@ namespace Scene.BattleNpcScene
                 return;
             }
 
-            // 先に既定間隔で並べて向きを確定させる
-            BattleMatchupLayout.ApplyFromSpawns(
-                context.PlayerModel,
-                context.EnemyModel,
-                context.PlayerSpawn,
-                context.EnemySpawn,
+            // 短いキャラ向けの控えめな初期間隔で並べ隙間補正に任せる
+            // 前後に長いモデルはEnforceMatchupSideClearanceが外側へ広げる
+            float sideSeparation = Mathf.Clamp(
                 matchupSideSeparation,
-                matchupHorizontalAngle,
-                matchupModelTowardCameraDegrees,
-                matchupSideGapPadding);
-
-            // 確定した向きでの見た目の幅から間隔を決め直す
-            float sideSeparation = ResolveMatchupIntroSideSeparation(context);
+                matchupMinSideSeparation,
+                matchupMaxSideSeparation);
             BattleMatchupLayout.ApplyFromSpawns(
                 context.PlayerModel,
                 context.EnemyModel,
@@ -456,22 +449,6 @@ namespace Scene.BattleNpcScene
                 matchupModelTowardCameraDegrees,
                 matchupSideGapPadding);
             SyncMotionLayout(context);
-        }
-
-        private float ResolveMatchupIntroSideSeparation(BattleStagingContext context)
-        {
-            if (context.PlayerModel == null || context.EnemyModel == null)
-            {
-                return matchupSideSeparation;
-            }
-
-            return BattleFieldFocusResolver.ResolveMatchupIntroSeparation(
-                context.PlayerModel,
-                context.EnemyModel,
-                matchupHorizontalAngle,
-                matchupSideGapPadding,
-                matchupMinSideSeparation,
-                matchupMaxSideSeparation);
         }
 
         private static void SyncMotionLayout(BattleStagingContext context)
@@ -549,6 +526,14 @@ namespace Scene.BattleNpcScene
                 return focus;
             }
 
+            // スポーン中央を使い長い側へ押した後もVSと注視点を一致させる
+            if (context.PlayerSpawn != null && context.EnemySpawn != null)
+            {
+                Vector3 spawnFocus = (context.PlayerSpawn.position + context.EnemySpawn.position) * 0.5f;
+                spawnFocus.y = ResolveBattleGroundY(context) + matchupFocusHeightOffset;
+                return spawnFocus;
+            }
+
             if (context.PlayerModel != null && context.EnemyModel != null)
             {
                 return BattleFieldFocusResolver.ResolveMidpoint(
@@ -563,7 +548,8 @@ namespace Scene.BattleNpcScene
             return center;
         }
 
-        // 注視点と距離は同一の採寸結果から決めないと構図がずれて隅に寄る
+        // 注視点はレイアウト中央に固定し距離だけ姿勢実測で決める
+        // 結合AABB中心だと前後に長い側へ寄り相手側はみ出しに見える
         private Vector3 ApplyMatchupCamera(BattleStagingContext context)
         {
             Bounds bounds = default;
@@ -574,9 +560,7 @@ namespace Scene.BattleNpcScene
                     context.EnemyModel,
                     out bounds);
 
-            Vector3 focus = hasBounds
-                ? bounds.center
-                : ResolveMatchupFallbackFocus(context);
+            Vector3 focus = ResolveMatchupFallbackFocus(context);
 
             if (cameraView == null)
             {
@@ -589,8 +573,9 @@ namespace Scene.BattleNpcScene
                 UnityEngine.Camera camera = UnityEngine.Camera.main;
                 float verticalFov = camera != null ? camera.fieldOfView : 45f;
                 float aspect = camera != null ? camera.aspect : 16f / 9f;
-                distance = BattleFieldFocusResolver.ResolveOrbitDistanceForBounds(
+                distance = BattleFieldFocusResolver.ResolveOrbitDistanceForBoundsAroundFocus(
                     bounds,
+                    focus,
                     matchupHorizontalAngle,
                     matchupVerticalAngle,
                     verticalFov,

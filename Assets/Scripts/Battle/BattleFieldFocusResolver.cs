@@ -219,26 +219,22 @@ namespace Battle
         }
 
         /// <summary>
-        /// 対戦紹介で左右モデルが画面中央をまたがないよう外側へ押し出す
-        /// 前後に長いモデルをカメラ向きへ回したときAABBが中央へ張り出すのを防ぐ
+        /// 対戦紹介で左右モデルがレイアウト中央を越えないよう外側へ押し出す
+        /// 前後に長いモデルの相手側はみ出しを防ぎ短いモデルは中央帯まで寄せられる
         /// </summary>
         /// <param name="playerModel">左側のプレイヤー</param>
         /// <param name="enemyModel">右側の敵</param>
+        /// <param name="layoutCenter">対戦紹介の固定中央</param>
         /// <param name="cameraHorizontalAngle">対戦紹介カメラの水平角</param>
         /// <param name="gapPadding">中央に残す隙間</param>
         public static void EnforceMatchupSideClearance(
             Transform playerModel,
             Transform enemyModel,
+            Vector3 layoutCenter,
             float cameraHorizontalAngle,
             float gapPadding)
         {
             if (playerModel == null || enemyModel == null)
-            {
-                return;
-            }
-
-            if (!TryGetPosedModelBounds(playerModel, out Bounds playerBounds)
-                || !TryGetPosedModelBounds(enemyModel, out Bounds enemyBounds))
             {
                 return;
             }
@@ -249,23 +245,61 @@ namespace Battle
                 return;
             }
 
-            Vector3 mid = (playerBounds.center + enemyBounds.center) * 0.5f;
-            float halfGap = Mathf.Max(0.05f, gapPadding * 0.5f);
-
-            // プレイヤーは左側最大投影が中央隙間の左端を越えた分だけ左へ
-            float playerInward = ResolveMaxAxisProjection(playerBounds, mid, screenRight);
-            float playerOverflow = playerInward + halfGap;
-            if (playerOverflow > 0f)
+            float requiredGap = Mathf.Max(0.05f, gapPadding);
+            float halfGap = requiredGap * 0.5f;
+            float midProjection = Vector3.Dot(layoutCenter, screenRight);
+            const int maxPasses = 6;
+            for (int pass = 0; pass < maxPasses; pass++)
             {
-                playerModel.position -= screenRight * playerOverflow;
-            }
+                if (!TryGetPosedModelBounds(playerModel, out Bounds playerBounds)
+                    || !TryGetPosedModelBounds(enemyModel, out Bounds enemyBounds))
+                {
+                    return;
+                }
 
-            // 敵は右側最小投影が中央隙間の右端を下回った分だけ右へ
-            float enemyInward = ResolveMaxAxisProjection(enemyBounds, mid, -screenRight);
-            float enemyOverflow = enemyInward + halfGap;
-            if (enemyOverflow > 0f)
-            {
-                enemyModel.position += screenRight * enemyOverflow;
+                float playerMax = ResolveMaxAxisProjection(playerBounds, Vector3.zero, screenRight);
+                float enemyMin = ResolveMinAxisProjection(enemyBounds, Vector3.zero, screenRight);
+                bool moved = false;
+
+                // 固定中央帯をまたぐはみ出しを先に外側へ戻す
+                float playerOverflow = playerMax - (midProjection - halfGap);
+                if (playerOverflow > 1e-4f)
+                {
+                    playerModel.position -= screenRight * playerOverflow;
+                    moved = true;
+                }
+
+                float enemyOverflow = (midProjection + halfGap) - enemyMin;
+                if (enemyOverflow > 1e-4f)
+                {
+                    enemyModel.position += screenRight * enemyOverflow;
+                    moved = true;
+                }
+
+                if (moved)
+                {
+                    continue;
+                }
+
+                // 中央帯を侵さない範囲で余った隙間だけ内側へ寄せる
+                float currentGap = enemyMin - playerMax;
+                float excessGap = currentGap - requiredGap;
+                if (excessGap <= 1e-4f)
+                {
+                    return;
+                }
+
+                float playerSlack = (midProjection - halfGap) - playerMax;
+                float enemySlack = enemyMin - (midProjection + halfGap);
+                float playerPull = Mathf.Min(excessGap * 0.5f, Mathf.Max(0f, playerSlack));
+                float enemyPull = Mathf.Min(excessGap * 0.5f, Mathf.Max(0f, enemySlack));
+                if (playerPull <= 1e-4f && enemyPull <= 1e-4f)
+                {
+                    return;
+                }
+
+                playerModel.position += screenRight * playerPull;
+                enemyModel.position -= screenRight * enemyPull;
             }
         }
 
@@ -292,6 +326,31 @@ namespace Battle
             }
 
             return maxProjection;
+        }
+
+        private static float ResolveMinAxisProjection(Bounds bounds, Vector3 origin, Vector3 axis)
+        {
+            Vector3 center = bounds.center;
+            Vector3 extents = bounds.extents;
+            float minProjection = float.PositiveInfinity;
+
+            for (int x = -1; x <= 1; x += 2)
+            {
+                for (int y = -1; y <= 1; y += 2)
+                {
+                    for (int z = -1; z <= 1; z += 2)
+                    {
+                        Vector3 corner = center + Vector3.Scale(extents, new Vector3(x, y, z));
+                        float projection = Vector3.Dot(corner - origin, axis);
+                        if (projection < minProjection)
+                        {
+                            minProjection = projection;
+                        }
+                    }
+                }
+            }
+
+            return minProjection;
         }
 
         /// <summary>

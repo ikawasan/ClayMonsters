@@ -55,9 +55,16 @@ namespace Battle
                 BattleSpawnPlacement.RecenterHorizontallyTo(enemyModel, enemyPoint.position);
             }
 
+            Vector3 layoutCenter = (playerPosition + enemyPosition) * 0.5f;
+            if (playerPoint != null && enemyPoint != null)
+            {
+                layoutCenter = (playerPoint.position + enemyPoint.position) * 0.5f;
+            }
+
             BattleFieldFocusResolver.EnforceMatchupSideClearance(
                 playerModel,
                 enemyModel,
+                layoutCenter,
                 cameraHorizontalAngle,
                 sideGapPadding);
             BattleSpawnPlacement.SnapBottomToGroundY(playerModel, groundY);
@@ -114,6 +121,7 @@ namespace Battle
             BattleFieldFocusResolver.EnforceMatchupSideClearance(
                 playerModel,
                 enemyModel,
+                center,
                 cameraHorizontalAngle,
                 sideGapPadding);
             BattleSpawnPlacement.SnapBottomToGroundY(playerModel, groundY);
