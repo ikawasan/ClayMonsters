@@ -72,16 +72,19 @@ namespace ClayEditor
                 instanceRoot.transform.localScale = Vector3.one;
                 SetRenderersEnabled(instanceRoot, false);
 
-                if (!ClayFbxTextureToVertexColorBaker.TryBakeCombinedMesh(
+                (bool bakeSuccess, Mesh bakedResult, string bakeError) =
+                    await ClayFbxTextureToVertexColorBaker.TryBakeCombinedMeshAsync(
                         instanceRoot,
                         defaultVertexColor,
                         colorSubdivisionDepth,
                         maxUvEdgeLength,
-                        out bakedMesh,
-                        out string bakeError))
+                        cancellationToken);
+                if (!bakeSuccess)
                 {
                     return (false, bakeError);
                 }
+
+                bakedMesh = bakedResult;
 
                 previewRoot = new GameObject(modelAsset.name + "_VertexColorSpawn");
                 previewRoot.transform.SetParent(parent, false);

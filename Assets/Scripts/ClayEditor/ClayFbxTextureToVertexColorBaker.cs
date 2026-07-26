@@ -1,5 +1,9 @@
 #if UNITY_EDITOR
+using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -11,6 +15,10 @@ namespace ClayEditor
     /// </summary>
     public static class ClayFbxTextureToVertexColorBaker
     {
+        private const int MaxBakeTextureSize = 1024;
+        private const int ParallelTriangleChunkSize = 256;
+        private const int ParallelTriangleThreshold = 64;
+
         private static readonly string[] AlbedoPropertyNames =
         {
             "_BaseMap",
@@ -46,7 +54,65 @@ namespace ClayEditor
             out Mesh combinedMesh,
             out string errorMessage)
         {
-            combinedMesh = null;
+            if (!TryExtractBakeSources(
+                    sourceRoot,
+                    defaultColor,
+                    subdivisionDepth,
+                    maxUvEdgeLength,
+                    out BakeSources sources,
+                    out errorMessage))
+            {
+                combinedMesh = null;
+                return false;
+            }
+
+            BakeGeometry geometry = BakeGeometryFromSources(sources, CancellationToken.None);
+            return TryCreateMeshFromGeometry(sources.RootName, geometry, out combinedMesh, out errorMessage);
+        }
+
+        /// <summary>
+        /// ルート配下のメッシュとテクスチャを非同期で頂点カラーへ焼き込む
+        /// メインスレッドでは抽出のみ行い重い分割と色サンプルはワーカーで実行する
+        /// </summary>
+        public static async UniTask<(bool success, Mesh combinedMesh, string errorMessage)> TryBakeCombinedMeshAsync(
+            GameObject sourceRoot,
+            Color defaultColor,
+            int subdivisionDepth,
+            float maxUvEdgeLength,
+            CancellationToken cancellationToken)
+        {
+            if (!TryExtractBakeSources(
+                    sourceRoot,
+                    defaultColor,
+                    subdivisionDepth,
+                    maxUvEdgeLength,
+                    out BakeSources sources,
+                    out string errorMessage))
+            {
+                return (false, null, errorMessage);
+            }
+
+            BakeGeometry geometry = await UniTask.Run(
+                () => BakeGeometryFromSources(sources, cancellationToken),
+                cancellationToken: cancellationToken);
+
+            if (!TryCreateMeshFromGeometry(sources.RootName, geometry, out Mesh combinedMesh, out errorMessage))
+            {
+                return (false, null, errorMessage);
+            }
+
+            return (true, combinedMesh, string.Empty);
+        }
+
+        private static bool TryExtractBakeSources(
+            GameObject sourceRoot,
+            Color defaultColor,
+            int subdivisionDepth,
+            float maxUvEdgeLength,
+            out BakeSources sources,
+            out string errorMessage)
+        {
+            sources = default;
             errorMessage = string.Empty;
 
             if (sourceRoot == null)
@@ -55,225 +121,95 @@ namespace ClayEditor
                 return false;
             }
 
-            var vertices = new List<Vector3>(8192);
-            var normals = new List<Vector3>(8192);
-            var colors = new List<Color>(8192);
-            var triangles = new List<int>(8192);
-            var readableTextures = new Dictionary<Texture, Texture2D>(8);
-            var createdReadableTextures = new List<Texture2D>(8);
             Color displayDefault = defaultColor;
             displayDefault.a = 1f;
-            int sampledTextureCount = 0;
-            int bakedTriangleCount = 0;
             int clampedDepth = Mathf.Clamp(subdivisionDepth, 0, 6);
             float clampedUvEdge = Mathf.Max(0.005f, maxUvEdgeLength);
+            Matrix4x4 rootWorldToLocal = sourceRoot.transform.worldToLocalMatrix;
+            var meshSources = new List<MeshSource>(8);
+            var albedoCache = new Dictionary<Texture, AlbedoSampler>(8);
+            int sampledTextureCount = 0;
 
-            try
+            SkinnedMeshRenderer[] skinnedRenderers = sourceRoot.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            for (int i = 0; i < skinnedRenderers.Length; i++)
             {
-                Matrix4x4 rootWorldToLocal = sourceRoot.transform.worldToLocalMatrix;
-
-                SkinnedMeshRenderer[] skinnedRenderers = sourceRoot.GetComponentsInChildren<SkinnedMeshRenderer>(true);
-                for (int i = 0; i < skinnedRenderers.Length; i++)
+                SkinnedMeshRenderer renderer = skinnedRenderers[i];
+                if (renderer == null || renderer.sharedMesh == null || renderer.sharedMesh.vertexCount == 0)
                 {
-                    AppendSkinnedMesh(
-                        skinnedRenderers[i],
-                        rootWorldToLocal,
-                        displayDefault,
-                        clampedDepth,
-                        clampedUvEdge,
-                        readableTextures,
-                        createdReadableTextures,
-                        vertices,
-                        normals,
-                        colors,
-                        triangles,
-                        ref sampledTextureCount,
-                        ref bakedTriangleCount);
+                    continue;
                 }
 
-                MeshFilter[] meshFilters = sourceRoot.GetComponentsInChildren<MeshFilter>(true);
-                for (int i = 0; i < meshFilters.Length; i++)
-                {
-                    MeshFilter meshFilter = meshFilters[i];
-                    if (meshFilter.GetComponent<SkinnedMeshRenderer>() != null)
-                    {
-                        continue;
-                    }
-
-                    AppendMeshFilter(
-                        meshFilter,
-                        rootWorldToLocal,
-                        displayDefault,
-                        clampedDepth,
-                        clampedUvEdge,
-                        readableTextures,
-                        createdReadableTextures,
-                        vertices,
-                        normals,
-                        colors,
-                        triangles,
-                        ref sampledTextureCount,
-                        ref bakedTriangleCount);
-                }
-
-                if (vertices.Count == 0 || triangles.Count < 3)
-                {
-                    errorMessage = "変換可能なメッシュが見つかりません";
-                    return false;
-                }
-
-                combinedMesh = new Mesh
-                {
-                    name = sourceRoot.name + "_VertexColor",
-                    indexFormat = vertices.Count > 65535 ? IndexFormat.UInt32 : IndexFormat.UInt16
-                };
-                combinedMesh.SetVertices(vertices);
-                combinedMesh.SetNormals(normals);
-                combinedMesh.SetColors(colors);
-                combinedMesh.SetTriangles(triangles, 0, false);
-                combinedMesh.RecalculateBounds();
-
-                if (sampledTextureCount == 0)
-                {
-                    Debug.LogWarning(
-                        "[ClayFbxTextureToVertexColorBaker] アルベドテクスチャを取得できませんでしたマテリアル設定を確認してください");
-                }
-
-                int nearWhiteCount = 0;
-                int paddingLikeCount = 0;
-                float maxLuminance = 0f;
-                for (int i = 0; i < colors.Count; i++)
-                {
-                    Color c = colors[i];
-                    float luminance = 0.2126f * c.r + 0.7152f * c.g + 0.0722f * c.b;
-                    if (luminance > maxLuminance)
-                    {
-                        maxLuminance = luminance;
-                    }
-
-                    if (IsNearWhite(c))
-                    {
-                        nearWhiteCount++;
-                    }
-
-                    if (IsPaddingTexel(c))
-                    {
-                        paddingLikeCount++;
-                    }
-                }
-
-                Debug.Log(
-                    $"[ClayFbxTextureToVertexColorBaker] ベイク完了 triangles={bakedTriangleCount} vertices={vertices.Count} textures={sampledTextureCount} depth={clampedDepth} nearWhite={nearWhiteCount} paddingLike={paddingLikeCount} maxLum={maxLuminance:F3}");
-                return true;
-            }
-            finally
-            {
-                for (int i = 0; i < createdReadableTextures.Count; i++)
-                {
-                    if (createdReadableTextures[i] != null)
-                    {
-                        Object.DestroyImmediate(createdReadableTextures[i]);
-                    }
-                }
-            }
-        }
-
-        private static void AppendSkinnedMesh(
-            SkinnedMeshRenderer renderer,
-            Matrix4x4 rootWorldToLocal,
-            Color displayDefault,
-            int subdivisionDepth,
-            float maxUvEdgeLength,
-            Dictionary<Texture, Texture2D> readableTextures,
-            List<Texture2D> createdReadableTextures,
-            List<Vector3> vertices,
-            List<Vector3> normals,
-            List<Color> colors,
-            List<int> triangles,
-            ref int sampledTextureCount,
-            ref int bakedTriangleCount)
-        {
-            if (renderer == null || renderer.sharedMesh == null || renderer.sharedMesh.vertexCount == 0)
-            {
-                return;
+                var bakedMesh = new Mesh();
+                renderer.BakeMesh(bakedMesh, true);
+                Matrix4x4 localToRoot = rootWorldToLocal * renderer.localToWorldMatrix;
+                AppendMeshSource(
+                    bakedMesh,
+                    renderer.sharedMaterials,
+                    localToRoot,
+                    displayDefault,
+                    albedoCache,
+                    meshSources,
+                    ref sampledTextureCount,
+                    destroySourceMesh: true);
             }
 
-            var bakedMesh = new Mesh();
-            renderer.BakeMesh(bakedMesh, true);
-            Matrix4x4 localToRoot = rootWorldToLocal * renderer.localToWorldMatrix;
-            AppendExplodedMesh(
-                bakedMesh,
-                renderer.sharedMaterials,
-                localToRoot,
+            MeshFilter[] meshFilters = sourceRoot.GetComponentsInChildren<MeshFilter>(true);
+            for (int i = 0; i < meshFilters.Length; i++)
+            {
+                MeshFilter meshFilter = meshFilters[i];
+                if (meshFilter == null
+                    || meshFilter.sharedMesh == null
+                    || meshFilter.sharedMesh.vertexCount == 0
+                    || meshFilter.GetComponent<SkinnedMeshRenderer>() != null)
+                {
+                    continue;
+                }
+
+                MeshRenderer meshRenderer = meshFilter.GetComponent<MeshRenderer>();
+                Material[] materials = meshRenderer != null ? meshRenderer.sharedMaterials : null;
+                Matrix4x4 localToRoot = rootWorldToLocal * meshFilter.transform.localToWorldMatrix;
+                AppendMeshSource(
+                    meshFilter.sharedMesh,
+                    materials,
+                    localToRoot,
+                    displayDefault,
+                    albedoCache,
+                    meshSources,
+                    ref sampledTextureCount,
+                    destroySourceMesh: false);
+            }
+
+            if (meshSources.Count == 0)
+            {
+                errorMessage = "変換可能なメッシュが見つかりません";
+                return false;
+            }
+
+            if (sampledTextureCount == 0)
+            {
+                Debug.LogWarning(
+                    "[ClayFbxTextureToVertexColorBaker] アルベドテクスチャを取得できませんでしたマテリアル設定を確認してください");
+            }
+
+            sources = new BakeSources(
+                sourceRoot.name,
                 displayDefault,
-                subdivisionDepth,
-                maxUvEdgeLength,
-                readableTextures,
-                createdReadableTextures,
-                vertices,
-                normals,
-                colors,
-                triangles,
-                ref sampledTextureCount,
-                ref bakedTriangleCount);
-            Object.DestroyImmediate(bakedMesh);
+                clampedDepth,
+                clampedUvEdge,
+                meshSources,
+                sampledTextureCount);
+            return true;
         }
 
-        private static void AppendMeshFilter(
-            MeshFilter meshFilter,
-            Matrix4x4 rootWorldToLocal,
-            Color displayDefault,
-            int subdivisionDepth,
-            float maxUvEdgeLength,
-            Dictionary<Texture, Texture2D> readableTextures,
-            List<Texture2D> createdReadableTextures,
-            List<Vector3> vertices,
-            List<Vector3> normals,
-            List<Color> colors,
-            List<int> triangles,
-            ref int sampledTextureCount,
-            ref int bakedTriangleCount)
-        {
-            if (meshFilter == null || meshFilter.sharedMesh == null || meshFilter.sharedMesh.vertexCount == 0)
-            {
-                return;
-            }
-
-            MeshRenderer meshRenderer = meshFilter.GetComponent<MeshRenderer>();
-            Material[] materials = meshRenderer != null ? meshRenderer.sharedMaterials : null;
-            Matrix4x4 localToRoot = rootWorldToLocal * meshFilter.transform.localToWorldMatrix;
-            AppendExplodedMesh(
-                meshFilter.sharedMesh,
-                materials,
-                localToRoot,
-                displayDefault,
-                subdivisionDepth,
-                maxUvEdgeLength,
-                readableTextures,
-                createdReadableTextures,
-                vertices,
-                normals,
-                colors,
-                triangles,
-                ref sampledTextureCount,
-                ref bakedTriangleCount);
-        }
-
-        private static void AppendExplodedMesh(
+        private static void AppendMeshSource(
             Mesh sourceMesh,
             Material[] materials,
             Matrix4x4 localToRoot,
             Color displayDefault,
-            int subdivisionDepth,
-            float maxUvEdgeLength,
-            Dictionary<Texture, Texture2D> readableTextures,
-            List<Texture2D> createdReadableTextures,
-            List<Vector3> vertices,
-            List<Vector3> normals,
-            List<Color> colors,
-            List<int> triangles,
+            Dictionary<Texture, AlbedoSampler> albedoCache,
+            List<MeshSource> meshSources,
             ref int sampledTextureCount,
-            ref int bakedTriangleCount)
+            bool destroySourceMesh)
         {
             Vector3[] sourceVertices = sourceMesh.vertices;
             Vector3[] sourceNormals = sourceMesh.normals;
@@ -285,7 +221,8 @@ namespace ClayEditor
                 sourceMesh.GetUVs(1, uvList);
             }
 
-            bool hasUv = uvList.Count == sourceVertices.Length;
+            Vector2[] uvs = uvList.Count == sourceVertices.Length ? uvList.ToArray() : Array.Empty<Vector2>();
+            bool hasUv = uvs.Length == sourceVertices.Length;
             bool hasNormals = sourceNormals != null && sourceNormals.Length == sourceVertices.Length;
             Matrix4x4 normalMatrix = localToRoot.inverse.transpose;
 
@@ -296,82 +233,372 @@ namespace ClayEditor
                     ? materials[subMeshIndex]
                     : null;
                 Color tint = ResolveDisplayTint(material);
-                Texture2D albedo = null;
+                AlbedoSampler albedo = default;
                 Vector2 textureScale = Vector2.one;
                 Vector2 textureOffset = Vector2.zero;
                 if (material != null
                     && TryResolveAlbedo(material, out Texture sourceTexture, out string propertyName))
                 {
-                    albedo = GetOrCreateReadableTexture(
-                        sourceTexture,
-                        readableTextures,
-                        createdReadableTextures);
+                    albedo = GetOrCreateAlbedoSampler(sourceTexture, albedoCache);
                     textureScale = material.GetTextureScale(propertyName);
                     textureOffset = material.GetTextureOffset(propertyName);
-                    sampledTextureCount++;
+                    if (albedo.HasData)
+                    {
+                        sampledTextureCount++;
+                    }
                 }
 
                 int[] indices = sourceMesh.GetTriangles(subMeshIndex);
-                for (int i = 0; i + 2 < indices.Length; i += 3)
+                if (indices.Length < 3)
                 {
-                    int i0 = indices[i];
-                    int i1 = indices[i + 1];
-                    int i2 = indices[i + 2];
-                    if (i0 < 0 || i1 < 0 || i2 < 0
-                        || i0 >= sourceVertices.Length
-                        || i1 >= sourceVertices.Length
-                        || i2 >= sourceVertices.Length)
-                    {
-                        continue;
-                    }
+                    continue;
+                }
 
-                    CornerData c0 = CreateCornerData(
-                        i0,
-                        sourceVertices,
-                        sourceNormals,
-                        uvList,
-                        hasUv,
-                        hasNormals,
-                        localToRoot,
-                        normalMatrix);
-                    CornerData c1 = CreateCornerData(
-                        i1,
-                        sourceVertices,
-                        sourceNormals,
-                        uvList,
-                        hasUv,
-                        hasNormals,
-                        localToRoot,
-                        normalMatrix);
-                    CornerData c2 = CreateCornerData(
-                        i2,
-                        sourceVertices,
-                        sourceNormals,
-                        uvList,
-                        hasUv,
-                        hasNormals,
-                        localToRoot,
-                        normalMatrix);
+                meshSources.Add(new MeshSource(
+                    sourceVertices,
+                    hasNormals ? sourceNormals : null,
+                    uvs,
+                    indices,
+                    localToRoot,
+                    normalMatrix,
+                    hasUv,
+                    hasNormals,
+                    tint,
+                    albedo,
+                    textureScale,
+                    textureOffset,
+                    displayDefault));
+            }
 
-                    SubdivideAndAppendTriangle(
-                        c0,
-                        c1,
-                        c2,
-                        0,
+            if (destroySourceMesh)
+            {
+                UnityEngine.Object.DestroyImmediate(sourceMesh);
+            }
+        }
+
+        private static BakeGeometry BakeGeometryFromSources(BakeSources sources, CancellationToken cancellationToken)
+        {
+            int estimatedTriangles = 0;
+            for (int i = 0; i < sources.Meshes.Count; i++)
+            {
+                estimatedTriangles += sources.Meshes[i].Indices.Length / 3;
+            }
+
+            int estimatedLeafCapacity = Mathf.Max(1024, estimatedTriangles * Mathf.Max(1, 1 << sources.SubdivisionDepth));
+            var vertices = new List<Vector3>(estimatedLeafCapacity * 3);
+            var normals = new List<Vector3>(estimatedLeafCapacity * 3);
+            var colors = new List<Color>(estimatedLeafCapacity * 3);
+            var triangles = new List<int>(estimatedLeafCapacity * 3);
+            int bakedTriangleCount = 0;
+
+            for (int meshIndex = 0; meshIndex < sources.Meshes.Count; meshIndex++)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                AppendExplodedMeshSource(
+                    sources.Meshes[meshIndex],
+                    sources.SubdivisionDepth,
+                    sources.MaxUvEdgeLength,
+                    vertices,
+                    normals,
+                    colors,
+                    triangles,
+                    ref bakedTriangleCount,
+                    cancellationToken);
+            }
+
+            return new BakeGeometry(vertices, normals, colors, triangles, bakedTriangleCount, sources.SampledTextureCount);
+        }
+
+        private static bool TryCreateMeshFromGeometry(
+            string rootName,
+            BakeGeometry geometry,
+            out Mesh combinedMesh,
+            out string errorMessage)
+        {
+            combinedMesh = null;
+            errorMessage = string.Empty;
+            if (geometry.Vertices.Count == 0 || geometry.Triangles.Count < 3)
+            {
+                errorMessage = "変換可能なメッシュが見つかりません";
+                return false;
+            }
+
+            combinedMesh = new Mesh
+            {
+                name = rootName + "_VertexColor",
+                indexFormat = geometry.Vertices.Count > 65535 ? IndexFormat.UInt32 : IndexFormat.UInt16
+            };
+            combinedMesh.SetVertices(geometry.Vertices);
+            combinedMesh.SetNormals(geometry.Normals);
+            combinedMesh.SetColors(geometry.Colors);
+            combinedMesh.SetTriangles(geometry.Triangles, 0, false);
+            combinedMesh.RecalculateBounds();
+
+            Debug.Log(
+                $"[ClayFbxTextureToVertexColorBaker] ベイク完了 triangles={geometry.BakedTriangleCount} vertices={geometry.Vertices.Count} textures={geometry.SampledTextureCount}");
+            return true;
+        }
+
+        private static void AppendExplodedMeshSource(
+            MeshSource source,
+            int subdivisionDepth,
+            float maxUvEdgeLength,
+            List<Vector3> vertices,
+            List<Vector3> normals,
+            List<Color> colors,
+            List<int> triangles,
+            ref int bakedTriangleCount,
+            CancellationToken cancellationToken)
+        {
+            int triangleCount = source.Indices.Length / 3;
+            if (triangleCount <= 0)
+            {
+                return;
+            }
+
+            if (triangleCount < ParallelTriangleThreshold)
+            {
+                for (int triangleIndex = 0; triangleIndex < triangleCount; triangleIndex++)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    AppendSourceTriangle(
+                        source,
+                        triangleIndex,
                         subdivisionDepth,
                         maxUvEdgeLength,
-                        albedo,
-                        tint,
-                        textureScale,
-                        textureOffset,
-                        displayDefault,
-                        hasUv,
                         vertices,
                         normals,
                         colors,
                         triangles,
                         ref bakedTriangleCount);
                 }
+
+                return;
+            }
+
+            int chunkCount = (triangleCount + ParallelTriangleChunkSize - 1) / ParallelTriangleChunkSize;
+            var chunkGeometries = new BakeGeometry[chunkCount];
+            Parallel.For(
+                0,
+                chunkCount,
+                new ParallelOptions
+                {
+                    MaxDegreeOfParallelism = Mathf.Max(1, Environment.ProcessorCount),
+                    CancellationToken = cancellationToken
+                },
+                chunkIndex =>
+                {
+                    int startTriangle = chunkIndex * ParallelTriangleChunkSize;
+                    int endTriangle = Mathf.Min(startTriangle + ParallelTriangleChunkSize, triangleCount);
+                    int capacity = Mathf.Max(64, (endTriangle - startTriangle) * Mathf.Max(1, 1 << subdivisionDepth));
+                    var localVertices = new List<Vector3>(capacity * 3);
+                    var localNormals = new List<Vector3>(capacity * 3);
+                    var localColors = new List<Color>(capacity * 3);
+                    var localTriangles = new List<int>(capacity * 3);
+                    int localBaked = 0;
+
+                    for (int triangleIndex = startTriangle; triangleIndex < endTriangle; triangleIndex++)
+                    {
+                        AppendSourceTriangle(
+                            source,
+                            triangleIndex,
+                            subdivisionDepth,
+                            maxUvEdgeLength,
+                            localVertices,
+                            localNormals,
+                            localColors,
+                            localTriangles,
+                            ref localBaked);
+                    }
+
+                    chunkGeometries[chunkIndex] = new BakeGeometry(
+                        localVertices,
+                        localNormals,
+                        localColors,
+                        localTriangles,
+                        localBaked,
+                        0);
+                });
+
+            for (int chunkIndex = 0; chunkIndex < chunkCount; chunkIndex++)
+            {
+                BakeGeometry chunk = chunkGeometries[chunkIndex];
+                int vertexOffset = vertices.Count;
+                vertices.AddRange(chunk.Vertices);
+                normals.AddRange(chunk.Normals);
+                colors.AddRange(chunk.Colors);
+                for (int i = 0; i < chunk.Triangles.Count; i++)
+                {
+                    triangles.Add(chunk.Triangles[i] + vertexOffset);
+                }
+
+                bakedTriangleCount += chunk.BakedTriangleCount;
+            }
+        }
+
+        private static void AppendSourceTriangle(
+            MeshSource source,
+            int triangleIndex,
+            int subdivisionDepth,
+            float maxUvEdgeLength,
+            List<Vector3> vertices,
+            List<Vector3> normals,
+            List<Color> colors,
+            List<int> triangles,
+            ref int bakedTriangleCount)
+        {
+            int indexOffset = triangleIndex * 3;
+            int i0 = source.Indices[indexOffset];
+            int i1 = source.Indices[indexOffset + 1];
+            int i2 = source.Indices[indexOffset + 2];
+            if (i0 < 0 || i1 < 0 || i2 < 0
+                || i0 >= source.Vertices.Length
+                || i1 >= source.Vertices.Length
+                || i2 >= source.Vertices.Length)
+            {
+                return;
+            }
+
+            CornerData c0 = CreateCornerData(i0, source);
+            CornerData c1 = CreateCornerData(i1, source);
+            CornerData c2 = CreateCornerData(i2, source);
+            SubdivideAndAppendTriangle(
+                c0,
+                c1,
+                c2,
+                0,
+                subdivisionDepth,
+                maxUvEdgeLength,
+                source.Albedo,
+                source.Tint,
+                source.TextureScale,
+                source.TextureOffset,
+                source.DisplayDefault,
+                source.HasUv,
+                vertices,
+                normals,
+                colors,
+                triangles,
+                ref bakedTriangleCount);
+        }
+
+        private readonly struct BakeSources
+        {
+            public readonly string RootName;
+            public readonly Color DisplayDefault;
+            public readonly int SubdivisionDepth;
+            public readonly float MaxUvEdgeLength;
+            public readonly List<MeshSource> Meshes;
+            public readonly int SampledTextureCount;
+
+            public BakeSources(
+                string rootName,
+                Color displayDefault,
+                int subdivisionDepth,
+                float maxUvEdgeLength,
+                List<MeshSource> meshes,
+                int sampledTextureCount)
+            {
+                RootName = rootName;
+                DisplayDefault = displayDefault;
+                SubdivisionDepth = subdivisionDepth;
+                MaxUvEdgeLength = maxUvEdgeLength;
+                Meshes = meshes;
+                SampledTextureCount = sampledTextureCount;
+            }
+        }
+
+        private readonly struct BakeGeometry
+        {
+            public readonly List<Vector3> Vertices;
+            public readonly List<Vector3> Normals;
+            public readonly List<Color> Colors;
+            public readonly List<int> Triangles;
+            public readonly int BakedTriangleCount;
+            public readonly int SampledTextureCount;
+
+            public BakeGeometry(
+                List<Vector3> vertices,
+                List<Vector3> normals,
+                List<Color> colors,
+                List<int> triangles,
+                int bakedTriangleCount,
+                int sampledTextureCount)
+            {
+                Vertices = vertices;
+                Normals = normals;
+                Colors = colors;
+                Triangles = triangles;
+                BakedTriangleCount = bakedTriangleCount;
+                SampledTextureCount = sampledTextureCount;
+            }
+        }
+
+        private readonly struct MeshSource
+        {
+            public readonly Vector3[] Vertices;
+            public readonly Vector3[] Normals;
+            public readonly Vector2[] Uvs;
+            public readonly int[] Indices;
+            public readonly Matrix4x4 LocalToRoot;
+            public readonly Matrix4x4 NormalMatrix;
+            public readonly bool HasUv;
+            public readonly bool HasNormals;
+            public readonly Color Tint;
+            public readonly AlbedoSampler Albedo;
+            public readonly Vector2 TextureScale;
+            public readonly Vector2 TextureOffset;
+            public readonly Color DisplayDefault;
+
+            public MeshSource(
+                Vector3[] vertices,
+                Vector3[] normals,
+                Vector2[] uvs,
+                int[] indices,
+                Matrix4x4 localToRoot,
+                Matrix4x4 normalMatrix,
+                bool hasUv,
+                bool hasNormals,
+                Color tint,
+                AlbedoSampler albedo,
+                Vector2 textureScale,
+                Vector2 textureOffset,
+                Color displayDefault)
+            {
+                Vertices = vertices;
+                Normals = normals;
+                Uvs = uvs;
+                Indices = indices;
+                LocalToRoot = localToRoot;
+                NormalMatrix = normalMatrix;
+                HasUv = hasUv;
+                HasNormals = hasNormals;
+                Tint = tint;
+                Albedo = albedo;
+                TextureScale = textureScale;
+                TextureOffset = textureOffset;
+                DisplayDefault = displayDefault;
+            }
+        }
+
+        private readonly struct AlbedoSampler
+        {
+            public readonly Color[] Pixels;
+            public readonly int Width;
+            public readonly int Height;
+
+            public AlbedoSampler(Color[] pixels, int width, int height)
+            {
+                Pixels = pixels;
+                Width = width;
+                Height = height;
+            }
+
+            public bool HasData => Pixels != null && Width > 0 && Height > 0;
+
+            public Color GetPixel(int x, int y)
+            {
+                return Pixels[y * Width + x];
             }
         }
 
@@ -389,21 +616,13 @@ namespace ClayEditor
             }
         }
 
-        private static CornerData CreateCornerData(
-            int vertexIndex,
-            Vector3[] sourceVertices,
-            Vector3[] sourceNormals,
-            List<Vector2> uvs,
-            bool hasUv,
-            bool hasNormals,
-            Matrix4x4 localToRoot,
-            Matrix4x4 normalMatrix)
+        private static CornerData CreateCornerData(int vertexIndex, MeshSource source)
         {
-            Vector3 position = localToRoot.MultiplyPoint3x4(sourceVertices[vertexIndex]);
-            Vector3 normal = hasNormals
-                ? normalMatrix.MultiplyVector(sourceNormals[vertexIndex]).normalized
+            Vector3 position = source.LocalToRoot.MultiplyPoint3x4(source.Vertices[vertexIndex]);
+            Vector3 normal = source.HasNormals
+                ? source.NormalMatrix.MultiplyVector(source.Normals[vertexIndex]).normalized
                 : Vector3.up;
-            Vector2 uv = hasUv ? uvs[vertexIndex] : Vector2.zero;
+            Vector2 uv = source.HasUv ? source.Uvs[vertexIndex] : Vector2.zero;
             return new CornerData(position, normal, uv);
         }
 
@@ -417,52 +636,12 @@ namespace ClayEditor
 
         private static Vector2 LerpUvSeamless(Vector2 a, Vector2 b)
         {
-            Vector2 delta = b - a;
-            if (delta.x > 0.5f)
-            {
-                delta.x -= 1f;
-            }
-            else if (delta.x < -0.5f)
-            {
-                delta.x += 1f;
-            }
-
-            if (delta.y > 0.5f)
-            {
-                delta.y -= 1f;
-            }
-            else if (delta.y < -0.5f)
-            {
-                delta.y += 1f;
-            }
-
-            Vector2 mid = a + delta * 0.5f;
-            mid.x -= Mathf.Floor(mid.x);
-            mid.y -= Mathf.Floor(mid.y);
-            return mid;
+            return LerpUvSeamless(a, b, 0.5f);
         }
 
         private static float UvEdgeLengthSeamless(Vector2 a, Vector2 b)
         {
-            Vector2 delta = b - a;
-            if (delta.x > 0.5f)
-            {
-                delta.x -= 1f;
-            }
-            else if (delta.x < -0.5f)
-            {
-                delta.x += 1f;
-            }
-
-            if (delta.y > 0.5f)
-            {
-                delta.y -= 1f;
-            }
-            else if (delta.y < -0.5f)
-            {
-                delta.y += 1f;
-            }
-
+            Vector2 delta = UnwrapDelta(a, b);
             return delta.magnitude;
         }
 
@@ -473,7 +652,7 @@ namespace ClayEditor
             int depth,
             int maxDepth,
             float maxUvEdgeLength,
-            Texture2D albedo,
+            AlbedoSampler albedo,
             Color tint,
             Vector2 textureScale,
             Vector2 textureOffset,
@@ -568,7 +747,7 @@ namespace ClayEditor
         private static Color SampleCornerColor(
             CornerData corner,
             Vector2 uvCentroid,
-            Texture2D albedo,
+            AlbedoSampler albedo,
             Color tint,
             Vector2 textureScale,
             Vector2 textureOffset,
@@ -576,7 +755,7 @@ namespace ClayEditor
             bool hasUv)
         {
             Color sampled = displayDefault;
-            if (albedo != null && hasUv)
+            if (albedo.HasData && hasUv)
             {
                 sampled = SampleAlbedoColor(
                     albedo,
@@ -610,7 +789,6 @@ namespace ClayEditor
                 return;
             }
 
-            // 余白っぽいコーナーは同じ三角形の非余白色で置換する
             if (p0)
             {
                 color0 = PickNonPaddingColor(color1, color2, p1, p2, displayDefault);
@@ -653,7 +831,6 @@ namespace ClayEditor
                 return b;
             }
 
-            // 三角形全体が余白なら既定色より彩度のあるTintが無いので少し落とす
             return ClampColor01(new Color(
                 displayDefault.r * 0.85f,
                 displayDefault.g * 0.85f,
@@ -662,7 +839,7 @@ namespace ClayEditor
         }
 
         private static Color SampleAlbedoColor(
-            Texture2D albedo,
+            AlbedoSampler albedo,
             Vector2 cornerUv,
             Vector2 uvCentroid,
             Color tint,
@@ -670,7 +847,6 @@ namespace ClayEditor
             Vector2 textureOffset,
             Color displayDefault)
         {
-            // 島端の余白を避けるため最初から中央側UVで取る
             Vector2 inwardUv = LerpUvSeamless(cornerUv, uvCentroid, 0.55f);
             Color texel = SampleTexel(albedo, inwardUv, textureScale, textureOffset);
             Color centroidTexel = SampleTexel(albedo, uvCentroid, textureScale, textureOffset);
@@ -698,7 +874,6 @@ namespace ClayEditor
             }
             else if (IsBrighterPaddingOutlier(texel, centroidTexel))
             {
-                // コーナーだけ余白寄りの明るい無彩色なら中央を使う
                 texel = centroidTexel;
             }
 
@@ -720,7 +895,7 @@ namespace ClayEditor
         }
 
         private static bool TryRecoverNonWhiteTexel(
-            Texture2D albedo,
+            AlbedoSampler albedo,
             Vector2 cornerUv,
             Vector2 uvCentroid,
             Vector2 textureScale,
@@ -777,7 +952,7 @@ namespace ClayEditor
         }
 
         private static Color SampleTexel(
-            Texture2D albedo,
+            AlbedoSampler albedo,
             Vector2 sourceUv,
             Vector2 textureScale,
             Vector2 textureOffset)
@@ -786,9 +961,8 @@ namespace ClayEditor
             float v = sourceUv.y * textureScale.y + textureOffset.y;
             u -= Mathf.Floor(u);
             v -= Mathf.Floor(v);
-            int width = Mathf.Max(1, albedo.width);
-            int height = Mathf.Max(1, albedo.height);
-            // バイリニアは余白と混ざるためポイントサンプルする
+            int width = Mathf.Max(1, albedo.Width);
+            int height = Mathf.Max(1, albedo.Height);
             int x = Mathf.Clamp(Mathf.FloorToInt(u * width), 0, width - 1);
             int y = Mathf.Clamp(Mathf.FloorToInt(v * height), 0, height - 1);
             return albedo.GetPixel(x, y);
@@ -805,6 +979,11 @@ namespace ClayEditor
         }
 
         private static Vector2 UnwrapUvRelative(Vector2 origin, Vector2 target)
+        {
+            return origin + UnwrapDelta(origin, target);
+        }
+
+        private static Vector2 UnwrapDelta(Vector2 origin, Vector2 target)
         {
             Vector2 delta = target - origin;
             if (delta.x > 0.5f)
@@ -825,7 +1004,7 @@ namespace ClayEditor
                 delta.y += 1f;
             }
 
-            return origin + delta;
+            return delta;
         }
 
         private static Vector2 LerpUvSeamless(Vector2 a, Vector2 b, float t)
@@ -842,14 +1021,8 @@ namespace ClayEditor
             return color.r > 0.97f && color.g > 0.97f && color.b > 0.97f;
         }
 
-        private static bool IsNearWhite(Color color)
-        {
-            return IsPaddingTexel(color);
-        }
-
         private static bool IsPaddingTexel(Color color)
         {
-            // 純白だけでなく薄いグレー余白も検出する
             float max = Mathf.Max(color.r, Mathf.Max(color.g, color.b));
             float min = Mathf.Min(color.r, Mathf.Min(color.g, color.b));
             float chroma = max - min;
@@ -909,7 +1082,6 @@ namespace ClayEditor
             texture = null;
             propertyName = string.Empty;
 
-            // mainTextureは未割当時でも白テクスチャを返すことがあるため最後に回す
             for (int i = 0; i < AlbedoPropertyNames.Length; i++)
             {
                 string candidate = AlbedoPropertyNames[i];
@@ -967,7 +1139,6 @@ namespace ClayEditor
                 return false;
             }
 
-            // Unity組み込みの白/黒/灰は未設定マテリアルのダミーなので除外する
             if (texture == Texture2D.whiteTexture
                 || texture == Texture2D.blackTexture
                 || texture == Texture2D.grayTexture
@@ -979,15 +1150,14 @@ namespace ClayEditor
             }
 
             string textureName = texture.name ?? string.Empty;
-            if (textureName.IndexOf("Default-Particle", System.StringComparison.OrdinalIgnoreCase) >= 0
-                || textureName.IndexOf("Default-White", System.StringComparison.OrdinalIgnoreCase) >= 0
-                || textureName.Equals("White", System.StringComparison.OrdinalIgnoreCase)
-                || textureName.Equals("UnityWhite", System.StringComparison.OrdinalIgnoreCase))
+            if (textureName.IndexOf("Default-Particle", StringComparison.OrdinalIgnoreCase) >= 0
+                || textureName.IndexOf("Default-White", StringComparison.OrdinalIgnoreCase) >= 0
+                || textureName.Equals("White", StringComparison.OrdinalIgnoreCase)
+                || textureName.Equals("UnityWhite", StringComparison.OrdinalIgnoreCase))
             {
                 return false;
             }
 
-            // 1x1の純白テクスチャもダミー扱い
             if (texture.width <= 1 && texture.height <= 1 && texture is Texture2D tiny)
             {
                 try
@@ -1001,9 +1171,8 @@ namespace ClayEditor
                         }
                     }
                 }
-                catch (System.Exception)
+                catch (Exception)
                 {
-                    // 読み取り不可なら名前判定のみで継続する
                 }
             }
 
@@ -1036,28 +1205,36 @@ namespace ClayEditor
 
         private static bool IsNonAlbedoTextureProperty(string propertyName)
         {
-            return propertyName.IndexOf("Normal", System.StringComparison.OrdinalIgnoreCase) >= 0
-                || propertyName.IndexOf("Mask", System.StringComparison.OrdinalIgnoreCase) >= 0
-                || propertyName.IndexOf("Metallic", System.StringComparison.OrdinalIgnoreCase) >= 0
-                || propertyName.IndexOf("Occlusion", System.StringComparison.OrdinalIgnoreCase) >= 0
-                || propertyName.IndexOf("Emission", System.StringComparison.OrdinalIgnoreCase) >= 0
-                || propertyName.IndexOf("Bump", System.StringComparison.OrdinalIgnoreCase) >= 0
-                || propertyName.IndexOf("Height", System.StringComparison.OrdinalIgnoreCase) >= 0
-                || propertyName.IndexOf("Spec", System.StringComparison.OrdinalIgnoreCase) >= 0;
+            return propertyName.IndexOf("Normal", StringComparison.OrdinalIgnoreCase) >= 0
+                || propertyName.IndexOf("Mask", StringComparison.OrdinalIgnoreCase) >= 0
+                || propertyName.IndexOf("Metallic", StringComparison.OrdinalIgnoreCase) >= 0
+                || propertyName.IndexOf("Occlusion", StringComparison.OrdinalIgnoreCase) >= 0
+                || propertyName.IndexOf("Emission", StringComparison.OrdinalIgnoreCase) >= 0
+                || propertyName.IndexOf("Bump", StringComparison.OrdinalIgnoreCase) >= 0
+                || propertyName.IndexOf("Height", StringComparison.OrdinalIgnoreCase) >= 0
+                || propertyName.IndexOf("Spec", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
-        private static Texture2D GetOrCreateReadableTexture(
+        private static AlbedoSampler GetOrCreateAlbedoSampler(
             Texture sourceTexture,
-            Dictionary<Texture, Texture2D> cache,
-            List<Texture2D> createdReadableTextures)
+            Dictionary<Texture, AlbedoSampler> cache)
         {
-            if (cache.TryGetValue(sourceTexture, out Texture2D cached) && cached != null)
+            if (cache.TryGetValue(sourceTexture, out AlbedoSampler cached) && cached.HasData)
             {
                 return cached;
             }
 
-            int width = Mathf.Max(1, sourceTexture.width);
-            int height = Mathf.Max(1, sourceTexture.height);
+            int sourceWidth = Mathf.Max(1, sourceTexture.width);
+            int sourceHeight = Mathf.Max(1, sourceTexture.height);
+            float scale = 1f;
+            int maxSide = Mathf.Max(sourceWidth, sourceHeight);
+            if (maxSide > MaxBakeTextureSize)
+            {
+                scale = MaxBakeTextureSize / (float)maxSide;
+            }
+
+            int width = Mathf.Max(1, Mathf.RoundToInt(sourceWidth * scale));
+            int height = Mathf.Max(1, Mathf.RoundToInt(sourceHeight * scale));
 
             RenderTexture temporary = RenderTexture.GetTemporary(
                 width,
@@ -1074,13 +1251,15 @@ namespace ClayEditor
             readable.filterMode = FilterMode.Point;
             readable.ReadPixels(new Rect(0, 0, width, height), 0, 0);
             readable.Apply(false, false);
+            Color[] pixels = readable.GetPixels();
 
             RenderTexture.active = previous;
             RenderTexture.ReleaseTemporary(temporary);
+            UnityEngine.Object.DestroyImmediate(readable);
 
-            cache[sourceTexture] = readable;
-            createdReadableTextures.Add(readable);
-            return readable;
+            var sampler = new AlbedoSampler(pixels, width, height);
+            cache[sourceTexture] = sampler;
+            return sampler;
         }
     }
 }
