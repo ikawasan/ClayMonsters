@@ -12,22 +12,31 @@ namespace Scene.TrainingScene.Domain
         /// 表示データを生成する
         /// </summary>
         /// <param name="modelName">モデル名</param>
-        /// <param name="progressLabel">曜日・時間割・所持金・体力</param>
+        /// <param name="scheduleMoneyLabel">曜日・時間割・所持金</param>
+        /// <param name="motivationLabel">やる気ラベル</param>
+        /// <param name="staminaLabel">体力ラベル</param>
         /// <param name="statsText">ステータス表示</param>
         /// <param name="attacks">技構成</param>
         /// <param name="thumbnailPng">モデルサムネイルPNG</param>
+        /// <param name="motivation">やる気</param>
         public TrainingResumeProgressPresentation(
             string modelName,
-            string progressLabel,
+            string scheduleMoneyLabel,
+            string motivationLabel,
+            string staminaLabel,
             string statsText,
             IReadOnlyList<MotionType> attacks,
-            byte[] thumbnailPng)
+            byte[] thumbnailPng,
+            TrainingMotivation motivation = TrainingMotivation.Normal)
         {
             ModelName = modelName ?? string.Empty;
-            ProgressLabel = progressLabel ?? string.Empty;
+            ScheduleMoneyLabel = scheduleMoneyLabel ?? string.Empty;
+            MotivationLabel = motivationLabel ?? string.Empty;
+            StaminaLabel = staminaLabel ?? string.Empty;
             StatsText = statsText ?? string.Empty;
             Attacks = attacks ?? System.Array.Empty<MotionType>();
             ThumbnailPng = thumbnailPng;
+            Motivation = TrainingMotivationCatalog.Clamp((int)motivation);
         }
 
         /// <summary>
@@ -36,9 +45,19 @@ namespace Scene.TrainingScene.Domain
         public string ModelName { get; }
 
         /// <summary>
-        /// 曜日・時間割・所持金・体力
+        /// 曜日・時間割・所持金
         /// </summary>
-        public string ProgressLabel { get; }
+        public string ScheduleMoneyLabel { get; }
+
+        /// <summary>
+        /// やる気ラベル
+        /// </summary>
+        public string MotivationLabel { get; }
+
+        /// <summary>
+        /// 体力ラベル
+        /// </summary>
+        public string StaminaLabel { get; }
 
         /// <summary>
         /// ステータス表示
@@ -54,5 +73,10 @@ namespace Scene.TrainingScene.Domain
         /// モデルサムネイルPNG
         /// </summary>
         public byte[] ThumbnailPng { get; }
+
+        /// <summary>
+        /// やる気
+        /// </summary>
+        public TrainingMotivation Motivation { get; }
     }
 }

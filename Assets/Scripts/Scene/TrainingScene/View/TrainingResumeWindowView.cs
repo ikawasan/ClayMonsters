@@ -34,12 +34,22 @@ namespace Scene.TrainingScene.View
         [SerializeField] private TMP_Text titleText;
         [Tooltip("モデル名")]
         [SerializeField] private TMP_Text modelNameText;
-        [Tooltip("曜日・時間割・所持金・体力")]
-        [SerializeField] private TMP_Text progressText;
+        [Tooltip("曜日・時間割・所持金")]
+        [FormerlySerializedAs("progressText")]
+        [SerializeField] private TMP_Text scheduleMoneyText;
+        [Tooltip("やる気ラベル")]
+        [FormerlySerializedAs("motivationStaminaText")]
+        [SerializeField] private TMP_Text motivationText;
+        [Tooltip("体力ラベル")]
+        [SerializeField] private TMP_Text staminaText;
         [Tooltip("ステータス")]
         [SerializeField] private TMP_Text statsText;
         [Tooltip("技構成パネル")]
         [SerializeField] private TrainingResumeAttacksContentView attacksPanel;
+
+        [Header("Motivation")]
+        [Tooltip("やる気アイコン")]
+        [SerializeField] private Image motivationIcon;
 
         [Header("Buttons")]
         [Tooltip("最初から育成ボタン")]
@@ -52,10 +62,19 @@ namespace Scene.TrainingScene.View
         private bool uiBound;
         private Texture2D runtimeThumbnailTexture;
         private Sprite runtimeThumbnailSprite;
+        private Sprite[] motivationFrames;
+        private int motivationFrameIndex;
+        private float motivationFrameTimer;
+        private const float MotivationFrameSeconds = 0.12f;
 
         private void Awake()
         {
             EnsureUiBound();
+        }
+
+        private void Update()
+        {
+            TickMotivationIconAnimation();
         }
 
         /// <inheritdoc/>
@@ -75,10 +94,22 @@ namespace Scene.TrainingScene.View
                 modelNameText.enabled = hasModelName;
             }
 
-            if (progressText != null)
+            if (scheduleMoneyText != null)
             {
-                progressText.text = presentation.ProgressLabel;
-                progressText.enabled = !string.IsNullOrEmpty(presentation.ProgressLabel);
+                scheduleMoneyText.text = presentation.ScheduleMoneyLabel;
+                scheduleMoneyText.enabled = !string.IsNullOrEmpty(presentation.ScheduleMoneyLabel);
+            }
+
+            if (motivationText != null)
+            {
+                motivationText.text = presentation.MotivationLabel;
+                motivationText.enabled = !string.IsNullOrEmpty(presentation.MotivationLabel);
+            }
+
+            if (staminaText != null)
+            {
+                staminaText.text = presentation.StaminaLabel;
+                staminaText.enabled = !string.IsNullOrEmpty(presentation.StaminaLabel);
             }
 
             if (statsText != null)
@@ -91,6 +122,7 @@ namespace Scene.TrainingScene.View
                 attacksPanel.ShowForResumeWindow(presentation.Attacks);
             }
 
+            ApplyMotivationIcon(presentation.Motivation);
             ApplyThumbnail(presentation.ThumbnailPng);
 
             if (continueButton != null)
@@ -113,6 +145,7 @@ namespace Scene.TrainingScene.View
             continueSelected = false;
             attacksPanel?.Clear(preserveLayoutSpace: true);
             ClearThumbnail();
+            ClearMotivationIcon();
             SetWindowVisible(false);
         }
 
@@ -164,10 +197,14 @@ namespace Scene.TrainingScene.View
             if (thumbnailImage == null
                 || attacksPanel == null
                 || continueButton == null
-                || restartButton == null)
+                || restartButton == null
+                || scheduleMoneyText == null
+                || motivationText == null
+                || staminaText == null
+                || motivationIcon == null)
             {
                 Debug.LogError(
-                    "[TrainingResumeWindowView] SerializeFieldが未配線ですTools/ClayMonsters/Wire Training Scene Referencesを実行してください",
+                    "[TrainingResumeWindowView] SerializeFieldが未配線ですHierarchy/Inspectorで手動接続してください",
                     this);
             }
         }
@@ -199,6 +236,70 @@ namespace Scene.TrainingScene.View
         {
             continueSelected = false;
             hasChoice = true;
+        }
+
+        private void ApplyMotivationIcon(TrainingMotivation motivation)
+        {
+            if (motivationIcon == null)
+            {
+                return;
+            }
+
+            motivationFrames = TrainingMotivationCatalog.ResolveIconFrames(motivation);
+            motivationFrameIndex = 0;
+            motivationFrameTimer = 0f;
+            Sprite first = motivationFrames != null && motivationFrames.Length > 0
+                ? motivationFrames[0]
+                : null;
+            motivationIcon.sprite = first;
+            bool hasFrames = first != null;
+            motivationIcon.enabled = hasFrames;
+            motivationIcon.gameObject.SetActive(true);
+            if (!hasFrames)
+            {
+                Debug.LogError(
+                    "[TrainingResumeWindowView] やる気アイコンの読み込みに失敗しました",
+                    this);
+            }
+        }
+
+        private void ClearMotivationIcon()
+        {
+            motivationFrames = null;
+            motivationFrameIndex = 0;
+            motivationFrameTimer = 0f;
+            if (motivationIcon == null)
+            {
+                return;
+            }
+
+            motivationIcon.sprite = null;
+            motivationIcon.enabled = false;
+        }
+
+        private void TickMotivationIconAnimation()
+        {
+            if (motivationIcon == null
+                || !motivationIcon.isActiveAndEnabled
+                || motivationFrames == null
+                || motivationFrames.Length <= 1)
+            {
+                return;
+            }
+
+            motivationFrameTimer += Time.unscaledDeltaTime;
+            if (motivationFrameTimer < MotivationFrameSeconds)
+            {
+                return;
+            }
+
+            motivationFrameTimer = 0f;
+            motivationFrameIndex = (motivationFrameIndex + 1) % motivationFrames.Length;
+            Sprite frame = motivationFrames[motivationFrameIndex];
+            if (frame != null)
+            {
+                motivationIcon.sprite = frame;
+            }
         }
 
         private void ApplyThumbnail(byte[] thumbnailPng)

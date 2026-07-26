@@ -160,17 +160,20 @@ namespace Scene.TrainingScene.Domain
                     slot != null ? slot.modelName : string.Empty,
                     string.Empty,
                     string.Empty,
+                    string.Empty,
+                    string.Empty,
                     System.Array.Empty<MotionType>(),
                     null);
             }
 
             string periodLabel = ResolvePeriodDisplayName(progress.turnIndexInDay);
-            string progressLabel =
+            TrainingMotivation motivation = TrainingMotivationCatalog.Clamp(progress.motivation);
+            string scheduleMoneyLabel =
                 $"{TrainingDayCatalog.GetDisplayName((TrainingDayOfWeek)progress.day)}"
                 + (string.IsNullOrEmpty(periodLabel) ? string.Empty : $" {periodLabel}")
-                + $", 所持金 {progress.money}G"
-                + $", 体力 {progress.stamina} / {TrainingSettings.MaxStamina}"
-                + $", やる気 {TrainingMotivationCatalog.GetDisplayName(TrainingMotivationCatalog.Clamp(progress.motivation))}";
+                + $", 所持金 {progress.money}G";
+            const string motivationLabel = "やる気　";
+            string staminaLabel = $", 体力 {progress.stamina} / {TrainingSettings.MaxStamina}";
             ModelStatus status = progress.status ?? new ModelStatus();
             string statsText =
                 $"HP {status.hp}\n"
@@ -181,12 +184,15 @@ namespace Scene.TrainingScene.Domain
 
             return new TrainingResumeProgressPresentation(
                 slot != null ? slot.modelName : string.Empty,
-                progressLabel,
+                scheduleMoneyLabel,
+                motivationLabel,
+                staminaLabel,
                 statsText,
                 ModelAttackMotionUtility.Normalize(
                     progress.attackMotions,
                     TrainingSettings.AttackSlotCount),
-                ModelSaveStorage.ReadThumbnailPng(slot));
+                ModelSaveStorage.ReadThumbnailPng(slot),
+                motivation);
         }
 
         /// <summary>
@@ -218,9 +224,9 @@ namespace Scene.TrainingScene.Domain
             string periodLabel = ResolvePeriodDisplayName(progress.turnIndexInDay);
             return $"{TrainingDayCatalog.GetDisplayName((TrainingDayOfWeek)progress.day)}"
                 + (string.IsNullOrEmpty(periodLabel) ? string.Empty : $" {periodLabel}")
+                + $", 所持金 {progress.money}G"
+                + $"\nやる気{TrainingMotivationCatalog.GetIconGlyph(TrainingMotivationCatalog.Clamp(progress.motivation))}"
                 + $" 体力{progress.stamina}/{TrainingSettings.MaxStamina}"
-                + $" やる気{TrainingMotivationCatalog.GetDisplayName(TrainingMotivationCatalog.Clamp(progress.motivation))}"
-                + $" {progress.money}G"
                 + $"\nHP {status.hp} 攻撃 {status.attack}"
                 + $" 防御 {status.defense} 速度 {status.speed}"
                 + $" 命中 {status.hit}";
