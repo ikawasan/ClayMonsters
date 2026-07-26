@@ -35,7 +35,7 @@ namespace Scene.BattleNpcScene
         [Header("対戦紹介")]
         [SerializeField] private float matchupSideGapPadding = 0.55f;
         [SerializeField] private float matchupMinSideSeparation = 1.5f;
-        [SerializeField] private float matchupMaxSideSeparation = 5.5f;
+        [SerializeField] private float matchupMaxSideSeparation = 12f;
         [SerializeField] private float matchupSideSeparation = 2.2f;
         [SerializeField] private float matchupHorizontalAngle = 0f;
         [SerializeField] private float matchupVerticalAngle = 4f;
@@ -45,7 +45,7 @@ namespace Scene.BattleNpcScene
         [SerializeField] private bool matchupAutoFrame = true;
         [SerializeField] private float matchupFramePadding = 0.8f;
         [SerializeField] private float matchupMinDistance = 3.8f;
-        [SerializeField] private float matchupMaxDistance = 7.5f;
+        [SerializeField] private float matchupMaxDistance = 11f;
 
         [Header("本番カメラ")]
         [SerializeField] private float battleHorizontalAngle = 0f;
@@ -173,7 +173,12 @@ namespace Scene.BattleNpcScene
                 }
                 else
                 {
-                    await overlayView.ShowVsAndWaitStartAsync(playerName, enemyName, cancellationToken);
+                    await overlayView.ShowVsAndWaitStartAsync(
+                        playerName,
+                        enemyName,
+                        context.Player,
+                        context.Enemy,
+                        cancellationToken);
                 }
             }
             else
@@ -422,7 +427,8 @@ namespace Scene.BattleNpcScene
                     matchupPlayerPoint,
                     matchupEnemyPoint,
                     matchupHorizontalAngle,
-                    matchupModelTowardCameraDegrees);
+                    matchupModelTowardCameraDegrees,
+                    matchupSideGapPadding);
                 SyncMotionLayout(context);
                 return;
             }
@@ -435,7 +441,8 @@ namespace Scene.BattleNpcScene
                 context.EnemySpawn,
                 matchupSideSeparation,
                 matchupHorizontalAngle,
-                matchupModelTowardCameraDegrees);
+                matchupModelTowardCameraDegrees,
+                matchupSideGapPadding);
 
             // 確定した向きでの見た目の幅から間隔を決め直す
             float sideSeparation = ResolveMatchupIntroSideSeparation(context);
@@ -446,7 +453,8 @@ namespace Scene.BattleNpcScene
                 context.EnemySpawn,
                 sideSeparation,
                 matchupHorizontalAngle,
-                matchupModelTowardCameraDegrees);
+                matchupModelTowardCameraDegrees,
+                matchupSideGapPadding);
             SyncMotionLayout(context);
         }
 

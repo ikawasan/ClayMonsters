@@ -16,7 +16,8 @@ namespace Battle
             Transform playerPoint,
             Transform enemyPoint,
             float cameraHorizontalAngle = 0f,
-            float towardCameraDegrees = 0f)
+            float towardCameraDegrees = 0f,
+            float sideGapPadding = 0.55f)
         {
             if (playerModel == null || enemyModel == null)
             {
@@ -35,6 +36,7 @@ namespace Battle
 
             Vector3 playerPosition = playerModel.position;
             Vector3 enemyPosition = enemyModel.position;
+            float groundY = Mathf.Max(playerPosition.y, enemyPosition.y);
             BattleFieldFacing.ApplyMatchupBetween(
                 playerModel,
                 enemyModel,
@@ -42,6 +44,24 @@ namespace Battle
                 enemyPosition,
                 cameraHorizontalAngle,
                 towardCameraDegrees);
+
+            if (playerPoint != null)
+            {
+                BattleSpawnPlacement.RecenterHorizontallyTo(playerModel, playerPoint.position);
+            }
+
+            if (enemyPoint != null)
+            {
+                BattleSpawnPlacement.RecenterHorizontallyTo(enemyModel, enemyPoint.position);
+            }
+
+            BattleFieldFocusResolver.EnforceMatchupSideClearance(
+                playerModel,
+                enemyModel,
+                cameraHorizontalAngle,
+                sideGapPadding);
+            BattleSpawnPlacement.SnapBottomToGroundY(playerModel, groundY);
+            BattleSpawnPlacement.SnapBottomToGroundY(enemyModel, groundY);
         }
 
         /// <summary>
@@ -54,7 +74,8 @@ namespace Battle
             Transform enemySpawn,
             float sideSeparation,
             float cameraHorizontalAngle,
-            float towardCameraDegrees = 0f)
+            float towardCameraDegrees = 0f,
+            float sideGapPadding = 0.55f)
         {
             if (playerModel == null || enemyModel == null)
             {
@@ -90,6 +111,11 @@ namespace Battle
             // 回転確定後にピボットずれを補正しないと見た目が片側へ寄る
             BattleSpawnPlacement.RecenterHorizontallyTo(playerModel, playerPosition);
             BattleSpawnPlacement.RecenterHorizontallyTo(enemyModel, enemyPosition);
+            BattleFieldFocusResolver.EnforceMatchupSideClearance(
+                playerModel,
+                enemyModel,
+                cameraHorizontalAngle,
+                sideGapPadding);
             BattleSpawnPlacement.SnapBottomToGroundY(playerModel, groundY);
             BattleSpawnPlacement.SnapBottomToGroundY(enemyModel, groundY);
         }

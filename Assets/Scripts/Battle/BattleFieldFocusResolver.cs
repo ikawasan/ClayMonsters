@@ -219,6 +219,82 @@ namespace Battle
         }
 
         /// <summary>
+        /// 対戦紹介で左右モデルが画面中央をまたがないよう外側へ押し出す
+        /// 前後に長いモデルをカメラ向きへ回したときAABBが中央へ張り出すのを防ぐ
+        /// </summary>
+        /// <param name="playerModel">左側のプレイヤー</param>
+        /// <param name="enemyModel">右側の敵</param>
+        /// <param name="cameraHorizontalAngle">対戦紹介カメラの水平角</param>
+        /// <param name="gapPadding">中央に残す隙間</param>
+        public static void EnforceMatchupSideClearance(
+            Transform playerModel,
+            Transform enemyModel,
+            float cameraHorizontalAngle,
+            float gapPadding)
+        {
+            if (playerModel == null || enemyModel == null)
+            {
+                return;
+            }
+
+            if (!TryGetPosedModelBounds(playerModel, out Bounds playerBounds)
+                || !TryGetPosedModelBounds(enemyModel, out Bounds enemyBounds))
+            {
+                return;
+            }
+
+            Vector3 screenRight = BattleFieldScreenAxis.ResolveScreenRight(cameraHorizontalAngle);
+            if (screenRight.sqrMagnitude < 1e-6f)
+            {
+                return;
+            }
+
+            Vector3 mid = (playerBounds.center + enemyBounds.center) * 0.5f;
+            float halfGap = Mathf.Max(0.05f, gapPadding * 0.5f);
+
+            // プレイヤーは左側最大投影が中央隙間の左端を越えた分だけ左へ
+            float playerInward = ResolveMaxAxisProjection(playerBounds, mid, screenRight);
+            float playerOverflow = playerInward + halfGap;
+            if (playerOverflow > 0f)
+            {
+                playerModel.position -= screenRight * playerOverflow;
+            }
+
+            // 敵は右側最小投影が中央隙間の右端を下回った分だけ右へ
+            float enemyInward = ResolveMaxAxisProjection(enemyBounds, mid, -screenRight);
+            float enemyOverflow = enemyInward + halfGap;
+            if (enemyOverflow > 0f)
+            {
+                enemyModel.position += screenRight * enemyOverflow;
+            }
+        }
+
+        private static float ResolveMaxAxisProjection(Bounds bounds, Vector3 origin, Vector3 axis)
+        {
+            Vector3 center = bounds.center;
+            Vector3 extents = bounds.extents;
+            float maxProjection = float.NegativeInfinity;
+
+            for (int x = -1; x <= 1; x += 2)
+            {
+                for (int y = -1; y <= 1; y += 2)
+                {
+                    for (int z = -1; z <= 1; z += 2)
+                    {
+                        Vector3 corner = center + Vector3.Scale(extents, new Vector3(x, y, z));
+                        float projection = Vector3.Dot(corner - origin, axis);
+                        if (projection > maxProjection)
+                        {
+                            maxProjection = projection;
+                        }
+                    }
+                }
+            }
+
+            return maxProjection;
+        }
+
+        /// <summary>
         /// 境界全体が収まるオービット距離を返す
         /// </summary>
         /// <param name="bounds">対象境界</param>
