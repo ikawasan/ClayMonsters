@@ -1,5 +1,3 @@
-using UnityEngine;
-
 namespace Scene.TrainingScene.Domain
 {
     /// <summary>
@@ -152,14 +150,18 @@ namespace Scene.TrainingScene.Domain
         }
 
         /// <summary>
-        /// 大会勝利時の賞金を返す
+        /// 放課後戦闘勝利時の賞金を返す
+        /// 最終日は賞金なしそれ以外は固定額
         /// </summary>
         /// <param name="week">現在週</param>
         public static int ResolveTournamentReward(int week)
         {
-            int safeWeek = Mathf.Max(1, week);
-            return TrainingSettings.TournamentRewardBase
-                + safeWeek * TrainingSettings.TournamentRewardPerWeek;
+            if (week >= TrainingSettings.TotalDays)
+            {
+                return 0;
+            }
+
+            return TrainingSettings.TournamentRewardBase;
         }
 
         private static void ApplyItemEffect(TrainingSession session, TrainingShopItem item)

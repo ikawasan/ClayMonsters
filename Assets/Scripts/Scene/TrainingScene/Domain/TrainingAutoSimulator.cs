@@ -148,8 +148,11 @@ namespace Scene.TrainingScene.Domain
             if (playerWon)
             {
                 session.ApplyAfterSchoolVictoryRecovery();
-                session.AddMoney(
-                    TrainingShopResolver.ResolveTournamentReward((int)session.CurrentDay));
+                int reward = TrainingShopResolver.ResolveTournamentReward((int)session.CurrentDay);
+                if (reward > 0)
+                {
+                    session.AddMoney(reward);
+                }
             }
 
             session.RefreshShopOffer(random);

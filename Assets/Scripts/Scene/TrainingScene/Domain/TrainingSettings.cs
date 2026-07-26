@@ -121,7 +121,7 @@ namespace Scene.TrainingScene.Domain
         public const int AfterSchoolVictoryStaminaRecovery = TournamentVictoryStaminaRecovery;
 
         /// <summary>
-        /// 大会勝利の基礎賞金
+        /// 放課後戦闘勝利の固定賞金
         /// </summary>
         public const int TournamentRewardBase = 200;
 

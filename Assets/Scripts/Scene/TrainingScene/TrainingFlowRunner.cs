@@ -1738,12 +1738,19 @@ namespace Scene.TrainingScene
             {
                 int reward = TrainingShopResolver.ResolveTournamentReward((int)session.CurrentDay);
                 session.ApplyAfterSchoolVictoryRecovery();
-                session.AddMoney(reward);
+                if (reward > 0)
+                {
+                    session.AddMoney(reward);
+                }
+
                 hudView.BindSession(session, period, turnNumber);
                 session.RefreshShopOffer(random);
+                string rewardText = reward > 0
+                    ? $" 賞金+{reward}G"
+                    : string.Empty;
                 hudView.SetLogMessage(
                     $"放課後の戦闘に勝利した\n体力+{TrainingSettings.AfterSchoolVictoryStaminaRecovery}"
-                    + $" 賞金+{reward}G\n売店の商品が入れ替わった");
+                    + $"{rewardText}\n売店の商品が入れ替わった");
             }
             else
             {
