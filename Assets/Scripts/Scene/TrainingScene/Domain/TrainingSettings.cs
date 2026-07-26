@@ -108,19 +108,15 @@ namespace Scene.TrainingScene.Domain
         public const float RestGreatSuccessPercent = 20f;
 
         /// <summary>
-        /// 訓練失敗判定のしきい値(必要消費未満)
+        /// 訓練失敗判定のしきい値(これ未満で失敗率が上がる)
         /// </summary>
-        public const int LowStaminaThreshold = TrainStaminaCost;
-
-        /// <summary>
-        /// 低体力時の基礎失敗率(百分率)
-        /// </summary>
-        public const float BaseFailurePercentAtLowStamina = 35f;
+        public const int LowStaminaThreshold = 50;
 
         /// <summary>
         /// しきい値を下回る体力1につき加算する失敗率(百分率)
+        /// 体力0で100%になる
         /// </summary>
-        public const float FailurePercentPerStaminaBelowThreshold = 3f;
+        public const float FailurePercentPerStaminaBelowThreshold = 2f;
 
         /// <summary>
         /// 大会勝利時の体力回復量

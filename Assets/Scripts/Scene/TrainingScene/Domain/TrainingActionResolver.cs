@@ -204,27 +204,31 @@ namespace Scene.TrainingScene.Domain
 
         /// <summary>
         /// 低体力時の失敗率を返す
+        /// 体力がしきい値未満になると不足分に応じて上昇する
         /// </summary>
         /// <param name="stamina">現在体力</param>
-        /// <param name="requiredCost">必要消費</param>
-        public static float ComputeFailurePercent(int stamina, int requiredCost)
+        public static float ComputeFailurePercent(int stamina)
         {
-            if (stamina >= requiredCost)
+            if (stamina >= TrainingSettings.LowStaminaThreshold)
             {
                 return 0f;
             }
 
-            float deficit = requiredCost - stamina;
-            return TrainingSettings.BaseFailurePercentAtLowStamina
-                + deficit * TrainingSettings.FailurePercentPerStaminaBelowThreshold;
+            float deficit = TrainingSettings.LowStaminaThreshold - stamina;
+            return Mathf.Min(
+                100f,
+                deficit * TrainingSettings.FailurePercentPerStaminaBelowThreshold);
         }
 
         /// <summary>
         /// 互換用の失敗率
+        /// 必要消費は参照せず体力しきい値のみで計算する
         /// </summary>
-        public static float ComputeFailurePercent(int stamina)
+        /// <param name="stamina">現在体力</param>
+        /// <param name="requiredCost">未使用</param>
+        public static float ComputeFailurePercent(int stamina, int requiredCost)
         {
-            return ComputeFailurePercent(stamina, TrainingSettings.TrainStaminaCost);
+            return ComputeFailurePercent(stamina);
         }
 
         private static TrainingActionResult ExecuteFocusCommand(
@@ -242,8 +246,9 @@ namespace Scene.TrainingScene.Domain
             TrainingLocation presentation =
                 TrainingFocusCatalog.GetPresentationLocation(focus);
 
-            bool failedByLowStamina = currentStamina < cost
-                && random.NextDouble() * 100d < ComputeFailurePercent(currentStamina, cost);
+            float failurePercent = ComputeFailurePercent(currentStamina);
+            bool failedByLowStamina = failurePercent > 0f
+                && random.NextDouble() * 100d < failurePercent;
             if (failedByLowStamina)
             {
                 return new TrainingActionResult(

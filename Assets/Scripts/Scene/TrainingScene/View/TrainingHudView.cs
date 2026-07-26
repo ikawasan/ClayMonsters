@@ -1273,9 +1273,11 @@ namespace Scene.TrainingScene.View
             string detail = command switch
             {
                 TrainingCommandType.Train =>
-                    "訓練ごとに体力消費が異なる 成功/大成功でステ上昇",
+                    FormatTrainCommandHoverDetail(
+                        "訓練ごとに体力消費が異なる 成功/大成功でステ上昇"),
                 TrainingCommandType.SpecialTrain =>
-                    "特訓ごとに体力消費が異なる 大幅にステ上昇",
+                    FormatTrainCommandHoverDetail(
+                        "特訓ごとに体力消費が異なる 大幅にステ上昇"),
                 TrainingCommandType.Rest =>
                     $"体力+{TrainingSettings.RestStaminaRecovery}"
                     + $"(大成功で+{TrainingSettings.RestGreatSuccessRecovery})",
@@ -1286,6 +1288,18 @@ namespace Scene.TrainingScene.View
             };
             AddHoverEntry(trigger, EventTriggerType.PointerEnter, () => SetLogMessage(detail));
             AddHoverEntry(trigger, EventTriggerType.PointerExit, () => SetLogMessage(CommandChoicePrompt));
+        }
+
+        private string FormatTrainCommandHoverDetail(string baseDetail)
+        {
+            float failurePercent =
+                TrainingActionResolver.ComputeFailurePercent(locationChoiceStamina);
+            if (failurePercent <= 0f)
+            {
+                return baseDetail;
+            }
+
+            return $"{baseDetail}\n失敗率 {failurePercent:0.#}%";
         }
 
         private void BindFocusHover(
@@ -1314,10 +1328,17 @@ namespace Scene.TrainingScene.View
                 ? TrainingFocusCatalog.GetSpecialTrainStaminaCost(focus)
                 : TrainingFocusCatalog.GetTrainStaminaCost(focus);
             TrainingStatGain scaled = TrainingFocusCatalog.ScaleGain(gain, multiplier);
+            float failurePercent =
+                TrainingActionResolver.ComputeFailurePercent(locationChoiceStamina);
             string detail =
                 $"{TrainingFocusCatalog.GetDisplayName(focus)}\n"
                 + $"体力-{staminaCost}\n"
                 + FormatFocusGainPreview(scaled);
+            if (failurePercent > 0f)
+            {
+                detail += $"\n失敗率 {failurePercent:0.#}%";
+            }
+
             AddHoverEntry(trigger, EventTriggerType.PointerEnter, () => SetLogMessage(detail));
             AddHoverEntry(trigger, EventTriggerType.PointerExit, () => SetLogMessage(FocusChoicePrompt));
         }

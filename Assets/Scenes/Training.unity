@@ -40675,7 +40675,7 @@ MonoBehaviour:
   finishText: {fileID: 1366864994}
   finishFlashImage: {fileID: 1366864998}
   startButton: {fileID: 1366864993}
-  statusPanel: {fileID: 0}
+  statusPanel: {fileID: 6356662758479494296}
   vsPopSeconds: 0.35
   vsIdlePulseAmplitude: 0.05
   vsIdlePulseSpeed: 3.2
@@ -58101,8 +58101,37 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!114 &6356662758479494296 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2358728696626565719, guid: c3d4e5f60718293a4b5c6d7e8f901a2b, type: 3}
+  m_PrefabInstance: {fileID: 5890625584147341184}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b2c3d4e5f60718293a4b5c6d7e8f901a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Scene::Scene.BattleNpcScene.View.BattleMatchupStatusPanelView
+--- !u!1001 &5890625584147341184
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 1126847926404610461, guid: c3d4e5f60718293a4b5c6d7e8f901a2b, type: 3}
+      propertyPath: m_Name
+      value: BattleMatchupStatusPanel
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c3d4e5f60718293a4b5c6d7e8f901a2b, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
   - {fileID: 859135441}
+  - {fileID: 5890625584147341184}
