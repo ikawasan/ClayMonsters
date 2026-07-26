@@ -40611,7 +40611,7 @@ MonoBehaviour:
   matchupEnemyPoint: {fileID: 0}
   matchupSideGapPadding: 0.55
   matchupMinSideSeparation: 1.5
-  matchupMaxSideSeparation: 5.5
+  matchupMaxSideSeparation: 12
   matchupSideSeparation: 4
   matchupHorizontalAngle: 0
   matchupVerticalAngle: 4
@@ -40621,7 +40621,7 @@ MonoBehaviour:
   matchupAutoFrame: 1
   matchupFramePadding: 0.8
   matchupMinDistance: 3.8
-  matchupMaxDistance: 7.5
+  matchupMaxDistance: 11
   battleHorizontalAngle: 0
   battleVerticalAngle: 10
   battleDistance: 7.5

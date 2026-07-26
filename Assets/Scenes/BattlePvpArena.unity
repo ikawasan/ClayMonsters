@@ -11919,7 +11919,7 @@ MonoBehaviour:
   matchupEnemyPoint: {fileID: 0}
   matchupSideGapPadding: 0.55
   matchupMinSideSeparation: 1.5
-  matchupMaxSideSeparation: 5.5
+  matchupMaxSideSeparation: 12
   matchupSideSeparation: 4
   matchupHorizontalAngle: 0
   matchupVerticalAngle: 4
@@ -11929,7 +11929,7 @@ MonoBehaviour:
   matchupAutoFrame: 1
   matchupFramePadding: 0.8
   matchupMinDistance: 3.8
-  matchupMaxDistance: 7.5
+  matchupMaxDistance: 11
   battleHorizontalAngle: 0
   battleVerticalAngle: 10
   battleDistance: 7.5
@@ -11969,6 +11969,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4d7e9b21c5a8f3640b2d1e6f8a9c3b5d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Scene.BattleNpcScene.View::Scene.BattleNpcScene.View.BattleStartOverlayView
+  statusPanel: {fileID: 6356662758479494295}
   overlayCanvas: {fileID: 1069784576}
   vsText: {fileID: 1069784575}
   readyText: {fileID: 1069784574}
@@ -13833,9 +13834,43 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 100002, guid: c3d4e5f6a7b8499092a3b4c5d6e7f8c3, type: 3}
   m_PrefabInstance: {fileID: 8800000000000000600}
   m_PrefabAsset: {fileID: 0}
+--- !u!224 &8744028535593132259 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 6939596180442651345, guid: c3d4e5f60718293a4b5c6d7e8f901a2b, type: 3}
+  m_PrefabInstance: {fileID: 5890625584147341183}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &6356662758479494295 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2358728696626565719, guid: c3d4e5f60718293a4b5c6d7e8f901a2b, type: 3}
+  m_PrefabInstance: {fileID: 5890625584147341183}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b2c3d4e5f60718293a4b5c6d7e8f901a, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+--- !u!1001 &5890625584147341183
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 1126847926404610461, guid: c3d4e5f60718293a4b5c6d7e8f901a2b, type: 3}
+      propertyPath: m_Name
+      value: BattleMatchupStatusPanel
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c3d4e5f60718293a4b5c6d7e8f901a2b, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
   - {fileID: 859135441}
   - {fileID: 312423578}
+  - {fileID: 8744028535593132259}
