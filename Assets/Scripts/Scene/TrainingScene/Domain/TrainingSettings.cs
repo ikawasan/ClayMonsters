@@ -250,7 +250,7 @@ namespace Scene.TrainingScene.Domain
         /// <summary>
         /// 強敵急襲勝利時の基礎賞金
         /// </summary>
-        public const int AmbushVictoryReward = 40;
+        public const int AmbushVictoryReward = 200;
 
         /// <summary>
         /// 強敵急襲勝利時のHP上昇
