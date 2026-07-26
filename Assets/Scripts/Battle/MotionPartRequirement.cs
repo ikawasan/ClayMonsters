@@ -146,25 +146,25 @@ namespace Battle
         {
             switch (motion)
             {
-                case MotionType.Punch: return new Vector2(0f, 3f);
-                case MotionType.Elbow: return new Vector2(0f, 2f);
-                case MotionType.Kick: return new Vector2(1f, 5f);
-                case MotionType.Stomp: return new Vector2(0f, 2.5f);
-                case MotionType.Tackle: return new Vector2(0f, 4f);
-                case MotionType.SpinTackle: return new Vector2(0f, 2.5f);
+                case MotionType.Punch: return new Vector2(0f, 5f);
+                case MotionType.Elbow: return new Vector2(0f, 4.5f);
+                case MotionType.Kick: return new Vector2(0.5f, 6.5f);
+                case MotionType.Stomp: return new Vector2(0f, 4.5f);
+                case MotionType.Tackle: return new Vector2(0f, 5.5f);
+                case MotionType.SpinTackle: return new Vector2(0f, 4.5f);
                 case MotionType.TailWhip: return new Vector2(3f, 7f);
-                case MotionType.Headbutt: return new Vector2(0f, 3.5f);
-                case MotionType.BodySlam: return new Vector2(0f, 3f);
-                case MotionType.Uppercut: return new Vector2(0f, 2.5f);
-                case MotionType.Knee: return new Vector2(0f, 2f);
-                case MotionType.ShoulderRam: return new Vector2(0f, 3.5f);
-                case MotionType.BellyFlop: return new Vector2(0f, 3f);
-                case MotionType.HipCheck: return new Vector2(0f, 2.5f);
-                case MotionType.GroundPound: return new Vector2(0f, 2f);
-                case MotionType.Slap: return new Vector2(0f, 3.5f);
-                case MotionType.LowSweep: return new Vector2(0f, 4f);
-                case MotionType.Bite: return new Vector2(0f, 2.5f);
-                default: return new Vector2(0f, 4f);
+                case MotionType.Headbutt: return new Vector2(0f, 5f);
+                case MotionType.BodySlam: return new Vector2(0f, 5f);
+                case MotionType.Uppercut: return new Vector2(0f, 4.5f);
+                case MotionType.Knee: return new Vector2(0f, 4.5f);
+                case MotionType.ShoulderRam: return new Vector2(0f, 5f);
+                case MotionType.BellyFlop: return new Vector2(0f, 5f);
+                case MotionType.HipCheck: return new Vector2(0f, 4.5f);
+                case MotionType.GroundPound: return new Vector2(0f, 4.5f);
+                case MotionType.Slap: return new Vector2(0f, 5f);
+                case MotionType.LowSweep: return new Vector2(0f, 5.5f);
+                case MotionType.Bite: return new Vector2(0f, 4.5f);
+                default: return new Vector2(0f, 5.5f);
             }
         }
 

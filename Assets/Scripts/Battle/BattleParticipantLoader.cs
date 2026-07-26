@@ -133,9 +133,10 @@ namespace Battle
             configured.PartLoss?.SuspendMeshRebuild();
             NormalizeStatus(status, out int hp, out int attack, out int defense, out int speed, out int hit);
 
-            IReadOnlyList<MotionType> motions = attackMotions != null && attackMotions.Count > 0
-                ? attackMotions
-                : DefaultAttackMotions;
+            IReadOnlyList<MotionType> motions = ModelAttackMotionUtility.SanitizeForAvailableParts(
+                attackMotions != null && attackMotions.Count > 0 ? attackMotions : DefaultAttackMotions,
+                ModelAttackMotionUtility.CollectAvailableParts(configured.PartLoss),
+                ModelAttackMotionUtility.SlotCount);
 
             var unit = new BattleUnit(
                 modelName,
@@ -251,7 +252,7 @@ namespace Battle
             var unit = new BattleUnit(
                 slot.modelName,
                 hp, attack, defense, speed, hit,
-                ResolveAttackMotions(slot),
+                ResolveAttackMotions(slot, cfg.PartLoss),
                 cfg.Motion,
                 cfg.PartLoss);
 
@@ -270,15 +271,19 @@ namespace Battle
             BattleStatusBalance.Normalize(status, out hp, out attack, out defense, out speed, out hit);
         }
 
-        // 攻撃モーションが空のスロット向けに既定技を返す
-        private static IReadOnlyList<MotionType> ResolveAttackMotions(ModelSaveSlot slot)
+        // 必要部位が無い技を捨て使用可能攻撃でスロットを埋めてから返す
+        private static IReadOnlyList<MotionType> ResolveAttackMotions(
+            ModelSaveSlot slot,
+            ModelPartLossController partLoss)
         {
-            if (slot.attackMotions != null && slot.attackMotions.Count > 0)
-            {
-                return slot.attackMotions;
-            }
-
-            return DefaultAttackMotions;
+            HashSet<BonePart> availableParts = ModelAttackMotionUtility.CollectAvailableParts(partLoss);
+            IReadOnlyList<MotionType> source = slot.attackMotions != null && slot.attackMotions.Count > 0
+                ? slot.attackMotions
+                : DefaultAttackMotions;
+            return ModelAttackMotionUtility.SanitizeForAvailableParts(
+                source,
+                availableParts,
+                ModelAttackMotionUtility.SlotCount);
         }
     }
 }
