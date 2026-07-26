@@ -337,7 +337,9 @@ namespace Scene.TrainingScene
             EnsureTrainingDisplayActive();
             if (!await trainingDisplay.LoadSlotAsync(slotIndex, cancellationToken))
             {
-                saveService.ClearTrainingProgress(ModelSavePool.Player, slotIndex);
+                // 読込失敗で途中データを消すと再開不能になるため保持する
+                Debug.LogError(
+                    $"[TrainingFlowRunner] 再開用モデルの読込に失敗したため途中データを保持します slot={slotIndex}");
                 trainingDisplay.Clear();
                 await RevealSelectionAsync(cancellationToken);
                 return false;
@@ -352,8 +354,18 @@ namespace Scene.TrainingScene
                 await canvasTransition.FadeInAsync(cancellationToken);
             }
 
-            bool resume = await hudView.WaitResumeChoiceAsync(cancellationToken);
-            if (!resume)
+            TrainingResumeChoice resumeChoice = await hudView.WaitResumeChoiceAsync(cancellationToken);
+            if (resumeChoice == TrainingResumeChoice.Unavailable)
+            {
+                Debug.LogError(
+                    "[TrainingFlowRunner] 再開UIが使えないため途中データを保持したまま選択画面へ戻ります");
+                trainingDisplay.Clear();
+                hudView.Hide();
+                await RevealSelectionAsync(cancellationToken);
+                return false;
+            }
+
+            if (resumeChoice == TrainingResumeChoice.Restart)
             {
                 trainingDisplay.Clear();
                 saveService.ClearTrainingProgress(ModelSavePool.Player, slotIndex);
@@ -370,7 +382,8 @@ namespace Scene.TrainingScene
             if (!trainingDisplay.IsDisplayingSlot(slotIndex)
                 && !await trainingDisplay.LoadSlotAsync(slotIndex, cancellationToken))
             {
-                saveService.ClearTrainingProgress(ModelSavePool.Player, slotIndex);
+                Debug.LogError(
+                    $"[TrainingFlowRunner] 再開確定後のモデル再読込に失敗したため途中データを保持します slot={slotIndex}");
                 trainingDisplay.Clear();
                 hudView.Hide();
                 await RevealSelectionAsync(cancellationToken);
@@ -627,18 +640,29 @@ namespace Scene.TrainingScene
             ModelSaveSlot slot,
             TrainingInheritanceResult inheritance)
         {
-            TrainingSlotProgress savedProgress = saveService.GetTrainingProgress(ModelSavePool.Player, slotIndex);
-            if (savedProgress != null)
-            {
-                saveService.ClearTrainingProgress(ModelSavePool.Player, slotIndex);
-            }
+            // 途中データの削除は再開UIで最初からを選んだときだけ行う
+            // ここで消すと再開失敗時に進行データが消える
 
             if (inheritance != null && inheritance.Applied)
             {
-                return new TrainingSession(slotIndex, inheritance.Status, inheritance.AttackMotions);
+                return new TrainingSession(
+                    slotIndex,
+                    inheritance.Status,
+                    SanitizeAttacks(inheritance.AttackMotions));
             }
 
-            return new TrainingSession(slotIndex, slot.status, slot.attackMotions);
+            return new TrainingSession(slotIndex, slot.status, SanitizeAttacks(slot.attackMotions));
+        }
+
+        private IReadOnlyList<MotionType> SanitizeAttacks(IReadOnlyList<MotionType> attacks)
+        {
+            IReadOnlyList<MotionType> usable = trainingDisplay != null
+                ? trainingDisplay.UsableAttacks
+                : null;
+            return ModelAttackMotionUtility.SanitizeForUsableAttacks(
+                attacks,
+                usable,
+                TrainingSettings.AttackSlotCount);
         }
 
         private async UniTask<TrainingInheritanceResult> ResolveInheritanceAsync(
@@ -841,8 +865,19 @@ namespace Scene.TrainingScene
                 return learned;
             }
 
+            // 空きスロットがあれば入れ替えずにそのまま覚える
+            if (attacks.Count < TrainingSettings.AttackSlotCount)
+            {
+                attacks.Add(learned);
+                hudView.ShowOverlayMessage(
+                    $"技を覚えました\nスロット{attacks.Count}: {TrainingAttackTeacher.FormatAttackName(learned)}");
+                await hudView.WaitContinueAsync(cancellationToken);
+                hudView.ClearOverlayMessage();
+                return learned;
+            }
+
             hudView.ShowOverlayMessage(
-                $"技「{TrainingAttackTeacher.FormatAttackLabel(learned)}」を覚えるスロットを選んでください");
+                $"技「{TrainingAttackTeacher.FormatAttackName(learned)}」を覚えるスロットを選んでください");
             await hudView.WaitContinueAsync(cancellationToken);
             hudView.ClearOverlayMessage();
 
@@ -851,7 +886,7 @@ namespace Scene.TrainingScene
             if (replaceIndex < 0)
             {
                 hudView.ShowOverlayMessage(
-                    $"「{TrainingAttackTeacher.FormatAttackLabel(learned)}」は覚えませんでした");
+                    $"「{TrainingAttackTeacher.FormatAttackName(learned)}」は覚えませんでした");
                 await hudView.WaitContinueAsync(cancellationToken);
                 hudView.ClearOverlayMessage();
                 return null;
@@ -868,8 +903,8 @@ namespace Scene.TrainingScene
             MotionType oldAttack = attacks[replaceIndex];
             attacks[replaceIndex] = learned;
             hudView.ShowOverlayMessage(
-                $"技を入れ替えました\nスロット{replaceIndex + 1}: {TrainingAttackTeacher.FormatAttackLabel(oldAttack)}"
-                + $" → {TrainingAttackTeacher.FormatAttackLabel(learned)}");
+                $"技を入れ替えました\nスロット{replaceIndex + 1}: {TrainingAttackTeacher.FormatAttackName(oldAttack)}"
+                + $" → {TrainingAttackTeacher.FormatAttackName(learned)}");
             await hudView.WaitContinueAsync(cancellationToken);
             hudView.ClearOverlayMessage();
             return learned;
@@ -1418,12 +1453,13 @@ namespace Scene.TrainingScene
             CancellationToken cancellationToken)
         {
             TrainingActionResult result = TrainingActionResolver.ExecuteRest(session.Stamina);
-            StopMonsterRoam();
             await TransitionTurnAsync(
                 cancellationToken,
                 () =>
                 {
                     hudView.HideLocationChoices();
+
+                    // 徘徊停止による位置戻しを見せないため暗転中に行う
                     ApplyDefaultDestinationPresentation();
                 });
             session.ApplyAction(result);
@@ -1457,9 +1493,11 @@ namespace Scene.TrainingScene
                     hudView.HideLocationChoices();
                     ApplyRoamDestinationPresentation();
                     hudView.Hide();
+
+                    // スポーン位置の切り替えを見せないため暗転中に開始する
+                    StartMonsterRoam(cancellationToken);
                 });
 
-            StartMonsterRoam(cancellationToken);
             hudView.Show();
             session.ApplyAction(result);
             CheckpointSave(session);
@@ -1770,7 +1808,7 @@ namespace Scene.TrainingScene
                 learnOutcome = new TrainingEventOutcome(
                     TrainingEventType.LearnAttack,
                     "出会い",
-                    $"新しい技「{TrainingAttackTeacher.FormatAttackLabel(learned)}」を覚えるチャンスです",
+                    $"新しい技「{TrainingAttackTeacher.FormatAttackName(learned)}」を覚えるチャンスです",
                     default,
                     learned);
             }
@@ -1786,11 +1824,23 @@ namespace Scene.TrainingScene
             hudView.SetLogMessage($"【{outcome.Title}】\n{outcome.Message}");
             await hudView.WaitContinueAsync(cancellationToken);
 
+            // 空きスロットがあれば入れ替えずにそのまま覚える
+            if (session.AttackMotions.Count < TrainingSettings.AttackSlotCount
+                && session.TryAddAttack(outcome.LearnedAttack))
+            {
+                hudView.SetLogMessage(
+                    $"技を覚えました\nスロット{session.AttackMotions.Count}:"
+                    + $" {TrainingAttackTeacher.FormatAttackName(outcome.LearnedAttack)}");
+                await hudView.WaitContinueAsync(cancellationToken);
+                hudView.BindSession(session);
+                return;
+            }
+
             hudView.ShowAttackSwapChoices(outcome.LearnedAttack, session.AttackMotions);
             int replaceIndex = await hudView.WaitAttackSwapChoiceAsync(cancellationToken);
             if (replaceIndex < 0)
             {
-                hudView.SetLogMessage($"「{TrainingAttackTeacher.FormatAttackLabel(outcome.LearnedAttack)}」は覚えませんでした");
+                hudView.SetLogMessage($"「{TrainingAttackTeacher.FormatAttackName(outcome.LearnedAttack)}」は覚えませんでした");
                 await hudView.WaitContinueAsync(cancellationToken);
                 return;
             }
@@ -1799,8 +1849,8 @@ namespace Scene.TrainingScene
             if (session.TryReplaceAttack(replaceIndex, outcome.LearnedAttack))
             {
                 hudView.SetLogMessage(
-                    $"技を入れ替えました\nスロット{replaceIndex + 1}: {TrainingAttackTeacher.FormatAttackLabel(oldAttack)}"
-                    + $" → {TrainingAttackTeacher.FormatAttackLabel(outcome.LearnedAttack)}");
+                    $"技を入れ替えました\nスロット{replaceIndex + 1}: {TrainingAttackTeacher.FormatAttackName(oldAttack)}"
+                    + $" → {TrainingAttackTeacher.FormatAttackName(outcome.LearnedAttack)}");
             }
 
             await hudView.WaitContinueAsync(cancellationToken);
@@ -1832,10 +1882,21 @@ namespace Scene.TrainingScene
             TrainingSlotProgress progress = TrainingSlotProgressMapper.ToSaveData(session);
             if (progress == null)
             {
+                Debug.LogError("[TrainingFlowRunner] 育成途中データへ変換できませんでした");
                 return;
             }
 
-            saveService.SaveTrainingProgress(ModelSavePool.Player, session.PlayerSlotIndex, progress);
+            if (saveService == null)
+            {
+                Debug.LogError("[TrainingFlowRunner] saveServiceが未注入のため育成途中データを保存できません");
+                return;
+            }
+
+            if (!saveService.SaveTrainingProgress(ModelSavePool.Player, session.PlayerSlotIndex, progress))
+            {
+                Debug.LogError(
+                    $"[TrainingFlowRunner] 育成途中データの保存に失敗しました slot={session.PlayerSlotIndex}");
+            }
         }
 
         private async UniTask WaitBackToTitleAsync(CancellationToken cancellationToken)

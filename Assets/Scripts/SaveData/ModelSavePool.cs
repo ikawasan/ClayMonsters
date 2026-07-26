@@ -100,6 +100,17 @@ namespace SaveData
         }
 
         /// <summary>
+        /// 育成途中データのファイル名を返す
+        /// </summary>
+        /// <param name="pool">セーブプール</param>
+        /// <param name="slotIndex">スロット番号</param>
+        public static string GetTrainingProgressFileName(ModelSavePool pool, int slotIndex)
+        {
+            string prefix = GetFilePrefix(pool);
+            return $"{prefix}_Slot{slotIndex}.training.json";
+        }
+
+        /// <summary>
         /// 造形ボクセルスナップショットのファイル名を返す
         /// </summary>
         public static string GetVoxelFileName(ModelSavePool pool, int slotIndex)

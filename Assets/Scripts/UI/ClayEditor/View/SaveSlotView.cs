@@ -738,12 +738,15 @@ namespace UI.ClayEditor.View
                     thumbnailPng = await thumbnailCapturer.CaptureToPngAsync(renderer, cancellationToken);
                 }
 
+                Transform[] bones = autoRigController.Bones;
+                List<MotionType> usableAttacks = AttackMotionSelector.CollectUsableAttacks(
+                    partAnalyzer,
+                    bones);
                 List<MotionType> attackMotions = pendingRegisteredAttackMotions;
                 if (attackMotions == null || attackMotions.Count == 0)
                 {
-                    attackMotions = ClayModelSaveService.PickRandomAttacks(
-                        partAnalyzer,
-                        autoRigController.Bones,
+                    attackMotions = AttackMotionSelector.ShuffleAndTake(
+                        usableAttacks,
                         ClayModelSaveService.AttackMotionCount);
                 }
                 else
@@ -751,15 +754,14 @@ namespace UI.ClayEditor.View
                     attackMotions = AttackMotionSelector.FilterUsableAttacks(
                         attackMotions,
                         partAnalyzer,
-                        autoRigController.Bones);
-                    if (attackMotions.Count == 0)
-                    {
-                        attackMotions = ClayModelSaveService.PickRandomAttacks(
-                            partAnalyzer,
-                            autoRigController.Bones,
-                            ClayModelSaveService.AttackMotionCount);
-                    }
+                        bones);
                 }
+
+                // 使用可能攻撃から必ずスロット数を埋める埋められない場合はエラー
+                attackMotions = AttackMotionSelector.EnsureAttackSlots(
+                    attackMotions,
+                    usableAttacks,
+                    ClayModelSaveService.AttackMotionCount);
 
                 string modelName = !string.IsNullOrEmpty(pendingModelName)
                     ? pendingModelName

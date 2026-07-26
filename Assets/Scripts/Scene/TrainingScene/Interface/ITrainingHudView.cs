@@ -194,6 +194,8 @@ namespace Scene.TrainingScene.Interface
         /// <summary>
         /// 育成再開か最初からかが選ばれるまで待機する
         /// </summary>
-        UniTask<bool> WaitResumeChoiceAsync(CancellationToken cancellationToken);
+        /// <param name="cancellationToken">キャンセルトークン</param>
+        /// <returns>再開選択結果</returns>
+        UniTask<TrainingResumeChoice> WaitResumeChoiceAsync(CancellationToken cancellationToken);
     }
 }

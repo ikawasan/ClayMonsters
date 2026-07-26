@@ -58,6 +58,7 @@ namespace Scene.TrainingScene.View
         private int roamSessionId;
         private bool isRoaming;
         private bool isReacting;
+        private bool hasRoamSpawnPlacement;
         private float noticeAnimHeightBoost;
         private Vector3 noticeBaseScale = Vector3.one;
 
@@ -136,6 +137,14 @@ namespace Scene.TrainingScene.View
 
             EnsureNoticeMark();
             SetNoticeVisible(false);
+
+            // 非Roamからの初回のみランダム配置するRoam→訓練→Roamでは位置を維持する
+            if (!hasRoamSpawnPlacement)
+            {
+                PlaceAtRandomRoamSpawn();
+                hasRoamSpawnPlacement = true;
+            }
+
             isRoaming = true;
             int sessionId = ++roamSessionId;
             roamCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -201,6 +210,7 @@ namespace Scene.TrainingScene.View
                 model.transform.localRotation = DisplayFacingRotation;
                 model.transform.localScale = Vector3.one;
                 trainingDisplay.SnapDisplayedModelToGround();
+                hasRoamSpawnPlacement = false;
             }
 
             motion?.SetRootTranslationEnabled(false);
@@ -659,6 +669,26 @@ namespace Scene.TrainingScene.View
             {
                 motion.Play(MotionType.Idle);
             }
+        }
+
+        private void PlaceAtRandomRoamSpawn()
+        {
+            GameObject model = trainingDisplay != null ? trainingDisplay.LoadedModel : null;
+            if (model == null)
+            {
+                return;
+            }
+
+            Transform modelTransform = model.transform;
+            Vector3 spawnPosition = PickDestination(modelTransform.position);
+            modelTransform.position = spawnPosition;
+            modelTransform.rotation = DisplayFacingRotation;
+            trainingDisplay.SnapDisplayedModelToGround();
+
+            ProceduralMotionCharacter motion = trainingDisplay.MotionCharacter;
+            motion?.SetRootTranslationEnabled(false);
+            motion?.Play(MotionType.Idle);
+            motion?.OnLayoutPositionChanged();
         }
 
         private Vector3 PickDestination(Vector3 currentPosition)

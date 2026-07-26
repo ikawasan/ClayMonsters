@@ -591,12 +591,31 @@ namespace Scene.TrainingScene.Domain
         {
             if (slotIndex < 0
                 || slotIndex >= TrainingSettings.AttackSlotCount
-                || slotIndex >= AttackMotions.Count)
+                || slotIndex >= AttackMotions.Count
+                || !ProceduralMotionCharacter.IsAttackMotion(newAttack))
             {
                 return false;
             }
 
             AttackMotions[slotIndex] = newAttack;
+            return true;
+        }
+
+        /// <summary>
+        /// 空きスロットへ新しい攻撃を追加する
+        /// </summary>
+        /// <param name="newAttack">新しい攻撃</param>
+        /// <returns>追加に成功したか</returns>
+        public bool TryAddAttack(MotionType newAttack)
+        {
+            if (AttackMotions.Count >= TrainingSettings.AttackSlotCount
+                || !ProceduralMotionCharacter.IsAttackMotion(newAttack)
+                || AttackMotions.Contains(newAttack))
+            {
+                return false;
+            }
+
+            AttackMotions.Add(newAttack);
             return true;
         }
 

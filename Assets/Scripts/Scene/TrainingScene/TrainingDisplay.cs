@@ -234,9 +234,21 @@ namespace Scene.TrainingScene
                 return false;
             }
 
-            string filePath = Path.Combine(Application.persistentDataPath, slot.glbFileName);
-            if (!File.Exists(filePath))
+            // 圧縮後はClayModel_SlotN.glb.gzになるためResolveReadPathで展開パスを解決する
+            if (!ModelSaveStorage.Exists(slot.glbFileName))
             {
+                Debug.LogError(
+                    $"[TrainingDisplay] GLBが見つかりません: {slot.glbFileName}",
+                    this);
+                return false;
+            }
+
+            string filePath = ModelSaveStorage.ResolveReadPath(slot.glbFileName);
+            if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
+            {
+                Debug.LogError(
+                    $"[TrainingDisplay] GLBの読込パスを解決できません: {slot.glbFileName}",
+                    this);
                 return false;
             }
 

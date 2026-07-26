@@ -19,23 +19,44 @@ namespace Scene.TrainingScene.Domain
         /// <returns>再開可能ならtrue</returns>
         public static bool IsResumable(TrainingSlotProgress progress)
         {
-            if (progress == null || !progress.inProgress || progress.status == null)
+            if (progress == null || !progress.inProgress)
             {
                 return false;
             }
 
-            if (progress.day < 1 || progress.day > TrainingSettings.TotalDays)
+            // 最終日を越えた保存は育成完了扱いで再開しない
+            if (progress.day > TrainingSettings.TotalDays)
             {
+                return false;
+            }
+
+            if (progress.status == null)
+            {
+                Debug.LogError("[TrainingSlotProgressMapper] 育成途中データのステータスが欠落しています");
+                return false;
+            }
+
+            if (progress.day < 1)
+            {
+                Debug.LogError($"[TrainingSlotProgressMapper] 育成途中データの日付が不正です: {progress.day}");
                 return false;
             }
 
             if (progress.turnIndexInDay < 0
                 || progress.turnIndexInDay > TrainingDailySchedule.TurnsPerDay)
             {
+                Debug.LogError(
+                    $"[TrainingSlotProgressMapper] 育成途中データのターン位置が不正です: {progress.turnIndexInDay}");
                 return false;
             }
 
-            return progress.attackMotions != null && progress.attackMotions.Count > 0;
+            if (progress.attackMotions == null || progress.attackMotions.Count == 0)
+            {
+                // 技が空でも再開は許可し原因が分かるようエラーだけ出す
+                Debug.LogError("[TrainingSlotProgressMapper] 育成途中データの攻撃が空です");
+            }
+
+            return true;
         }
 
         /// <summary>

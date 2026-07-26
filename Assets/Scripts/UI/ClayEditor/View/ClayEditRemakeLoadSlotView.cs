@@ -308,10 +308,10 @@ namespace UI.ClayEditor.View
                 return;
             }
 
-            string filePath = Path.Combine(Application.persistentDataPath, slot.glbFileName);
-            if (!File.Exists(filePath))
+            string filePath = ModelSaveStorage.ResolveReadPath(slot.glbFileName);
+            if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
             {
-                Debug.LogError($"[ClayEditRemakeLoadSlotView] glbファイルが見つかりません: {filePath}");
+                Debug.LogError($"[ClayEditRemakeLoadSlotView] glbファイルが見つかりません: {slot.glbFileName}");
                 return;
             }
 

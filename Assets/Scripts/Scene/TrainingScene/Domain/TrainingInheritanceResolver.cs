@@ -66,8 +66,9 @@ namespace Scene.TrainingScene.Domain
             status.hit += gain.Hit;
             TrainingActionResolver.ClampStatus(status);
 
-            List<MotionType> attacks = ModelAttackMotionUtility.Normalize(
+            List<MotionType> attacks = ModelAttackMotionUtility.SanitizeForUsableAttacks(
                 baseAttacks,
+                usableAttacks,
                 TrainingSettings.AttackSlotCount);
 
             MotionType? inheritedA = TryPickInheritedAttack(

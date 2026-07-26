@@ -91,8 +91,14 @@ namespace SaveData.Service
             List<MotionType> attacks = attackMotions != null
                 ? new List<MotionType>(attackMotions)
                 : new List<MotionType>();
+            if (attacks.Count != AttackMotionCount)
+            {
+                Debug.LogError(
+                    $"[ClayModelSaveService] 攻撃スロット数が不正です({attacks.Count}/{AttackMotionCount})");
+            }
 
             ClayModelSaveData data = LoadOrCreate(pool);
+            TrainingSlotProgress existingProgress = data.slots[slotIndex].trainingProgress;
             data.slots[slotIndex] = new ModelSaveSlot
             {
                 isUsed = true,
@@ -100,7 +106,9 @@ namespace SaveData.Service
                 status = status,
                 glbFileName = glbFileName,
                 thumbnailFileName = thumbnailFileName,
-                attackMotions = attacks
+                attackMotions = attacks,
+                // モデル再保存で育成途中データを消さない
+                trainingProgress = existingProgress
             };
 
             WriteToFile(pool, data);
@@ -225,6 +233,17 @@ namespace SaveData.Service
         /// <inheritdoc />
         public TrainingSlotProgress GetTrainingProgress(ModelSavePool pool, int slotIndex)
         {
+            if (!ModelSavePoolSettings.IsValidSlotIndex(pool, slotIndex))
+            {
+                return null;
+            }
+
+            TrainingSlotProgress fileProgress = ReadTrainingProgressFile(pool, slotIndex);
+            if (fileProgress != null && fileProgress.inProgress)
+            {
+                return CloneTrainingProgress(fileProgress);
+            }
+
             ModelSaveSlot slot = GetSlot(pool, slotIndex);
             if (slot?.trainingProgress == null || !slot.trainingProgress.inProgress)
             {
@@ -237,8 +256,15 @@ namespace SaveData.Service
         /// <inheritdoc />
         public bool SaveTrainingProgress(ModelSavePool pool, int slotIndex, TrainingSlotProgress progress)
         {
-            if (!ModelSavePoolSettings.IsValidSlotIndex(pool, slotIndex) || progress == null || !progress.inProgress)
+            if (!ModelSavePoolSettings.IsValidSlotIndex(pool, slotIndex))
             {
+                Debug.LogError($"[ClayModelSaveService] 育成途中データのスロット番号が不正です: {slotIndex}");
+                return false;
+            }
+
+            if (progress == null || !progress.inProgress)
+            {
+                Debug.LogError("[ClayModelSaveService] 育成途中データが進行中ではありません");
                 return false;
             }
 
@@ -246,12 +272,24 @@ namespace SaveData.Service
             ModelSaveSlot slot = data.slots[slotIndex];
             if (!slot.isUsed)
             {
+                Debug.LogError($"[ClayModelSaveService] 未使用スロット{slotIndex}へ育成途中データを保存できません");
                 return false;
             }
 
-            slot.trainingProgress = CloneTrainingProgress(progress);
+            TrainingSlotProgress cloned = CloneTrainingProgress(progress);
+            slot.trainingProgress = cloned;
             data.slots[slotIndex] = slot;
             WriteToFile(pool, data);
+            WriteTrainingProgressFile(pool, slotIndex, cloned);
+
+            TrainingSlotProgress verified = GetTrainingProgress(pool, slotIndex);
+            if (verified == null || !verified.inProgress)
+            {
+                Debug.LogError(
+                    $"[ClayModelSaveService] 育成途中データの保存検証に失敗しました slot={slotIndex}");
+                return false;
+            }
+
             return true;
         }
 
@@ -265,14 +303,14 @@ namespace SaveData.Service
 
             ClayModelSaveData data = LoadOrCreate(pool);
             ModelSaveSlot slot = data.slots[slotIndex];
-            if (slot.trainingProgress == null)
+            if (slot.trainingProgress != null)
             {
-                return;
+                slot.trainingProgress = null;
+                data.slots[slotIndex] = slot;
+                WriteToFile(pool, data);
             }
 
-            slot.trainingProgress = null;
-            data.slots[slotIndex] = slot;
-            WriteToFile(pool, data);
+            DeleteTrainingProgressFile(pool, slotIndex);
         }
 
         /// <inheritdoc />
@@ -427,6 +465,13 @@ namespace SaveData.Service
                 day = source.day,
                 turnIndexInDay = source.turnIndexInDay,
                 stamina = source.stamina,
+                money = source.money,
+                trainGreatSuccessBonusPercent = source.trainGreatSuccessBonusPercent,
+                trainGreatSuccessBonusWeeks = source.trainGreatSuccessBonusWeeks,
+                inventory = CloneInventory(source.inventory),
+                shopOfferItemIds = source.shopOfferItemIds != null
+                    ? new List<string>(source.shopOfferItemIds)
+                    : new List<string>(),
                 status = source.status != null
                     ? new ModelStatus
                     {
@@ -442,6 +487,66 @@ namespace SaveData.Service
                     : new List<MotionType>()
             };
             return clone;
+        }
+
+        private static List<TrainingInventoryEntry> CloneInventory(
+            IReadOnlyList<TrainingInventoryEntry> source)
+        {
+            var clone = new List<TrainingInventoryEntry>();
+            if (source == null)
+            {
+                return clone;
+            }
+
+            for (int i = 0; i < source.Count; i++)
+            {
+                TrainingInventoryEntry entry = source[i];
+                if (entry == null)
+                {
+                    continue;
+                }
+
+                clone.Add(new TrainingInventoryEntry
+                {
+                    itemId = entry.itemId,
+                    count = entry.count
+                });
+            }
+
+            return clone;
+        }
+
+        private static void WriteTrainingProgressFile(
+            ModelSavePool pool,
+            int slotIndex,
+            TrainingSlotProgress progress)
+        {
+            string fileName = ModelSavePoolSettings.GetTrainingProgressFileName(pool, slotIndex);
+            string json = JsonUtility.ToJson(progress, true);
+            ModelSaveStorage.WriteAllText(fileName, json);
+        }
+
+        private static TrainingSlotProgress ReadTrainingProgressFile(ModelSavePool pool, int slotIndex)
+        {
+            string fileName = ModelSavePoolSettings.GetTrainingProgressFileName(pool, slotIndex);
+            if (!ModelSaveStorage.Exists(fileName))
+            {
+                return null;
+            }
+
+            string json = ModelSaveStorage.ReadAllText(fileName);
+            if (string.IsNullOrEmpty(json))
+            {
+                return null;
+            }
+
+            return JsonUtility.FromJson<TrainingSlotProgress>(json);
+        }
+
+        private static void DeleteTrainingProgressFile(ModelSavePool pool, int slotIndex)
+        {
+            string fileName = ModelSavePoolSettings.GetTrainingProgressFileName(pool, slotIndex);
+            ModelSaveStorage.Delete(fileName);
         }
 
         /// <inheritdoc />
@@ -473,6 +578,7 @@ namespace SaveData.Service
 
             string voxelFileName = ModelSavePoolSettings.GetVoxelFileName(pool, slotIndex);
             ModelSaveStorage.Delete(voxelFileName);
+            DeleteTrainingProgressFile(pool, slotIndex);
 
             data.slots[slotIndex] = new ModelSaveSlot();
             WriteToFile(pool, data);

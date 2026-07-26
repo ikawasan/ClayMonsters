@@ -262,11 +262,8 @@ namespace Scene.TrainingScene.View
                 dayText.text = TrainingDayCatalog.GetDisplayName(session.CurrentDay);
             }
 
-            if (periodText != null)
-            {
-                periodText.text =
-                    $"{(int)session.CurrentDay}/{TrainingSettings.TotalDays}";
-            }
+            // periodTextとturnTextはBindSession(session,period,turnNumber)側が正
+            // ここであんぶん表示を書くと訓練成功ログ表示時に時間割が壊れる
 
             if (moneyText != null)
             {
@@ -1005,11 +1002,20 @@ namespace Scene.TrainingScene.View
         /// <inheritdoc/>
         public void SetInterruptButtonVisible(bool visible)
         {
-            if (interruptButton != null)
+            if (interruptButton == null)
             {
-                interruptButton.gameObject.SetActive(visible);
-                interruptButton.interactable = visible;
+                if (visible)
+                {
+                    Debug.LogError(
+                        "[TrainingHudView] interruptButtonが未配線ですHierarchyで接続してください",
+                        this);
+                }
+
+                return;
             }
+
+            interruptButton.gameObject.SetActive(visible);
+            interruptButton.interactable = visible;
         }
 
         /// <inheritdoc/>
@@ -1017,6 +1023,9 @@ namespace Scene.TrainingScene.View
         {
             if (interruptButton == null)
             {
+                Debug.LogError(
+                    "[TrainingHudView] interruptButtonが未配線のため中断できません",
+                    this);
                 return new EmptyDisposable();
             }
 
@@ -1030,7 +1039,16 @@ namespace Scene.TrainingScene.View
             HideLocationChoices();
             HideAttackSwapChoices();
             SetLegacyResumeButtonsVisible(false);
-            GetResumeWindowView()?.Show(presentation);
+            TrainingResumeWindowView windowView = GetResumeWindowView();
+            if (windowView == null)
+            {
+                Debug.LogError(
+                    "[TrainingHudView] resumeWindowViewが未配線ですHierarchyで接続してください",
+                    this);
+                return;
+            }
+
+            windowView.Show(presentation);
         }
 
         /// <inheritdoc/>
@@ -1051,15 +1069,19 @@ namespace Scene.TrainingScene.View
         }
 
         /// <inheritdoc/>
-        public async UniTask<bool> WaitResumeChoiceAsync(CancellationToken cancellationToken)
+        public async UniTask<TrainingResumeChoice> WaitResumeChoiceAsync(CancellationToken cancellationToken)
         {
             TrainingResumeWindowView windowView = GetResumeWindowView();
             if (windowView == null)
             {
-                return false;
+                Debug.LogError(
+                    "[TrainingHudView] resumeWindowViewが未配線のため再開選択できません",
+                    this);
+                return TrainingResumeChoice.Unavailable;
             }
 
-            return await windowView.WaitChoiceAsync(cancellationToken);
+            bool resume = await windowView.WaitChoiceAsync(cancellationToken);
+            return resume ? TrainingResumeChoice.Continue : TrainingResumeChoice.Restart;
         }
 
         /// <inheritdoc/>

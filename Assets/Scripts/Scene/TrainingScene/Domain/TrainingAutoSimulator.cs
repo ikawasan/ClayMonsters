@@ -167,6 +167,12 @@ namespace Scene.TrainingScene.Domain
                     usableAttacks,
                     out TrainingEventOutcome learnOutcome))
             {
+                // 空きスロットがあれば入れ替えずにそのまま覚える
+                if (session.TryAddAttack(learnOutcome.LearnedAttack))
+                {
+                    return;
+                }
+
                 int replaceIndex = TrainingAutoPolicy.PickAttackSwapSlot(
                     session,
                     learnOutcome.LearnedAttack);

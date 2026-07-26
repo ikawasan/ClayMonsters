@@ -1,3 +1,4 @@
+using Battle;
 using Battle.Interface;
 using Cysharp.Threading.Tasks;
 using Extensions;
@@ -29,6 +30,7 @@ namespace Scene.BattleNpcScene.View
         [SerializeField] private TMP_Text finishText;
         [SerializeField] private Image finishFlashImage;
         [SerializeField] private Button startButton;
+        [SerializeField] private BattleMatchupStatusPanelView statusPanel;
 
         [Header("VS画面")]
         [SerializeField] private float vsPopSeconds = 0.45f;
@@ -135,9 +137,12 @@ namespace Scene.BattleNpcScene.View
         public async UniTask ShowVsAndWaitStartAsync(
             string playerName,
             string enemyName,
+            BattleUnit player,
+            BattleUnit enemy,
             CancellationToken cancellationToken)
         {
             PrepareVsPresentation(playerName, enemyName, showStartButton: true);
+            BindStatusPanel(player, enemy);
 
             if (vsText != null)
             {
@@ -176,6 +181,8 @@ namespace Scene.BattleNpcScene.View
             finally
             {
                 isVsIdleAnimating = false;
+                statusPanel?.SetButtonVisible(false);
+                statusPanel?.HideDetail();
             }
         }
 
@@ -188,6 +195,8 @@ namespace Scene.BattleNpcScene.View
             CancellationToken cancellationToken)
         {
             PrepareVsPresentation(playerName, enemyName, showStartButton: false);
+            statusPanel?.SetButtonVisible(false);
+            statusPanel?.HideDetail();
 
             if (vsText != null)
             {
@@ -308,11 +317,46 @@ namespace Scene.BattleNpcScene.View
         public void HideVsUi()
         {
             SetStartButtonVisible(false);
+            statusPanel?.SetButtonVisible(false);
+            statusPanel?.HideDetail();
             SetVsNamePlatesVisible(false);
             SetElementAlpha(vsText, 0f);
             SetNamePlate(playerNameText, null, 0f);
             SetNamePlate(enemyNameText, null, 0f);
             isVsIdleAnimating = false;
+        }
+
+        private void BindStatusPanel(BattleUnit player, BattleUnit enemy)
+        {
+            if (statusPanel == null)
+            {
+                Debug.LogError(
+                    "[BattleStartOverlayView] statusPanelが未配線ですPrefab ModeでBattleMatchupStatusPanelを配置し接続してください",
+                    this);
+                return;
+            }
+
+            statusPanel.Bind(player, enemy);
+            statusPanel.SetDetailVisibilityListener(OnStatusDetailVisibilityChanged);
+            statusPanel.SetButtonVisible(true);
+        }
+
+        private void OnStatusDetailVisibilityChanged(bool isDetailVisible)
+        {
+            // パラメーター表示中は背面のVS UIを出さない
+            if (isDetailVisible)
+            {
+                SetCanvasVisible(false);
+                return;
+            }
+
+            if (!isVsIdleAnimating)
+            {
+                return;
+            }
+
+            SetCanvasVisible(true);
+            EnsureStartButtonReceivesInput();
         }
 
         /// <summary>
@@ -859,6 +903,8 @@ namespace Scene.BattleNpcScene.View
                 // 勝利表示中はWinnerとモンスター名を維持する
                 CancelPartBreakPresentation();
                 SetStartButtonVisible(false);
+                statusPanel?.SetButtonVisible(false);
+                statusPanel?.HideDetail();
                 SetVsNamePlatesVisible(false);
                 HidePhaseTexts();
                 HideFinishImmediate();
@@ -870,6 +916,8 @@ namespace Scene.BattleNpcScene.View
             victoryConfetti.Dispose();
             CancelPartBreakPresentation();
             SetStartButtonVisible(false);
+            statusPanel?.SetButtonVisible(false);
+            statusPanel?.HideDetail();
             SetVsNamePlatesVisible(false);
             HidePhaseTexts();
             HideVictoryLabels();

@@ -13,6 +13,9 @@ namespace UI.Battle.View
 
         public const int SegmentCount = 3;
         public const float DefaultMaxDistance = 10f;
+        // BattleDistanceBandResolverの近中境界と揃える
+        private const float CloseMaxDistance = 4f;
+        private const float MidMaxDistance = 7f;
         public const float BattleBarWidth = 64f;
         public const float BattleBarHeight = 10f;
         public const float BattleSegmentWidth = 20f;
@@ -277,11 +280,50 @@ namespace UI.Battle.View
                 image.type = Image.Type.Simple;
                 image.preserveAspect = false;
 
-                float lower = maxDistance > 0f ? (maxDistance / SegmentCount) * i : 0f;
-                float upper = maxDistance > 0f ? (maxDistance / SegmentCount) * (i + 1) : 0f;
+                float lower = GetSegmentLower(i, maxDistance);
+                float upper = GetSegmentUpper(i, maxDistance);
                 bool inRange = maxDistance > 0f && rangeMin < upper && rangeMax > lower;
                 image.color = inRange ? inColor : outColor;
             }
+        }
+
+        private static float GetSegmentLower(int segmentIndex, float maxDistance)
+        {
+            if (maxDistance <= 0f || segmentIndex <= 0)
+            {
+                return 0f;
+            }
+
+            if (segmentIndex == 1)
+            {
+                return Mathf.Min(CloseMaxDistance, maxDistance);
+            }
+
+            float closeMax = Mathf.Min(CloseMaxDistance, maxDistance);
+            float midMax = Mathf.Min(MidMaxDistance, maxDistance);
+            return Mathf.Max(midMax, closeMax);
+        }
+
+        private static float GetSegmentUpper(int segmentIndex, float maxDistance)
+        {
+            if (maxDistance <= 0f)
+            {
+                return 0f;
+            }
+
+            if (segmentIndex <= 0)
+            {
+                return Mathf.Min(CloseMaxDistance, maxDistance);
+            }
+
+            if (segmentIndex == 1)
+            {
+                float closeMax = Mathf.Min(CloseMaxDistance, maxDistance);
+                float midMax = Mathf.Min(MidMaxDistance, maxDistance);
+                return Mathf.Max(midMax, closeMax);
+            }
+
+            return maxDistance;
         }
 
         /// <summary>

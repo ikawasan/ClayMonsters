@@ -42,7 +42,7 @@ namespace Scene.TrainingScene.Domain
                 return false;
             }
 
-            string label = TrainingAttackTeacher.FormatAttackLabel(learned);
+            string label = TrainingAttackTeacher.FormatAttackName(learned);
             outcome = new TrainingEventOutcome(
                 TrainingEventType.LearnAttack,
                 "技習得イベント",
