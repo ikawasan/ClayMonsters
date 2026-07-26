@@ -126,7 +126,9 @@ namespace Scene.TrainingScene.Domain
         /// </summary>
         public static string FormatRestDisplayText()
         {
-            return "休憩\n体力を全回復する";
+            return "休憩\n"
+                + $"体力+{TrainingSettings.RestStaminaRecovery}"
+                + $"(大成功で+{TrainingSettings.RestGreatSuccessRecovery})";
         }
 
         private static TrainingStatGain ResolveSuccessGain(TrainingLocation location)

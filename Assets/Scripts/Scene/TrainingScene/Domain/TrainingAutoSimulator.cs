@@ -91,7 +91,7 @@ namespace Scene.TrainingScene.Domain
                 switch (choice.Command)
                 {
                     case TrainingCommandType.Rest:
-                        session.ApplyAction(TrainingActionResolver.ExecuteRest(session.Stamina));
+                        session.ApplyAction(TrainingActionResolver.ExecuteRest(session.Stamina, random));
                         return;
                     case TrainingCommandType.SpecialTrain:
                     {
@@ -153,6 +153,10 @@ namespace Scene.TrainingScene.Domain
                 {
                     session.AddMoney(reward);
                 }
+            }
+            else
+            {
+                session.LowerMotivation(1);
             }
 
             session.RefreshShopOffer(random);

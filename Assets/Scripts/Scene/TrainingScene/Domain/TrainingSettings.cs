@@ -36,7 +36,8 @@ namespace Scene.TrainingScene.Domain
         public const int StartingMoney = 100;
 
         /// <summary>
-        /// 訓練の体力消費
+        /// 訓練の標準体力消費(互換用)
+        /// 実際の消費は主ステごとにTrainingFocusCatalogが返す
         /// </summary>
         public const int TrainStaminaCost = 20;
 
@@ -46,9 +47,15 @@ namespace Scene.TrainingScene.Domain
         public const int OfferedTrainFocusCount = 3;
 
         /// <summary>
-        /// 特訓の体力消費
+        /// 特訓の標準体力消費(互換用)
+        /// 実際の消費は主ステごとにTrainingFocusCatalogが返す
         /// </summary>
         public const int SpecialTrainStaminaCost = 40;
+
+        /// <summary>
+        /// 特訓の体力消費倍率(通常訓練比)
+        /// </summary>
+        public const int SpecialTrainStaminaCostMultiplier = 2;
 
         /// <summary>
         /// 互換用の旧行動消費
@@ -81,19 +88,24 @@ namespace Scene.TrainingScene.Domain
         public const float SpecialTrainGreatSuccessMultiplier = 2.5f;
 
         /// <summary>
-        /// 休憩で体力を最大まで回復する
+        /// 訓練成功時にアイテムを拾う確率(百分率)
         /// </summary>
-        public const int RestStaminaRecovery = MaxStamina;
+        public const float TrainLuckyItemPercent = 5f;
 
         /// <summary>
-        /// 互換用の旧休憩大成功回復
+        /// 休憩の基本体力回復
         /// </summary>
-        public const int RestGreatSuccessRecovery = MaxStamina;
+        public const int RestStaminaRecovery = 40;
 
         /// <summary>
-        /// 互換用の旧休憩大成功率
+        /// 休憩大成功時の体力回復
         /// </summary>
-        public const float RestGreatSuccessPercent = 0f;
+        public const int RestGreatSuccessRecovery = 80;
+
+        /// <summary>
+        /// 休憩大成功率(百分率)
+        /// </summary>
+        public const float RestGreatSuccessPercent = 20f;
 
         /// <summary>
         /// 訓練失敗判定のしきい値(必要消費未満)
@@ -184,6 +196,41 @@ namespace Scene.TrainingScene.Domain
         /// カクリツン改の継続週数
         /// </summary>
         public const int ShopTrainBoostStrongWeeks = 2;
+
+        /// <summary>
+        /// やる気回復アイテム価格
+        /// </summary>
+        public const int ShopMotivationBoostPrice = 150;
+
+        /// <summary>
+        /// やる気回復アイテムの上昇段階数
+        /// </summary>
+        public const int ShopMotivationBoostGain = 1;
+
+        /// <summary>
+        /// 開始時のやる気
+        /// </summary>
+        public const TrainingMotivation StartingMotivation = TrainingMotivation.Normal;
+
+        /// <summary>
+        /// やる気最低時の訓練上昇倍率
+        /// </summary>
+        public const float MotivationTrainMultiplierVeryLow = 0.6f;
+
+        /// <summary>
+        /// やる気低時の訓練上昇倍率
+        /// </summary>
+        public const float MotivationTrainMultiplierLow = 0.8f;
+
+        /// <summary>
+        /// やる気普通時の訓練上昇倍率
+        /// </summary>
+        public const float MotivationTrainMultiplierNormal = 1f;
+
+        /// <summary>
+        /// やる気高時の訓練上昇倍率
+        /// </summary>
+        public const float MotivationTrainMultiplierHigh = 1.3f;
 
         /// <summary>
         /// 行動成功後に技習得イベントが発生する確率(百分率)

@@ -109,6 +109,8 @@ namespace Scene.TrainingScene.Domain
             }
 
             session.AddInventoryItem(item.Id);
+            // 購入した枠は売り切れにし同来店中は補充しない
+            session.TryRemoveShopOfferItem(item.Id);
             return new TrainingShopPurchaseResult(
                 true,
                 $"{item.DisplayName}を購入した\n所持へ追加\n残り{session.Money}G",
@@ -143,9 +145,12 @@ namespace Scene.TrainingScene.Domain
             }
 
             ApplyItemEffect(session, item);
+            string message = item.ItemType == TrainingShopItemType.MotivationBoost
+                ? $"{item.DisplayName}を使った\nやる気が上がった"
+                : $"{item.DisplayName}を使った";
             return new TrainingItemUseResult(
                 true,
-                $"{item.DisplayName}を使った",
+                message,
                 item);
         }
 
@@ -179,6 +184,9 @@ namespace Scene.TrainingScene.Domain
                     session.ApplyTrainEfficiencyBoost(
                         item.GreatSuccessBonusPercent,
                         item.GreatSuccessBonusWeeks);
+                    break;
+                case TrainingShopItemType.MotivationBoost:
+                    session.RaiseMotivation(item.MotivationGain);
                     break;
             }
         }

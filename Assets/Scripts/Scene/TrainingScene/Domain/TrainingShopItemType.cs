@@ -23,6 +23,11 @@ namespace Scene.TrainingScene.Domain
         /// <summary>
         /// 訓練効率アップ
         /// </summary>
-        TrainEfficiency
+        TrainEfficiency,
+
+        /// <summary>
+        /// やる気上昇
+        /// </summary>
+        MotivationBoost
     }
 }

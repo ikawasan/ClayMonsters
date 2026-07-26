@@ -36,6 +36,10 @@ namespace Scene.TrainingScene.View
         [SerializeField] private TMP_Text turnText;
         [Tooltip("体力の数値表示。体力 現在/最大")]
         [SerializeField] private TMP_Text staminaText;
+        [Tooltip("やる気のテキスト。やる気　のあとにアイコンまたは記号を出す")]
+        [SerializeField] private TMP_Text motivationText;
+        [Tooltip("やる気アイコン。未配線時はmotivationTextへ記号を出す")]
+        [SerializeField] private Image motivationIcon;
         [Tooltip("所持金の数値表示。nG")]
         [SerializeField] private TMP_Text moneyText;
         [Tooltip("HP・攻撃・防御・速度・命中のステータス表示")]
@@ -123,6 +127,11 @@ namespace Scene.TrainingScene.View
         private int pendingSwapChoice = -1;
         private bool hasSwapChoice;
         private bool attackSwapRestoreTrainingLayout = true;
+        private Sprite[] motivationFrames;
+        private int motivationFrameIndex;
+        private float motivationFrameTimer;
+        private TrainingMotivation playingMotivation;
+        private const float MotivationFrameSeconds = 0.12f;
         private const string CommandChoicePrompt = "この時間の行動を選んでください";
         private const string FocusChoicePrompt = "伸ばすステータスを選んでください";
         private const string ShopChoicePrompt = "買いたい商品を選んでください";
@@ -153,6 +162,63 @@ namespace Scene.TrainingScene.View
             EnsureSerializedReferences();
             BindUi();
             Hide();
+        }
+
+        private void Update()
+        {
+            TickMotivationIconAnimation();
+        }
+
+        private void PlayMotivationIcon(TrainingMotivation motivation)
+        {
+            if (motivationIcon == null)
+            {
+                return;
+            }
+
+            bool changed = motivationFrames == null
+                || motivationFrames.Length == 0
+                || playingMotivation != motivation;
+            if (changed)
+            {
+                playingMotivation = motivation;
+                motivationFrames = TrainingMotivationCatalog.ResolveIconFrames(motivation);
+                motivationFrameIndex = 0;
+                motivationFrameTimer = 0f;
+                Sprite first = motivationFrames != null && motivationFrames.Length > 0
+                    ? motivationFrames[0]
+                    : null;
+                motivationIcon.sprite = first;
+            }
+
+            bool hasFrames = motivationFrames != null && motivationFrames.Length > 0;
+            motivationIcon.enabled = hasFrames && motivationIcon.sprite != null;
+            motivationIcon.gameObject.SetActive(true);
+        }
+
+        private void TickMotivationIconAnimation()
+        {
+            if (motivationIcon == null
+                || !motivationIcon.isActiveAndEnabled
+                || motivationFrames == null
+                || motivationFrames.Length <= 1)
+            {
+                return;
+            }
+
+            motivationFrameTimer += Time.unscaledDeltaTime;
+            if (motivationFrameTimer < MotivationFrameSeconds)
+            {
+                return;
+            }
+
+            motivationFrameTimer = 0f;
+            motivationFrameIndex = (motivationFrameIndex + 1) % motivationFrames.Length;
+            Sprite frame = motivationFrames[motivationFrameIndex];
+            if (frame != null)
+            {
+                motivationIcon.sprite = frame;
+            }
         }
 
         /// <inheritdoc/>
@@ -273,6 +339,16 @@ namespace Scene.TrainingScene.View
             if (staminaText != null)
             {
                 staminaText.text = $"体力 {session.Stamina} / {TrainingSettings.MaxStamina}";
+            }
+
+            if (motivationText != null)
+            {
+                motivationText.text = "やる気　";
+            }
+
+            if (motivationIcon != null)
+            {
+                PlayMotivationIcon(session.Motivation);
             }
 
             if (statsText != null)
@@ -1197,10 +1273,12 @@ namespace Scene.TrainingScene.View
             string detail = command switch
             {
                 TrainingCommandType.Train =>
-                    $"体力-{TrainingSettings.TrainStaminaCost} 成功/大成功でステ上昇",
+                    "訓練ごとに体力消費が異なる 成功/大成功でステ上昇",
                 TrainingCommandType.SpecialTrain =>
-                    $"体力-{TrainingSettings.SpecialTrainStaminaCost} 大幅にステ上昇",
-                TrainingCommandType.Rest => "体力を全回復する",
+                    "特訓ごとに体力消費が異なる 大幅にステ上昇",
+                TrainingCommandType.Rest =>
+                    $"体力+{TrainingSettings.RestStaminaRecovery}"
+                    + $"(大成功で+{TrainingSettings.RestGreatSuccessRecovery})",
                 TrainingCommandType.Shop => "昼休みにだけ利用できる売店",
                 TrainingCommandType.UseItem => "所持アイテムを使う(時間は消費しない)",
                 TrainingCommandType.Tournament => "対戦に勝利すると賞金と体力回復",
@@ -1228,15 +1306,51 @@ namespace Scene.TrainingScene.View
 
             trigger.triggers.Clear();
             TrainingStatGain gain = TrainingFocusCatalog.GetBaseGain(focus);
-            float multiplier = command == TrainingCommandType.SpecialTrain
+            bool isSpecial = command == TrainingCommandType.SpecialTrain;
+            float multiplier = isSpecial
                 ? TrainingSettings.SpecialTrainSuccessMultiplier
                 : 1f;
+            int staminaCost = isSpecial
+                ? TrainingFocusCatalog.GetSpecialTrainStaminaCost(focus)
+                : TrainingFocusCatalog.GetTrainStaminaCost(focus);
             TrainingStatGain scaled = TrainingFocusCatalog.ScaleGain(gain, multiplier);
             string detail =
                 $"{TrainingFocusCatalog.GetDisplayName(focus)}\n"
-                + $"HP+{scaled.Hp} 攻撃+{scaled.Attack} 防御+{scaled.Defense} 速度+{scaled.Speed} 命中+{scaled.Hit}";
+                + $"体力-{staminaCost}\n"
+                + FormatFocusGainPreview(scaled);
             AddHoverEntry(trigger, EventTriggerType.PointerEnter, () => SetLogMessage(detail));
             AddHoverEntry(trigger, EventTriggerType.PointerExit, () => SetLogMessage(FocusChoicePrompt));
+        }
+
+        private static string FormatFocusGainPreview(TrainingStatGain gain)
+        {
+            var parts = new List<string>(3);
+            if (gain.Hp != 0)
+            {
+                parts.Add($"HP+{gain.Hp}");
+            }
+
+            if (gain.Attack != 0)
+            {
+                parts.Add($"攻撃+{gain.Attack}");
+            }
+
+            if (gain.Defense != 0)
+            {
+                parts.Add($"防御+{gain.Defense}");
+            }
+
+            if (gain.Speed != 0)
+            {
+                parts.Add($"速度+{gain.Speed}");
+            }
+
+            if (gain.Hit != 0)
+            {
+                parts.Add($"命中+{gain.Hit}");
+            }
+
+            return parts.Count > 0 ? string.Join(" ", parts) : "ステ上昇なし";
         }
 
         private void BindFocusNavHover(LHButton button, string detail)
@@ -1507,6 +1621,8 @@ namespace Scene.TrainingScene.View
                 || periodText == null
                 || turnText == null
                 || staminaText == null
+                || motivationText == null
+                || motivationIcon == null
                 || moneyText == null
                 || moneyPanel == null
                 || statsText == null

@@ -17,7 +17,8 @@ namespace Scene.TrainingScene.Domain
             TrainingStatGain statGain,
             int staminaRecover,
             float greatSuccessBonusPercent,
-            int greatSuccessBonusWeeks)
+            int greatSuccessBonusWeeks,
+            int motivationGain = 0)
         {
             Id = id ?? string.Empty;
             DisplayName = displayName ?? string.Empty;
@@ -28,6 +29,7 @@ namespace Scene.TrainingScene.Domain
             StaminaRecover = staminaRecover;
             GreatSuccessBonusPercent = greatSuccessBonusPercent;
             GreatSuccessBonusWeeks = greatSuccessBonusWeeks;
+            MotivationGain = motivationGain;
         }
 
         /// <summary>
@@ -74,5 +76,10 @@ namespace Scene.TrainingScene.Domain
         /// 大成功ボーナスの継続週数
         /// </summary>
         public int GreatSuccessBonusWeeks { get; }
+
+        /// <summary>
+        /// やる気上昇量(段階)
+        /// </summary>
+        public int MotivationGain { get; }
     }
 }

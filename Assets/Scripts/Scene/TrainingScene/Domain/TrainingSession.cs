@@ -23,7 +23,8 @@ namespace Scene.TrainingScene.Domain
             bool isGreatSuccess,
             int staminaBefore,
             int staminaAfter,
-            TrainingStatGain appliedGain)
+            TrainingStatGain appliedGain,
+            string foundItemId = null)
         {
             Command = command;
             Focus = focus;
@@ -36,6 +37,7 @@ namespace Scene.TrainingScene.Domain
             StaminaBefore = staminaBefore;
             StaminaAfter = staminaAfter;
             AppliedGain = appliedGain;
+            FoundItemId = foundItemId;
         }
 
         /// <summary>
@@ -92,6 +94,11 @@ namespace Scene.TrainingScene.Domain
         /// 適用されたステータス上昇
         /// </summary>
         public TrainingStatGain AppliedGain { get; }
+
+        /// <summary>
+        /// 訓練中に拾ったアイテムID
+        /// </summary>
+        public string FoundItemId { get; }
     }
 
     /// <summary>
@@ -129,6 +136,11 @@ namespace Scene.TrainingScene.Domain
         /// 行動体力
         /// </summary>
         public int Stamina { get; private set; }
+
+        /// <summary>
+        /// やる気
+        /// </summary>
+        public TrainingMotivation Motivation { get; private set; }
 
         /// <summary>
         /// 所持金
@@ -193,6 +205,7 @@ namespace Scene.TrainingScene.Domain
             CurrentDay = TrainingDayOfWeek.Monday;
             TurnIndexInDay = 0;
             Stamina = TrainingSettings.MaxStamina;
+            Motivation = TrainingSettings.StartingMotivation;
             Money = TrainingSettings.StartingMoney;
             CurrentStatus = ModelStatus.CloneOrDefault(baseStatus);
             AttackMotions = ModelAttackMotionUtility.Normalize(
@@ -221,6 +234,7 @@ namespace Scene.TrainingScene.Domain
                 0,
                 TrainingDailySchedule.TurnsPerDay);
             session.Stamina = Mathf.Clamp(progress.stamina, 0, TrainingSettings.MaxStamina);
+            session.Motivation = TrainingMotivationCatalog.Clamp(progress.motivation);
             session.Money = Mathf.Max(0, progress.money);
             session.TrainGreatSuccessBonusPercent =
                 Mathf.Max(0f, progress.trainGreatSuccessBonusPercent);
@@ -233,6 +247,7 @@ namespace Scene.TrainingScene.Domain
 
         /// <summary>
         /// 売店陳列をランダムに入れ替える
+        /// 放課後など陳列更新タイミングでのみ呼ぶ
         /// </summary>
         /// <param name="random">乱数</param>
         public void RefreshShopOffer(System.Random random)
@@ -259,6 +274,32 @@ namespace Scene.TrainingScene.Domain
             }
 
             RefreshShopOffer(random);
+        }
+
+        /// <summary>
+        /// 購入した商品を陳列から外す
+        /// 同じ来店中は空枠へ補充しない
+        /// </summary>
+        /// <param name="itemId">商品ID</param>
+        public bool TryRemoveShopOfferItem(string itemId)
+        {
+            if (string.IsNullOrEmpty(itemId))
+            {
+                return false;
+            }
+
+            for (int i = 0; i < shopOfferItemIds.Count; i++)
+            {
+                if (shopOfferItemIds[i] != itemId)
+                {
+                    continue;
+                }
+
+                shopOfferItemIds.RemoveAt(i);
+                return true;
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -461,9 +502,46 @@ namespace Scene.TrainingScene.Domain
             if (result.Succeeded)
             {
                 ApplyGain(result.AppliedGain);
+                if (!string.IsNullOrEmpty(result.FoundItemId))
+                {
+                    AddInventoryItem(result.FoundItemId);
+                }
+            }
+            else if (result.Command == TrainingCommandType.Train
+                || result.Command == TrainingCommandType.SpecialTrain)
+            {
+                LowerMotivation(1);
             }
 
             CompletePeriod();
+        }
+
+        /// <summary>
+        /// やる気を1段階以上下げる
+        /// </summary>
+        /// <param name="steps">下降段階数</param>
+        public void LowerMotivation(int steps = 1)
+        {
+            if (steps <= 0)
+            {
+                return;
+            }
+
+            Motivation = TrainingMotivationCatalog.Clamp((int)Motivation - steps);
+        }
+
+        /// <summary>
+        /// やる気を1段階以上上げる
+        /// </summary>
+        /// <param name="steps">上昇段階数</param>
+        public void RaiseMotivation(int steps = 1)
+        {
+            if (steps <= 0)
+            {
+                return;
+            }
+
+            Motivation = TrainingMotivationCatalog.Clamp((int)Motivation + steps);
         }
 
         /// <summary>

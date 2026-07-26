@@ -91,19 +91,64 @@ namespace Scene.TrainingScene.Domain
 
         /// <summary>
         /// 成功時の基礎上昇を返す
+        /// 各訓練は主ステを中心に1〜3種類のみ上げる
         /// </summary>
         /// <param name="focus">主ステ</param>
         public static TrainingStatGain GetBaseGain(TrainingFocus focus)
         {
             return focus switch
             {
-                TrainingFocus.Hp => new TrainingStatGain(8, 0, 2, 4, 0),
-                TrainingFocus.Attack => new TrainingStatGain(4, 8, 0, 2, 1),
-                TrainingFocus.Defense => new TrainingStatGain(2, 4, 8, 0, 0),
-                TrainingFocus.Speed => new TrainingStatGain(0, 2, 4, 8, 2),
-                TrainingFocus.Hit => new TrainingStatGain(0, 2, 0, 2, 8),
+                TrainingFocus.Hp => new TrainingStatGain(10, 0, 3, 0, 0),
+                TrainingFocus.Attack => new TrainingStatGain(0, 12, 0, 0, 0),
+                TrainingFocus.Defense => new TrainingStatGain(3, 0, 10, 0, 0),
+                TrainingFocus.Speed => new TrainingStatGain(0, 0, 0, 10, 3),
+                TrainingFocus.Hit => new TrainingStatGain(0, 2, 0, 2, 10),
                 _ => default
             };
+        }
+
+        /// <summary>
+        /// 通常訓練の体力消費を返す
+        /// </summary>
+        /// <param name="focus">主ステ</param>
+        public static int GetTrainStaminaCost(TrainingFocus focus)
+        {
+            return focus switch
+            {
+                TrainingFocus.Hp => 15,
+                TrainingFocus.Attack => 25,
+                TrainingFocus.Defense => 20,
+                TrainingFocus.Speed => 15,
+                TrainingFocus.Hit => 20,
+                _ => TrainingSettings.TrainStaminaCost
+            };
+        }
+
+        /// <summary>
+        /// 特訓の体力消費を返す
+        /// </summary>
+        /// <param name="focus">主ステ</param>
+        public static int GetSpecialTrainStaminaCost(TrainingFocus focus)
+        {
+            return GetTrainStaminaCost(focus) * TrainingSettings.SpecialTrainStaminaCostMultiplier;
+        }
+
+        /// <summary>
+        /// 通常訓練の最小体力消費を返す
+        /// </summary>
+        public static int GetMinTrainStaminaCost()
+        {
+            int min = int.MaxValue;
+            for (int i = 0; i < AllFocuses.Length; i++)
+            {
+                int cost = GetTrainStaminaCost(AllFocuses[i]);
+                if (cost < min)
+                {
+                    min = cost;
+                }
+            }
+
+            return min == int.MaxValue ? TrainingSettings.TrainStaminaCost : min;
         }
 
         /// <summary>

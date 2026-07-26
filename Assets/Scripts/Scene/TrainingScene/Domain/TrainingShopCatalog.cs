@@ -103,7 +103,18 @@ namespace Scene.TrainingScene.Domain
                 default,
                 0,
                 TrainingSettings.ShopTrainBoostStrongPercent,
-                TrainingSettings.ShopTrainBoostStrongWeeks)
+                TrainingSettings.ShopTrainBoostStrongWeeks),
+            new TrainingShopItem(
+                "motivation_boost",
+                "やる気まんじゅう",
+                $"やる気が{TrainingSettings.ShopMotivationBoostGain}段階上がる",
+                TrainingSettings.ShopMotivationBoostPrice,
+                TrainingShopItemType.MotivationBoost,
+                default,
+                0,
+                0f,
+                0,
+                TrainingSettings.ShopMotivationBoostGain)
         };
 
         /// <summary>

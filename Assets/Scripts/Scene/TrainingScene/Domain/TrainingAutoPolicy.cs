@@ -29,14 +29,14 @@ namespace Scene.TrainingScene.Domain
 
             TrainingFocus focus = PickBestFocus(session.GetOrRollOfferedFocuses(random));
             if (TrainingSchedule.IsSpecialTrainDay(session.CurrentDay)
-                && session.Stamina >= TrainingSettings.SpecialTrainStaminaCost)
+                && session.Stamina >= TrainingFocusCatalog.GetSpecialTrainStaminaCost(focus))
             {
                 return TrainingWeekChoice.FromFocus(
                     TrainingCommandType.SpecialTrain,
                     focus);
             }
 
-            if (session.Stamina >= TrainingSettings.TrainStaminaCost)
+            if (session.Stamina >= TrainingFocusCatalog.GetTrainStaminaCost(focus))
             {
                 return TrainingWeekChoice.FromFocus(
                     TrainingCommandType.Train,
@@ -73,6 +73,12 @@ namespace Scene.TrainingScene.Domain
 
             if (session.Stamina <= TrainingSettings.TrainStaminaCost
                 && TryFindInOffer(offer, TrainingShopItemType.StaminaFullRecover, out item))
+            {
+                return session.Money >= item.Price;
+            }
+
+            if (session.Motivation < TrainingMotivation.Normal
+                && TryFindInOffer(offer, TrainingShopItemType.MotivationBoost, out item))
             {
                 return session.Money >= item.Price;
             }
@@ -169,7 +175,7 @@ namespace Scene.TrainingScene.Domain
 
         private static bool ShouldRest(TrainingSession session)
         {
-            return session.Stamina < TrainingSettings.TrainStaminaCost;
+            return session.Stamina < TrainingFocusCatalog.GetMinTrainStaminaCost();
         }
 
         private static bool TryFindInOffer(

@@ -1373,6 +1373,12 @@ namespace Scene.TrainingScene
                     continue;
                 }
 
+                // 次ページは陳列入れ替えに使わない
+                if (choice == TrainingShopChoiceCodes.NextPage)
+                {
+                    continue;
+                }
+
                 if (choice < 0 || choice >= offerItems.Count)
                 {
                     continue;
@@ -1452,7 +1458,7 @@ namespace Scene.TrainingScene
             TrainingSession session,
             CancellationToken cancellationToken)
         {
-            TrainingActionResult result = TrainingActionResolver.ExecuteRest(session.Stamina);
+            TrainingActionResult result = TrainingActionResolver.ExecuteRest(session.Stamina, random);
             await TransitionTurnAsync(
                 cancellationToken,
                 () =>
@@ -1640,7 +1646,9 @@ namespace Scene.TrainingScene
             }
             else
             {
-                hudView.SetLogMessage($"【強敵急襲】\n{enemyName}に敗北した");
+                session.LowerMotivation(1);
+                hudView.BindSession(session);
+                hudView.SetLogMessage($"【強敵急襲】\n{enemyName}に敗北した\nやる気が下がった");
             }
 
             await hudView.WaitContinueAsync(cancellationToken);
@@ -1754,8 +1762,11 @@ namespace Scene.TrainingScene
             }
             else
             {
+                session.LowerMotivation(1);
                 session.RefreshShopOffer(random);
-                hudView.SetLogMessage("放課後の戦闘に敗北した\n売店の商品が入れ替わった");
+                hudView.BindSession(session, period, turnNumber);
+                hudView.SetLogMessage(
+                    "放課後の戦闘に敗北した\nやる気が下がった\n売店の商品が入れ替わった");
             }
 
             await hudView.WaitContinueAsync(cancellationToken);
@@ -1925,27 +1936,71 @@ namespace Scene.TrainingScene
             string commandName = TrainingCommandCatalog.GetDisplayName(result.Command);
             if (!result.Succeeded)
             {
-                return result.FailedByLowStamina
+                string failReason = result.FailedByLowStamina
                     ? $"{commandName}は体力不足で失敗した"
                     : $"{commandName}は失敗した";
+                return $"{failReason}\nやる気が下がった";
             }
 
             if (result.IsRestAction)
             {
-                return $"休憩で体力全回復 {result.StaminaBefore}→{result.StaminaAfter}";
+                string restOutcome = result.IsGreatSuccess ? "休憩大成功" : "休憩";
+                return $"{restOutcome}で体力回復 {result.StaminaBefore}→{result.StaminaAfter}";
             }
 
             TrainingStatGain gain = result.AppliedGain;
             string outcome = result.IsGreatSuccess ? "大成功" : "成功";
+            string gainLine = FormatGainLine(gain);
+            string log;
             if (result.Command == TrainingCommandType.Train
                 || result.Command == TrainingCommandType.SpecialTrain)
             {
-                return $"{commandName}{outcome} {TrainingFocusCatalog.GetDisplayName(result.Focus)}"
-                    + $"\nHP+{gain.Hp} 攻撃+{gain.Attack} 防御+{gain.Defense} 速度+{gain.Speed} 命中+{gain.Hit}";
+                log = $"{commandName}{outcome} {TrainingFocusCatalog.GetDisplayName(result.Focus)}"
+                    + $"\n{gainLine}";
+            }
+            else
+            {
+                log = $"{commandName}{outcome}\n{gainLine}";
             }
 
-            return $"{commandName}{outcome}"
-                + $"\nHP+{gain.Hp} 攻撃+{gain.Attack} 防御+{gain.Defense} 速度+{gain.Speed} 命中+{gain.Hit}";
+            if (!string.IsNullOrEmpty(result.FoundItemId)
+                && TrainingShopCatalog.TryGetById(result.FoundItemId, out TrainingShopItem item))
+            {
+                log += $"\n運よく{item.DisplayName}を拾った";
+            }
+
+            return log;
+        }
+
+        private static string FormatGainLine(TrainingStatGain gain)
+        {
+            var parts = new System.Collections.Generic.List<string>(3);
+            if (gain.Hp != 0)
+            {
+                parts.Add($"HP+{gain.Hp}");
+            }
+
+            if (gain.Attack != 0)
+            {
+                parts.Add($"攻撃+{gain.Attack}");
+            }
+
+            if (gain.Defense != 0)
+            {
+                parts.Add($"防御+{gain.Defense}");
+            }
+
+            if (gain.Speed != 0)
+            {
+                parts.Add($"速度+{gain.Speed}");
+            }
+
+            if (gain.Hit != 0)
+            {
+                parts.Add($"命中+{gain.Hit}");
+            }
+
+            return parts.Count > 0 ? string.Join(" ", parts) : "ステ上昇なし";
         }
 
         private void ApplyDefaultDestinationPresentation()

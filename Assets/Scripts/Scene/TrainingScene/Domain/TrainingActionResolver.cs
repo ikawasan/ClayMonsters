@@ -1,5 +1,6 @@
 using Battle;
 using SaveData;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Scene.TrainingScene.Domain
@@ -21,14 +22,17 @@ namespace Scene.TrainingScene.Domain
             System.Random random = null)
         {
             float bonus = session != null ? session.TrainGreatSuccessBonusPercent : 0f;
+            float motivationMultiplier = session != null
+                ? TrainingMotivationCatalog.GetTrainGainMultiplier(session.Motivation)
+                : 1f;
             return ExecuteFocusCommand(
                 TrainingCommandType.Train,
                 focus,
                 session != null ? session.Stamina : TrainingSettings.MaxStamina,
-                TrainingSettings.TrainStaminaCost,
+                TrainingFocusCatalog.GetTrainStaminaCost(focus),
                 TrainingSettings.TrainGreatSuccessPercent + bonus,
-                1f,
-                TrainingSettings.TrainGreatSuccessMultiplier,
+                1f * motivationMultiplier,
+                TrainingSettings.TrainGreatSuccessMultiplier * motivationMultiplier,
                 random);
         }
 
@@ -44,14 +48,17 @@ namespace Scene.TrainingScene.Domain
             System.Random random = null)
         {
             float bonus = session != null ? session.TrainGreatSuccessBonusPercent : 0f;
+            float motivationMultiplier = session != null
+                ? TrainingMotivationCatalog.GetTrainGainMultiplier(session.Motivation)
+                : 1f;
             return ExecuteFocusCommand(
                 TrainingCommandType.SpecialTrain,
                 focus,
                 session != null ? session.Stamina : TrainingSettings.MaxStamina,
-                TrainingSettings.SpecialTrainStaminaCost,
+                TrainingFocusCatalog.GetSpecialTrainStaminaCost(focus),
                 TrainingSettings.SpecialTrainGreatSuccessPercent + bonus,
-                TrainingSettings.SpecialTrainSuccessMultiplier,
-                TrainingSettings.SpecialTrainGreatSuccessMultiplier,
+                TrainingSettings.SpecialTrainSuccessMultiplier * motivationMultiplier,
+                TrainingSettings.SpecialTrainGreatSuccessMultiplier * motivationMultiplier,
                 random);
         }
 
@@ -67,7 +74,7 @@ namespace Scene.TrainingScene.Domain
                 TrainingCommandType.Train,
                 focus,
                 currentStamina,
-                TrainingSettings.TrainStaminaCost,
+                TrainingFocusCatalog.GetTrainStaminaCost(focus),
                 TrainingSettings.TrainGreatSuccessPercent,
                 1f,
                 TrainingSettings.TrainGreatSuccessMultiplier,
@@ -86,7 +93,7 @@ namespace Scene.TrainingScene.Domain
                 TrainingCommandType.SpecialTrain,
                 focus,
                 currentStamina,
-                TrainingSettings.SpecialTrainStaminaCost,
+                TrainingFocusCatalog.GetSpecialTrainStaminaCost(focus),
                 TrainingSettings.SpecialTrainGreatSuccessPercent,
                 TrainingSettings.SpecialTrainSuccessMultiplier,
                 TrainingSettings.SpecialTrainGreatSuccessMultiplier,
@@ -97,17 +104,29 @@ namespace Scene.TrainingScene.Domain
         /// 休憩を実行して結果を返す
         /// </summary>
         /// <param name="currentStamina">現在体力</param>
-        public static TrainingActionResult ExecuteRest(int currentStamina)
+        /// <param name="random">乱数</param>
+        public static TrainingActionResult ExecuteRest(
+            int currentStamina,
+            System.Random random = null)
         {
+            random ??= new System.Random();
+            bool isGreatSuccess =
+                random.NextDouble() * 100d < TrainingSettings.RestGreatSuccessPercent;
+            int recovery = isGreatSuccess
+                ? TrainingSettings.RestGreatSuccessRecovery
+                : TrainingSettings.RestStaminaRecovery;
+            int staminaAfter = Mathf.Min(
+                TrainingSettings.MaxStamina,
+                currentStamina + recovery);
             return new TrainingActionResult(
                 TrainingCommandType.Rest,
                 default,
                 TrainingLocation.Library,
                 succeeded: true,
                 failedByLowStamina: false,
-                isGreatSuccess: false,
+                isGreatSuccess,
                 currentStamina,
-                TrainingSettings.MaxStamina,
+                staminaAfter,
                 default);
         }
 
@@ -132,16 +151,6 @@ namespace Scene.TrainingScene.Domain
         }
 
         /// <summary>
-        /// 互換用の旧休憩
-        /// </summary>
-        public static TrainingActionResult ExecuteRest(
-            int currentStamina,
-            System.Random random)
-        {
-            return ExecuteRest(currentStamina);
-        }
-
-        /// <summary>
         /// 互換用の行き先抽選
         /// </summary>
         public static TrainingLocation[] PickLocationChoices(
@@ -151,7 +160,7 @@ namespace Scene.TrainingScene.Domain
             random ??= new System.Random();
             TrainingLocation[] pool = TrainingLocationCatalog.AllLocations;
             int count = Mathf.Clamp(choiceCount, 1, pool.Length);
-            var indices = new System.Collections.Generic.List<int>(pool.Length);
+            var indices = new List<int>(pool.Length);
             for (int i = 0; i < pool.Length; i++)
             {
                 indices.Add(i);
@@ -257,6 +266,7 @@ namespace Scene.TrainingScene.Domain
             TrainingStatGain gain = TrainingFocusCatalog.ScaleGain(
                 TrainingFocusCatalog.GetBaseGain(focus),
                 multiplier);
+            string foundItemId = TryRollLuckyItemId(random);
             return new TrainingActionResult(
                 command,
                 focus,
@@ -266,7 +276,19 @@ namespace Scene.TrainingScene.Domain
                 isGreatSuccess,
                 currentStamina,
                 staminaAfter,
-                gain);
+                gain,
+                foundItemId);
+        }
+
+        private static string TryRollLuckyItemId(System.Random random)
+        {
+            if (random.NextDouble() * 100d >= TrainingSettings.TrainLuckyItemPercent)
+            {
+                return null;
+            }
+
+            List<string> rolled = TrainingShopCatalog.RollOfferItemIds(1, random);
+            return rolled.Count > 0 ? rolled[0] : null;
         }
     }
 }
