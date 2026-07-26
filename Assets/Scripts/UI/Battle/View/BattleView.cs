@@ -16,20 +16,17 @@ namespace UI.Battle.View
     public class BattleView : MonoBehaviour, IBattleView
     {
         [Header("技コマンド")]
-        [Tooltip("攻撃ボタン(最大4。威力/属性/アイコン/ガッツ/距離バーを持つ)")]
+        [Tooltip("攻撃ボタン(最大4。威力/属性/ガッツ/距離バーを持つ)")]
         [SerializeField] private MoveButtonView[] moveButtons;
 
         [Tooltip("カーソルが最後に当たった技名を表示する固定欄")]
         [SerializeField] private TMP_Text moveNameText;
 
-        [Tooltip("モーション種別ごとのアイコン画像")]
-        [SerializeField] private MoveIconEntry[] moveIcons;
-
         [Tooltip("必要部位(属性)ごとの画像")]
         [SerializeField] private TargetPartIconEntry[] targetPartIcons;
 
         [Header("敵の技")]
-        [Tooltip("敵の技ボタン(最大4。表示のみ。威力/属性/アイコン/ガッツ/距離バーを持つ)")]
+        [Tooltip("敵の技ボタン(最大4。表示のみ。威力/属性/ガッツ/距離バーを持つ)")]
         [SerializeField] private MoveButtonView[] enemyMoveButtons;
 
         [Header("プレイヤー")]
@@ -86,7 +83,6 @@ namespace UI.Battle.View
 
         private readonly Subject<int> moveSelectedSubject = new Subject<int>();
 
-        private readonly Dictionary<MoveIconId, Sprite> iconMap = new Dictionary<MoveIconId, Sprite>();
         private readonly Dictionary<MoveTargetPartId, Sprite> targetPartMap = new Dictionary<MoveTargetPartId, Sprite>();
         private float currentMaxDistance = 10f;
         private Color timeNormalColor = Color.white;
@@ -111,16 +107,6 @@ namespace UI.Battle.View
         private Slider playerHpSlider;
         private Slider enemyHpSlider;
         private Slider distanceSlider;
-
-        /// <summary>
-        /// モーション種別とアイコン画像の対応(インスペクタ設定用)
-        /// </summary>
-        [System.Serializable]
-        private struct MoveIconEntry
-        {
-            public MoveIconId iconId;
-            public Sprite sprite;
-        }
 
         /// <summary>
         /// 破壊対象部位と画像の対応(インスペクタ設定用)
@@ -335,32 +321,6 @@ namespace UI.Battle.View
         // Resourcesとインスペクタ設定からスプライト対応表を作る
         private void BuildSpriteMaps()
         {
-            iconMap.Clear();
-            foreach (MoveIconId iconId in System.Enum.GetValues(typeof(MoveIconId)))
-            {
-                if (iconId == MoveIconId.None)
-                {
-                    continue;
-                }
-
-                Sprite sprite = MoveCommandSpriteCatalog.LoadMoveIcon(iconId);
-                if (sprite != null)
-                {
-                    iconMap[iconId] = sprite;
-                }
-            }
-
-            if (moveIcons != null)
-            {
-                foreach (MoveIconEntry entry in moveIcons)
-                {
-                    if (entry.sprite != null)
-                    {
-                        iconMap[entry.iconId] = entry.sprite;
-                    }
-                }
-            }
-
             targetPartMap.Clear();
             foreach (MoveTargetPartId targetPartId in System.Enum.GetValues(typeof(MoveTargetPartId)))
             {
@@ -381,12 +341,6 @@ namespace UI.Battle.View
                     }
                 }
             }
-        }
-
-        // モーション種別からアイコン画像を引く
-        private Sprite GetIcon(MoveIconId iconId)
-        {
-            return iconMap.TryGetValue(iconId, out Sprite sprite) ? sprite : null;
         }
 
         // 破壊対象部位から画像を引く
@@ -625,7 +579,6 @@ namespace UI.Battle.View
                         MoveDisplay move = moves[i];
                         moveButton.Apply(
                             move,
-                            GetIcon(move.IconId),
                             GetTargetPart(move.TargetPartId),
                             GetTargetPartColor(move.TargetPartId),
                             currentMaxDistance);
@@ -663,7 +616,6 @@ namespace UI.Battle.View
                         MoveDisplay move = moves[i];
                         moveButton.Apply(
                             move,
-                            GetIcon(move.IconId),
                             GetTargetPart(move.TargetPartId),
                             GetTargetPartColor(move.TargetPartId),
                             currentMaxDistance);

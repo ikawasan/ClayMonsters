@@ -11,19 +11,6 @@ namespace UI.Battle.View
         private const string Root = "Image";
 
         /// <summary>
-        /// 技アイコンを読み込む
-        /// </summary>
-        public static Sprite LoadMoveIcon(MoveIconId iconId)
-        {
-            if (iconId == MoveIconId.None)
-            {
-                return null;
-            }
-
-            return LoadSprite($"{Root}/Move/{iconId}");
-        }
-
-        /// <summary>
         /// 破壊対象部位アイコンを読み込む
         /// 実アルファ付きResourcesを優先し無ければ生成スプライトを使う
         /// </summary>
@@ -31,13 +18,13 @@ namespace UI.Battle.View
         {
             Sprite sprite = targetPartId switch
             {
-                MoveTargetPartId.None => LoadSprite($"{Root}/TargetPart/None"),
-                MoveTargetPartId.Arm => LoadSprite($"{Root}/TargetPart/Arm"),
-                MoveTargetPartId.Leg => LoadSprite($"{Root}/TargetPart/Leg"),
-                MoveTargetPartId.Front => LoadSprite($"{Root}/TargetPart/Front"),
-                MoveTargetPartId.Back => LoadSprite($"{Root}/TargetPart/Back"),
-                MoveTargetPartId.Body => LoadSprite($"{Root}/TargetPart/None"),
-                MoveTargetPartId.Any => LoadSprite($"{Root}/TargetPart/None"),
+                MoveTargetPartId.None => LoadSprite($"{Root}/TargetPart/NoneIcon"),
+                MoveTargetPartId.Arm => LoadSprite($"{Root}/TargetPart/ArmIcon"),
+                MoveTargetPartId.Leg => LoadSprite($"{Root}/TargetPart/LegIcon"),
+                MoveTargetPartId.Front => LoadSprite($"{Root}/TargetPart/HeadIcon"),
+                MoveTargetPartId.Back => LoadSprite($"{Root}/TargetPart/TailIcon"),
+                MoveTargetPartId.Body => LoadSprite($"{Root}/TargetPart/NoneIcon"),
+                MoveTargetPartId.Any => LoadSprite($"{Root}/TargetPart/NoneIcon"),
                 _ => null
             };
 

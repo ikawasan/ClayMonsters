@@ -4,7 +4,7 @@ using R3;
 namespace UI.Battle.Interface
 {
     /// <summary>
-    /// 1つの技ボタンの表示情報(名前・使用可否・間合い・ガッツ・威力・アイコン識別子・破壊対象部位識別子)
+    /// 1つの技ボタンの表示情報(名前・使用可否・間合い・ガッツ・威力・破壊対象部位識別子)
     /// </summary>
     public readonly struct MoveDisplay
     {
@@ -15,7 +15,6 @@ namespace UI.Battle.Interface
             float rangeMax,
             float gutsCost,
             float power,
-            MoveIconId iconId,
             MoveTargetPartId targetPartId,
             MoveTargetPartId requiredPartId)
         {
@@ -25,7 +24,6 @@ namespace UI.Battle.Interface
             RangeMax = rangeMax;
             GutsCost = gutsCost;
             Power = power;
-            IconId = iconId;
             TargetPartId = targetPartId;
             RequiredPartId = requiredPartId;
         }
@@ -36,7 +34,6 @@ namespace UI.Battle.Interface
         public float RangeMax { get; }
         public float GutsCost { get; }
         public float Power { get; }
-        public MoveIconId IconId { get; }
         public MoveTargetPartId TargetPartId { get; }
         public MoveTargetPartId RequiredPartId { get; }
     }
@@ -92,7 +89,7 @@ namespace UI.Battle.Interface
         void SetPlayerMoves(IReadOnlyList<MoveDisplay> moves);
 
         /// <summary>
-        /// 敵の技一覧の表示(威力・破壊部位・アイコン・間合い・ガッツ・使用可否)を更新する
+        /// 敵の技一覧の表示(威力・破壊部位・間合い・ガッツ・使用可否)を更新する
         /// </summary>
         void SetEnemyMoves(IReadOnlyList<MoveDisplay> moves);
 

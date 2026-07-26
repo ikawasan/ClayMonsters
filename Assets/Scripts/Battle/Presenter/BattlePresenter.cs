@@ -164,7 +164,6 @@ namespace Battle.Presenter
                     m.RangeMax,
                     m.GutsCost,
                     m.Power,
-                    ToIconId(m.Motion),
                     ToTargetPartId(m.TargetDestroyPart),
                     ToRequiredPartId(m.RequiredPart)));
             }
@@ -198,33 +197,6 @@ namespace Battle.Presenter
             }
 
             return string.Empty;
-        }
-
-        // ドメインのMotionTypeをUIのアイコン識別子へ変換する
-        private static MoveIconId ToIconId(MotionType motion)
-        {
-            switch (motion)
-            {
-                case MotionType.Tackle: return MoveIconId.Tackle;
-                case MotionType.Punch: return MoveIconId.Punch;
-                case MotionType.Kick: return MoveIconId.Kick;
-                case MotionType.SpinTackle: return MoveIconId.SpinTackle;
-                case MotionType.TailWhip: return MoveIconId.TailWhip;
-                case MotionType.Headbutt: return MoveIconId.Headbutt;
-                case MotionType.Elbow: return MoveIconId.Elbow;
-                case MotionType.Stomp: return MoveIconId.Stomp;
-                case MotionType.BodySlam: return MoveIconId.BodySlam;
-                case MotionType.Uppercut: return MoveIconId.Uppercut;
-                case MotionType.Knee: return MoveIconId.Knee;
-                case MotionType.ShoulderRam: return MoveIconId.ShoulderRam;
-                case MotionType.BellyFlop: return MoveIconId.BellyFlop;
-                case MotionType.HipCheck: return MoveIconId.HipCheck;
-                case MotionType.GroundPound: return MoveIconId.GroundPound;
-                case MotionType.Slap: return MoveIconId.Slap;
-                case MotionType.LowSweep: return MoveIconId.LowSweep;
-                case MotionType.Bite: return MoveIconId.Bite;
-                default: return MoveIconId.None;
-            }
         }
 
         // ドメインの破壊対象部位をUIの識別子へ変換する

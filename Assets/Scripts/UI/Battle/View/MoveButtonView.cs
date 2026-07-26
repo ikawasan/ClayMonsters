@@ -8,7 +8,7 @@ namespace UI.Battle.View
 {
     /// <summary>
     /// 1つの攻撃ボタンの表示部品
-    /// 攻撃名・技アイコン・必要部位・破壊部位・威力・コスト・射程を表示する
+    /// 攻撃名・必要部位・破壊部位・威力・コスト・射程を表示する
     /// </summary>
     public class MoveButtonView : MonoBehaviour
     {
@@ -34,9 +34,6 @@ namespace UI.Battle.View
 
         [Tooltip("破壊対象部位のラベル表示")]
         [SerializeField] private TMP_Text targetPartLabelText;
-
-        [Tooltip("技アイコンの画像")]
-        [SerializeField] private Image iconImage;
 
         [Tooltip("必要ガッツの数値表示")]
         [SerializeField] private TMP_Text gutsText;
@@ -153,7 +150,6 @@ namespace UI.Battle.View
         /// </summary>
         public void Apply(
             in MoveDisplay move,
-            Sprite icon,
             Sprite targetPartIcon,
             Color targetPartColor,
             float maxDistance)
@@ -178,7 +174,6 @@ namespace UI.Battle.View
                 rangeLabelText.text = RangeLabel;
             }
 
-            SetSprite(iconImage, icon);
             ApplyRequiredPartIcon(move.RequiredPartId);
             ApplyTargetPartIcon(targetPartIcon, targetPartColor, move.TargetPartId);
 
@@ -325,7 +320,6 @@ namespace UI.Battle.View
         private void SetVisualUsable(bool usable)
         {
             float alpha = usable ? 1f : 0.42f;
-            SetImageAlpha(iconImage, alpha);
             SetImageAlpha(requiredPartImage, alpha);
             SetImageAlpha(attributeImage, alpha);
             SetTextAlpha(moveNameText, alpha);
@@ -453,17 +447,6 @@ namespace UI.Battle.View
                 rangeActiveColor,
                 rangeInactiveColor,
                 rangeOutOfBandColor);
-        }
-
-        private static void SetSprite(Image image, Sprite sprite)
-        {
-            if (image == null)
-            {
-                return;
-            }
-
-            image.sprite = sprite;
-            image.enabled = sprite != null;
         }
     }
 }
