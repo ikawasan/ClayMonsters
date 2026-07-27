@@ -90,6 +90,11 @@ namespace SaveData
         public bool hasEnemyStrengthStatuses;
 
         /// <summary>
+        /// 敵強さバランスの改訂番号
+        /// </summary>
+        public int enemyStrengthBalanceVersion;
+
+        /// <summary>
         /// 敵の弱いステータス
         /// </summary>
         public ModelStatus statusWeak = new ModelStatus();

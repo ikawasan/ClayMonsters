@@ -2,28 +2,34 @@ namespace SaveData
 {
     /// <summary>
     /// 敵モデルの強さ段階ごとのステータス解決
+    /// 弱い=未育成を基準にし強い=育成完了程度へ伸ばす
     /// </summary>
     public static class EnemyStrengthStatusCatalog
     {
         /// <summary>
-        /// 弱い倍率(基準ステータス比)
+        /// バランス改訂番号(不一致なら段階ステータスを再生成する)
         /// </summary>
-        public const float WeakScale = 0.75f;
+        public const int BalanceVersion = 2;
 
         /// <summary>
-        /// 普通倍率(基準ステータス比)
+        /// 弱い倍率(未育成=基準)
         /// </summary>
-        public const float NormalScale = 1f;
+        public const float WeakScale = 1f;
 
         /// <summary>
-        /// 強い倍率(基準ステータス比)
+        /// 普通倍率(弱い比・育成中盤程度)
         /// </summary>
-        public const float StrongScale = 1.25f;
+        public const float NormalScale = 1.3f;
 
         /// <summary>
-        /// 超強い倍率(基準ステータス比)
+        /// 強い倍率(弱い比・育成完了程度)
         /// </summary>
-        public const float VeryStrongScale = 1.55f;
+        public const float StrongScale = 1.7f;
+
+        /// <summary>
+        /// 超強い倍率(弱い比・継承込みでも超えられる余白)
+        /// </summary>
+        public const float VeryStrongScale = 2.1f;
 
         /// <summary>
         /// 敵HP上限
@@ -94,7 +100,7 @@ namespace SaveData
 
         /// <summary>
         /// 4段階ステータスが無ければ基準ステータスから用意する
-        /// 既存データが上限超過なら丸める
+        /// バランス改訂時は再生成する
         /// </summary>
         /// <param name="slot">敵スロット</param>
         public static void EnsureFromBase(ModelSaveSlot slot)
@@ -104,20 +110,23 @@ namespace SaveData
                 return;
             }
 
-            if (slot.hasEnemyStrengthStatuses && HasCompleteSet(slot))
+            if (slot.hasEnemyStrengthStatuses
+                && HasCompleteSet(slot)
+                && slot.enemyStrengthBalanceVersion == BalanceVersion)
             {
                 ClampAllTiers(slot);
                 return;
             }
 
-            ApplyGeneratedFromBase(slot, slot.status);
+            ModelStatus untrainedBase = ResolveUntrainedBase(slot);
+            ApplyGeneratedFromBase(slot, untrainedBase);
         }
 
         /// <summary>
-        /// 基準ステータスから4段階を書き込む
+        /// 未育成基準ステータスから4段階を書き込む
         /// </summary>
         /// <param name="slot">敵スロット</param>
-        /// <param name="baseStatus">基準ステータス(普通相当)</param>
+        /// <param name="baseStatus">未育成ステータス(弱い相当)</param>
         public static void ApplyGeneratedFromBase(ModelSaveSlot slot, ModelStatus baseStatus)
         {
             if (slot == null)
@@ -130,8 +139,24 @@ namespace SaveData
             slot.statusNormal = Scale(source, NormalScale);
             slot.statusStrong = Scale(source, StrongScale);
             slot.statusVeryStrong = Scale(source, VeryStrongScale);
-            slot.status = Scale(source, NormalScale);
+            // 表示・基準用は未育成(弱い)を保持する
+            slot.status = Scale(source, WeakScale);
             slot.hasEnemyStrengthStatuses = true;
+            slot.enemyStrengthBalanceVersion = BalanceVersion;
+        }
+
+        // 旧仕様は普通=未育成だったので改訂時は普通を基準に戻す
+        private static ModelStatus ResolveUntrainedBase(ModelSaveSlot slot)
+        {
+            if (slot.hasEnemyStrengthStatuses
+                && HasCompleteSet(slot)
+                && slot.enemyStrengthBalanceVersion < BalanceVersion
+                && HasAnyValue(slot.statusNormal))
+            {
+                return slot.statusNormal;
+            }
+
+            return slot.status;
         }
 
         private static void ClampAllTiers(ModelSaveSlot slot)

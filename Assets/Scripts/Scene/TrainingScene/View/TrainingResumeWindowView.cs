@@ -117,6 +117,9 @@ namespace Scene.TrainingScene.View
                 statsText.text = presentation.StatsText;
             }
 
+            // 初回表示で子のAwake(EnsureSprites)が走る前に範囲色を書くと上書きされる
+            SetWindowVisible(true);
+
             if (attacksPanel != null)
             {
                 attacksPanel.ShowForResumeWindow(presentation.Attacks);
@@ -134,8 +137,6 @@ namespace Scene.TrainingScene.View
             {
                 restartButton.interactable = true;
             }
-
-            SetWindowVisible(true);
         }
 
         /// <inheritdoc/>

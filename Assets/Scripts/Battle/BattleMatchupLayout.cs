@@ -17,7 +17,8 @@ namespace Battle
             Transform enemyPoint,
             float cameraHorizontalAngle = 0f,
             float towardCameraDegrees = 0f,
-            float sideGapPadding = 0.55f)
+            float sideGapPadding = 0.55f,
+            float minCenterOffsetFromMid = 0f)
         {
             if (playerModel == null || enemyModel == null)
             {
@@ -66,7 +67,8 @@ namespace Battle
                 enemyModel,
                 layoutCenter,
                 cameraHorizontalAngle,
-                sideGapPadding);
+                sideGapPadding,
+                minCenterOffsetFromMid);
             BattleSpawnPlacement.SnapBottomToGroundY(playerModel, groundY);
             BattleSpawnPlacement.SnapBottomToGroundY(enemyModel, groundY);
         }
@@ -82,7 +84,8 @@ namespace Battle
             float sideSeparation,
             float cameraHorizontalAngle,
             float towardCameraDegrees = 0f,
-            float sideGapPadding = 0.55f)
+            float sideGapPadding = 0.55f,
+            float minCenterOffsetFromMid = 0f)
         {
             if (playerModel == null || enemyModel == null)
             {
@@ -123,7 +126,8 @@ namespace Battle
                 enemyModel,
                 center,
                 cameraHorizontalAngle,
-                sideGapPadding);
+                sideGapPadding,
+                minCenterOffsetFromMid);
             BattleSpawnPlacement.SnapBottomToGroundY(playerModel, groundY);
             BattleSpawnPlacement.SnapBottomToGroundY(enemyModel, groundY);
         }

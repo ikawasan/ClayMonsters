@@ -1,3 +1,4 @@
+using Battle;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -336,9 +337,10 @@ namespace Scene.BattleNpcScene.View
                 return;
             }
 
-            Vector3 offset = (-cameraForward * 1.8f) + (Vector3.up * 3.4f);
+            Vector3 offset = (-cameraForward * BattleSpawnPlacement.ScaleAuthoredLength(1.8f))
+                + (Vector3.up * BattleSpawnPlacement.ScaleAuthoredLength(3.4f));
             light.transform.position = characterPosition + offset;
-            light.transform.LookAt(characterPosition + Vector3.up * 0.85f);
+            light.transform.LookAt(characterPosition + Vector3.up * BattleSpawnPlacement.ScaleAuthoredLength(0.85f));
             light.color = color;
             light.intensity = intensity;
         }
@@ -355,8 +357,10 @@ namespace Scene.BattleNpcScene.View
                 return;
             }
 
-            light.transform.position = characterPosition + sideOffset.normalized * 2.4f + Vector3.up * 1.6f;
-            light.transform.LookAt(characterPosition + Vector3.up * 0.9f);
+            light.transform.position = characterPosition
+                + sideOffset.normalized * BattleSpawnPlacement.ScaleAuthoredLength(2.4f)
+                + Vector3.up * BattleSpawnPlacement.ScaleAuthoredLength(1.6f);
+            light.transform.LookAt(characterPosition + Vector3.up * BattleSpawnPlacement.ScaleAuthoredLength(0.9f));
             light.color = color;
             light.intensity = intensity;
         }
@@ -385,7 +389,9 @@ namespace Scene.BattleNpcScene.View
 
             BattleMatchupFlameEffectSettings settings = ResolveFlameEffectSettings();
             float inwardTilt = settings != null ? settings.SideInwardTilt : 16f;
-            float outwardOffset = settings != null ? settings.FlameOutwardOffset : 1.1f;
+            float outwardOffset = settings != null
+                ? BattleSpawnPlacement.ScaleAuthoredLength(settings.FlameOutwardOffset)
+                : BattleSpawnPlacement.ScaleAuthoredLength(1.1f);
 
             if (hasCharacterPositions)
             {

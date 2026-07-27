@@ -62,6 +62,10 @@ namespace Battle.Presenter
                 .Subscribe(_ => RefreshContinuous())
                 .AddTo(disposables);
 
+            system.OnAttackWindUpStarted
+                .Subscribe(OnAttackWindUpStarted)
+                .AddTo(disposables);
+
             system.OnBattleEnd
                 .Subscribe(_ => isBattleEnded = true)
                 .AddTo(disposables);
@@ -78,6 +82,17 @@ namespace Battle.Presenter
                     system.TryUsePlayerMove(index);
                 })
                 .AddTo(disposables);
+        }
+
+        private void OnAttackWindUpStarted(AttackWindUpStarted started)
+        {
+            if (isBattleEnded || started.Move == null || system == null)
+            {
+                return;
+            }
+
+            bool isPlayer = ReferenceEquals(started.Attacker, system.Player);
+            view.SetAttackName(isPlayer, started.Move.DisplayName);
         }
 
         // 連続値をまとめてUIへ反映する
@@ -173,7 +188,9 @@ namespace Battle.Presenter
         {
             if (system.IsCounterWindowOpen)
             {
-                return "カウンター！同じ技ボタンで迎撃";
+                BonePart destroyPart = system.PendingEnemyTargetDestroyPart;
+                string partLabel = MotionPartRequirement.FormatTargetDestroyPartLabel(destroyPart);
+                return $"カウンター！{partLabel}技で迎撃";
             }
 
             if (system.IsAttackLockoutActive)

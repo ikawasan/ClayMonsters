@@ -33,7 +33,8 @@ namespace Scene.BattleNpcScene
         public IBattlePartBreakPresentation PartBreakPresentation => overlayView;
 
         [Header("対戦紹介")]
-        [SerializeField] private float matchupSideGapPadding = 0.55f;
+        [SerializeField] private float matchupSideGapPadding = 1.35f;
+        [SerializeField] private float matchupMinCenterOffset = 1.15f;
         [SerializeField] private float matchupMinSideSeparation = 1.2f;
         [SerializeField] private float matchupMaxSideSeparation = 24f;
         [SerializeField] private float matchupSideSeparation = 1.5f;
@@ -355,11 +356,11 @@ namespace Scene.BattleNpcScene
 
             Vector3 focus = hasBounds
                 ? bounds.center
-                : winnerModel.position + Vector3.up * victoryFocusHeightOffset;
+                : winnerModel.position + Vector3.up * BattleSpawnPlacement.ScaleAuthoredLength(victoryFocusHeightOffset);
             cameraView.SetCameraOperatable(false);
             cameraView.SetFocusPosition(focus);
 
-            float distance = victoryDistance;
+            float distance = BattleSpawnPlacement.ScaleAuthoredLength(victoryDistance);
             if (victoryAutoFrame && hasBounds)
             {
                 UnityEngine.Camera camera = UnityEngine.Camera.main;
@@ -371,9 +372,9 @@ namespace Scene.BattleNpcScene
                     victoryVerticalAngle,
                     verticalFov,
                     aspect,
-                    victoryFramePadding,
-                    victoryMinDistance,
-                    victoryMaxDistance);
+                    BattleSpawnPlacement.ScaleAuthoredLength(victoryFramePadding),
+                    BattleSpawnPlacement.ScaleAuthoredLength(victoryMinDistance),
+                    BattleSpawnPlacement.ScaleAuthoredLength(victoryMaxDistance));
             }
 
             cameraView.SetOrbitView(battleHorizontalAngle, victoryVerticalAngle, distance);
@@ -423,6 +424,8 @@ namespace Scene.BattleNpcScene
                 return;
             }
 
+            float sideGapPadding = ResolveMatchupSideGapPadding();
+            float minCenterOffset = ResolveMatchupMinCenterOffset();
             if (matchupPlayerPoint != null && matchupEnemyPoint != null)
             {
                 BattleMatchupLayout.Apply(
@@ -432,7 +435,8 @@ namespace Scene.BattleNpcScene
                     matchupEnemyPoint,
                     matchupHorizontalAngle,
                     matchupModelTowardCameraDegrees,
-                    matchupSideGapPadding);
+                    sideGapPadding,
+                    minCenterOffset);
                 SyncMotionLayout(context);
                 return;
             }
@@ -440,8 +444,8 @@ namespace Scene.BattleNpcScene
             // 短いキャラ向けの控えめな初期間隔で並べ隙間補正に任せる
             // 前後に長いモデルはEnforceMatchupSideClearanceが外側へ広げる
             float sideSeparation = Mathf.Clamp(
-                matchupSideSeparation,
-                matchupMinSideSeparation,
+                ResolveMatchupSideSeparation(),
+                ResolveMatchupMinSideSeparation(),
                 matchupMaxSideSeparation);
             BattleMatchupLayout.ApplyFromSpawns(
                 context.PlayerModel,
@@ -451,7 +455,8 @@ namespace Scene.BattleNpcScene
                 sideSeparation,
                 matchupHorizontalAngle,
                 matchupModelTowardCameraDegrees,
-                matchupSideGapPadding);
+                sideGapPadding,
+                minCenterOffset);
             SyncMotionLayout(context);
         }
 
@@ -494,13 +499,14 @@ namespace Scene.BattleNpcScene
         private Vector3 ResolveBattleFocus(BattleStagingContext context)
         {
             float groundY = ResolveBattleGroundY(context);
+            float focusHeightOffset = ResolveBattleFocusHeightOffset();
             if (context.PlayerModel != null && context.EnemyModel != null)
             {
                 return BattleFieldFocusResolver.ResolveMidpoint(
                     context.PlayerModel,
                     context.EnemyModel,
                     groundY,
-                    battleFocusHeightOffset);
+                    focusHeightOffset);
             }
 
             Vector3 playerHome = context.PlayerSpawn != null
@@ -510,7 +516,7 @@ namespace Scene.BattleNpcScene
                 ? context.EnemySpawn.position
                 : Vector3.zero;
             Vector3 fallback = (playerHome + enemyHome) * 0.5f;
-            fallback.y = groundY + battleFocusHeightOffset;
+            fallback.y = groundY + focusHeightOffset;
             return fallback;
         }
 
@@ -523,10 +529,11 @@ namespace Scene.BattleNpcScene
 
         private Vector3 ResolveMatchupFallbackFocus(BattleStagingContext context)
         {
+            float focusHeightOffset = ResolveMatchupFocusHeightOffset();
             if (matchupPlayerPoint != null && matchupEnemyPoint != null)
             {
                 Vector3 focus = (matchupPlayerPoint.position + matchupEnemyPoint.position) * 0.5f;
-                focus.y += matchupFocusHeightOffset;
+                focus.y = ResolveBattleGroundY(context) + focusHeightOffset;
                 return focus;
             }
 
@@ -534,7 +541,7 @@ namespace Scene.BattleNpcScene
             if (context.PlayerSpawn != null && context.EnemySpawn != null)
             {
                 Vector3 spawnFocus = (context.PlayerSpawn.position + context.EnemySpawn.position) * 0.5f;
-                spawnFocus.y = ResolveBattleGroundY(context) + matchupFocusHeightOffset;
+                spawnFocus.y = ResolveBattleGroundY(context) + focusHeightOffset;
                 return spawnFocus;
             }
 
@@ -544,16 +551,16 @@ namespace Scene.BattleNpcScene
                     context.PlayerModel,
                     context.EnemyModel,
                     ResolveBattleGroundY(context),
-                    matchupFocusHeightOffset);
+                    focusHeightOffset);
             }
 
             Vector3 center = context.ResolveCenterPosition();
-            center.y += matchupFocusHeightOffset;
+            center.y = ResolveBattleGroundY(context) + focusHeightOffset;
             return center;
         }
 
-        // 注視点はレイアウト中央に固定し距離だけ姿勢実測で決める
-        // 結合AABB中心だと前後に長い側へ寄り相手側はみ出しに見える
+        // 注視点XZはレイアウト中央に固定し高さは姿勢実測中心を優先する
+        // 結合AABBのXZ中心だと前後に長い側へ寄り相手側はみ出しに見える
         private Vector3 ApplyMatchupCamera(BattleStagingContext context)
         {
             Bounds bounds = default;
@@ -565,6 +572,10 @@ namespace Scene.BattleNpcScene
                     out bounds);
 
             Vector3 focus = ResolveMatchupFallbackFocus(context);
+            if (hasBounds)
+            {
+                focus.y = bounds.center.y;
+            }
 
             if (cameraView == null)
             {
@@ -584,8 +595,8 @@ namespace Scene.BattleNpcScene
                     matchupVerticalAngle,
                     verticalFov,
                     aspect,
-                    matchupFramePadding,
-                    matchupMinDistance,
+                    ResolveMatchupFramePadding(),
+                    ResolveMatchupMinDistance(),
                     matchupMaxDistance);
             }
 
@@ -593,6 +604,46 @@ namespace Scene.BattleNpcScene
             cameraView.SetFocusPosition(focus);
             cameraView.SetOrbitView(matchupHorizontalAngle, matchupVerticalAngle, distance);
             return focus;
+        }
+
+        private float ResolveMatchupSideGapPadding()
+        {
+            return BattleSpawnPlacement.ScaleAuthoredLength(matchupSideGapPadding);
+        }
+
+        private float ResolveMatchupMinCenterOffset()
+        {
+            return BattleSpawnPlacement.ScaleAuthoredLength(matchupMinCenterOffset);
+        }
+
+        private float ResolveMatchupSideSeparation()
+        {
+            return BattleSpawnPlacement.ScaleAuthoredLength(matchupSideSeparation);
+        }
+
+        private float ResolveMatchupMinSideSeparation()
+        {
+            return BattleSpawnPlacement.ScaleAuthoredLength(matchupMinSideSeparation);
+        }
+
+        private float ResolveMatchupFocusHeightOffset()
+        {
+            return BattleSpawnPlacement.ScaleAuthoredLength(matchupFocusHeightOffset);
+        }
+
+        private float ResolveMatchupFramePadding()
+        {
+            return BattleSpawnPlacement.ScaleAuthoredLength(matchupFramePadding);
+        }
+
+        private float ResolveMatchupMinDistance()
+        {
+            return BattleSpawnPlacement.ScaleAuthoredLength(matchupMinDistance);
+        }
+
+        private float ResolveBattleFocusHeightOffset()
+        {
+            return BattleSpawnPlacement.ScaleAuthoredLength(battleFocusHeightOffset);
         }
     }
 }

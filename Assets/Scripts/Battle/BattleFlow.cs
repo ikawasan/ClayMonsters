@@ -193,6 +193,7 @@ namespace Battle
             BattleFieldCameraPresenter cameraPresenter = null;
             BattleCombatFeedbackPresenter combatFeedbackPresenter = null;
             BattleChargeEffectPresenter chargeEffectPresenter = null;
+            BattleMagicAttackEffectPresenter magicAttackEffectPresenter = null;
             BattleFinishPresenter finishPresenter = null;
             BattlePartBreakPresenter partBreakPresenter = null;
 
@@ -518,6 +519,19 @@ namespace Battle
                         seService);
                 }
 
+                BattleMagicAttackEffectView magicEffectView = EnsureMagicAttackEffectView();
+                if (magicEffectView != null)
+                {
+                    float battleGroundY = ResolveBattleGroundY(context.PlayerSpawn, context.EnemySpawn);
+                    magicAttackEffectPresenter = new BattleMagicAttackEffectPresenter(
+                        magicEffectView,
+                        system,
+                        player.Model.transform,
+                        enemy.Model.transform,
+                        battleGroundY,
+                        seService);
+                }
+
                 if (context.FinishPresentation != null)
                 {
                     finishPresenter = new BattleFinishPresenter(
@@ -578,6 +592,8 @@ namespace Battle
                     combatFeedbackPresenter = null;
                     chargeEffectPresenter?.Dispose();
                     chargeEffectPresenter = null;
+                    magicAttackEffectPresenter?.Dispose();
+                    magicAttackEffectPresenter = null;
                     finishPresenter?.Dispose();
                     finishPresenter = null;
                     partBreakPresenter?.Dispose();
@@ -613,6 +629,7 @@ namespace Battle
                 presenter?.Dispose();
                 combatFeedbackPresenter?.Dispose();
                 chargeEffectPresenter?.Dispose();
+                magicAttackEffectPresenter?.Dispose();
                 finishPresenter?.Dispose();
                 partBreakPresenter?.Dispose();
                 fieldPresenter?.Dispose();
@@ -799,6 +816,26 @@ namespace Battle
 
             var host = new GameObject(nameof(BattleChargeEffectView));
             return host.AddComponent<BattleChargeEffectView>();
+        }
+
+        private static BattleMagicAttackEffectView EnsureMagicAttackEffectView()
+        {
+            BattleMagicAttackEffectView existing = UnityEngine.Object.FindFirstObjectByType<BattleMagicAttackEffectView>(
+                UnityEngine.FindObjectsInactive.Include);
+            if (existing != null)
+            {
+                return existing;
+            }
+
+            var host = new GameObject(nameof(BattleMagicAttackEffectView));
+            return host.AddComponent<BattleMagicAttackEffectView>();
+        }
+
+        private static float ResolveBattleGroundY(Transform playerSpawn, Transform enemySpawn)
+        {
+            float playerY = playerSpawn != null ? playerSpawn.position.y : 0f;
+            float enemyY = enemySpawn != null ? enemySpawn.position.y : playerY;
+            return (playerY + enemyY) * 0.5f;
         }
 
         private static BattleDamagePopupView EnsureDamagePopupView()

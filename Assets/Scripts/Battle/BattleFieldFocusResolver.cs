@@ -220,19 +220,21 @@ namespace Battle
 
         /// <summary>
         /// 対戦紹介で左右モデルがレイアウト中央を越えないよう外側へ押し出す
-        /// 前後に長いモデルの相手側はみ出しを防ぎ短いモデルは中央帯まで寄せられる
+        /// 前後に長いモデルの相手側はみ出しを防ぎ短いモデルは中央帯へ寄せつつ寄りすぎを抑える
         /// </summary>
         /// <param name="playerModel">左側のプレイヤー</param>
         /// <param name="enemyModel">右側の敵</param>
         /// <param name="layoutCenter">対戦紹介の固定中央</param>
         /// <param name="cameraHorizontalAngle">対戦紹介カメラの水平角</param>
         /// <param name="gapPadding">中央に残す隙間</param>
+        /// <param name="minCenterOffsetFromMid">各モデル中心が中央から離れる最小距離</param>
         public static void EnforceMatchupSideClearance(
             Transform playerModel,
             Transform enemyModel,
             Vector3 layoutCenter,
             float cameraHorizontalAngle,
-            float gapPadding)
+            float gapPadding,
+            float minCenterOffsetFromMid = 0f)
         {
             if (playerModel == null || enemyModel == null)
             {
@@ -247,6 +249,7 @@ namespace Battle
 
             float requiredGap = Mathf.Max(0.05f, gapPadding);
             float halfGap = requiredGap * 0.5f;
+            float minCenterOffset = Mathf.Max(0f, minCenterOffsetFromMid);
             float midProjection = Vector3.Dot(layoutCenter, screenRight);
             const int maxPasses = 6;
             for (int pass = 0; pass < maxPasses; pass++)
@@ -259,6 +262,8 @@ namespace Battle
 
                 float playerMax = ResolveMaxAxisProjection(playerBounds, Vector3.zero, screenRight);
                 float enemyMin = ResolveMinAxisProjection(enemyBounds, Vector3.zero, screenRight);
+                float playerCenter = Vector3.Dot(playerBounds.center, screenRight);
+                float enemyCenter = Vector3.Dot(enemyBounds.center, screenRight);
                 bool moved = false;
 
                 // 固定中央帯をまたぐはみ出しを先に外側へ戻す
@@ -276,12 +281,27 @@ namespace Battle
                     moved = true;
                 }
 
+                // 短いモデルの中心が中央へ寄りすぎないよう外側下限を維持する
+                float playerCenterOvershoot = playerCenter - (midProjection - minCenterOffset);
+                if (playerCenterOvershoot > 1e-4f)
+                {
+                    playerModel.position -= screenRight * playerCenterOvershoot;
+                    moved = true;
+                }
+
+                float enemyCenterOvershoot = (midProjection + minCenterOffset) - enemyCenter;
+                if (enemyCenterOvershoot > 1e-4f)
+                {
+                    enemyModel.position += screenRight * enemyCenterOvershoot;
+                    moved = true;
+                }
+
                 if (moved)
                 {
                     continue;
                 }
 
-                // 中央帯を侵さない範囲で余った隙間だけ内側へ寄せる
+                // 中央帯と最小中心距離を侵さない範囲で余った隙間だけ内側へ寄せる
                 float currentGap = enemyMin - playerMax;
                 float excessGap = currentGap - requiredGap;
                 if (excessGap <= 1e-4f)
@@ -291,8 +311,16 @@ namespace Battle
 
                 float playerSlack = (midProjection - halfGap) - playerMax;
                 float enemySlack = enemyMin - (midProjection + halfGap);
-                float playerPull = Mathf.Min(excessGap * 0.5f, Mathf.Max(0f, playerSlack));
-                float enemyPull = Mathf.Min(excessGap * 0.5f, Mathf.Max(0f, enemySlack));
+                float playerCenterSlack = (midProjection - minCenterOffset) - playerCenter;
+                float enemyCenterSlack = enemyCenter - (midProjection + minCenterOffset);
+                float playerPull = Mathf.Min(
+                    excessGap * 0.5f,
+                    Mathf.Max(0f, playerSlack),
+                    Mathf.Max(0f, playerCenterSlack));
+                float enemyPull = Mathf.Min(
+                    excessGap * 0.5f,
+                    Mathf.Max(0f, enemySlack),
+                    Mathf.Max(0f, enemyCenterSlack));
                 if (playerPull <= 1e-4f && enemyPull <= 1e-4f)
                 {
                     return;

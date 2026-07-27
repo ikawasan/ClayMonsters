@@ -112,7 +112,23 @@ namespace ClayEditor.Rigging
         /// <summary>
         /// 噛みつき(前部を突き出して噛む)
         /// </summary>
-        Bite
+        Bite,
+        /// <summary>
+        /// ファイアーボール(汎用魔法)
+        /// </summary>
+        Fireball,
+        /// <summary>
+        /// ウィンドスラッシャー(汎用魔法)
+        /// </summary>
+        WindSlasher,
+        /// <summary>
+        /// ダイヤモンドダスト(汎用魔法)
+        /// </summary>
+        DiamondDust,
+        /// <summary>
+        /// サンダーショック(汎用魔法)
+        /// </summary>
+        ThunderShock
     }
 
     /// <summary>
@@ -1035,7 +1051,23 @@ namespace ClayEditor.Rigging
                 || type == MotionType.GroundPound
                 || type == MotionType.Slap
                 || type == MotionType.LowSweep
-                || type == MotionType.Bite;
+                || type == MotionType.Bite
+                || type == MotionType.Fireball
+                || type == MotionType.WindSlasher
+                || type == MotionType.DiamondDust
+                || type == MotionType.ThunderShock;
+        }
+
+        /// <summary>
+        /// 指定のモーションが汎用魔法かどうかを返す
+        /// </summary>
+        /// <param name="type">判定するモーション</param>
+        public static bool IsMagicAttack(MotionType type)
+        {
+            return type == MotionType.Fireball
+                || type == MotionType.WindSlasher
+                || type == MotionType.DiamondDust
+                || type == MotionType.ThunderShock;
         }
 
         /// <summary>
@@ -1239,6 +1271,12 @@ namespace ClayEditor.Rigging
                         break;
                     case MotionType.Bite:
                         ApplyBite();
+                        break;
+                    case MotionType.Fireball:
+                    case MotionType.WindSlasher:
+                    case MotionType.DiamondDust:
+                    case MotionType.ThunderShock:
+                        ApplyMagicCast();
                         break;
                     case MotionType.StepForward:
                         ApplyStepForward();
@@ -1867,6 +1905,10 @@ namespace ClayEditor.Rigging
                     case MotionType.BellyFlop:
                     case MotionType.HipCheck:
                     case MotionType.GroundPound:
+                    case MotionType.Fireball:
+                    case MotionType.WindSlasher:
+                    case MotionType.DiamondDust:
+                    case MotionType.ThunderShock:
                         angle = intensity * MotionSettings.ChargePullbackAngle * 1.15f * depthFactor;
                         axis = MotionSettings.SpineBendAxis;
                         break;
@@ -2571,6 +2613,36 @@ namespace ClayEditor.Rigging
                     float pull = (snap - open * 0.35f) * MotionSettings.HeadbuttAmplitude * 0.2f * depthFactor;
                     info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, pull);
                 }
+            }
+        }
+
+        /// <summary>
+        /// 汎用魔法詠唱その場で力を解放する
+        /// </summary>
+        private void ApplyMagicCast()
+        {
+            float u = AttackProgress();
+            if (u >= 1f)
+            {
+                FinishAttack();
+                return;
+            }
+
+            float thrust = EvaluateStrikeEnvelope(u);
+            ApplyVisualLift(Mathf.Max(0f, thrust) * 0.18f);
+            Vector3 sagittalAxis = ResolveLocomotionSwingWorldAxis();
+
+            for (int i = 0; i < infos.Count; i++)
+            {
+                BoneInfo info = infos[i];
+                if (info.transform == null)
+                {
+                    continue;
+                }
+
+                float depthFactor = maxDepth > 0 ? (float)info.depth / maxDepth : 1f;
+                float angle = thrust * MotionSettings.ChargePullbackAngle * 0.85f * depthFactor;
+                info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, -angle);
             }
         }
 

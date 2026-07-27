@@ -9,6 +9,31 @@ namespace Battle
     public static class BattleSpawnPlacement
     {
         /// <summary>
+        /// 戦闘中モデルの統一スケール
+        /// </summary>
+        public const float BattleModelScale = 0.5f;
+
+        /// <summary>
+        /// 対戦紹介演出パラメータを調整した時点のモデルスケール
+        /// </summary>
+        public const float StagingAuthoredModelScale = 0.7f;
+
+        /// <summary>
+        /// 作者想定スケール基準の長さを現在の戦闘モデルスケールへ換算する
+        /// </summary>
+        /// <param name="authoredLength">StagingAuthoredModelScale時点の長さ</param>
+        /// <returns>現在スケール向けの長さ</returns>
+        public static float ScaleAuthoredLength(float authoredLength)
+        {
+            if (StagingAuthoredModelScale <= 1e-6f)
+            {
+                return authoredLength;
+            }
+
+            return authoredLength * (BattleModelScale / StagingAuthoredModelScale);
+        }
+
+        /// <summary>
         /// モデルをスポーンTransformへ配置する
         /// </summary>
         /// <param name="model">配置するモデル</param>
@@ -69,6 +94,7 @@ namespace Battle
             }
 
             model.SetPositionAndRotation(worldPosition, worldRotation);
+            model.localScale = Vector3.one * BattleModelScale;
             SnapBottomToGroundY(model, groundY);
         }
 

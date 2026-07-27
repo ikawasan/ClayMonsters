@@ -51,6 +51,9 @@ namespace Scene.TrainingScene.View
         {
             EnsureUiBound();
 
+            // 初回表示で子のAwake(EnsureSprites)が走る前に範囲色を書くと上書きされる
+            SetWindowVisible(true);
+
             if (titleText != null)
             {
                 titleText.text = string.IsNullOrEmpty(presentation.TitleText)
@@ -72,7 +75,7 @@ namespace Scene.TrainingScene.View
 
             if (attacksPanel != null)
             {
-                attacksPanel.Show(presentation.Attacks);
+                attacksPanel.ShowForConfirmPrefab(presentation.Attacks);
             }
 
             if (saveResultText != null)
@@ -92,14 +95,12 @@ namespace Scene.TrainingScene.View
                     : presentation.ContinueButtonLabel;
                 LhButtonLabelUtility.SetLabel(backToTitleButtonLabel, buttonLabel);
             }
-
-            SetWindowVisible(true);
         }
 
         /// <inheritdoc/>
         public void Hide()
         {
-            attacksPanel?.Clear();
+            attacksPanel?.ClearForConfirmPrefab();
             ClearThumbnail();
             SetWindowVisible(false);
         }

@@ -43,11 +43,16 @@ namespace ClayEditor.Rigging
                 case MotionType.BellyFlop:
                 case MotionType.BodySlam:
                 case MotionType.SpinTackle:
+                case MotionType.Fireball:
+                case MotionType.WindSlasher:
+                case MotionType.DiamondDust:
+                case MotionType.ThunderShock:
                     return 3;
                 default:
                     return 1;
             }
         }
+
         /// <summary>
         /// 骨格解析で使用可能と判定した攻撃モーションの一覧を返す
         /// MotionRequirementの条件とリム部位の両方を満たすものだけを含める

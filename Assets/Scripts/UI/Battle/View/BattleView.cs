@@ -19,8 +19,11 @@ namespace UI.Battle.View
         [Tooltip("攻撃ボタン(最大4。威力/属性/ガッツ/距離バーを持つ)")]
         [SerializeField] private MoveButtonView[] moveButtons;
 
-        [Tooltip("カーソルが最後に当たった技名を表示する固定欄")]
+        [Tooltip("プレイヤー側の攻撃名表示")]
         [SerializeField] private TMP_Text moveNameText;
+
+        [Tooltip("敵側の攻撃名表示")]
+        [SerializeField] private TMP_Text enemyMoveNameText;
 
         [Tooltip("必要部位(属性)ごとの画像")]
         [SerializeField] private TargetPartIconEntry[] targetPartIcons;
@@ -123,12 +126,20 @@ namespace UI.Battle.View
 
         private string[] playerMoveNames;
         private string[] enemyMoveNames;
+        private bool hasLoggedMissingEnemyMoveNameText;
 
         private void Awake()
         {
             playerMoveNames = new string[moveButtons != null ? moveButtons.Length : 0];
             enemyMoveNames = new string[enemyMoveButtons != null ? enemyMoveButtons.Length : 0];
 
+            if (enemyMoveNameText == null)
+            {
+                Debug.LogError(
+                    "[BattleView] enemyMoveNameTextが未配線ですPrefab Modeで敵側AttackNameを接続してください",
+                    this);
+                hasLoggedMissingEnemyMoveNameText = true;
+            }
             BuildSpriteMaps();
 
             if (timeText != null)
@@ -143,10 +154,14 @@ namespace UI.Battle.View
                     int index = i;
                     if (moveButtons[index] != null && moveButtons[index].Button != null)
                     {
-                        moveButtons[index].Button.SubscribeOnClick(() => moveSelectedSubject.OnNext(index));
+                        moveButtons[index].Button.SubscribeOnClick(() =>
+                        {
+                            ShowMoveName(true, playerMoveNames, index);
+                            moveSelectedSubject.OnNext(index);
+                        });
                         AddHoverHandler(
                             moveButtons[index].Button.gameObject,
-                            () => ShowMoveName(playerMoveNames, index),
+                            () => ShowMoveName(true, playerMoveNames, index),
                             moveButtons[index]);
                     }
                 }
@@ -161,7 +176,7 @@ namespace UI.Battle.View
                     {
                         AddHoverHandler(
                             enemyMoveButtons[index].Button.gameObject,
-                            () => ShowMoveName(enemyMoveNames, index),
+                            () => ShowMoveName(false, enemyMoveNames, index),
                             enemyMoveButtons[index]);
                     }
                 }
@@ -359,10 +374,30 @@ namespace UI.Battle.View
             return MoveTargetPartSpriteFactory.GetDisplayColor(targetPartId);
         }
 
-        // カーソルが最後に当たった技名を固定欄に表示する
-        private void ShowMoveName(string[] names, int index)
+        /// <inheritdoc />
+        public void SetAttackName(bool isPlayer, string attackName)
         {
-            if (moveNameText == null || names == null || index < 0 || index >= names.Length)
+            TMP_Text target = isPlayer ? moveNameText : enemyMoveNameText;
+            if (target == null)
+            {
+                if (!isPlayer && !hasLoggedMissingEnemyMoveNameText)
+                {
+                    Debug.LogError(
+                        "[BattleView] enemyMoveNameTextが未配線ですPrefab Modeで敵側AttackNameを接続してください",
+                        this);
+                    hasLoggedMissingEnemyMoveNameText = true;
+                }
+
+                return;
+            }
+
+            target.text = string.IsNullOrEmpty(attackName) ? string.Empty : attackName;
+        }
+
+        // カーソルが最後に当たった技名を固定欄に表示する
+        private void ShowMoveName(bool isPlayer, string[] names, int index)
+        {
+            if (names == null || index < 0 || index >= names.Length)
             {
                 return;
             }
@@ -370,7 +405,7 @@ namespace UI.Battle.View
             string moveName = names[index];
             if (!string.IsNullOrEmpty(moveName))
             {
-                moveNameText.text = moveName;
+                SetAttackName(isPlayer, moveName);
             }
         }
 

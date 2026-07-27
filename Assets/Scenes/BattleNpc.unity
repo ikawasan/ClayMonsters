@@ -10664,7 +10664,8 @@ MonoBehaviour:
   matchupBackground: {fileID: 2010494676}
   matchupPlayerPoint: {fileID: 0}
   matchupEnemyPoint: {fileID: 0}
-  matchupSideGapPadding: 0.55
+  matchupSideGapPadding: 1.35
+  matchupMinCenterOffset: 1.15
   matchupMinSideSeparation: 1.5
   matchupMaxSideSeparation: 12
   matchupSideSeparation: 4

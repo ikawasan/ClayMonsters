@@ -128,3 +128,23 @@ MonoBehaviour:
     requiredLegCount: 0
     requiredFrontCount: 1
     requiredBackCount: 0
+  - motionType: 26
+    requiredArmCount: 0
+    requiredLegCount: 0
+    requiredFrontCount: 0
+    requiredBackCount: 0
+  - motionType: 27
+    requiredArmCount: 0
+    requiredLegCount: 0
+    requiredFrontCount: 0
+    requiredBackCount: 0
+  - motionType: 28
+    requiredArmCount: 0
+    requiredLegCount: 0
+    requiredFrontCount: 0
+    requiredBackCount: 0
+  - motionType: 29
+    requiredArmCount: 0
+    requiredLegCount: 0
+    requiredFrontCount: 0
+    requiredBackCount: 0

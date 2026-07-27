@@ -47,7 +47,7 @@ namespace Battle
             await SpinWhileAsync(
                 model,
                 degreesPerSecond,
-                DefaultHopHeight,
+                BattleSpawnPlacement.ScaleAuthoredLength(DefaultHopHeight),
                 DefaultHopFrequency,
                 cancellationToken);
         }

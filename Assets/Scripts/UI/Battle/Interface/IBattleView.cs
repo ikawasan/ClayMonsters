@@ -94,6 +94,13 @@ namespace UI.Battle.Interface
         void SetEnemyMoves(IReadOnlyList<MoveDisplay> moves);
 
         /// <summary>
+        /// 攻撃開始時などに自他の攻撃名表示を更新する
+        /// </summary>
+        /// <param name="isPlayer">プレイヤー側ならtrue</param>
+        /// <param name="attackName">表示する攻撃名</param>
+        void SetAttackName(bool isPlayer, string attackName);
+
+        /// <summary>
         /// リザルト表示前に戦闘操作UIを止めてレイアウト負荷を下げる
         /// </summary>
         void PrepareForResultDisplay();

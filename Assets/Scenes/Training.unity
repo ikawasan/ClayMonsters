@@ -40616,7 +40616,8 @@ MonoBehaviour:
   matchupBackground: {fileID: 2010494676}
   matchupPlayerPoint: {fileID: 0}
   matchupEnemyPoint: {fileID: 0}
-  matchupSideGapPadding: 0.55
+  matchupSideGapPadding: 1.35
+  matchupMinCenterOffset: 1.15
   matchupMinSideSeparation: 1.5
   matchupMaxSideSeparation: 12
   matchupSideSeparation: 4
@@ -42637,9 +42638,9 @@ MonoBehaviour:
   emptyText: {fileID: 3275608817127323242}
   attackSlots:
   - {fileID: 8164343904440962031}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
+  - {fileID: 1230087436073444768}
+  - {fileID: 8523847421617875056}
+  - {fileID: 2661747325068236735}
 --- !u!114 &881958917927765368 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 6199997086301378191, guid: da51dbbf90d3cbd4d9e704fe6fedc3ae, type: 3}
