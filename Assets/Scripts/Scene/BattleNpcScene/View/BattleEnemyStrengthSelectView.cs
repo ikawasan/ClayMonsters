@@ -25,7 +25,6 @@ namespace Scene.BattleNpcScene.View
         [SerializeField] private Button veryStrongButton;
 
         [Header("ラベル")]
-        [SerializeField] private TMP_Text titleText;
         [SerializeField] private TMP_Text weakLabel;
         [SerializeField] private TMP_Text normalLabel;
         [SerializeField] private TMP_Text strongLabel;
@@ -164,11 +163,6 @@ namespace Scene.BattleNpcScene.View
 
         private void ApplyLabels()
         {
-            if (titleText != null)
-            {
-                titleText.text = "敵の強さ";
-            }
-
             SetLabel(weakLabel, EnemyStrengthTier.Weak);
             SetLabel(normalLabel, EnemyStrengthTier.Normal);
             SetLabel(strongLabel, EnemyStrengthTier.Strong);
