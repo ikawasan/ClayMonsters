@@ -26,6 +26,31 @@ namespace SaveData
         public const float VeryStrongScale = 1.55f;
 
         /// <summary>
+        /// 敵HP上限
+        /// </summary>
+        public const int MaxHp = 900;
+
+        /// <summary>
+        /// 敵攻撃上限
+        /// </summary>
+        public const int MaxAttack = 250;
+
+        /// <summary>
+        /// 敵防御上限
+        /// </summary>
+        public const int MaxDefense = 250;
+
+        /// <summary>
+        /// 敵速さ上限
+        /// </summary>
+        public const int MaxSpeed = 99;
+
+        /// <summary>
+        /// 敵命中上限
+        /// </summary>
+        public const int MaxHit = 99;
+
+        /// <summary>
         /// 強さ段階の表示名を返す
         /// </summary>
         /// <param name="tier">強さ段階</param>
@@ -64,11 +89,12 @@ namespace SaveData
                 _ => slot.statusNormal
             };
 
-            return ModelStatus.CloneOrDefault(selected);
+            return Clamp(ModelStatus.CloneOrDefault(selected));
         }
 
         /// <summary>
         /// 4段階ステータスが無ければ基準ステータスから用意する
+        /// 既存データが上限超過なら丸める
         /// </summary>
         /// <param name="slot">敵スロット</param>
         public static void EnsureFromBase(ModelSaveSlot slot)
@@ -80,6 +106,7 @@ namespace SaveData
 
             if (slot.hasEnemyStrengthStatuses && HasCompleteSet(slot))
             {
+                ClampAllTiers(slot);
                 return;
             }
 
@@ -98,13 +125,22 @@ namespace SaveData
                 return;
             }
 
-            ModelStatus source = ModelStatus.CloneOrDefault(baseStatus);
+            ModelStatus source = Clamp(ModelStatus.CloneOrDefault(baseStatus));
             slot.statusWeak = Scale(source, WeakScale);
             slot.statusNormal = Scale(source, NormalScale);
             slot.statusStrong = Scale(source, StrongScale);
             slot.statusVeryStrong = Scale(source, VeryStrongScale);
             slot.status = Scale(source, NormalScale);
             slot.hasEnemyStrengthStatuses = true;
+        }
+
+        private static void ClampAllTiers(ModelSaveSlot slot)
+        {
+            slot.status = Clamp(slot.status);
+            slot.statusWeak = Clamp(slot.statusWeak);
+            slot.statusNormal = Clamp(slot.statusNormal);
+            slot.statusStrong = Clamp(slot.statusStrong);
+            slot.statusVeryStrong = Clamp(slot.statusVeryStrong);
         }
 
         private static bool HasCompleteSet(ModelSaveSlot slot)
@@ -133,6 +169,37 @@ namespace SaveData
             status.defense = ScaleStat(status.defense, scale);
             status.speed = ScaleStat(status.speed, scale);
             status.hit = ScaleStat(status.hit, scale);
+            return Clamp(status);
+        }
+
+        private static ModelStatus Clamp(ModelStatus source)
+        {
+            ModelStatus status = ModelStatus.CloneOrDefault(source);
+            if (status.hp > 0)
+            {
+                status.hp = UnityEngine.Mathf.Min(status.hp, MaxHp);
+            }
+
+            if (status.attack > 0)
+            {
+                status.attack = UnityEngine.Mathf.Min(status.attack, MaxAttack);
+            }
+
+            if (status.defense > 0)
+            {
+                status.defense = UnityEngine.Mathf.Min(status.defense, MaxDefense);
+            }
+
+            if (status.speed > 0)
+            {
+                status.speed = UnityEngine.Mathf.Min(status.speed, MaxSpeed);
+            }
+
+            if (status.hit > 0)
+            {
+                status.hit = UnityEngine.Mathf.Min(status.hit, MaxHit);
+            }
+
             return status;
         }
 

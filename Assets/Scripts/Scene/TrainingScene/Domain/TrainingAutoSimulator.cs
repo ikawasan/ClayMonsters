@@ -24,16 +24,24 @@ namespace Scene.TrainingScene.Domain
                 return;
             }
 
-            while (!session.IsCompleted)
+            session.SetStatusGainMultiplier(TrainingSettings.AutoTrainingStatGainMultiplier);
+            try
             {
-                session.EnsureShopOffer(random);
-                RunSingleDay(session, saveService, usableAttacks, random);
-                if (session.IsCompleted)
+                while (!session.IsCompleted)
                 {
-                    break;
-                }
+                    session.EnsureShopOffer(random);
+                    RunSingleDay(session, saveService, usableAttacks, random);
+                    if (session.IsCompleted)
+                    {
+                        break;
+                    }
 
-                session.AdvanceDay();
+                    session.AdvanceDay();
+                }
+            }
+            finally
+            {
+                session.SetStatusGainMultiplier(1f);
             }
         }
 

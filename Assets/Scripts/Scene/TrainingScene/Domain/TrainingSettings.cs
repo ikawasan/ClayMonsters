@@ -119,6 +119,12 @@ namespace Scene.TrainingScene.Domain
         public const float FailurePercentPerStaminaBelowThreshold = 2f;
 
         /// <summary>
+        /// 自動育成時のステータス上昇倍率
+        /// 手動育成より少し弱くする
+        /// </summary>
+        public const float AutoTrainingStatGainMultiplier = 0.85f;
+
+        /// <summary>
         /// 大会勝利時の体力回復量
         /// </summary>
         public const int TournamentVictoryStaminaRecovery = 20;

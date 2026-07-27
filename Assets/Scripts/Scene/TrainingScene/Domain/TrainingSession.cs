@@ -182,12 +182,23 @@ namespace Scene.TrainingScene.Domain
         /// </summary>
         public bool IsCompleted { get; private set; }
 
+        private float statusGainMultiplier = 1f;
+
         /// <summary>
         /// 育成完了状態へ遷移する
         /// </summary>
         public void MarkCompleted()
         {
             IsCompleted = true;
+        }
+
+        /// <summary>
+        /// ステータス上昇全体に掛ける倍率を設定する
+        /// </summary>
+        /// <param name="multiplier">倍率</param>
+        public void SetStatusGainMultiplier(float multiplier)
+        {
+            statusGainMultiplier = Mathf.Max(0f, multiplier);
         }
 
         /// <summary>
@@ -755,11 +766,14 @@ namespace Scene.TrainingScene.Domain
 
         private void ApplyGain(TrainingStatGain gain)
         {
-            CurrentStatus.hp += gain.Hp;
-            CurrentStatus.attack += gain.Attack;
-            CurrentStatus.defense += gain.Defense;
-            CurrentStatus.speed += gain.Speed;
-            CurrentStatus.hit += gain.Hit;
+            TrainingStatGain applied = Mathf.Abs(statusGainMultiplier - 1f) < 0.0001f
+                ? gain
+                : TrainingFocusCatalog.ScaleGain(gain, statusGainMultiplier);
+            CurrentStatus.hp += applied.Hp;
+            CurrentStatus.attack += applied.Attack;
+            CurrentStatus.defense += applied.Defense;
+            CurrentStatus.speed += applied.Speed;
+            CurrentStatus.hit += applied.Hit;
         }
     }
 }
