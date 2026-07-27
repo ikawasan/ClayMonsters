@@ -199,6 +199,71 @@ namespace Battle
         }
 
         /// <summary>
+        /// 攻撃の強さランクを返す(1〜3)
+        /// </summary>
+        /// <param name="motion">攻撃</param>
+        public static int GetStrengthRank(MotionType motion)
+        {
+            switch (motion)
+            {
+                case MotionType.Slap:
+                case MotionType.Punch:
+                case MotionType.LowSweep:
+                case MotionType.Tackle:
+                case MotionType.HipCheck:
+                    return 1;
+                case MotionType.Kick:
+                case MotionType.Headbutt:
+                case MotionType.ShoulderRam:
+                case MotionType.Knee:
+                case MotionType.Elbow:
+                case MotionType.Bite:
+                case MotionType.Uppercut:
+                case MotionType.TailWhip:
+                    return 2;
+                case MotionType.GroundPound:
+                case MotionType.Stomp:
+                case MotionType.BellyFlop:
+                case MotionType.BodySlam:
+                case MotionType.SpinTackle:
+                    return 3;
+                default:
+                    return 1;
+            }
+        }
+
+        /// <summary>
+        /// 強さランクを★表示にする
+        /// </summary>
+        /// <param name="rank">強さランク(1〜3)</param>
+        public static string FormatStrengthRankStars(int rank)
+        {
+            int clamped = Mathf.Clamp(rank, 1, MaxStrengthRank);
+            var chars = new char[MaxStrengthRank];
+            for (int i = 0; i < MaxStrengthRank; i++)
+            {
+                chars[i] = i < clamped ? '★' : '☆';
+            }
+
+            return new string(chars);
+        }
+
+        /// <summary>
+        /// 技名の横に強さランク★を付けた表示名を返す
+        /// 戦闘UI以外で使う
+        /// </summary>
+        /// <param name="motion">攻撃</param>
+        public static string FormatDisplayNameWithStrengthRank(MotionType motion)
+        {
+            return GetDisplayName(motion) + " " + FormatStrengthRankStars(GetStrengthRank(motion));
+        }
+
+        /// <summary>
+        /// 強さランクの最大値
+        /// </summary>
+        public const int MaxStrengthRank = 3;
+
+        /// <summary>
         /// UI表示用のガッツコストを返す
         /// </summary>
         public static int GetGutsCostDisplayValue(MotionType motion)

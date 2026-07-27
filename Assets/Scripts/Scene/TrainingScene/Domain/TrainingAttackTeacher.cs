@@ -55,12 +55,12 @@ namespace Scene.TrainingScene.Domain
         }
 
         /// <summary>
-        /// 攻撃の技名のみを返す
+        /// 攻撃の技名と強さランクを返す
         /// </summary>
         /// <param name="motion">攻撃</param>
         public static string FormatAttackName(MotionType motion)
         {
-            return MotionPartRequirement.GetDisplayName(motion);
+            return MotionPartRequirement.FormatDisplayNameWithStrengthRank(motion);
         }
 
         /// <summary>
@@ -69,7 +69,7 @@ namespace Scene.TrainingScene.Domain
         /// <param name="motion">攻撃</param>
         public static string FormatAttackLabel(MotionType motion)
         {
-            return $"{MotionPartRequirement.GetDisplayName(motion)}"
+            return $"{FormatAttackName(motion)}"
                 + $" 威力{MotionPartRequirement.GetPowerDisplayValue(motion)}"
                 + $" [{FormatRequiredPartLabel(motion)}]";
         }
@@ -80,7 +80,7 @@ namespace Scene.TrainingScene.Domain
         /// <param name="motion">攻撃</param>
         public static string FormatAttackDetail(MotionType motion)
         {
-            return MotionPartRequirement.GetDisplayName(motion)
+            return FormatAttackName(motion)
                 + " [" + FormatRequiredPartLabel(motion) + "]"
                 + "\n破壊:" + MotionPartRequirement.FormatTargetDestroyPartLabel(motion)
                 + "  " + FormatAttackStatsLine(motion);
@@ -123,7 +123,7 @@ namespace Scene.TrainingScene.Domain
         /// <param name="motion">攻撃</param>
         public static string FormatResumeAttackDetail(MotionType motion)
         {
-            return "攻撃名 " + MotionPartRequirement.GetDisplayName(motion)
+            return "攻撃名 " + FormatAttackName(motion)
                 + "\n必要部位 " + FormatRequiredPartLabel(motion)
                 + "\n破壊部位 " + MotionPartRequirement.FormatTargetDestroyPartLabel(motion)
                 + "\nダメージ " + MotionPartRequirement.GetPowerDisplayValue(motion)

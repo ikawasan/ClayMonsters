@@ -216,7 +216,7 @@ namespace UI.ClayEditor.View
                 }
 
                 MotionType motion = attacks[i];
-                builder.Append(MotionPartRequirement.GetDisplayName(motion));
+                builder.Append(MotionPartRequirement.FormatDisplayNameWithStrengthRank(motion));
                 builder.Append('(').Append(MotionPartRequirement.FormatTargetDestroyPartLabel(motion));
                 builder.Append('/').Append(MotionPartRequirement.FormatRangeLabel(motion));
                 builder.Append("/威力").Append(MotionPartRequirement.GetPowerDisplayValue(motion));
@@ -233,7 +233,7 @@ namespace UI.ClayEditor.View
                 return "攻撃なし";
             }
 
-            string firstAttack = MotionPartRequirement.GetDisplayName(attacks[0]);
+            string firstAttack = MotionPartRequirement.FormatDisplayNameWithStrengthRank(attacks[0]);
             string firstTargetPart = MotionPartRequirement.FormatTargetDestroyPartLabel(attacks[0]);
             if (attacks.Count == 1)
             {

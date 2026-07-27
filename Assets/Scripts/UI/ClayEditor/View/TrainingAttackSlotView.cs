@@ -52,7 +52,7 @@ namespace UI.ClayEditor.View
 
             if (attackNameText != null)
             {
-                attackNameText.text = MotionPartRequirement.GetDisplayName(attack);
+                attackNameText.text = MotionPartRequirement.FormatDisplayNameWithStrengthRank(attack);
             }
 
             if (damageText != null)
@@ -154,7 +154,7 @@ namespace UI.ClayEditor.View
 
             if (attackNameText != null)
             {
-                attackNameText.text = MotionPartRequirement.GetDisplayName(attack);
+                attackNameText.text = MotionPartRequirement.FormatDisplayNameWithStrengthRank(attack);
             }
 
             if (damageText != null)
