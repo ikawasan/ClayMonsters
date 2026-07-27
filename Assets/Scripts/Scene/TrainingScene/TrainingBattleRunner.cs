@@ -207,6 +207,8 @@ namespace Scene.TrainingScene
 
         /// <param name="enemySlotIndex">敵スロット</param>
 
+        /// <param name="enemyStrengthTier">敵強さ段階</param>
+
         /// <param name="cancellationToken">キャンセルトークン</param>
 
         public async UniTask<TrainingBattleResult> RunAfterSchoolBattleAsync(
@@ -218,6 +220,8 @@ namespace Scene.TrainingScene
             string modelName,
 
             int enemySlotIndex,
+
+            EnemyStrengthTier enemyStrengthTier,
 
             CancellationToken cancellationToken)
 
@@ -317,7 +321,7 @@ namespace Scene.TrainingScene
 
 
 
-                BattleParticipant enemy = await loader.LoadEnemyAsync(enemySlotIndex, enemySpawn, cancellationToken);
+                BattleParticipant enemy = await loader.LoadEnemyAsync(enemySlotIndex, enemySpawn, enemyStrengthTier, cancellationToken);
 
                 if (!enemy.IsValid)
 

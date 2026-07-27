@@ -1550,6 +1550,7 @@ namespace Scene.TrainingScene
 
             if (!TrainingEnemyResolver.TryPickAmbushEnemySlotIndex(
                     saveService,
+                    session.CurrentDay,
                     out int enemySlotIndex))
             {
                 return false;
@@ -1618,6 +1619,7 @@ namespace Scene.TrainingScene
                     playerModel,
                     modelName,
                     enemySlotIndex,
+                    TrainingEnemyResolver.ResolveAmbushTier(session.CurrentDay),
                     cancellationToken);
             }
             finally
@@ -1729,6 +1731,7 @@ namespace Scene.TrainingScene
                     playerModel,
                     modelName,
                     enemySlotIndex,
+                    TrainingEnemyResolver.ResolveAfterSchoolTier(session.CurrentDay),
                     cancellationToken);
             }
             finally

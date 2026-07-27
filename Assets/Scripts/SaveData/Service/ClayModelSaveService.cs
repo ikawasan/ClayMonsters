@@ -99,7 +99,7 @@ namespace SaveData.Service
 
             ClayModelSaveData data = LoadOrCreate(pool);
             TrainingSlotProgress existingProgress = data.slots[slotIndex].trainingProgress;
-            data.slots[slotIndex] = new ModelSaveSlot
+            ModelSaveSlot written = new ModelSaveSlot
             {
                 isUsed = true,
                 modelName = modelName,
@@ -110,6 +110,12 @@ namespace SaveData.Service
                 // モデル再保存で育成途中データを消さない
                 trainingProgress = existingProgress
             };
+            if (pool == ModelSavePool.Enemy)
+            {
+                EnemyStrengthStatusCatalog.ApplyGeneratedFromBase(written, status);
+            }
+
+            data.slots[slotIndex] = written;
 
             WriteToFile(pool, data);
             return true;
@@ -638,7 +644,27 @@ namespace SaveData.Service
             }
 
             MigrateLegacyWritableFiles(pool, data);
+            EnsureEnemyStrengthStatuses(pool, data);
             return data;
+        }
+
+        private static void EnsureEnemyStrengthStatuses(ModelSavePool pool, ClayModelSaveData data)
+        {
+            if (pool != ModelSavePool.Enemy || data?.slots == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < data.slots.Count; i++)
+            {
+                ModelSaveSlot slot = data.slots[i];
+                if (slot == null || !slot.isUsed)
+                {
+                    continue;
+                }
+
+                EnemyStrengthStatusCatalog.EnsureFromBase(slot);
+            }
         }
 
         /// <summary>

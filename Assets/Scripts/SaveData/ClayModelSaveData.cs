@@ -80,9 +80,34 @@ namespace SaveData
         public string modelName;
 
         /// <summary>
-        /// モデルのステータス
+        /// モデルのステータス(表示・基準用)
         /// </summary>
         public ModelStatus status = new ModelStatus();
+
+        /// <summary>
+        /// 敵の強さ段階ステータスが用意されているか
+        /// </summary>
+        public bool hasEnemyStrengthStatuses;
+
+        /// <summary>
+        /// 敵の弱いステータス
+        /// </summary>
+        public ModelStatus statusWeak = new ModelStatus();
+
+        /// <summary>
+        /// 敵の普通ステータス
+        /// </summary>
+        public ModelStatus statusNormal = new ModelStatus();
+
+        /// <summary>
+        /// 敵の強いステータス
+        /// </summary>
+        public ModelStatus statusStrong = new ModelStatus();
+
+        /// <summary>
+        /// 敵の超強いステータス
+        /// </summary>
+        public ModelStatus statusVeryStrong = new ModelStatus();
 
         /// <summary>
         /// glbファイルの名前(persistentDataPath内)

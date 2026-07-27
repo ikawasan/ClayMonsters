@@ -68,7 +68,37 @@ namespace Battle
         /// </summary>
         public async UniTask<BattleParticipant> LoadEnemyAsync(int slotIndex, Transform spawn, CancellationToken cancellationToken)
         {
-            return await LoadFromPoolAsync(ModelSavePool.Enemy, slotIndex, spawn, cancellationToken);
+            return await LoadEnemyAsync(slotIndex, spawn, null, cancellationToken);
+        }
+
+        /// <summary>
+        /// 強さ段階のステータスで敵参加者を返す
+        /// </summary>
+        /// <param name="slotIndex">敵スロット</param>
+        /// <param name="spawn">配置先</param>
+        /// <param name="strengthTier">強さ段階</param>
+        /// <param name="cancellationToken">キャンセルトークン</param>
+        public async UniTask<BattleParticipant> LoadEnemyAsync(
+            int slotIndex,
+            Transform spawn,
+            EnemyStrengthTier strengthTier,
+            CancellationToken cancellationToken)
+        {
+            return await LoadEnemyAsync(slotIndex, spawn, (EnemyStrengthTier?)strengthTier, cancellationToken);
+        }
+
+        private async UniTask<BattleParticipant> LoadEnemyAsync(
+            int slotIndex,
+            Transform spawn,
+            EnemyStrengthTier? strengthTier,
+            CancellationToken cancellationToken)
+        {
+            return await LoadFromPoolAsync(
+                ModelSavePool.Enemy,
+                slotIndex,
+                spawn,
+                strengthTier,
+                cancellationToken);
         }
 
         /// <summary>
@@ -76,7 +106,7 @@ namespace Battle
         /// </summary>
         public async UniTask<BattleParticipant> LoadPlayerSlotAsync(int slotIndex, Transform spawn, CancellationToken cancellationToken)
         {
-            return await LoadFromPoolAsync(ModelSavePool.TrainedPlayer, slotIndex, spawn, cancellationToken);
+            return await LoadFromPoolAsync(ModelSavePool.TrainedPlayer, slotIndex, spawn, null, cancellationToken);
         }
 
         /// <summary>
@@ -171,7 +201,12 @@ namespace Battle
             return configurator.Configure(model);
         }
 
-        private async UniTask<BattleParticipant> LoadFromPoolAsync(ModelSavePool pool, int slotIndex, Transform spawn, CancellationToken cancellationToken)
+        private async UniTask<BattleParticipant> LoadFromPoolAsync(
+            ModelSavePool pool,
+            int slotIndex,
+            Transform spawn,
+            EnemyStrengthTier? strengthTier,
+            CancellationToken cancellationToken)
         {
             ModelSaveSlot slot = saveService.GetSlot(pool, slotIndex);
             if (slot == null || string.IsNullOrEmpty(slot.glbFileName))
@@ -195,7 +230,10 @@ namespace Battle
                 return default;
             }
 
-            BattleParticipant participant = BuildParticipant(model, slot);
+            ModelStatus status = strengthTier.HasValue
+                ? EnemyStrengthStatusCatalog.Resolve(slot, strengthTier.Value)
+                : ModelStatus.CloneOrDefault(slot.status);
+            BattleParticipant participant = BuildParticipant(model, slot, status);
             return FinalizeSpawnPlacement(participant, spawn);
         }
 
@@ -234,6 +272,11 @@ namespace Battle
 
         private BattleParticipant BuildParticipant(GameObject model, ModelSaveSlot slot)
         {
+            return BuildParticipant(model, slot, ModelStatus.CloneOrDefault(slot.status));
+        }
+
+        private BattleParticipant BuildParticipant(GameObject model, ModelSaveSlot slot, ModelStatus status)
+        {
             LoadedModelConfigurator.Result cfg = configurator.Configure(model);
 
             if (cfg.Motion == null || !cfg.Motion.IsReady)
@@ -247,7 +290,7 @@ namespace Battle
 
             cfg.PartLoss?.SuspendMeshRebuild();
 
-            NormalizeStatus(slot.status, out int hp, out int attack, out int defense, out int speed, out int hit);
+            NormalizeStatus(status, out int hp, out int attack, out int defense, out int speed, out int hit);
 
             var unit = new BattleUnit(
                 slot.modelName,

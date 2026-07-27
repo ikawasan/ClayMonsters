@@ -139,8 +139,11 @@ namespace Scene.TrainingScene.Domain
                 return;
             }
 
-            ModelStatus enemyStatus =
-                saveService.GetSlot(ModelSavePool.Enemy, enemySlotIndex)?.status;
+            ModelSaveSlot enemySlot = saveService.GetSlot(ModelSavePool.Enemy, enemySlotIndex);
+            EnemyStrengthTier tier = TrainingEnemyResolver.ResolveAfterSchoolTier(session.CurrentDay);
+            ModelStatus enemyStatus = enemySlot != null
+                ? EnemyStrengthStatusCatalog.Resolve(enemySlot, tier)
+                : null;
             bool playerWon = TrainingAutoBattleResolver.TrySimulateVictory(
                 session.CurrentStatus,
                 enemyStatus,
