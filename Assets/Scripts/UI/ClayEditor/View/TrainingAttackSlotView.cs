@@ -82,11 +82,6 @@ namespace UI.ClayEditor.View
 
             ApplyRange(attack);
             DisableContentRaycasts();
-
-            if (preserveLayoutSpace)
-            {
-                RefreshPartInfoRowLayout();
-            }
         }
 
         /// <summary>
@@ -183,7 +178,6 @@ namespace UI.ClayEditor.View
             }
 
             ApplyRangeForConfirmPrefab(attack);
-            RefreshPartInfoRowLayout();
         }
 
         /// <summary>
@@ -303,28 +297,6 @@ namespace UI.ClayEditor.View
             frameImage.color = new Color(1f, 1f, 1f, 0f);
         }
 
-        private void RefreshPartInfoRowLayout()
-        {
-            Transform partInfoRow = transform.Find("PartInfoRow");
-            if (partInfoRow == null)
-            {
-                return;
-            }
-
-            TMP_Text[] labels = partInfoRow.GetComponentsInChildren<TMP_Text>(true);
-            for (int i = 0; i < labels.Length; i++)
-            {
-                TMP_Text label = labels[i];
-                label.ForceMeshUpdate();
-                if (label.TryGetComponent(out LayoutElement layoutElement))
-                {
-                    layoutElement.preferredWidth = label.preferredWidth;
-                }
-            }
-
-            Canvas.ForceUpdateCanvases();
-        }
-
         private void ApplyRangeForConfirmPrefab(MotionType attack)
         {
             if (rangeBar == null)
@@ -338,7 +310,7 @@ namespace UI.ClayEditor.View
                 range.y,
                 MoveRangeSegmentBarView.DefaultMaxDistance,
                 usable: true,
-                preserveSegmentHierarchy: true);
+                preserveSegmentHierarchy: false);
         }
 
         private void SetSlotRootVisible(bool visible, bool preserveLayoutSpace)

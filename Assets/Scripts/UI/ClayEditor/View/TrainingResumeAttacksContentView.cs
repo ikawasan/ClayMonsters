@@ -184,6 +184,9 @@ namespace UI.ClayEditor.View
                     : null;
                 if (slotView == null)
                 {
+                    Debug.LogError(
+                        $"[TrainingResumeAttacksContentView] attackSlots[{i}]が未配線です",
+                        this);
                     continue;
                 }
 
