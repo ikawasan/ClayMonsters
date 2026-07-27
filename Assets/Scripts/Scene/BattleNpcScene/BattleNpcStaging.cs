@@ -178,6 +178,10 @@ namespace Scene.BattleNpcScene
                         enemyName,
                         context.Player,
                         context.Enemy,
+                        context.EnableEnemyStrengthSelect
+                            ? context.RebuildEnemyWithStrengthTier
+                            : null,
+                        context.EnemyStrengthTier,
                         cancellationToken);
                 }
             }

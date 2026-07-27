@@ -1,6 +1,5 @@
 using Battle;
 using Battle.Interface;
-using Battle.Interface;
 using Battle.View;
 using Camera.View;
 using ClayEditor.Rigging;
@@ -49,6 +48,8 @@ namespace Scene.BattleNpcScene
                 TipsView = runner.TipsView,
                 LevelDesignSettings = runner.LevelDesignSettings,
                 AutoStartMatchup = false,
+                EnableEnemyStrengthSelect = true,
+                EnemyStrengthTier = EnemyStrengthTier.Normal,
             };
         }
     }

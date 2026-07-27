@@ -129,6 +129,46 @@ namespace Battle
         }
 
         /// <summary>
+        /// 読み込み済み敵モデルの強さ段階だけ差し替えて参加者を再構築する
+        /// </summary>
+        /// <param name="model">既存モデル</param>
+        /// <param name="slotIndex">敵スロット</param>
+        /// <param name="strengthTier">強さ段階</param>
+        public BattleParticipant RebuildEnemyWithStrengthTier(
+            GameObject model,
+            int slotIndex,
+            EnemyStrengthTier strengthTier)
+        {
+            ModelSaveSlot slot = saveService.GetSlot(ModelSavePool.Enemy, slotIndex);
+            if (model == null || slot == null)
+            {
+                return default;
+            }
+
+            ModelStatus status = EnemyStrengthStatusCatalog.Resolve(slot, strengthTier);
+            ProceduralMotionCharacter motion = model.GetComponent<ProceduralMotionCharacter>();
+            ModelPartLossController partLoss = model.GetComponent<ModelPartLossController>();
+            if (motion == null || !motion.IsReady)
+            {
+                return BuildParticipant(model, slot, status);
+            }
+
+            NormalizeStatus(status, out int hp, out int attack, out int defense, out int speed, out int hit);
+            var unit = new BattleUnit(
+                slot.modelName,
+                hp,
+                attack,
+                defense,
+                speed,
+                hit,
+                ResolveAttackMotions(slot, partLoss),
+                motion,
+                partLoss);
+
+            return new BattleParticipant { Model = model, Unit = unit };
+        }
+
+        /// <summary>
         /// 育成中ステータスを反映した参加者を構築する
         /// </summary>
         /// <param name="model">モデル</param>

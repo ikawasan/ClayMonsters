@@ -2,6 +2,7 @@ using Battle;
 using Battle.Interface;
 using Cysharp.Threading.Tasks;
 using Extensions;
+using SaveData;
 using System;
 using System.Threading;
 using TMPro;
@@ -31,6 +32,7 @@ namespace Scene.BattleNpcScene.View
         [SerializeField] private Image finishFlashImage;
         [SerializeField] private Button startButton;
         [SerializeField] private BattleMatchupStatusPanelView statusPanel;
+        [SerializeField] private BattleEnemyStrengthSelectView enemyStrengthSelect;
 
         [Header("VS画面")]
         [SerializeField] private float vsPopSeconds = 0.45f;
@@ -139,10 +141,13 @@ namespace Scene.BattleNpcScene.View
             string enemyName,
             BattleUnit player,
             BattleUnit enemy,
+            Func<EnemyStrengthTier, BattleUnit> rebuildEnemyWithStrength,
+            EnemyStrengthTier initialStrengthTier,
             CancellationToken cancellationToken)
         {
             PrepareVsPresentation(playerName, enemyName, showStartButton: true);
             BindStatusPanel(player, enemy);
+            BeginEnemyStrengthSelect(player, enemy, rebuildEnemyWithStrength, initialStrengthTier);
 
             if (vsText != null)
             {
@@ -181,6 +186,7 @@ namespace Scene.BattleNpcScene.View
             finally
             {
                 isVsIdleAnimating = false;
+                EndEnemyStrengthSelect();
                 statusPanel?.SetButtonVisible(false);
                 statusPanel?.HideDetail();
             }
@@ -197,6 +203,7 @@ namespace Scene.BattleNpcScene.View
             PrepareVsPresentation(playerName, enemyName, showStartButton: false);
             statusPanel?.SetButtonVisible(false);
             statusPanel?.HideDetail();
+            EndEnemyStrengthSelect();
 
             if (vsText != null)
             {
@@ -317,6 +324,7 @@ namespace Scene.BattleNpcScene.View
         public void HideVsUi()
         {
             SetStartButtonVisible(false);
+            EndEnemyStrengthSelect();
             statusPanel?.SetButtonVisible(false);
             statusPanel?.HideDetail();
             SetVsNamePlatesVisible(false);
@@ -324,6 +332,49 @@ namespace Scene.BattleNpcScene.View
             SetNamePlate(playerNameText, null, 0f);
             SetNamePlate(enemyNameText, null, 0f);
             isVsIdleAnimating = false;
+        }
+
+        private void BeginEnemyStrengthSelect(
+            BattleUnit player,
+            BattleUnit enemy,
+            Func<EnemyStrengthTier, BattleUnit> rebuildEnemyWithStrength,
+            EnemyStrengthTier initialStrengthTier)
+        {
+            if (rebuildEnemyWithStrength == null)
+            {
+                EndEnemyStrengthSelect();
+                return;
+            }
+
+            if (enemyStrengthSelect == null)
+            {
+                Debug.LogError(
+                    "[BattleStartOverlayView] enemyStrengthSelectが未配線ですPrefab ModeでBattleEnemyStrengthSelectを配置し接続してください",
+                    this);
+                return;
+            }
+
+            BattleUnit boundPlayer = player;
+            BattleUnit boundEnemy = enemy;
+            enemyStrengthSelect.Show(
+                initialStrengthTier,
+                tier =>
+                {
+                    BattleUnit rebuilt = rebuildEnemyWithStrength(tier);
+                    if (rebuilt == null)
+                    {
+                        return;
+                    }
+
+                    boundEnemy = rebuilt;
+                    BindStatusPanel(boundPlayer, boundEnemy);
+                    enemyStrengthSelect.SetSelected(tier);
+                });
+        }
+
+        private void EndEnemyStrengthSelect()
+        {
+            enemyStrengthSelect?.Hide();
         }
 
         private void BindStatusPanel(BattleUnit player, BattleUnit enemy)
@@ -347,6 +398,7 @@ namespace Scene.BattleNpcScene.View
             if (isDetailVisible)
             {
                 SetCanvasVisible(false);
+                enemyStrengthSelect?.SetTemporaryVisible(false);
                 return;
             }
 
@@ -356,6 +408,7 @@ namespace Scene.BattleNpcScene.View
             }
 
             SetCanvasVisible(true);
+            enemyStrengthSelect?.SetTemporaryVisible(true);
             EnsureStartButtonReceivesInput();
         }
 
@@ -903,6 +956,7 @@ namespace Scene.BattleNpcScene.View
                 // 勝利表示中はWinnerとモンスター名を維持する
                 CancelPartBreakPresentation();
                 SetStartButtonVisible(false);
+                EndEnemyStrengthSelect();
                 statusPanel?.SetButtonVisible(false);
                 statusPanel?.HideDetail();
                 SetVsNamePlatesVisible(false);
@@ -916,6 +970,7 @@ namespace Scene.BattleNpcScene.View
             victoryConfetti.Dispose();
             CancelPartBreakPresentation();
             SetStartButtonVisible(false);
+            EndEnemyStrengthSelect();
             statusPanel?.SetButtonVisible(false);
             statusPanel?.HideDetail();
             SetVsNamePlatesVisible(false);

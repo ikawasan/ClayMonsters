@@ -1,27 +1,18 @@
 using Audio;
 using Audio.Interface;
 using Battle.Input;
-
 using Battle.Interface;
 using Battle.Presenter;
 using Battle.View;
-
 using Camera.Interface;
-
 using ClayEditor.Rigging;
-
 using Cysharp.Threading.Tasks;
-
 using Extensions;
-
 using R3;
-
+using SaveData;
 using System;
-
 using System.Threading;
-
 using UI.Battle.Interface;
-
 using UnityEngine;
 
 
@@ -113,6 +104,16 @@ namespace Battle
             /// VS開始ボタンを待たずに紹介演出だけ再生する
             /// </summary>
             public bool AutoStartMatchup;
+
+            /// <summary>
+            /// CPU戦のVS待ちで敵強さ選択UIを出すか
+            /// </summary>
+            public bool EnableEnemyStrengthSelect;
+
+            /// <summary>
+            /// 初期の敵強さ段階
+            /// </summary>
+            public EnemyStrengthTier EnemyStrengthTier = EnemyStrengthTier.Normal;
 
             /// <summary>
             /// 参加者モデルが確定したときに通知する
@@ -234,7 +235,11 @@ namespace Battle
 
                     enemy = context.EnemyLoader != null
                         ? await context.EnemyLoader(cancellationToken)
-                        : await loader.LoadEnemyAsync(context.EnemySlotIndex, context.EnemySpawn, cancellationToken);
+                        : await loader.LoadEnemyAsync(
+                            context.EnemySlotIndex,
+                            context.EnemySpawn,
+                            context.EnemyStrengthTier,
+                            cancellationToken);
                 }
                 else
                 {
@@ -273,7 +278,11 @@ namespace Battle
 
                         enemy = context.EnemyLoader != null
                             ? await context.EnemyLoader(cancellationToken)
-                            : await loader.LoadEnemyAsync(context.EnemySlotIndex, context.EnemySpawn, cancellationToken);
+                            : await loader.LoadEnemyAsync(
+                                context.EnemySlotIndex,
+                                context.EnemySpawn,
+                                context.EnemyStrengthTier,
+                                cancellationToken);
 
                         if (player.IsValid && enemy.IsValid)
                         {
@@ -353,8 +362,31 @@ namespace Battle
                     InitialBattleDistance = battleSettings.MaxDistance,
                     MaxBattleDistance = battleSettings.MaxDistance,
                     WaitForMatchupStartAsync = context.WaitForMatchupStartAsync,
-                    AutoStartMatchup = context.AutoStartMatchup
+                    AutoStartMatchup = context.AutoStartMatchup,
+                    EnableEnemyStrengthSelect = context.EnableEnemyStrengthSelect,
+                    EnemyStrengthTier = context.EnemyStrengthTier
                 };
+
+                if (context.EnableEnemyStrengthSelect)
+                {
+                    stagingContext.RebuildEnemyWithStrengthTier = tier =>
+                    {
+                        BattleParticipant rebuilt = loader.RebuildEnemyWithStrengthTier(
+                            enemy.Model,
+                            context.EnemySlotIndex,
+                            tier);
+                        if (!rebuilt.IsValid)
+                        {
+                            Debug.LogError($"[BattleFlow] 敵強さ段階{tier}の再構築に失敗しました");
+                            return stagingContext.Enemy;
+                        }
+
+                        enemy = rebuilt;
+                        stagingContext.Enemy = rebuilt.Unit;
+                        stagingContext.EnemyStrengthTier = tier;
+                        return rebuilt.Unit;
+                    };
+                }
 
                 // 3. 対戦紹介(VS表示と開始待ち)
                 if (staging == null)
@@ -402,7 +434,7 @@ namespace Battle
                 context.OnBattleInputCreated?.Invoke(movementInput);
                 system = new BattleSystem(
                     player.Unit,
-                    enemy.Unit,
+                    stagingContext.Enemy != null ? stagingContext.Enemy : enemy.Unit,
                     battleSettings,
                     movementInput,
                     context.EnemyAi ?? new StandardBattleEnemyAi(),

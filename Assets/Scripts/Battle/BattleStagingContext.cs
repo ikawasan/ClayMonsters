@@ -1,8 +1,10 @@
 using Battle.Interface;
 using Cysharp.Threading.Tasks;
+using SaveData;
 using System;
 using System.Threading;
 using UnityEngine;
+
 namespace Battle
 {
     /// <summary>
@@ -79,6 +81,21 @@ namespace Battle
         /// VS開始ボタンを待たずに紹介演出だけ再生する
         /// </summary>
         public bool AutoStartMatchup { get; set; }
+
+        /// <summary>
+        /// CPU戦のVS待ちで敵強さ選択UIを出すか
+        /// </summary>
+        public bool EnableEnemyStrengthSelect { get; set; }
+
+        /// <summary>
+        /// 現在の敵強さ段階
+        /// </summary>
+        public EnemyStrengthTier EnemyStrengthTier { get; set; } = EnemyStrengthTier.Normal;
+
+        /// <summary>
+        /// 強さ段階変更時に敵ユニットを再構築する
+        /// </summary>
+        public Func<EnemyStrengthTier, BattleUnit> RebuildEnemyWithStrengthTier { get; set; }
 
         /// <summary>
         /// 両者の中間地点を返す
