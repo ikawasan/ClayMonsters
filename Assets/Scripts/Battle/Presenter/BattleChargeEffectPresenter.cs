@@ -2,6 +2,7 @@ using Audio;
 using Audio.Interface;
 using Battle.Interface;
 using Battle.View;
+using ClayEditor.Rigging;
 using R3;
 using System;
 using UnityEngine;
@@ -72,6 +73,13 @@ namespace Battle.Presenter
             activeAttacker = started.Attacker;
             chargeEffect.Play(modelRoot, started.WindUpDuration);
             chargeEffect.SetIntensity(started.Attacker != null ? started.Attacker.ChargeIntensity : 0f);
+
+            // 魔法はMagicCircle SEを使うので通常チャージSEは鳴らさない
+            if (started.Move != null && ProceduralMotionCharacter.IsMagicAttack(started.Move.Motion))
+            {
+                return;
+            }
+
             PlayChargeSe(started.WindUpDuration);
         }
 

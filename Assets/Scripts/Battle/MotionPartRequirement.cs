@@ -135,6 +135,10 @@ namespace Battle
                 case MotionType.Slap: return 0.88f;
                 case MotionType.LowSweep: return 0.92f;
                 case MotionType.Bite: return 1.05f;
+                case MotionType.Fireball: return 1.22f;
+                case MotionType.WindSlasher: return 1.18f;
+                case MotionType.DiamondDust: return 1.2f;
+                case MotionType.ThunderShock: return 1.25f;
                 default: return 0.9f;
             }
         }
@@ -164,6 +168,11 @@ namespace Battle
                 case MotionType.Slap: return new Vector2(0f, 5f);
                 case MotionType.LowSweep: return new Vector2(0f, 5.5f);
                 case MotionType.Bite: return new Vector2(0f, 4.5f);
+                case MotionType.Fireball:
+                case MotionType.WindSlasher:
+                case MotionType.DiamondDust:
+                case MotionType.ThunderShock:
+                    return new Vector2(0f, 10f);
                 default: return new Vector2(0f, 5.5f);
             }
         }
@@ -271,6 +280,10 @@ namespace Battle
                 case MotionType.Slap: return 18f;
                 case MotionType.LowSweep: return 26f;
                 case MotionType.Bite: return 24f;
+                case MotionType.Fireball: return 30f;
+                case MotionType.WindSlasher: return 28f;
+                case MotionType.DiamondDust: return 32f;
+                case MotionType.ThunderShock: return 30f;
                 default: return 25f;
             }
         }
@@ -300,6 +313,10 @@ namespace Battle
                 case MotionType.Slap: return 0.91f;
                 case MotionType.LowSweep: return 0.83f;
                 case MotionType.Bite: return 0.86f;
+                case MotionType.Fireball: return 0.78f;
+                case MotionType.WindSlasher: return 0.8f;
+                case MotionType.DiamondDust: return 0.76f;
+                case MotionType.ThunderShock: return 0.74f;
                 default: return 0.8f;
             }
         }
@@ -329,6 +346,10 @@ namespace Battle
                 case MotionType.Slap: return 0.82f;
                 case MotionType.LowSweep: return 1f;
                 case MotionType.Bite: return 0.9f;
+                case MotionType.Fireball: return 1.3f;
+                case MotionType.WindSlasher: return 1.25f;
+                case MotionType.DiamondDust: return 1.35f;
+                case MotionType.ThunderShock: return 1.4f;
                 default: return 1f;
             }
         }
@@ -358,6 +379,10 @@ namespace Battle
                 case MotionType.Slap: return 0.7f;
                 case MotionType.LowSweep: return 0.78f;
                 case MotionType.Bite: return 0.74f;
+                case MotionType.Fireball: return 1.05f;
+                case MotionType.WindSlasher: return 1f;
+                case MotionType.DiamondDust: return 1.1f;
+                case MotionType.ThunderShock: return 1.15f;
                 default: return 0.8f;
             }
         }
@@ -373,7 +398,7 @@ namespace Battle
         /// <summary>
         /// UI表示名の最大文字数
         /// </summary>
-        public const int MaxDisplayNameLength = 8;
+        public const int MaxDisplayNameLength = 10;
 
         /// <summary>
         /// UI表示名を返す
@@ -414,6 +439,10 @@ namespace Battle
                 case MotionType.Slap: return "平打ち";
                 case MotionType.LowSweep: return "足払い";
                 case MotionType.Bite: return "噛みつき";
+                case MotionType.Fireball: return "ファイアーボール";
+                case MotionType.WindSlasher: return "ウィンドスラッシャー";
+                case MotionType.DiamondDust: return "ダイヤモンドダスト";
+                case MotionType.ThunderShock: return "サンダーショック";
                 default: return motion.ToString();
             }
         }

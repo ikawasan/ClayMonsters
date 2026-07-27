@@ -170,6 +170,11 @@ namespace Scene.TrainingScene.Domain
         /// <param name="motion">攻撃</param>
         public static string FormatRequiredPartLabel(MotionType motion)
         {
+            if (ProceduralMotionCharacter.IsMagicAttack(motion))
+            {
+                return "汎用技";
+            }
+
             switch (MotionPartRequirement.GetRequiredPart(motion))
             {
                 case BonePart.Arm:

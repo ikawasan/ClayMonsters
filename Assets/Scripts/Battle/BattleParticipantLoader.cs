@@ -49,7 +49,11 @@ namespace Battle
             MotionType.GroundPound,
             MotionType.Slap,
             MotionType.LowSweep,
-            MotionType.Bite
+            MotionType.Bite,
+            MotionType.Fireball,
+            MotionType.WindSlasher,
+            MotionType.DiamondDust,
+            MotionType.ThunderShock
         };
 
         private readonly IClayModelImporter importer;

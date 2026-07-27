@@ -1,6 +1,8 @@
+using Audio;
 using Audio.Interface;
 using Battle.Interface;
 using Battle.View;
+using ClayEditor.Rigging;
 using R3;
 using System;
 using UnityEngine;
@@ -101,6 +103,19 @@ namespace Battle.Presenter
             if (result.PartLost || result.IsKnockout)
             {
                 seService.PlayPartsBreak();
+                return;
+            }
+
+            // ファイアーボール着弾は専用SE
+            if (result.Move != null && result.Move.Motion == MotionType.Fireball)
+            {
+                seService.Play(SeTrackId.MagicFireballHit);
+                return;
+            }
+
+            // その他魔法は技SE側で鳴らすので通常ヒットSEは重ねない
+            if (result.Move != null && ProceduralMotionCharacter.IsMagicAttack(result.Move.Motion))
+            {
                 return;
             }
 

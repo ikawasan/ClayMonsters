@@ -6,6 +6,7 @@ namespace Audio
     public static class SeCatalog
     {
         private const string ResourceRoot = "Audio/SE/";
+        private const string MagicRoot = ResourceRoot + "Magic/";
 
         /// <summary>
         /// トラックIDからResourcesパスを取得する
@@ -20,6 +21,12 @@ namespace Audio
                 SeTrackId.AttackMiss => ResourceRoot + "AttackMiss",
                 SeTrackId.PartsBreak => ResourceRoot + "PartsBreak",
                 SeTrackId.PowerCharge => ResourceRoot + "PowerCharge",
+                SeTrackId.MagicCircle => MagicRoot + "MagicCircle",
+                SeTrackId.MagicFireball => MagicRoot + "Fireball",
+                SeTrackId.MagicFireballHit => MagicRoot + "FireballHit",
+                SeTrackId.MagicWindSlasher => MagicRoot + "WindSlasher",
+                SeTrackId.MagicDiamondDust => MagicRoot + "DirmondDust",
+                SeTrackId.MagicThunderShock => MagicRoot + "ThunderShock",
                 _ => string.Empty
             };
         }

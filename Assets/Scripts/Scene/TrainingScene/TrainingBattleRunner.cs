@@ -285,6 +285,8 @@ namespace Scene.TrainingScene
 
             BattleChargeEffectPresenter chargeEffectPresenter = null;
 
+            BattleMagicAttackEffectPresenter magicAttackEffectPresenter = null;
+
             BattleFinishPresenter finishPresenter = null;
 
             BattlePartBreakPresenter partBreakPresenter = null;
@@ -530,6 +532,25 @@ namespace Scene.TrainingScene
 
 
 
+                BattleMagicAttackEffectView magicEffectView = GetOrAddComponent<BattleMagicAttackEffectView>();
+
+                float battleGroundY = ResolveBattleGroundY(playerSpawn, enemySpawn);
+                magicAttackEffectPresenter = new BattleMagicAttackEffectPresenter(
+
+                    magicEffectView,
+
+                    system,
+
+                    player.Model.transform,
+
+                    enemy.Model.transform,
+
+                    battleGroundY,
+
+                    seService);
+
+
+
                 if (overlayView != null)
 
                 {
@@ -614,6 +635,7 @@ namespace Scene.TrainingScene
                         ref presenter,
                         ref combatFeedbackPresenter,
                         ref chargeEffectPresenter,
+                        ref magicAttackEffectPresenter,
                         ref finishPresenter,
                         ref partBreakPresenter,
                         ref fieldPresenter,
@@ -636,6 +658,8 @@ namespace Scene.TrainingScene
                 combatFeedbackPresenter?.Dispose();
 
                 chargeEffectPresenter?.Dispose();
+
+                magicAttackEffectPresenter?.Dispose();
 
                 finishPresenter?.Dispose();
 
@@ -920,6 +944,13 @@ namespace Scene.TrainingScene
 
         }
 
+        private static float ResolveBattleGroundY(Transform playerSpawnPoint, Transform enemySpawnPoint)
+        {
+            float playerY = playerSpawnPoint != null ? playerSpawnPoint.position.y : 0f;
+            float enemyY = enemySpawnPoint != null ? enemySpawnPoint.position.y : playerY;
+            return (playerY + enemyY) * 0.5f;
+        }
+
 
 
         private T GetOrAddComponent<T>() where T : Component
@@ -946,6 +977,7 @@ namespace Scene.TrainingScene
             ref BattlePresenter presenter,
             ref BattleCombatFeedbackPresenter combatFeedbackPresenter,
             ref BattleChargeEffectPresenter chargeEffectPresenter,
+            ref BattleMagicAttackEffectPresenter magicAttackEffectPresenter,
             ref BattleFinishPresenter finishPresenter,
             ref BattlePartBreakPresenter partBreakPresenter,
             ref BattleFieldPresenter fieldPresenter,
@@ -957,6 +989,8 @@ namespace Scene.TrainingScene
             combatFeedbackPresenter = null;
             chargeEffectPresenter?.Dispose();
             chargeEffectPresenter = null;
+            magicAttackEffectPresenter?.Dispose();
+            magicAttackEffectPresenter = null;
             finishPresenter?.Dispose();
             finishPresenter = null;
             partBreakPresenter?.Dispose();
