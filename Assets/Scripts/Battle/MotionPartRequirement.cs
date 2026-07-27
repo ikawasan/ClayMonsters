@@ -204,32 +204,7 @@ namespace Battle
         /// <param name="motion">攻撃</param>
         public static int GetStrengthRank(MotionType motion)
         {
-            switch (motion)
-            {
-                case MotionType.Slap:
-                case MotionType.Punch:
-                case MotionType.LowSweep:
-                case MotionType.Tackle:
-                case MotionType.HipCheck:
-                    return 1;
-                case MotionType.Kick:
-                case MotionType.Headbutt:
-                case MotionType.ShoulderRam:
-                case MotionType.Knee:
-                case MotionType.Elbow:
-                case MotionType.Bite:
-                case MotionType.Uppercut:
-                case MotionType.TailWhip:
-                    return 2;
-                case MotionType.GroundPound:
-                case MotionType.Stomp:
-                case MotionType.BellyFlop:
-                case MotionType.BodySlam:
-                case MotionType.SpinTackle:
-                    return 3;
-                default:
-                    return 1;
-            }
+            return AttackMotionSelector.GetStrengthRank(motion);
         }
 
         /// <summary>

@@ -598,6 +598,7 @@ namespace SaveData.Service
 
         /// <summary>
         /// 骨格解析で使用可能と判定した攻撃から保存登録用の攻撃を選ぶ
+        /// 基本は星1運が良ければ星2星3は選ばない
         /// </summary>
         /// <param name="analyzer">部位分類器</param>
         /// <param name="bones">ボーン配列</param>

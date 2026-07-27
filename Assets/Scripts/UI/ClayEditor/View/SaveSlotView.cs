@@ -745,7 +745,7 @@ namespace UI.ClayEditor.View
                 List<MotionType> attackMotions = pendingRegisteredAttackMotions;
                 if (attackMotions == null || attackMotions.Count == 0)
                 {
-                    attackMotions = AttackMotionSelector.ShuffleAndTake(
+                    attackMotions = AttackMotionSelector.PickInitialSaveAttacks(
                         usableAttacks,
                         ClayModelSaveService.AttackMotionCount);
                 }
@@ -758,10 +758,12 @@ namespace UI.ClayEditor.View
                 }
 
                 // 使用可能攻撃から必ずスロット数を埋める埋められない場合はエラー
+                // 生成時補充は星2まで星3は継承か育成でのみ
                 attackMotions = AttackMotionSelector.EnsureAttackSlots(
                     attackMotions,
                     usableAttacks,
-                    ClayModelSaveService.AttackMotionCount);
+                    ClayModelSaveService.AttackMotionCount,
+                    maxStrengthRankForFill: 2);
 
                 string modelName = !string.IsNullOrEmpty(pendingModelName)
                     ? pendingModelName

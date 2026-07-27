@@ -11,6 +11,44 @@ namespace ClayEditor.Rigging
     public static class AttackMotionSelector
     {
         /// <summary>
+        /// モデル生成時に星2技を選ぶ確率(百分率)
+        /// </summary>
+        public const float InitialAttackRank2ChancePercent = 22f;
+
+        /// <summary>
+        /// 攻撃の強さランクを返す(1〜3)
+        /// </summary>
+        /// <param name="motion">攻撃</param>
+        public static int GetStrengthRank(MotionType motion)
+        {
+            switch (motion)
+            {
+                case MotionType.Slap:
+                case MotionType.Punch:
+                case MotionType.LowSweep:
+                case MotionType.Tackle:
+                case MotionType.HipCheck:
+                    return 1;
+                case MotionType.Kick:
+                case MotionType.Headbutt:
+                case MotionType.ShoulderRam:
+                case MotionType.Knee:
+                case MotionType.Elbow:
+                case MotionType.Bite:
+                case MotionType.Uppercut:
+                case MotionType.TailWhip:
+                    return 2;
+                case MotionType.GroundPound:
+                case MotionType.Stomp:
+                case MotionType.BellyFlop:
+                case MotionType.BodySlam:
+                case MotionType.SpinTackle:
+                    return 3;
+                default:
+                    return 1;
+            }
+        }
+        /// <summary>
         /// 骨格解析で使用可能と判定した攻撃モーションの一覧を返す
         /// MotionRequirementの条件とリム部位の両方を満たすものだけを含める
         /// </summary>
@@ -76,8 +114,8 @@ namespace ClayEditor.Rigging
         }
 
         /// <summary>
-        /// 使用可能な攻撃から保存登録用の攻撃を最大count件ランダムで選ぶ
-        /// 使用可能数が不足する場合はエラーを出す
+        /// 使用可能な攻撃から保存登録用の攻撃を最大count件選ぶ
+        /// 基本は星1運が良ければ星2星3は選ばない
         /// </summary>
         /// <param name="analyzer">部位分類器</param>
         /// <param name="bones">ボーン配列</param>
@@ -89,13 +127,86 @@ namespace ClayEditor.Rigging
             int count)
         {
             List<MotionType> usable = CollectUsableAttacks(analyzer, bones);
-            if (usable.Count < count)
+            List<MotionType> picked = PickInitialSaveAttacks(usable, count);
+            if (picked.Count < count)
             {
                 Debug.LogError(
-                    $"[AttackMotionSelector] 使用可能攻撃が不足しています({usable.Count}/{count})");
+                    $"[AttackMotionSelector] 使用可能攻撃が不足しています({picked.Count}/{count})");
             }
 
-            return ShuffleAndTake(usable, count);
+            return picked;
+        }
+
+        /// <summary>
+        /// モデル生成向けに星1中心で攻撃を選ぶ
+        /// 星3は含めない
+        /// </summary>
+        /// <param name="usableAttacks">使用可能な攻撃</param>
+        /// <param name="count">選ぶ件数</param>
+        /// <returns>選んだ攻撃</returns>
+        public static List<MotionType> PickInitialSaveAttacks(
+            IReadOnlyList<MotionType> usableAttacks,
+            int count)
+        {
+            var result = new List<MotionType>();
+            if (usableAttacks == null || usableAttacks.Count == 0 || count <= 0)
+            {
+                return result;
+            }
+
+            var rank1 = new List<MotionType>();
+            var rank2 = new List<MotionType>();
+            for (int i = 0; i < usableAttacks.Count; i++)
+            {
+                MotionType motion = usableAttacks[i];
+                if (!ProceduralMotionCharacter.IsAttackMotion(motion))
+                {
+                    continue;
+                }
+
+                int rank = GetStrengthRank(motion);
+                if (rank <= 1)
+                {
+                    if (!rank1.Contains(motion))
+                    {
+                        rank1.Add(motion);
+                    }
+                }
+                else if (rank == 2)
+                {
+                    if (!rank2.Contains(motion))
+                    {
+                        rank2.Add(motion);
+                    }
+                }
+            }
+
+            ShuffleInPlace(rank1);
+            ShuffleInPlace(rank2);
+
+            while (result.Count < count)
+            {
+                bool preferRank2 = rank2.Count > 0
+                    && UnityEngine.Random.Range(0f, 100f) < InitialAttackRank2ChancePercent;
+                MotionType? picked = preferRank2
+                    ? TakeNextUnused(rank2, result)
+                    : TakeNextUnused(rank1, result);
+                if (!picked.HasValue)
+                {
+                    picked = preferRank2
+                        ? TakeNextUnused(rank1, result)
+                        : TakeNextUnused(rank2, result);
+                }
+
+                if (!picked.HasValue)
+                {
+                    break;
+                }
+
+                result.Add(picked.Value);
+            }
+
+            return result;
         }
 
         /// <summary>
@@ -142,7 +253,26 @@ namespace ClayEditor.Rigging
             IReadOnlyList<MotionType> usableAttacks,
             int slotCount)
         {
+            return EnsureAttackSlots(currentAttacks, usableAttacks, slotCount, maxStrengthRankForFill: 3);
+        }
+
+        /// <summary>
+        /// 現在の攻撃を残しつつ使用可能攻撃でスロット数まで埋める
+        /// 埋められない場合はエラーを出す
+        /// </summary>
+        /// <param name="currentAttacks">現在の攻撃</param>
+        /// <param name="usableAttacks">使用可能な攻撃</param>
+        /// <param name="slotCount">スロット数</param>
+        /// <param name="maxStrengthRankForFill">補充に使う強さランク上限</param>
+        /// <returns>スロット数へ整えた攻撃</returns>
+        public static List<MotionType> EnsureAttackSlots(
+            IReadOnlyList<MotionType> currentAttacks,
+            IReadOnlyList<MotionType> usableAttacks,
+            int slotCount,
+            int maxStrengthRankForFill)
+        {
             int count = Mathf.Max(0, slotCount);
+            int maxRank = Mathf.Clamp(maxStrengthRankForFill, 1, 3);
             var usableSet = new HashSet<MotionType>();
             if (usableAttacks != null)
             {
@@ -183,6 +313,11 @@ namespace ClayEditor.Rigging
                 {
                     MotionType candidate = fillers[i];
                     if (!usableSet.Contains(candidate) || attacks.Contains(candidate))
+                    {
+                        continue;
+                    }
+
+                    if (GetStrengthRank(candidate) > maxRank)
                     {
                         continue;
                     }
@@ -228,11 +363,7 @@ namespace ClayEditor.Rigging
                 }
             }
 
-            for (int i = result.Count - 1; i > 0; i--)
-            {
-                int j = UnityEngine.Random.Range(0, i + 1);
-                (result[i], result[j]) = (result[j], result[i]);
-            }
+            ShuffleInPlace(result);
 
             if (result.Count > count)
             {
@@ -240,6 +371,39 @@ namespace ClayEditor.Rigging
             }
 
             return result;
+        }
+
+        private static void ShuffleInPlace(List<MotionType> attacks)
+        {
+            if (attacks == null || attacks.Count <= 1)
+            {
+                return;
+            }
+
+            for (int i = attacks.Count - 1; i > 0; i--)
+            {
+                int j = UnityEngine.Random.Range(0, i + 1);
+                (attacks[i], attacks[j]) = (attacks[j], attacks[i]);
+            }
+        }
+
+        private static MotionType? TakeNextUnused(List<MotionType> pool, List<MotionType> used)
+        {
+            if (pool == null || pool.Count == 0)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < pool.Count; i++)
+            {
+                MotionType candidate = pool[i];
+                if (!used.Contains(candidate))
+                {
+                    return candidate;
+                }
+            }
+
+            return null;
         }
 
         /// <summary>
