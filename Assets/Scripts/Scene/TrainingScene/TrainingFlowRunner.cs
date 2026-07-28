@@ -1771,7 +1771,7 @@ namespace Scene.TrainingScene
                     : string.Empty;
                 hudView.SetLogMessage(
                     $"放課後の戦闘に勝利した\n体力+{TrainingSettings.AfterSchoolVictoryStaminaRecovery}"
-                    + $"{rewardText}\n売店の商品が入れ替わった");
+                    + $"{rewardText}");
             }
             else
             {
@@ -1779,7 +1779,7 @@ namespace Scene.TrainingScene
                 session.RefreshShopOffer(random);
                 hudView.BindSession(session, period, turnNumber);
                 hudView.SetLogMessage(
-                    "放課後の戦闘に敗北した\nやる気が下がった\n売店の商品が入れ替わった");
+                    "放課後の戦闘に敗北した\nやる気が下がった");
             }
 
             await FadeInAfterBattleResultReadyAsync(cancellationToken);
