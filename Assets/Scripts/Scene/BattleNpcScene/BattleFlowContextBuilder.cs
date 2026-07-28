@@ -1,4 +1,4 @@
-using Battle;
+﻿using Battle;
 using Battle.Interface;
 using Battle.View;
 using Camera.View;
@@ -36,7 +36,7 @@ namespace Scene.BattleNpcScene
                 PlayerSpawn = runner.PlayerSpawn,
                 EnemySpawn = runner.EnemySpawn,
                 BattleUiCanvas = runner.BattleUiCanvas,
-                EnemySlotIndex = RandomEnemySlotResolver.Resolve(saveService, enemySlotIndex),
+                EnemySlotIndex = enemySlotIndex,
                 BattleCamera = runner.BattleCamera,
                 CameraProfile = runner.CameraProfile,
                 PresentationTransition = presentationTransition,
@@ -48,7 +48,8 @@ namespace Scene.BattleNpcScene
                 TipsView = runner.TipsView,
                 LevelDesignSettings = runner.LevelDesignSettings,
                 AutoStartMatchup = false,
-                EnableEnemyStrengthSelect = true,
+                SelectEnemyAfterPlayer = true,
+                EnableEnemyStrengthSelect = false,
                 EnemyStrengthTier = EnemyStrengthTier.Normal,
             };
         }

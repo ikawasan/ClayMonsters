@@ -13,7 +13,7 @@ namespace Scene.BattleNpcScene
 {
     /// <summary>
     /// LoadSlotViewを使ったモンスター選択セッション
-    /// 表示切替とロード待ちを一箇所に集約する
+    /// 表示制御とロード完了を一括で扱う
     /// </summary>
     public sealed class MonsterSelectionSession : IMonsterSelectionSession
     {
@@ -22,6 +22,7 @@ namespace Scene.BattleNpcScene
         private readonly ISceneFade sceneFade;
         private bool isRevealed;
         private int selectedSlotIndex = -1;
+        private EnemyStrengthTier selectedStrengthTier = EnemyStrengthTier.Normal;
 
         /// <summary>
         /// DIで依存を受け取る
@@ -44,14 +45,29 @@ namespace Scene.BattleNpcScene
         public int SelectedSlotIndex => selectedSlotIndex;
 
         /// <inheritdoc />
+        public EnemyStrengthTier SelectedStrengthTier => selectedStrengthTier;
+
+        /// <inheritdoc />
         public void PrepareEntry()
         {
             isRevealed = false;
             selectedSlotIndex = -1;
-            // シーン再利用時に前回ロード済みモデルで選択待ちをスキップしない
+            selectedStrengthTier = EnemyStrengthTier.Normal;
             loadSlotView?.HideForLeave();
+            loadSlotView?.ConfigureSavePool(ModelSavePool.TrainedPlayer);
             loadSlotView?.PrepareLayout();
             Hide();
+        }
+
+        /// <inheritdoc />
+        public void ConfigureSavePool(ModelSavePool pool)
+        {
+            selectedSlotIndex = -1;
+            selectedStrengthTier = EnemyStrengthTier.Normal;
+            // 次のWaitForModelAsyncでFadeIn付き再表示が必要なので解除する
+            isRevealed = false;
+            loadSlotView?.ClearLoadedModelForNewSelection();
+            loadSlotView?.ConfigureSavePool(pool);
         }
 
         /// <inheritdoc />
@@ -63,8 +79,6 @@ namespace Scene.BattleNpcScene
                 return null;
             }
 
-            // 再入場・再戦では必ず選択UIを出し直す
-            // 前回LoadedModelが残っていてもスキップしない
             await EnsureRevealedAsync(cancellationToken);
             loadSlotView.PrepareForSelectionWait();
 
@@ -76,8 +90,8 @@ namespace Scene.BattleNpcScene
                     cancellationToken: cancellationToken);
             }
 
-            // Detach前にスロット番号を保持する(BattleFlowが直後に参照する)
             selectedSlotIndex = loadSlotView.SelectedSlotIndex;
+            selectedStrengthTier = loadSlotView.SelectedStrengthTier;
             GameObject model = loadSlotView.DetachLoadedModel() ?? selected;
             loadSlotView.HideSelectionUi();
             presentationTransition?.ReleasePresentationInput();
@@ -100,6 +114,7 @@ namespace Scene.BattleNpcScene
         {
             isRevealed = false;
             selectedSlotIndex = -1;
+            selectedStrengthTier = EnemyStrengthTier.Normal;
             loadSlotView?.HideForLeave();
             Hide();
         }
@@ -113,7 +128,8 @@ namespace Scene.BattleNpcScene
             }
 
             loadSlotView.RestoreAfterParticipantFailure();
-            await RevealSelectionUiAsync(cancellationToken);
+            isRevealed = false;
+            await EnsureRevealedAsync(cancellationToken);
         }
 
         private async UniTask EnsureRevealedAsync(CancellationToken cancellationToken)
@@ -130,8 +146,8 @@ namespace Scene.BattleNpcScene
                 return;
             }
 
-            isRevealed = true;
             await RevealSelectionUiAsync(cancellationToken);
+            isRevealed = true;
         }
 
         private async UniTask RevealSelectionUiAsync(CancellationToken cancellationToken)

@@ -91,6 +91,7 @@ namespace Battle
         private readonly Subject<MoveUsedResult> moveUsedSubject = new Subject<MoveUsedResult>();
         private readonly Subject<AttackWindUpStarted> attackWindUpStartedSubject = new Subject<AttackWindUpStarted>();
         private readonly Subject<AttackProjectileStarted> attackProjectileStartedSubject = new Subject<AttackProjectileStarted>();
+        private readonly Subject<KnockbackPerformed> knockbackPerformedSubject = new Subject<KnockbackPerformed>();
         private readonly Subject<BattleUnit> battleEndSubject = new Subject<BattleUnit>();
 
         private BattleUnit pendingAttackAttacker;
@@ -362,6 +363,11 @@ namespace Battle
         /// 投射魔法の飛翔開始通知
         /// </summary>
         public Observable<AttackProjectileStarted> OnAttackProjectileStarted => attackProjectileStartedSubject;
+
+        /// <summary>
+        /// ふきとばしが成立した通知
+        /// </summary>
+        public Observable<KnockbackPerformed> OnKnockbackPerformed => knockbackPerformedSubject;
 
         /// <summary>
         /// 決着通知(勝者引き分け時はnull)
@@ -1111,6 +1117,7 @@ namespace Battle
             }
 
             combatSync?.ReportLocalKnockback(Distance);
+            knockbackPerformedSubject.OnNext(new KnockbackPerformed(player, enemy));
         }
 
         private void ApplyRemoteEnemyKnockback(float resultingDistance)
@@ -1141,6 +1148,8 @@ namespace Battle
             {
                 Distance = Mathf.Clamp(resultingDistance, 0f, settings.MaxDistance);
             }
+
+            knockbackPerformedSubject.OnNext(new KnockbackPerformed(enemy, player));
         }
 
         private void UpdatePartRepair(float deltaTime)
@@ -1888,6 +1897,7 @@ namespace Battle
             moveUsedSubject.Dispose();
             attackWindUpStartedSubject.Dispose();
             attackProjectileStartedSubject.Dispose();
+            knockbackPerformedSubject.Dispose();
             battleEndSubject.Dispose();
         }
     }

@@ -111,6 +111,11 @@ namespace Battle
             public bool EnableEnemyStrengthSelect;
 
             /// <summary>
+            /// プレイヤー選択後に敵NPC選択UIを出すか
+            /// </summary>
+            public bool SelectEnemyAfterPlayer;
+
+            /// <summary>
             /// 初期の敵強さ段階
             /// </summary>
             public EnemyStrengthTier EnemyStrengthTier = EnemyStrengthTier.Normal;
@@ -194,6 +199,7 @@ namespace Battle
             BattleCombatFeedbackPresenter combatFeedbackPresenter = null;
             BattleChargeEffectPresenter chargeEffectPresenter = null;
             BattleMagicAttackEffectPresenter magicAttackEffectPresenter = null;
+            BattleKnockbackEffectPresenter knockbackEffectPresenter = null;
             BattleFinishPresenter finishPresenter = null;
             BattlePartBreakPresenter partBreakPresenter = null;
 
@@ -277,13 +283,32 @@ namespace Battle
                         spawnedPlayerModel = player.Model;
                         context.RegisterSpawnedParticipants?.Invoke(spawnedPlayerModel, null);
 
-                        enemy = context.EnemyLoader != null
-                            ? await context.EnemyLoader(cancellationToken)
-                            : await loader.LoadEnemyAsync(
-                                context.EnemySlotIndex,
-                                context.EnemySpawn,
-                                context.EnemyStrengthTier,
+                        if (context.SelectEnemyAfterPlayer)
+                        {
+                            enemy = await SelectEnemyParticipantAsync(
+                                context,
+                                loader,
                                 cancellationToken);
+                            if (!enemy.IsValid)
+                            {
+                                Debug.LogError("[BattleFlow] 敵NPC選択が完了しませんでした");
+                                DestroyParticipantModels(playerModel, null);
+                                return BattleVictoryReturnChoice.Title;
+                            }
+
+                            spawnedEnemyModel = enemy.Model;
+                            context.RegisterSpawnedParticipants?.Invoke(spawnedPlayerModel, spawnedEnemyModel);
+                        }
+                        else
+                        {
+                            enemy = context.EnemyLoader != null
+                                ? await context.EnemyLoader(cancellationToken)
+                                : await loader.LoadEnemyAsync(
+                                    context.EnemySlotIndex,
+                                    context.EnemySpawn,
+                                    context.EnemyStrengthTier,
+                                    cancellationToken);
+                        }
 
                         if (player.IsValid && enemy.IsValid)
                         {
@@ -300,6 +325,27 @@ namespace Battle
                         if (player.IsValid && !enemy.IsValid)
                         {
                             DestroyParticipantModels(null, enemy.Model);
+                            if (context.SelectEnemyAfterPlayer)
+                            {
+                                // プレイヤーは維持し敵選択だけやり直す
+                                enemy = await SelectEnemyParticipantAsync(
+                                    context,
+                                    loader,
+                                    cancellationToken);
+                                if (enemy.IsValid)
+                                {
+                                    spawnedEnemyModel = enemy.Model;
+                                    context.RegisterSpawnedParticipants?.Invoke(
+                                        spawnedPlayerModel,
+                                        spawnedEnemyModel);
+                                    bgmService?.Play(BgmTrackId.Battle);
+                                    break;
+                                }
+
+                                DestroyParticipantModels(playerModel, null);
+                                return BattleVictoryReturnChoice.Title;
+                            }
+
                             ReleasePresentationInput();
                             return BattleVictoryReturnChoice.Title;
                         }
@@ -314,6 +360,11 @@ namespace Battle
                         {
                             UnityEngine.Object.Destroy(enemy.Model);
                             enemy = default;
+                        }
+
+                        if (context.SelectEnemyAfterPlayer)
+                        {
+                            selectionSession.ConfigureSavePool(ModelSavePool.TrainedPlayer);
                         }
 
                         await selectionSession.RestoreAfterParticipantFailureAsync(cancellationToken);
@@ -532,6 +583,17 @@ namespace Battle
                         seService);
                 }
 
+                BattleKnockbackEffectView knockbackEffectView = EnsureKnockbackEffectView();
+                if (knockbackEffectView != null)
+                {
+                    knockbackEffectPresenter = new BattleKnockbackEffectPresenter(
+                        knockbackEffectView,
+                        system,
+                        player.Model.transform,
+                        enemy.Model.transform,
+                        seService);
+                }
+
                 if (context.FinishPresentation != null)
                 {
                     finishPresenter = new BattleFinishPresenter(
@@ -594,6 +656,8 @@ namespace Battle
                     chargeEffectPresenter = null;
                     magicAttackEffectPresenter?.Dispose();
                     magicAttackEffectPresenter = null;
+                    knockbackEffectPresenter?.Dispose();
+                    knockbackEffectPresenter = null;
                     finishPresenter?.Dispose();
                     finishPresenter = null;
                     partBreakPresenter?.Dispose();
@@ -630,6 +694,7 @@ namespace Battle
                 combatFeedbackPresenter?.Dispose();
                 chargeEffectPresenter?.Dispose();
                 magicAttackEffectPresenter?.Dispose();
+                knockbackEffectPresenter?.Dispose();
                 finishPresenter?.Dispose();
                 partBreakPresenter?.Dispose();
                 fieldPresenter?.Dispose();
@@ -665,6 +730,37 @@ namespace Battle
         private void ReleasePresentationInput()
         {
             context.PresentationTransition?.ReleasePresentationInput();
+        }
+
+        private async UniTask<BattleParticipant> SelectEnemyParticipantAsync(
+            Context context,
+            BattleParticipantLoader loader,
+            CancellationToken cancellationToken)
+        {
+            if (selectionSession == null)
+            {
+                Debug.LogError("[BattleFlow] モンスター選択セッションが未設定です");
+                return default;
+            }
+
+            selectionSession.ConfigureSavePool(ModelSavePool.Enemy);
+            GameObject selectedModel = await selectionSession.WaitForModelAsync(cancellationToken);
+            if (selectedModel == null)
+            {
+                return default;
+            }
+
+            context.EnemySlotIndex = selectionSession.SelectedSlotIndex;
+            context.EnemyStrengthTier = selectionSession.SelectedStrengthTier;
+
+            // 確認画面のプレビュー用ロードは破棄し強さ付きで正式配置する
+            UnityEngine.Object.Destroy(selectedModel);
+
+            return await loader.LoadEnemyAsync(
+                context.EnemySlotIndex,
+                context.EnemySpawn,
+                context.EnemyStrengthTier,
+                cancellationToken);
         }
 
         private static void DestroyParticipantModels(GameObject playerModel, GameObject enemyModel)
@@ -829,6 +925,19 @@ namespace Battle
 
             var host = new GameObject(nameof(BattleMagicAttackEffectView));
             return host.AddComponent<BattleMagicAttackEffectView>();
+        }
+
+        private static BattleKnockbackEffectView EnsureKnockbackEffectView()
+        {
+            BattleKnockbackEffectView existing = UnityEngine.Object.FindFirstObjectByType<BattleKnockbackEffectView>(
+                UnityEngine.FindObjectsInactive.Include);
+            if (existing != null)
+            {
+                return existing;
+            }
+
+            var host = new GameObject(nameof(BattleKnockbackEffectView));
+            return host.AddComponent<BattleKnockbackEffectView>();
         }
 
         private static float ResolveBattleGroundY(Transform playerSpawn, Transform enemySpawn)

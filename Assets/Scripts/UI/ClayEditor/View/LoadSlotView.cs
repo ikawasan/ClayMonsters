@@ -54,6 +54,9 @@ namespace UI.ClayEditor.View
         [Tooltip("ロード確認で選択スロットを表示するView")]
         [SerializeField] private ModelSaveConfirmView loadConfirmView;
 
+        [Tooltip("敵選択確認で強さを切り替えるUI")]
+        [SerializeField] private EnemyStrengthSelectView confirmStrengthSelect;
+
         [Tooltip("「ロードする」ボタン")]
         [SerializeField] private LHButton loadButton;
 
@@ -94,6 +97,11 @@ namespace UI.ClayEditor.View
         /// </summary>
         public int LoadedSlotIndex { get; private set; } = -1;
 
+        /// <summary>
+        /// 敵選択確認で選ばれた強さ段階
+        /// </summary>
+        public EnemyStrengthTier SelectedStrengthTier { get; private set; } = EnemyStrengthTier.Normal;
+
         /// <inheritdoc />
         public int SelectedSlotIndex => LoadedSlotIndex;
 
@@ -124,6 +132,8 @@ namespace UI.ClayEditor.View
             DestroyOwnedLoadedModel();
             selectedSlot = -1;
             isLoading = false;
+            SelectedStrengthTier = EnemyStrengthTier.Normal;
+            confirmStrengthSelect?.Hide();
             loadConfirmView?.Clear();
             SetConfirmPanelActive(false);
             HideSelectionUi();
@@ -137,6 +147,8 @@ namespace UI.ClayEditor.View
             DestroyOwnedLoadedModel();
             selectedSlot = -1;
             isLoading = false;
+            SelectedStrengthTier = EnemyStrengthTier.Normal;
+            confirmStrengthSelect?.Hide();
             loadConfirmView?.Clear();
         }
 
@@ -207,6 +219,7 @@ namespace UI.ClayEditor.View
         public void HideSelectionUi()
         {
             EnsureSelectionCanvas();
+            confirmStrengthSelect?.Hide();
             SetConfirmPanelActive(false);
             trainedSlotGrid?.Hide();
             CanvasVisibilityUtility.SetCanvasEnabled(selectionCanvas, false);
@@ -350,7 +363,8 @@ namespace UI.ClayEditor.View
 
         private bool UsesTrainedSlotGrid()
         {
-            return savePool == ModelSavePool.TrainedPlayer && EnsureTrainedSlotGrid();
+            return (savePool == ModelSavePool.TrainedPlayer || savePool == ModelSavePool.Enemy)
+                && EnsureTrainedSlotGrid();
         }
 
         // 画面が表示されるたびに最新のセーブ内容を読み直す。
@@ -462,7 +476,7 @@ namespace UI.ClayEditor.View
                 return;
             }
 
-            if (savePool == ModelSavePool.TrainedPlayer)
+            if (savePool == ModelSavePool.TrainedPlayer || savePool == ModelSavePool.Enemy)
             {
                 if (EnsureTrainedSlotGrid())
                 {
@@ -470,13 +484,20 @@ namespace UI.ClayEditor.View
                     ClearRuntimeThumbnails();
                     trainedSlotGrid.Show();
                     trainedSlotGrid.Initialize(OnSlotSelected);
-                    trainedSlotGrid.Refresh(saveService, emptySlotLabel, allowEmptySlotSelection: false);
+                    trainedSlotGrid.Refresh(
+                        saveService,
+                        savePool,
+                        emptySlotLabel,
+                        allowEmptySlotSelection: false);
                     return;
                 }
 
-                Debug.LogError(
-                    "[LoadSlotView] trainedSlotGridが未配置ですResources/UI/TrainedSaveSlotGridをHierarchyへ配置してください",
-                    this);
+                if (savePool == ModelSavePool.TrainedPlayer)
+                {
+                    Debug.LogError(
+                        "[LoadSlotView] trainedSlotGridが未配置ですResources/UI/TrainedSaveSlotGridをHierarchyへ配置してください",
+                        this);
+                }
             }
             else
             {
@@ -594,6 +615,7 @@ namespace UI.ClayEditor.View
             }
 
             selectedSlot = -1;
+            confirmStrengthSelect?.Hide();
             loadConfirmView?.Clear();
             SetConfirmPanelActive(false);
             SetSelectionContentVisible(true);
@@ -733,10 +755,67 @@ namespace UI.ClayEditor.View
             ModelSaveSlot slot = saveService.GetSlot(savePool, slotIndex);
             if (slot == null)
             {
+                confirmStrengthSelect?.Hide();
                 return;
             }
 
-            loadConfirmView.ShowSlot(slot, ModelSaveStorage.ReadThumbnailPng(slot), slotIndex);
+            byte[] thumbnailPng = ModelSaveStorage.ReadThumbnailPng(slot);
+            if (savePool == ModelSavePool.Enemy)
+            {
+                EnsureConfirmStrengthSelect();
+                SelectedStrengthTier = confirmStrengthSelect != null
+                    ? confirmStrengthSelect.CurrentTier
+                    : EnemyStrengthTier.Normal;
+                ModelStatus status = EnemyStrengthStatusCatalog.Resolve(slot, SelectedStrengthTier);
+                loadConfirmView.ShowSlot(slot, thumbnailPng, slotIndex, status);
+                confirmStrengthSelect?.Show(SelectedStrengthTier, OnConfirmStrengthSelected);
+                return;
+            }
+
+            confirmStrengthSelect?.Hide();
+            loadConfirmView.ShowSlot(slot, thumbnailPng, slotIndex);
+        }
+
+        private void OnConfirmStrengthSelected(EnemyStrengthTier tier)
+        {
+            SelectedStrengthTier = tier;
+            if (selectedSlot < 0 || loadConfirmView == null || saveService == null)
+            {
+                return;
+            }
+
+            ModelSaveSlot slot = saveService.GetSlot(savePool, selectedSlot);
+            if (slot == null)
+            {
+                return;
+            }
+
+            ModelStatus status = EnemyStrengthStatusCatalog.Resolve(slot, tier);
+            loadConfirmView.ShowSlot(
+                slot,
+                ModelSaveStorage.ReadThumbnailPng(slot),
+                selectedSlot,
+                status);
+        }
+
+        private void EnsureConfirmStrengthSelect()
+        {
+            if (confirmStrengthSelect != null)
+            {
+                return;
+            }
+
+            if (confirmPanelRoot != null)
+            {
+                confirmStrengthSelect = confirmPanelRoot.GetComponentInChildren<EnemyStrengthSelectView>(true);
+            }
+
+            if (confirmStrengthSelect == null)
+            {
+                Debug.LogError(
+                    "[LoadSlotView] confirmStrengthSelectが未配線ですConfirmSaveSlotCanvasへEnemyStrengthSelectを配置し接続してください",
+                    this);
+            }
         }
 
         private void EnsureSlotScrollList()

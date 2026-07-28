@@ -41,10 +41,40 @@ namespace UI.ClayEditor.View
         /// </summary>
         public void ShowSlot(ModelSaveSlot slot, byte[] thumbnailPng, int slotIndex)
         {
+            ShowSlot(slot, thumbnailPng, slotIndex, statusOverride: null);
+        }
+
+        /// <summary>
+        /// 保存済みスロット内容を指定ステータスで表示する
+        /// </summary>
+        public void ShowSlot(
+            ModelSaveSlot slot,
+            byte[] thumbnailPng,
+            int slotIndex,
+            ModelStatus statusOverride)
+        {
             _ = slotIndex;
             ValidateSerializedReferences();
             SetLegacyMessageVisible(false);
-            rowElementRefs?.BindConfirmFromSlot(slot);
+            if (slot == null || string.IsNullOrEmpty(slot.modelName))
+            {
+                rowElementRefs?.BindConfirmEmpty();
+                ApplyThumbnail(null);
+                return;
+            }
+
+            if (statusOverride != null)
+            {
+                rowElementRefs?.BindConfirmPreview(
+                    slot.modelName,
+                    statusOverride,
+                    slot.attackMotions);
+            }
+            else
+            {
+                rowElementRefs?.BindConfirmFromSlot(slot);
+            }
+
             ApplyThumbnail(thumbnailPng);
         }
 

@@ -21,9 +21,20 @@ namespace Battle.Interface
         int SelectedSlotIndex { get; }
 
         /// <summary>
+        /// 敵選択確認で選ばれた強さ段階
+        /// </summary>
+        EnemyStrengthTier SelectedStrengthTier { get; }
+
+        /// <summary>
         /// シーン入場時の準備(レイアウト整備と非表示)
         /// </summary>
         void PrepareEntry();
+
+        /// <summary>
+        /// 表示・ロード対象のセーブプールを切り替える
+        /// </summary>
+        /// <param name="pool">対象プール</param>
+        void ConfigureSavePool(ModelSavePool pool);
 
         /// <summary>
         /// 選択UIを表示してモデルロード完了まで待つ
@@ -47,5 +58,4 @@ namespace Battle.Interface
         /// <param name="cancellationToken">キャンセルトークン</param>
         UniTask RestoreAfterParticipantFailureAsync(CancellationToken cancellationToken);
     }
-
 }

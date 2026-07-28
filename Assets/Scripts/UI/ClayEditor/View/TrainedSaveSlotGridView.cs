@@ -79,6 +79,26 @@ namespace UI.ClayEditor.View
             string emptySlotLabel,
             bool allowEmptySlotSelection)
         {
+            Refresh(
+                saveService,
+                ModelSavePool.TrainedPlayer,
+                emptySlotLabel,
+                allowEmptySlotSelection);
+        }
+
+        /// <summary>
+        /// 指定プールのスロット一覧を更新する
+        /// </summary>
+        /// <param name="saveService">セーブサービス</param>
+        /// <param name="pool">対象プール</param>
+        /// <param name="emptySlotLabel">空スロット文言</param>
+        /// <param name="allowEmptySlotSelection">空スロット選択を許可するか</param>
+        public void Refresh(
+            IClayModelSaveService saveService,
+            ModelSavePool pool,
+            string emptySlotLabel,
+            bool allowEmptySlotSelection)
+        {
             EnsureCells();
             ClearRuntimeThumbnails();
             if (saveService == null)
@@ -89,6 +109,7 @@ namespace UI.ClayEditor.View
                 return;
             }
 
+            int poolSlotCount = ModelSavePoolSettings.GetSlotCount(pool);
             for (int i = 0; i < SlotCount; i++)
             {
                 TrainedSaveSlotCellView cell = i < cells.Length ? cells[i] : null;
@@ -97,7 +118,13 @@ namespace UI.ClayEditor.View
                     continue;
                 }
 
-                ModelSaveSlot slot = saveService.GetSlot(ModelSavePool.TrainedPlayer, i);
+                if (i >= poolSlotCount)
+                {
+                    cell.BindEmpty(i, emptySlotLabel, false);
+                    continue;
+                }
+
+                ModelSaveSlot slot = saveService.GetSlot(pool, i);
                 bool used = slot != null
                     && slot.isUsed
                     && !string.IsNullOrEmpty(slot.glbFileName);
@@ -107,7 +134,7 @@ namespace UI.ClayEditor.View
                     continue;
                 }
 
-                Sprite thumbnail = LoadThumbnailSprite(saveService, i);
+                Sprite thumbnail = LoadThumbnailSprite(saveService, pool, i);
                 cell.BindUsed(i, slot, thumbnail, true);
             }
         }
@@ -181,9 +208,12 @@ namespace UI.ClayEditor.View
             onSlotSelected?.Invoke(slotIndex);
         }
 
-        private Sprite LoadThumbnailSprite(IClayModelSaveService saveService, int slotIndex)
+        private Sprite LoadThumbnailSprite(
+            IClayModelSaveService saveService,
+            ModelSavePool pool,
+            int slotIndex)
         {
-            Texture2D texture = saveService.LoadThumbnail(ModelSavePool.TrainedPlayer, slotIndex);
+            Texture2D texture = saveService.LoadThumbnail(pool, slotIndex);
             if (texture == null)
             {
                 return null;
