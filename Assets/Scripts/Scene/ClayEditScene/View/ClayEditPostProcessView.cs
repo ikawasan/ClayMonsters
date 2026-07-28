@@ -8,7 +8,7 @@ using UnityEngine.Rendering.Universal;
 namespace Scene.ClayEditScene.View
 {
     /// <summary>
-    /// ClayEditシーン向けの黒背景を適用する
+    /// ClayEditシーン向けの背景色を適用する
     /// メッシュ色味を他シーンと揃えるためポストプロセスは掛けない
     /// </summary>
     [DisallowMultipleComponent]
@@ -29,6 +29,9 @@ namespace Scene.ClayEditScene.View
         private readonly List<Volume> disabledVolumes = new();
 
         /// <inheritdoc/>
+        public Color BackgroundColor => backgroundColor;
+
+        /// <inheritdoc/>
         public void Enable()
         {
             if (isEnabled)
@@ -44,7 +47,7 @@ namespace Scene.ClayEditScene.View
             isEnabled = true;
             DisableSceneVolumes();
             BackgroundOutlineActivation.SuppressForClayEdit();
-            ApplyBlackBackground();
+            ApplyBackground();
             DisableCameraPostProcessing();
         }
 
@@ -62,7 +65,26 @@ namespace Scene.ClayEditScene.View
             RestoreCameraSettings();
         }
 
-        private void ApplyBlackBackground()
+        /// <inheritdoc/>
+        public void SetBackgroundColor(Color color)
+        {
+            backgroundColor = color;
+            if (!isEnabled)
+            {
+                return;
+            }
+
+            UnityEngine.Camera camera = UnityEngine.Camera.main;
+            if (camera == null)
+            {
+                return;
+            }
+
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = backgroundColor;
+        }
+
+        private void ApplyBackground()
         {
             UnityEngine.Camera camera = UnityEngine.Camera.main;
             if (camera == null)

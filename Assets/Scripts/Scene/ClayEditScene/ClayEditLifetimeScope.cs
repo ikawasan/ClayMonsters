@@ -52,6 +52,7 @@ namespace Scene.ClayEditScene
         [Header("UI Views")]
         [SerializeField] ClayEditModeView clayEditModeView;
         [SerializeField] ClayEditOperationGuideView clayEditOperationGuideView;
+        [SerializeField] ClayEditBackgroundColorView clayEditBackgroundColorView;
         [SerializeField] ClayModelAnimationView clayModelAnimationView;
         [SerializeField] SaveSlotView saveSlotView;
 
@@ -116,6 +117,11 @@ namespace Scene.ClayEditScene
             if (clayEditOperationGuideView != null)
             {
                 builder.RegisterComponent(clayEditOperationGuideView);
+            }
+
+            if (clayEditBackgroundColorView != null)
+            {
+                builder.RegisterComponent(clayEditBackgroundColorView);
             }
 
             builder.RegisterComponent(clayModelAnimationView);
@@ -193,6 +199,7 @@ namespace Scene.ClayEditScene
                 || clayPainter == null
                 || clayPaintCursor == null
                 || clayEditModeView == null
+                || clayEditBackgroundColorView == null
                 || clayModelAnimationView == null
                 || saveSlotView == null
                 || clayEditEntryView == null
