@@ -357,7 +357,7 @@ namespace Scene.TrainingScene.Domain
         /// <summary>
         /// 継承演出の発光秒数
         /// </summary>
-        public const float InheritancePresentationGlowSeconds = 0.7f;
+        public const float InheritancePresentationGlowSeconds = 1.5f;
 
         /// <summary>
         /// 継承演出の上昇光秒数

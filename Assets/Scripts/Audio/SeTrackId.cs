@@ -53,6 +53,31 @@ namespace Audio
         /// <summary>
         /// サンダーショック
         /// </summary>
-        MagicThunderShock
+        MagicThunderShock,
+
+        /// <summary>
+        /// ふきとばし押し出し
+        /// </summary>
+        PressAction,
+
+        /// <summary>
+        /// 継承演出の光に包まれる
+        /// </summary>
+        InheritanceGlow,
+
+        /// <summary>
+        /// 継承演出の光上昇
+        /// </summary>
+        InheritanceLightRise,
+
+        /// <summary>
+        /// 継承演出の光下降
+        /// </summary>
+        InheritanceLightFall,
+
+        /// <summary>
+        /// 継承演出で継承先が光る
+        /// </summary>
+        InheritanceLightGlow
     }
 }

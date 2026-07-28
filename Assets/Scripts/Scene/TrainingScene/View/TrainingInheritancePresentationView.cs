@@ -1,3 +1,5 @@
+using Audio;
+using Audio.Interface;
 using ClayEditor.Rigging;
 using Cysharp.Threading.Tasks;
 using Extensions;
@@ -49,6 +51,7 @@ namespace Scene.TrainingScene.View
         [Inject] private readonly LoadedModelConfigurator configurator;
         [Inject] private readonly ITrainingBackgroundView backgroundView;
         [Inject] private readonly ITrainingLocationCameraView locationCameraView;
+        [Inject] private readonly ISeService seService;
 
         private GameObject leftParentModel;
         private GameObject rightParentModel;
@@ -127,6 +130,9 @@ namespace Scene.TrainingScene.View
                     TrainingSettings.InheritancePresentationPoseSeconds,
                     cancellationToken);
 
+                PlayTimedSe(
+                    SeTrackId.InheritanceGlow,
+                    TrainingSettings.InheritancePresentationGlowSeconds);
                 await WaitSeconds(
                     TrainingSettings.InheritancePresentationGlowSeconds,
                     cancellationToken);
@@ -143,6 +149,9 @@ namespace Scene.TrainingScene.View
                     + TrainingSettings.InheritancePresentationLightRiseHeight;
                 Vector3 leftRisePeak = new Vector3(leftStart.x, peakY, leftStart.z);
                 Vector3 rightRisePeak = new Vector3(rightStart.x, peakY, rightStart.z);
+                PlayTimedSe(
+                    SeTrackId.InheritanceLightRise,
+                    TrainingSettings.InheritancePresentationLightRiseSeconds);
                 await MoveFallingLightsAsync(
                     leftRisePeak,
                     rightRisePeak,
@@ -179,6 +188,7 @@ namespace Scene.TrainingScene.View
                     centerAnchor,
                     cancellationToken);
                 StartPersistentMagicCircleEffect(traineeModel, centerAnchor);
+                seService?.Play(SeTrackId.InheritanceLightGlow);
                 await fallTask;
 
                 UniTask settleTask = SettleFallingLightsOnTraineeAsync(
@@ -213,6 +223,7 @@ namespace Scene.TrainingScene.View
         /// <inheritdoc/>
         public void HideForLeave()
         {
+            StopInheritanceSe();
             DestroyParents();
             ClearDisappearEffects();
             ClearFallingLightEffects();
@@ -990,6 +1001,7 @@ namespace Scene.TrainingScene.View
 
         private async UniTask CleanupAsync(GameObject traineeModel, CancellationToken cancellationToken)
         {
+            StopInheritanceSe();
             SetTitleVisible(false);
             ClearFallingLightEffects();
             SetFallingLightRootActive(leftFallingLightRoot, false);
@@ -1211,6 +1223,28 @@ namespace Scene.TrainingScene.View
             }
 
             CanvasVisibilityUtility.SetCanvasEnabled(inheritanceTitleCanvas, visible);
+        }
+
+        private void PlayTimedSe(SeTrackId trackId, float durationSeconds)
+        {
+            if (seService == null)
+            {
+                return;
+            }
+
+            seService.PlayTimed(trackId, durationSeconds);
+        }
+
+        private void StopInheritanceSe()
+        {
+            if (seService == null)
+            {
+                return;
+            }
+
+            seService.Stop(SeTrackId.InheritanceGlow);
+            seService.Stop(SeTrackId.InheritanceLightRise);
+            seService.Stop(SeTrackId.InheritanceLightFall);
         }
 
         private static async UniTask WaitSeconds(float seconds, CancellationToken cancellationToken)

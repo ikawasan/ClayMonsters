@@ -7,6 +7,7 @@ namespace Audio
     {
         private const string ResourceRoot = "Audio/SE/";
         private const string MagicRoot = ResourceRoot + "Magic/";
+        private const string InheritanceRoot = ResourceRoot + "Inheritance/";
 
         /// <summary>
         /// トラックIDからResourcesパスを取得する
@@ -27,6 +28,11 @@ namespace Audio
                 SeTrackId.MagicWindSlasher => MagicRoot + "WindSlasher",
                 SeTrackId.MagicDiamondDust => MagicRoot + "DirmondDust",
                 SeTrackId.MagicThunderShock => MagicRoot + "ThunderShock",
+                SeTrackId.PressAction => ResourceRoot + "PressAction",
+                SeTrackId.InheritanceGlow => InheritanceRoot + "InheritanceGlow",
+                SeTrackId.InheritanceLightRise => InheritanceRoot + "InheritanceLightRise",
+                SeTrackId.InheritanceLightFall => InheritanceRoot + "InheritanceLightFall",
+                SeTrackId.InheritanceLightGlow => InheritanceRoot + "InheritanceLightGlow",
                 _ => string.Empty
             };
         }
