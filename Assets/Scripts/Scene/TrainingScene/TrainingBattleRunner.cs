@@ -287,6 +287,8 @@ namespace Scene.TrainingScene
 
             BattleMagicAttackEffectPresenter magicAttackEffectPresenter = null;
 
+            BattleKnockbackEffectPresenter knockbackEffectPresenter = null;
+
             BattleFinishPresenter finishPresenter = null;
 
             BattlePartBreakPresenter partBreakPresenter = null;
@@ -551,6 +553,22 @@ namespace Scene.TrainingScene
 
 
 
+                BattleKnockbackEffectView knockbackEffectView = GetOrAddComponent<BattleKnockbackEffectView>();
+
+                knockbackEffectPresenter = new BattleKnockbackEffectPresenter(
+
+                    knockbackEffectView,
+
+                    system,
+
+                    player.Model.transform,
+
+                    enemy.Model.transform,
+
+                    seService);
+
+
+
                 if (overlayView != null)
 
                 {
@@ -636,6 +654,7 @@ namespace Scene.TrainingScene
                         ref combatFeedbackPresenter,
                         ref chargeEffectPresenter,
                         ref magicAttackEffectPresenter,
+                        ref knockbackEffectPresenter,
                         ref finishPresenter,
                         ref partBreakPresenter,
                         ref fieldPresenter,
@@ -660,6 +679,8 @@ namespace Scene.TrainingScene
                 chargeEffectPresenter?.Dispose();
 
                 magicAttackEffectPresenter?.Dispose();
+
+                knockbackEffectPresenter?.Dispose();
 
                 finishPresenter?.Dispose();
 
@@ -978,6 +999,7 @@ namespace Scene.TrainingScene
             ref BattleCombatFeedbackPresenter combatFeedbackPresenter,
             ref BattleChargeEffectPresenter chargeEffectPresenter,
             ref BattleMagicAttackEffectPresenter magicAttackEffectPresenter,
+            ref BattleKnockbackEffectPresenter knockbackEffectPresenter,
             ref BattleFinishPresenter finishPresenter,
             ref BattlePartBreakPresenter partBreakPresenter,
             ref BattleFieldPresenter fieldPresenter,
@@ -991,6 +1013,8 @@ namespace Scene.TrainingScene
             chargeEffectPresenter = null;
             magicAttackEffectPresenter?.Dispose();
             magicAttackEffectPresenter = null;
+            knockbackEffectPresenter?.Dispose();
+            knockbackEffectPresenter = null;
             finishPresenter?.Dispose();
             finishPresenter = null;
             partBreakPresenter?.Dispose();

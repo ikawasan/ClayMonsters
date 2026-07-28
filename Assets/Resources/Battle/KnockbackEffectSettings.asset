@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 05425a425dc86014ab64aaea99b273d2, type: 3}
+  m_Name: KnockbackEffectSettings
+  m_EditorClassIdentifier: Battle::Battle.KnockbackEffectSettings
+  shockwavePrefab: {fileID: 5488793821149183516, guid: dbf3f6d46cd12584e9b77d878e982179, type: 3}
+  worldScale: 7
+  heightFallback: 0.85
+  simulationSpeed: 1.65
+  distortion: 0.32
+  distortionDepthFade: 0.08
+  startSize: 2.4
+  lifetimeSeconds: 0.55
+  pushForwardOffset: 0.35
+  ringCount: 2
