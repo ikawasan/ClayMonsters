@@ -99,6 +99,29 @@ namespace UI.ClayEditor.View
             string emptySlotLabel,
             bool allowEmptySlotSelection)
         {
+            Refresh(
+                saveService,
+                pool,
+                emptySlotLabel,
+                allowEmptySlotSelection,
+                isSlotUnlocked: null);
+        }
+
+        /// <summary>
+        /// 指定プールのスロット一覧を更新する
+        /// </summary>
+        /// <param name="saveService">セーブサービス</param>
+        /// <param name="pool">対象プール</param>
+        /// <param name="emptySlotLabel">空スロット文言</param>
+        /// <param name="allowEmptySlotSelection">空スロット選択を許可するか</param>
+        /// <param name="isSlotUnlocked">使用中スロットの選択可否(nullなら常に可)</param>
+        public void Refresh(
+            IClayModelSaveService saveService,
+            ModelSavePool pool,
+            string emptySlotLabel,
+            bool allowEmptySlotSelection,
+            Func<int, bool> isSlotUnlocked)
+        {
             EnsureCells();
             ClearRuntimeThumbnails();
             if (saveService == null)
@@ -135,7 +158,8 @@ namespace UI.ClayEditor.View
                 }
 
                 Sprite thumbnail = LoadThumbnailSprite(saveService, pool, i);
-                cell.BindUsed(i, slot, thumbnail, true);
+                bool interactable = isSlotUnlocked == null || isSlotUnlocked(i);
+                cell.BindUsed(i, slot, thumbnail, interactable);
             }
         }
 

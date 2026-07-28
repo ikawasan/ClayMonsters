@@ -5,6 +5,7 @@ using LighthouseExtends.UIComponent.Button;
 using R3;
 using SaveData;
 using SaveData.Interface;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
@@ -28,6 +29,7 @@ namespace UI.ClayEditor.View
         [Inject] private readonly IClayModelSaveService saveService;
         [Inject] private readonly IClayModelImporter importer;
         [Inject] private readonly IBattleCanvasTransition canvasTransition;
+        [Inject] private readonly INpcBattleProgressService npcBattleProgress;
 
         [Header("セーブスロット選択")]
         [Tooltip("横長のスクロールスロット一覧")]
@@ -153,7 +155,7 @@ namespace UI.ClayEditor.View
         }
 
         // 表示用に生成したサムネイル(Texture2D / Sprite)。再表示・破棄時にまとめてDestroyする
-        private readonly List<Object> runtimeThumbnailObjects = new List<Object>();
+        private readonly List<UnityEngine.Object> runtimeThumbnailObjects = new List<UnityEngine.Object>();
 
         // 現在選択中のスロット番号(未選択は-1)
         private int selectedSlot = -1;
@@ -488,7 +490,8 @@ namespace UI.ClayEditor.View
                         saveService,
                         savePool,
                         emptySlotLabel,
-                        allowEmptySlotSelection: false);
+                        allowEmptySlotSelection: false,
+                        isSlotUnlocked: ResolveEnemySlotUnlockPredicate());
                     return;
                 }
 
@@ -549,6 +552,12 @@ namespace UI.ClayEditor.View
         // スロットが選択されたとき: 確認キャンバスを開く
         private void OnSlotSelected(int slotIndex)
         {
+            if (savePool == ModelSavePool.Enemy && !IsEnemySlotSelectable(slotIndex))
+            {
+                Debug.LogWarning($"[LoadSlotView] スロット{slotIndex}は未開放です");
+                return;
+            }
+
             ModelSaveSlot slot = saveService.GetSlot(savePool, slotIndex);
             if (slot == null || string.IsNullOrEmpty(slot.glbFileName))
             {
@@ -645,6 +654,24 @@ namespace UI.ClayEditor.View
 
         private async UniTaskVoid LoadAsync(int slotIndex, CancellationToken cancellationToken)
         {
+            if (savePool == ModelSavePool.Enemy)
+            {
+                if (!IsEnemySlotSelectable(slotIndex))
+                {
+                    Debug.LogWarning($"[LoadSlotView] 未開放の敵スロットです slot={slotIndex}");
+                    return;
+                }
+
+                if (!IsEnemyStrengthSelectable(slotIndex, SelectedStrengthTier))
+                {
+                    Debug.LogWarning(
+                        "[LoadSlotView] 未開放の強さです"
+                        + $" slot={slotIndex}"
+                        + $" tier={SelectedStrengthTier}");
+                    return;
+                }
+            }
+
             ModelSaveSlot slot = saveService.GetSlot(savePool, slotIndex);
             if (slot == null || string.IsNullOrEmpty(slot.glbFileName))
             {
@@ -763,12 +790,24 @@ namespace UI.ClayEditor.View
             if (savePool == ModelSavePool.Enemy)
             {
                 EnsureConfirmStrengthSelect();
-                SelectedStrengthTier = confirmStrengthSelect != null
-                    ? confirmStrengthSelect.CurrentTier
-                    : EnemyStrengthTier.Normal;
+                EnemyStrengthTier preferredTier = npcBattleProgress != null
+                    ? npcBattleProgress.GetHighestUnlockedStrength(slotIndex)
+                    : EnemyStrengthTier.Weak;
+                if (confirmStrengthSelect != null)
+                {
+                    confirmStrengthSelect.Show(
+                        preferredTier,
+                        OnConfirmStrengthSelected,
+                        tier => IsEnemyStrengthSelectable(slotIndex, tier));
+                    SelectedStrengthTier = confirmStrengthSelect.CurrentTier;
+                }
+                else
+                {
+                    SelectedStrengthTier = preferredTier;
+                }
+
                 ModelStatus status = EnemyStrengthStatusCatalog.Resolve(slot, SelectedStrengthTier);
                 loadConfirmView.ShowSlot(slot, thumbnailPng, slotIndex, status);
-                confirmStrengthSelect?.Show(SelectedStrengthTier, OnConfirmStrengthSelected);
                 return;
             }
 
@@ -778,6 +817,13 @@ namespace UI.ClayEditor.View
 
         private void OnConfirmStrengthSelected(EnemyStrengthTier tier)
         {
+            if (savePool == ModelSavePool.Enemy
+                && selectedSlot >= 0
+                && !IsEnemyStrengthSelectable(selectedSlot, tier))
+            {
+                return;
+            }
+
             SelectedStrengthTier = tier;
             if (selectedSlot < 0 || loadConfirmView == null || saveService == null)
             {
@@ -796,6 +842,44 @@ namespace UI.ClayEditor.View
                 ModelSaveStorage.ReadThumbnailPng(slot),
                 selectedSlot,
                 status);
+        }
+
+        private Func<int, bool> ResolveEnemySlotUnlockPredicate()
+        {
+            if (savePool != ModelSavePool.Enemy)
+            {
+                return null;
+            }
+
+            if (npcBattleProgress == null)
+            {
+                Debug.LogError(
+                    "[LoadSlotView] npcBattleProgressが未注入のため敵スロットを全て選択不可にします",
+                    this);
+                return _ => false;
+            }
+
+            return npcBattleProgress.IsEnemySlotUnlocked;
+        }
+
+        private bool IsEnemySlotSelectable(int slotIndex)
+        {
+            if (npcBattleProgress == null)
+            {
+                return false;
+            }
+
+            return npcBattleProgress.IsEnemySlotUnlocked(slotIndex);
+        }
+
+        private bool IsEnemyStrengthSelectable(int slotIndex, EnemyStrengthTier tier)
+        {
+            if (npcBattleProgress == null)
+            {
+                return false;
+            }
+
+            return npcBattleProgress.IsEnemyStrengthUnlocked(slotIndex, tier);
         }
 
         private void EnsureConfirmStrengthSelect()

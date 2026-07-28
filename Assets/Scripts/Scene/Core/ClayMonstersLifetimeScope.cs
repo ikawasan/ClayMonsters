@@ -6,6 +6,7 @@ using Lighthouse.Scene.SceneCamera;
 using LighthouseExtends.UIComponent.CanvasSceneObject;
 using LighthouseExtends.UIComponent.InputBlocker;
 using SampleProduct.Core;
+using SaveData.Service;
 using Scene.PvpLobby;
 using Scene.PvpLobby.Interface;
 using Scene.Core.View;
@@ -52,6 +53,7 @@ namespace Scene.Core
             builder.Register<IUiSoundService, UiSoundService>(Lifetime.Singleton);
             builder.Register<ISeService, SeService>(Lifetime.Singleton);
             builder.Register<OptionService>(Lifetime.Singleton).AsImplementedInterfaces();
+            builder.Register<NpcBattleProgressService>(Lifetime.Singleton).AsImplementedInterfaces();
             builder.RegisterComponent(optionViewPrefab).AsImplementedInterfaces();
             builder.Register<OptionPresenter>(Lifetime.Singleton).AsImplementedInterfaces();
 

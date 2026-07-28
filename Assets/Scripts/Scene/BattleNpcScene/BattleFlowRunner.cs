@@ -8,6 +8,7 @@ using Cysharp.Threading.Tasks;
 using Extensions;
 using Lighthouse.Scene;
 using LighthouseExtends.UIComponent.Button;
+using SaveData;
 using SaveData.Interface;
 using Scene.BattleNpcScene.Interface;
 using Scene.BattleNpcScene.View;
@@ -53,6 +54,7 @@ namespace Scene.BattleNpcScene
 
         private IClayModelImporter importer;
         private IClayModelSaveService saveService;
+        private INpcBattleProgressService npcBattleProgress;
         private IBattleCanvasTransition presentationTransition;
         private IBgmService bgmService;
         private ISeService seService;
@@ -103,6 +105,7 @@ namespace Scene.BattleNpcScene
         public void Construct(
             IClayModelImporter importer,
             IClayModelSaveService saveService,
+            INpcBattleProgressService npcBattleProgress,
             IBattleCanvasTransition presentationTransition,
             IBgmService bgmService,
             ISeService seService,
@@ -112,6 +115,7 @@ namespace Scene.BattleNpcScene
         {
             this.importer = importer;
             this.saveService = saveService;
+            this.npcBattleProgress = npcBattleProgress;
             this.presentationTransition = presentationTransition;
             this.bgmService = bgmService;
             this.seService = seService;
@@ -172,6 +176,7 @@ namespace Scene.BattleNpcScene
                     presentationTransition,
                     enemySlotIndex);
                 context.RegisterSpawnedParticipants = RegisterSpawnedParticipants;
+                context.OnNpcBattleSettled = OnNpcBattleSettled;
 
                 var flow = new BattleFlow(
                     selectionSession,
@@ -220,6 +225,25 @@ namespace Scene.BattleNpcScene
             ResolveTipsView()?.HideAll();
             staging?.PrepareSelectionEntry();
             presentationTransition?.ReleasePresentationInput();
+        }
+
+        private void OnNpcBattleSettled(
+            bool playerWon,
+            int settledEnemySlotIndex,
+            EnemyStrengthTier settledStrengthTier)
+        {
+            if (!playerWon)
+            {
+                return;
+            }
+
+            if (npcBattleProgress == null)
+            {
+                Debug.LogError("[BattleFlowRunner] npcBattleProgressが未注入です");
+                return;
+            }
+
+            npcBattleProgress.RegisterVictory(settledEnemySlotIndex, settledStrengthTier);
         }
 
         private void RegisterSpawnedParticipants(GameObject playerModel, GameObject enemyModel)

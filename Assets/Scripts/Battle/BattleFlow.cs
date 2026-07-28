@@ -86,6 +86,11 @@ namespace Battle
 
             public Action<BattleUnit> OnBattleEnd;
 
+            /// <summary>
+            /// CPU戦の勝敗確定時(プレイヤー勝利か敵スロット強さ)
+            /// </summary>
+            public Action<bool, int, EnemyStrengthTier> OnNpcBattleSettled;
+
             public Func<CancellationToken, UniTask> WaitForMatchupStartAsync;
 
             public IBattlePvpCombatSync CombatSync;
@@ -677,6 +682,11 @@ namespace Battle
 
                     returnChoice = stagingContext.VictoryReturnChoice;
                     context.OnBattleEnd?.Invoke(winner);
+                    bool playerWon = winner != null && winner == stagingContext.Player;
+                    context.OnNpcBattleSettled?.Invoke(
+                        playerWon,
+                        context.EnemySlotIndex,
+                        context.EnemyStrengthTier);
                 }
                 finally
                 {

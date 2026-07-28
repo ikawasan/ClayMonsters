@@ -18,14 +18,20 @@ namespace UI.ClayEditor.View
         IPointerEnterHandler,
         IPointerExitHandler
     {
+        private static readonly Color LockedSlotColor = new Color(0f, 0f, 0f, 1f);
+        private static readonly Color UnlockedSlotColor = Color.white;
+
         [SerializeField] private LHButton selectButton;
         [SerializeField] private Image thumbnailImage;
         [SerializeField] private TMP_Text nameText;
+        [SerializeField] private Image lockDimmer;
+        [SerializeField] private Image lockIcon;
 
         private int slotIndex = -1;
         private Action<int> onSelected;
         private Action<int> onPointerEnter;
         private Action onPointerExit;
+        private bool isLocked;
 
         /// <summary>
         /// 選択ボタン
@@ -84,6 +90,7 @@ namespace UI.ClayEditor.View
             }
 
             ApplyThumbnail(thumbnail);
+            SetLocked(!interactable);
             SetInteractable(interactable);
         }
 
@@ -105,6 +112,7 @@ namespace UI.ClayEditor.View
             }
 
             ApplyThumbnail(null);
+            SetLocked(false);
             SetInteractable(interactable);
         }
 
@@ -157,11 +165,74 @@ namespace UI.ClayEditor.View
 
             thumbnailImage.sprite = thumbnail;
             thumbnailImage.enabled = true;
-            thumbnailImage.color = Color.white;
+            thumbnailImage.color = isLocked ? LockedSlotColor : UnlockedSlotColor;
             thumbnailImage.preserveAspect = false;
             thumbnailImage.type = Image.Type.Simple;
             thumbnailImage.maskable = true;
             thumbnailImage.raycastTarget = false;
+        }
+
+        private void SetLocked(bool locked)
+        {
+            isLocked = locked;
+            if (locked)
+            {
+                ValidateLockRefs();
+            }
+
+            if (thumbnailImage != null && thumbnailImage.enabled)
+            {
+                thumbnailImage.color = locked ? LockedSlotColor : UnlockedSlotColor;
+            }
+
+            if (selectButton != null && selectButton.targetGraphic != null)
+            {
+                selectButton.targetGraphic.color = locked ? LockedSlotColor : UnlockedSlotColor;
+            }
+
+            if (lockDimmer != null)
+            {
+                lockDimmer.enabled = locked;
+                if (locked)
+                {
+                    lockDimmer.color = new Color(0f, 0f, 0f, 0.82f);
+                    lockDimmer.raycastTarget = false;
+                }
+            }
+
+            if (lockIcon != null)
+            {
+                if (locked)
+                {
+                    if (lockIcon.sprite == null)
+                    {
+                        Sprite sprite = UiLockIconResources.GetSprite();
+                        if (sprite != null)
+                        {
+                            lockIcon.sprite = sprite;
+                        }
+                    }
+
+                    lockIcon.color = Color.white;
+                    lockIcon.raycastTarget = false;
+                    lockIcon.preserveAspect = true;
+                    lockIcon.enabled = true;
+                }
+                else
+                {
+                    lockIcon.enabled = false;
+                }
+            }
+        }
+
+        private void ValidateLockRefs()
+        {
+            if (lockDimmer == null || lockIcon == null)
+            {
+                Debug.LogError(
+                    "[TrainedSaveSlotCellView] lockDimmer/lockIconが未配線ですPrefab Modeで配置し接続してください",
+                    this);
+            }
         }
 
         private void SetInteractable(bool interactable)
@@ -174,7 +245,7 @@ namespace UI.ClayEditor.View
 
         private void OnClicked()
         {
-            if (slotIndex < 0 || onSelected == null)
+            if (slotIndex < 0 || onSelected == null || isLocked)
             {
                 return;
             }

@@ -14,6 +14,7 @@ namespace UI.ClayEditor.View
     {
         private static readonly Color SelectedColor = new Color(1f, 0.86f, 0.42f, 1f);
         private static readonly Color NormalColor = new Color(1f, 1f, 1f, 1f);
+        private static readonly Color LockedButtonColor = new Color(0f, 0f, 0f, 1f);
 
         [Header("表示制御")]
         [SerializeField] private Canvas rootCanvas;
@@ -30,9 +31,20 @@ namespace UI.ClayEditor.View
         [SerializeField] private TMP_Text strongLabel;
         [SerializeField] private TMP_Text veryStrongLabel;
 
+        [Header("ロック表示")]
+        [SerializeField] private Image weakLockDimmer;
+        [SerializeField] private Image weakLockIcon;
+        [SerializeField] private Image normalLockDimmer;
+        [SerializeField] private Image normalLockIcon;
+        [SerializeField] private Image strongLockDimmer;
+        [SerializeField] private Image strongLockIcon;
+        [SerializeField] private Image veryStrongLockDimmer;
+        [SerializeField] private Image veryStrongLockIcon;
+
         private Action<EnemyStrengthTier> selectedListener;
         private EnemyStrengthTier currentTier = EnemyStrengthTier.Normal;
         private bool isExpectedVisible;
+        private int unlockedTierMask = -1;
 
         private void Awake()
         {
@@ -61,10 +73,27 @@ namespace UI.ClayEditor.View
         /// <param name="onSelected">選択時コールバック</param>
         public void Show(EnemyStrengthTier initialTier, Action<EnemyStrengthTier> onSelected)
         {
+            Show(initialTier, onSelected, isTierUnlocked: null);
+        }
+
+        /// <summary>
+        /// 強さ選択UIを表示し選択通知を受け取る
+        /// </summary>
+        /// <param name="initialTier">初期選択</param>
+        /// <param name="onSelected">選択時コールバック</param>
+        /// <param name="isTierUnlocked">開放判定(nullなら全て開放)</param>
+        public void Show(
+            EnemyStrengthTier initialTier,
+            Action<EnemyStrengthTier> onSelected,
+            Func<EnemyStrengthTier, bool> isTierUnlocked)
+        {
             ValidateRefs();
             selectedListener = onSelected;
-            currentTier = initialTier;
+            ApplyUnlockMask(isTierUnlocked);
+            currentTier = ResolveSelectableTier(initialTier);
             ApplySelectionVisual();
+            ApplyButtonInteractable();
+            ApplyLockVisuals();
             SetVisible(true);
         }
 
@@ -85,6 +114,7 @@ namespace UI.ClayEditor.View
         {
             currentTier = tier;
             ApplySelectionVisual();
+            ApplyLockVisuals();
         }
 
         /// <summary>
@@ -129,6 +159,11 @@ namespace UI.ClayEditor.View
 
         private void OnClickTier(EnemyStrengthTier tier)
         {
+            if (!IsTierUnlocked(tier))
+            {
+                return;
+            }
+
             if (tier == currentTier)
             {
                 return;
@@ -136,7 +171,74 @@ namespace UI.ClayEditor.View
 
             currentTier = tier;
             ApplySelectionVisual();
+            ApplyLockVisuals();
             selectedListener?.Invoke(tier);
+        }
+
+        private void ApplyUnlockMask(Func<EnemyStrengthTier, bool> isTierUnlocked)
+        {
+            if (isTierUnlocked == null)
+            {
+                unlockedTierMask = -1;
+                return;
+            }
+
+            int mask = 0;
+            for (int i = 0; i < NpcBattleProgressRules.TierCount; i++)
+            {
+                var tier = (EnemyStrengthTier)i;
+                if (isTierUnlocked(tier))
+                {
+                    mask |= 1 << i;
+                }
+            }
+
+            unlockedTierMask = mask;
+        }
+
+        private bool IsTierUnlocked(EnemyStrengthTier tier)
+        {
+            if (unlockedTierMask < 0)
+            {
+                return true;
+            }
+
+            return (unlockedTierMask & (1 << (int)tier)) != 0;
+        }
+
+        private EnemyStrengthTier ResolveSelectableTier(EnemyStrengthTier preferred)
+        {
+            if (IsTierUnlocked(preferred))
+            {
+                return preferred;
+            }
+
+            for (int i = NpcBattleProgressRules.TierCount - 1; i >= 0; i--)
+            {
+                var tier = (EnemyStrengthTier)i;
+                if (IsTierUnlocked(tier))
+                {
+                    return tier;
+                }
+            }
+
+            return EnemyStrengthTier.Weak;
+        }
+
+        private void ApplyButtonInteractable()
+        {
+            SetButtonInteractable(weakButton, IsTierUnlocked(EnemyStrengthTier.Weak));
+            SetButtonInteractable(normalButton, IsTierUnlocked(EnemyStrengthTier.Normal));
+            SetButtonInteractable(strongButton, IsTierUnlocked(EnemyStrengthTier.Strong));
+            SetButtonInteractable(veryStrongButton, IsTierUnlocked(EnemyStrengthTier.VeryStrong));
+        }
+
+        private static void SetButtonInteractable(Button button, bool interactable)
+        {
+            if (button != null)
+            {
+                button.interactable = interactable;
+            }
         }
 
         private void ApplySelectionVisual()
@@ -145,6 +247,84 @@ namespace UI.ClayEditor.View
             ApplyButtonVisual(normalButton, currentTier == EnemyStrengthTier.Normal);
             ApplyButtonVisual(strongButton, currentTier == EnemyStrengthTier.Strong);
             ApplyButtonVisual(veryStrongButton, currentTier == EnemyStrengthTier.VeryStrong);
+        }
+
+        private void ApplyLockVisuals()
+        {
+            ApplyTierLock(
+                weakButton,
+                weakLockDimmer,
+                weakLockIcon,
+                EnemyStrengthTier.Weak);
+            ApplyTierLock(
+                normalButton,
+                normalLockDimmer,
+                normalLockIcon,
+                EnemyStrengthTier.Normal);
+            ApplyTierLock(
+                strongButton,
+                strongLockDimmer,
+                strongLockIcon,
+                EnemyStrengthTier.Strong);
+            ApplyTierLock(
+                veryStrongButton,
+                veryStrongLockDimmer,
+                veryStrongLockIcon,
+                EnemyStrengthTier.VeryStrong);
+        }
+
+        private void ApplyTierLock(
+            Button button,
+            Image dimmer,
+            Image icon,
+            EnemyStrengthTier tier)
+        {
+            bool locked = !IsTierUnlocked(tier);
+            if (locked && (dimmer == null || icon == null))
+            {
+                Debug.LogError(
+                    "[EnemyStrengthSelectView] 強さロック用Imageが未配線ですPrefab Modeで配置し接続してください",
+                    this);
+            }
+
+            if (dimmer != null)
+            {
+                dimmer.enabled = locked;
+                if (locked)
+                {
+                    dimmer.color = new Color(0f, 0f, 0f, 0.82f);
+                    dimmer.raycastTarget = false;
+                }
+            }
+
+            if (icon != null)
+            {
+                if (locked)
+                {
+                    if (icon.sprite == null)
+                    {
+                        Sprite sprite = UiLockIconResources.GetSprite();
+                        if (sprite != null)
+                        {
+                            icon.sprite = sprite;
+                        }
+                    }
+
+                    icon.color = Color.white;
+                    icon.preserveAspect = true;
+                    icon.raycastTarget = false;
+                    icon.enabled = true;
+                }
+                else
+                {
+                    icon.enabled = false;
+                }
+            }
+
+            if (locked && button != null && button.targetGraphic != null)
+            {
+                button.targetGraphic.color = LockedButtonColor;
+            }
         }
 
         private static void ApplyButtonVisual(Button button, bool selected)

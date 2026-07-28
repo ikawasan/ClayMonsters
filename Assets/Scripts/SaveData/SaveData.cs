@@ -22,5 +22,6 @@ namespace SaveData
     {
         public VideoOptionSaveData VideoOptionData = new VideoOptionSaveData();
         public SoundOptionSaveData SoundOptionData = new SoundOptionSaveData();
+        public NpcBattleProgressSaveData NpcBattleProgress = new NpcBattleProgressSaveData();
     }
 }

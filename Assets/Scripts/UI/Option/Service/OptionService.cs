@@ -70,7 +70,11 @@ namespace UI.Option.Service
 
         private void SaveOptions()
         {
-            SaveDataManager.Save(currentSaveData);
+            SaveDataManager.Update(data =>
+            {
+                data.VideoOptionData = currentSaveData.VideoOptionData;
+                data.SoundOptionData = currentSaveData.SoundOptionData;
+            });
         }
 
         private void ApplySettings()
