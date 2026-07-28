@@ -108,6 +108,11 @@ namespace Scene.TrainingScene.Domain
         public const float RestGreatSuccessPercent = 20f;
 
         /// <summary>
+        /// 休憩大成功時のやる気上昇段階数
+        /// </summary>
+        public const int RestMotivationGain = 1;
+
+        /// <summary>
         /// 訓練失敗判定のしきい値(これ未満で失敗率が上がる)
         /// </summary>
         public const int LowStaminaThreshold = 50;

@@ -1280,7 +1280,8 @@ namespace Scene.TrainingScene.View
                         "特訓ごとに体力消費が異なる 大幅にステ上昇"),
                 TrainingCommandType.Rest =>
                     $"体力+{TrainingSettings.RestStaminaRecovery}"
-                    + $"(大成功で+{TrainingSettings.RestGreatSuccessRecovery})",
+                    + $"(大成功で+{TrainingSettings.RestGreatSuccessRecovery}"
+                    + $" やる気+{TrainingSettings.RestMotivationGain})",
                 TrainingCommandType.Shop => "昼休みにだけ利用できる売店",
                 TrainingCommandType.UseItem => "所持アイテムを使う(時間は消費しない)",
                 TrainingCommandType.Tournament => "対戦に勝利すると賞金と体力回復",

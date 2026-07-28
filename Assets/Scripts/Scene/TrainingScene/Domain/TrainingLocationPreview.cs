@@ -128,7 +128,8 @@ namespace Scene.TrainingScene.Domain
         {
             return "休憩\n"
                 + $"体力+{TrainingSettings.RestStaminaRecovery}"
-                + $"(大成功で+{TrainingSettings.RestGreatSuccessRecovery})";
+                + $"(大成功で+{TrainingSettings.RestGreatSuccessRecovery}"
+                + $" やる気+{TrainingSettings.RestMotivationGain})";
         }
 
         private static TrainingStatGain ResolveSuccessGain(TrainingLocation location)

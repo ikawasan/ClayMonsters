@@ -24,7 +24,8 @@ namespace Scene.TrainingScene.Domain
             int staminaBefore,
             int staminaAfter,
             TrainingStatGain appliedGain,
-            string foundItemId = null)
+            string foundItemId = null,
+            int motivationGain = 0)
         {
             Command = command;
             Focus = focus;
@@ -38,6 +39,7 @@ namespace Scene.TrainingScene.Domain
             StaminaAfter = staminaAfter;
             AppliedGain = appliedGain;
             FoundItemId = foundItemId;
+            MotivationGain = Mathf.Max(0, motivationGain);
         }
 
         /// <summary>
@@ -99,6 +101,11 @@ namespace Scene.TrainingScene.Domain
         /// 訓練中に拾ったアイテムID
         /// </summary>
         public string FoundItemId { get; }
+
+        /// <summary>
+        /// 休憩大成功などで上がるやる気段階数
+        /// </summary>
+        public int MotivationGain { get; }
     }
 
     /// <summary>
@@ -534,6 +541,11 @@ namespace Scene.TrainingScene.Domain
                 if (!string.IsNullOrEmpty(result.FoundItemId))
                 {
                     AddInventoryItem(result.FoundItemId);
+                }
+
+                if (result.MotivationGain > 0)
+                {
+                    RaiseMotivation(result.MotivationGain);
                 }
             }
             else if (result.Command == TrainingCommandType.Train

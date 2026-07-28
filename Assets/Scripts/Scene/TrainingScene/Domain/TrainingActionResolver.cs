@@ -118,6 +118,9 @@ namespace Scene.TrainingScene.Domain
             int staminaAfter = Mathf.Min(
                 TrainingSettings.MaxStamina,
                 currentStamina + recovery);
+            int motivationGain = isGreatSuccess
+                ? TrainingSettings.RestMotivationGain
+                : 0;
             return new TrainingActionResult(
                 TrainingCommandType.Rest,
                 default,
@@ -127,7 +130,9 @@ namespace Scene.TrainingScene.Domain
                 isGreatSuccess,
                 currentStamina,
                 staminaAfter,
-                default);
+                default,
+                foundItemId: null,
+                motivationGain: motivationGain);
         }
 
         /// <summary>

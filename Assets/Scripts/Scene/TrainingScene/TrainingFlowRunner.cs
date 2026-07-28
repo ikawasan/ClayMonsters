@@ -1959,7 +1959,14 @@ namespace Scene.TrainingScene
             if (result.IsRestAction)
             {
                 string restOutcome = result.IsGreatSuccess ? "休憩大成功" : "休憩";
-                return $"{restOutcome}で体力回復 {result.StaminaBefore}→{result.StaminaAfter}";
+                string restLog =
+                    $"{restOutcome}で体力回復 {result.StaminaBefore}→{result.StaminaAfter}";
+                if (result.MotivationGain > 0)
+                {
+                    restLog += "\nやる気が上がった";
+                }
+
+                return restLog;
             }
 
             TrainingStatGain gain = result.AppliedGain;
