@@ -25,6 +25,9 @@ namespace ClayEditor.Input
         // 入力受付の有効/無効
         private bool isInputEnabled = true;
 
+        // スライダー操作中などポインタがUI外へ出てもオーバー扱いを維持する件数
+        private int uiPointerCaptureCount;
+
         /// <inheritdoc />
         public Observable<Unit> OnUndo => onUndo;
 
@@ -77,6 +80,32 @@ namespace ClayEditor.Input
         }
 
         /// <inheritdoc />
+        public void BeginUiPointerCapture()
+        {
+            uiPointerCaptureCount++;
+            if (uiPointerCaptureCount == 1)
+            {
+                isPointerOverUI.Value = true;
+            }
+        }
+
+        /// <inheritdoc />
+        public void EndUiPointerCapture()
+        {
+            if (uiPointerCaptureCount <= 0)
+            {
+                return;
+            }
+
+            uiPointerCaptureCount--;
+            if (uiPointerCaptureCount == 0
+                && (EventSystem.current == null || !EventSystem.current.IsPointerOverGameObject()))
+            {
+                isPointerOverUI.Value = false;
+            }
+        }
+
+        /// <inheritdoc />
         public void Tick()
         {
             var mouse = Mouse.current;
@@ -99,7 +128,9 @@ namespace ClayEditor.Input
             }
 
             // 現在フレームの状態を更新
-            isPointerOverUI.Value = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+            bool isOverUi = uiPointerCaptureCount > 0
+                || (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject());
+            isPointerOverUI.Value = isOverUi;
             PointerPosition = mouse.position.ReadValue();
             IsShiftPressed = keyboard.shiftKey.isPressed;
             IsCtrlPressed = keyboard.ctrlKey.isPressed;

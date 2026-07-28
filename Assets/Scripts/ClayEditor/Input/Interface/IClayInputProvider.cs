@@ -84,5 +84,15 @@ namespace ClayEditor.Input.Interface
         /// </summary>
         /// <param name="isEnabled">true で受付、false で無効</param>
         void SetInputEnabled(bool isEnabled);
+
+        /// <summary>
+        /// スライダー等のUI操作中としてポインタオーバーUIを強制する
+        /// </summary>
+        void BeginUiPointerCapture();
+
+        /// <summary>
+        /// UI操作中のポインタオーバー強制を解除する
+        /// </summary>
+        void EndUiPointerCapture();
     }
 }
