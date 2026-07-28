@@ -3248,8 +3248,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 24
-  m_fontSizeBase: 24
+  m_fontSize: 36
+  m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -25738,23 +25738,6 @@ MonoBehaviour:
   fbxVertexColorSpawner: {fileID: 2888800301}
   clayBoneVisualizer: {fileID: 1797157980}
   skeletonPartAnalyzer: {fileID: 1797157981}
---- !u!114 &2888800301
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 559890489}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9f5dcf38c7af4526992ab7e9c0283074, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Scene::Scene.ClayEditScene.ClayEditFbxVertexColorSpawner
-  fbxModel: {fileID: 0}
-  spawnParent: {fileID: 310977140}
-  clayMaterial: {fileID: 2100000, guid: 0e7962f18c7a2884da9712516f584949, type: 2}
-  defaultVertexColor: {r: 0.94, g: 0.86, b: 0.74, a: 1}
-  keepSpawnedMeshPreview: 0
 --- !u!114 &559890491
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -26069,7 +26052,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 160, y: -120}
+  m_AnchoredPosition: {x: -160, y: -120}
   m_SizeDelta: {x: 240, y: 52}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &589679403
@@ -30945,8 +30928,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 24
-  m_fontSizeBase: 24
+  m_fontSize: 36
+  m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -32357,7 +32340,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -88}
+  m_AnchoredPosition: {x: 0, y: -69}
   m_SizeDelta: {x: 200, y: 52}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &991100042
@@ -41019,7 +41002,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -160, y: -120}
+  m_AnchoredPosition: {x: 160, y: -120}
   m_SizeDelta: {x: 240, y: 52}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1688554082
@@ -62916,6 +62899,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ClayEditor::ClayEditor.Rigging.SkeletonPartAnalyzer
   legDownThreshold: -0.5
+  headUpThreshold: 0.5
   armSideThreshold: 0.5
   frontBackThreshold: 0.5
   minLegsForWalk: 2
@@ -66402,8 +66386,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 24
-  m_fontSizeBase: 24
+  m_fontSize: 36
+  m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -91024,6 +91008,27 @@ MonoBehaviour:
   - {fileID: 707563697}
   - {fileID: 1850757530}
   - {fileID: 1899578046}
+--- !u!114 &2888800301
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 559890489}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9f5dcf38c7af4526992ab7e9c0283074, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Scene::Scene.ClayEditScene.ClayEditFbxVertexColorSpawner
+  fbxModel: {fileID: 0}
+  spawnParent: {fileID: 310977140}
+  clayMaterial: {fileID: 2100000, guid: 0e7962f18c7a2884da9712516f584949, type: 2}
+  defaultVertexColor: {r: 0.94, g: 0.86, b: 0.74, a: 1}
+  colorSubdivisionDepth: 4
+  maxUvEdgeLength: 0.04
+  keepSpawnedMeshPreview: 0
+  spawnEulerAngles: {x: 0, y: 0, z: 0}
+  applyAutoOrientation: 0
 --- !u!1 &2888800400
 GameObject:
   m_ObjectHideFlags: 0
