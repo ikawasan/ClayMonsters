@@ -265,6 +265,42 @@ namespace SaveData
         }
 
         /// <summary>
+        /// 書込先の内容をStreamingAssetsへ反映する
+        /// 書込先に無い場合はStreamingAssets側も削除する
+        /// </summary>
+        /// <param name="fileName">論理ファイル名</param>
+        public static void MirrorWritableToStreaming(string fileName)
+        {
+            if (string.IsNullOrEmpty(fileName))
+            {
+                return;
+            }
+
+            Directory.CreateDirectory(StreamingRoot);
+            string writableRaw = GetWritablePath(fileName);
+            string writableCompressed = GetCompressedPath(writableRaw);
+            string streamingRaw = Path.Combine(StreamingRoot, fileName);
+            string streamingCompressed = GetCompressedPath(streamingRaw);
+
+            if (File.Exists(writableCompressed))
+            {
+                File.Copy(writableCompressed, streamingCompressed, true);
+                DeleteIfExists(streamingRaw);
+                return;
+            }
+
+            if (File.Exists(writableRaw))
+            {
+                File.Copy(writableRaw, streamingRaw, true);
+                DeleteIfExists(streamingCompressed);
+                return;
+            }
+
+            DeleteIfExists(streamingRaw);
+            DeleteIfExists(streamingCompressed);
+        }
+
+        /// <summary>
         /// スロットのサムネイルPNGを読み込む
         /// </summary>
         /// <param name="slot">対象スロット</param>

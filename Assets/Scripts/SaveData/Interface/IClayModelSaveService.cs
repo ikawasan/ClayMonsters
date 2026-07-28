@@ -70,6 +70,15 @@ namespace SaveData.Interface
         void DeleteSlot(ModelSavePool pool, int slotIndex);
 
         /// <summary>
+        /// 指定プールの2スロットのメタデータと関連ファイルを入れ替える
+        /// </summary>
+        /// <param name="pool">対象プール</param>
+        /// <param name="slotIndexA">一方のスロット番号</param>
+        /// <param name="slotIndexB">もう一方のスロット番号</param>
+        /// <returns>入れ替えに成功したか</returns>
+        bool SwapSlots(ModelSavePool pool, int slotIndexA, int slotIndexB);
+
+        /// <summary>
         /// 指定プールにロード可能なモデルセーブデータが1件以上あるか
         /// </summary>
         /// <param name="pool">対象プール</param>

@@ -563,6 +563,85 @@ namespace SaveData.Service
             DeleteSlotInternal(pool, slotIndex);
         }
 
+        /// <inheritdoc />
+        public bool SwapSlots(ModelSavePool pool, int slotIndexA, int slotIndexB)
+        {
+            if (!ModelSavePoolSettings.IsValidSlotIndex(pool, slotIndexA)
+                || !ModelSavePoolSettings.IsValidSlotIndex(pool, slotIndexB))
+            {
+                Debug.LogError(
+                    "[ClayModelSaveService] スロット番号が範囲外です"
+                    + $" a={slotIndexA} b={slotIndexB}");
+                return false;
+            }
+
+            if (slotIndexA == slotIndexB)
+            {
+                return true;
+            }
+
+            ClayModelSaveData data = LoadOrCreate(pool);
+            SwapLogicalFiles(
+                ModelSavePoolSettings.GetGlbFileName(pool, slotIndexA),
+                ModelSavePoolSettings.GetGlbFileName(pool, slotIndexB));
+            SwapLogicalFiles(
+                ModelSavePoolSettings.GetThumbnailFileName(pool, slotIndexA),
+                ModelSavePoolSettings.GetThumbnailFileName(pool, slotIndexB));
+            SwapLogicalFiles(
+                ModelSavePoolSettings.GetVoxelFileName(pool, slotIndexA),
+                ModelSavePoolSettings.GetVoxelFileName(pool, slotIndexB));
+            SwapLogicalFiles(
+                ModelSavePoolSettings.GetTrainingProgressFileName(pool, slotIndexA),
+                ModelSavePoolSettings.GetTrainingProgressFileName(pool, slotIndexB));
+
+            ModelSaveSlot slotA = data.slots[slotIndexA] ?? new ModelSaveSlot();
+            ModelSaveSlot slotB = data.slots[slotIndexB] ?? new ModelSaveSlot();
+            data.slots[slotIndexA] = slotB;
+            data.slots[slotIndexB] = slotA;
+            AssignCanonicalFileNames(pool, slotIndexA, data.slots[slotIndexA]);
+            AssignCanonicalFileNames(pool, slotIndexB, data.slots[slotIndexB]);
+            WriteToFile(pool, data);
+            return true;
+        }
+
+        private static void SwapLogicalFiles(string fileNameA, string fileNameB)
+        {
+            byte[] bytesA = ModelSaveStorage.ReadAllBytes(fileNameA);
+            byte[] bytesB = ModelSaveStorage.ReadAllBytes(fileNameB);
+            ModelSaveStorage.Delete(fileNameA);
+            ModelSaveStorage.Delete(fileNameB);
+            if (bytesB != null)
+            {
+                ModelSaveStorage.WriteAllBytes(fileNameA, bytesB);
+            }
+
+            if (bytesA != null)
+            {
+                ModelSaveStorage.WriteAllBytes(fileNameB, bytesA);
+            }
+        }
+
+        private static void AssignCanonicalFileNames(
+            ModelSavePool pool,
+            int slotIndex,
+            ModelSaveSlot slot)
+        {
+            if (slot == null)
+            {
+                return;
+            }
+
+            if (!slot.isUsed)
+            {
+                slot.glbFileName = string.Empty;
+                slot.thumbnailFileName = string.Empty;
+                return;
+            }
+
+            slot.glbFileName = ModelSavePoolSettings.GetGlbFileName(pool, slotIndex);
+            slot.thumbnailFileName = ModelSavePoolSettings.GetThumbnailFileName(pool, slotIndex);
+        }
+
         private void DeleteSlotInternal(ModelSavePool pool, int slotIndex)
         {
             if (!ModelSavePoolSettings.IsValidSlotIndex(pool, slotIndex))
