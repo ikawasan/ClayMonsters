@@ -16,6 +16,7 @@ namespace Battle
             float timeRemaining,
             bool isOpponentPerformingAttack,
             float attackCooldownRemaining,
+            float deltaTime,
             BattleSettings settings)
         {
             Self = self;
@@ -25,6 +26,7 @@ namespace Battle
             TimeRemaining = timeRemaining;
             IsOpponentPerformingAttack = isOpponentPerformingAttack;
             AttackCooldownRemaining = attackCooldownRemaining;
+            DeltaTime = deltaTime;
             Settings = settings;
         }
 
@@ -62,6 +64,11 @@ namespace Battle
         /// 攻撃クールダウン残り(秒)
         /// </summary>
         public float AttackCooldownRemaining { get; }
+
+        /// <summary>
+        /// 今フレームの経過秒
+        /// </summary>
+        public float DeltaTime { get; }
 
         /// <summary>
         /// 戦闘設定

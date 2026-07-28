@@ -30,6 +30,12 @@ namespace Battle
         [Tooltip("この間合い比率以上に離れているとき欠損部位を修復する")]
         [SerializeField] private float repairSafeDistanceRatio = 0.55f;
 
+        [Header("攻撃反応")]
+        [Tooltip("攻撃可能になってから実際に撃つまでの最短待ち(秒)")]
+        [SerializeField] private float attackCommitDelayMin = 0.45f;
+        [Tooltip("攻撃可能になってから実際に撃つまでの最長待ち(秒)")]
+        [SerializeField] private float attackCommitDelayMax = 0.95f;
+
         /// <summary>
         /// 威力の重み
         /// </summary>
@@ -89,6 +95,17 @@ namespace Battle
         /// 欠損部位を修復し始める安全間合い比率
         /// </summary>
         public float RepairSafeDistanceRatio => repairSafeDistanceRatio;
+
+        /// <summary>
+        /// 攻撃コミット待ちの最短秒数
+        /// </summary>
+        public float AttackCommitDelayMin => Mathf.Max(0f, attackCommitDelayMin);
+
+        /// <summary>
+        /// 攻撃コミット待ちの最長秒数
+        /// </summary>
+        public float AttackCommitDelayMax =>
+            Mathf.Max(AttackCommitDelayMin, attackCommitDelayMax);
 
         /// <summary>
         /// 既定プロファイル

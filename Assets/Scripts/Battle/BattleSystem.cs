@@ -697,6 +697,7 @@ namespace Battle
                 TimeRemaining,
                 IsPlayerPerformingAttack,
                 enemyAttackCooldownRemaining,
+                deltaTime,
                 settings);
 
             BattleEnemyAiDecision decision = enemyAi.Decide(context);

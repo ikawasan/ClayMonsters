@@ -9,6 +9,8 @@ namespace Battle
     public sealed class StandardBattleEnemyAi : IBattleEnemyAi
     {
         private readonly BattleEnemyAiProfile profile;
+        private float attackCommitRemaining = -1f;
+        private int pendingAttackMoveIndex = -1;
 
         /// <summary>
         /// プロファイルを指定して敵AIを生成する
@@ -23,11 +25,13 @@ namespace Battle
         {
             if (context.Self == null || context.Opponent == null)
             {
+                ClearAttackCommit();
                 return BattleEnemyAiDecision.Hold;
             }
 
             if (!context.Self.CanAct)
             {
+                ClearAttackCommit();
                 return BattleEnemyAiDecision.Hold;
             }
 
@@ -35,18 +39,28 @@ namespace Battle
 
             if (ShouldRepair(context, bestMove))
             {
+                ClearAttackCommit();
                 return BattleEnemyAiDecision.Repair;
             }
 
             int movement = ResolveMovement(context, bestMove, secondBestMove);
 
-            int attackMoveIndex = -1;
-            if (context.AttackCooldownRemaining <= 0f
+            bool canAttackNow = context.AttackCooldownRemaining <= 0f
                 && bestMove >= 0
-                && context.Self.CanUseMove(bestMove, context.Distance))
+                && context.Self.CanUseMove(bestMove, context.Distance);
+
+            int attackMoveIndex = -1;
+            if (canAttackNow)
             {
-                attackMoveIndex = MaybePickAlternateMove(bestMove, secondBestMove);
-                movement = 0;
+                attackMoveIndex = UpdateAttackCommit(context, bestMove, secondBestMove);
+                if (attackMoveIndex >= 0 || attackCommitRemaining >= 0f)
+                {
+                    movement = 0;
+                }
+            }
+            else
+            {
+                ClearAttackCommit();
             }
 
             return new BattleEnemyAiDecision(movement, attackMoveIndex);
@@ -62,6 +76,51 @@ namespace Battle
             attackSequence = 0;
             isCounter = false;
             return false;
+        }
+
+        private int UpdateAttackCommit(
+            BattleEnemyAiContext context,
+            int bestMove,
+            int secondBestMove)
+        {
+            if (attackCommitRemaining < 0f)
+            {
+                int desiredMove = MaybePickAlternateMove(bestMove, secondBestMove);
+                if (desiredMove < 0 || !context.Self.CanUseMove(desiredMove, context.Distance))
+                {
+                    ClearAttackCommit();
+                    return -1;
+                }
+
+                pendingAttackMoveIndex = desiredMove;
+                float min = profile.AttackCommitDelayMin;
+                float max = profile.AttackCommitDelayMax;
+                attackCommitRemaining = min >= max
+                    ? min
+                    : Random.Range(min, max);
+            }
+            else if (pendingAttackMoveIndex < 0
+                || !context.Self.CanUseMove(pendingAttackMoveIndex, context.Distance))
+            {
+                ClearAttackCommit();
+                return -1;
+            }
+
+            attackCommitRemaining -= context.DeltaTime;
+            if (attackCommitRemaining > 0f)
+            {
+                return -1;
+            }
+
+            int committedMove = pendingAttackMoveIndex;
+            ClearAttackCommit();
+            return committedMove;
+        }
+
+        private void ClearAttackCommit()
+        {
+            attackCommitRemaining = -1f;
+            pendingAttackMoveIndex = -1;
         }
 
         // 欠損部位があり安全なときや攻撃手段が無いときは修復を優先する
