@@ -1033,10 +1033,16 @@ namespace UI.ClayEditor.View
         {
             if (selectionInstructionText == null)
             {
-                Debug.LogError(
-                    "[LoadSlotView] selectionInstructionTextが未配線です"
-                    + " LoadSlotCanvas上部にTMP_Textを配置し接続してください",
-                    this);
+                // 育成など対戦以外では任意参照
+                return;
+            }
+
+            // 対戦の育成済み選択と敵選択のみ案内文を出す
+            bool showInstruction = savePool == ModelSavePool.TrainedPlayer
+                || savePool == ModelSavePool.Enemy;
+            if (!showInstruction)
+            {
+                selectionInstructionText.enabled = false;
                 return;
             }
 

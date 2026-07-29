@@ -5210,6 +5210,7 @@ GameObject:
   - component: {fileID: 475060182}
   - component: {fileID: 475060181}
   - component: {fileID: 475060183}
+  - component: {fileID: 475060184}
   m_Layer: 0
   m_Name: TrainingDisplay
   m_TagString: Untagged
@@ -5284,6 +5285,37 @@ MonoBehaviour:
   approachDistanceFromCamera: 10
   approachSpeed: 5
   approachHoldSeconds: 8
+  chaseSpeed: 1.6
+--- !u!114 &475060184
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 475060180}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b7c4e91a2f8d4e6a9c1d3e5f708192a3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Scene::Scene.TrainingScene.View.TrainingMotivationBallPlayController
+  roamController: {fileID: 475060183}
+  throwCamera: {fileID: 0}
+  ballRoot: {fileID: 0}
+  holdDistance: 1.35
+  holdHeightOffset: -0.12
+  ballScale: 50
+  ballRadius: 25
+  minThrowSpeed: 4.5
+  maxThrowSpeed: 11
+  maxChargeSeconds: 1.1
+  upwardThrowBias: 0.35
+  gravity: 18
+  bounceRestitution: 0.68
+  wallRestitution: 0.82
+  groundFriction: 0.988
+  airDrag: 0.02
+  minBounceSpeed: 0.35
+  playDurationSeconds: 8
 --- !u!21 &486168013
 Material:
   serializedVersion: 8
@@ -9006,6 +9038,7 @@ MonoBehaviour:
   backgroundView: {fileID: 609684277}
   locationCameraView: {fileID: 2131812465}
   monsterRoamController: {fileID: 475060183}
+  motivationBallPlay: {fileID: 475060184}
   inheritancePresentationView: {fileID: 8800000000000000201}
 --- !u!114 &859135443
 MonoBehaviour:
@@ -65079,8 +65112,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 32
-  m_fontSizeBase: 32
+  m_fontSize: 26
+  m_fontSizeBase: 26
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18

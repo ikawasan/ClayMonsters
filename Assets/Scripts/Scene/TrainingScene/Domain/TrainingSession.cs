@@ -396,7 +396,17 @@ namespace Scene.TrainingScene.Domain
         /// <param name="itemId">商品ID</param>
         public void AddInventoryItem(string itemId)
         {
-            if (string.IsNullOrEmpty(itemId))
+            AddInventoryItem(itemId, 1);
+        }
+
+        /// <summary>
+        /// アイテムを指定個数追加する
+        /// </summary>
+        /// <param name="itemId">商品ID</param>
+        /// <param name="count">追加個数</param>
+        public void AddInventoryItem(string itemId, int count)
+        {
+            if (string.IsNullOrEmpty(itemId) || count <= 0)
             {
                 return;
             }
@@ -409,14 +419,14 @@ namespace Scene.TrainingScene.Domain
                     continue;
                 }
 
-                entry.count = Mathf.Max(1, entry.count) + 1;
+                entry.count = Mathf.Max(0, entry.count) + count;
                 return;
             }
 
             inventory.Add(new TrainingInventoryEntry
             {
                 itemId = itemId,
-                count = 1
+                count = count
             });
         }
 

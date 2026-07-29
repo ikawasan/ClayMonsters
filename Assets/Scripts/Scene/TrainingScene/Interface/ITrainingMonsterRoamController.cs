@@ -1,4 +1,5 @@
 using System.Threading;
+using UnityEngine;
 
 namespace Scene.TrainingScene.Interface
 {
@@ -18,5 +19,39 @@ namespace Scene.TrainingScene.Interface
         /// 徘徊を止め表示位置へ戻してIdleにする
         /// </summary>
         void StopRoam();
+
+        /// <summary>
+        /// 徘徊XZ範囲の中心と半サイズを返す
+        /// </summary>
+        /// <param name="center">範囲中心</param>
+        /// <param name="halfExtents">XZ半サイズ</param>
+        /// <returns>取得できたか</returns>
+        bool TryGetRoamPlanarBounds(out Vector3 center, out Vector2 halfExtents);
+
+        /// <summary>
+        /// ワールド座標を徘徊範囲内へクランプする
+        /// </summary>
+        /// <param name="worldPoint">対象座標</param>
+        /// <param name="keepY">維持するY</param>
+        /// <returns>クランプ後の座標</returns>
+        Vector3 ClampToRoamArea(Vector3 worldPoint, float keepY);
+
+        /// <summary>
+        /// 地面合わせの基準Yを返す
+        /// </summary>
+        /// <param name="nearPosition">近傍座標</param>
+        /// <returns>地面Y</returns>
+        float ResolveGroundY(Vector3 nearPosition);
+
+        /// <summary>
+        /// 指定Transformを追いかける
+        /// </summary>
+        /// <param name="target">追跡対象</param>
+        void StartChase(Transform target);
+
+        /// <summary>
+        /// 追いかけを終了して通常徘徊へ戻す
+        /// </summary>
+        void StopChase();
     }
 }

@@ -37,6 +37,7 @@ namespace Scene.TrainingScene
         [SerializeField] private TrainingBackgroundView backgroundView;
         [SerializeField] private TrainingLocationCameraView locationCameraView;
         [SerializeField] private TrainingMonsterRoamController monsterRoamController;
+        [SerializeField] private TrainingMotivationBallPlayController motivationBallPlay;
         [SerializeField] private TrainingInheritancePresentationView inheritancePresentationView;
 
         private IClayModelSaveService saveService;
@@ -131,6 +132,76 @@ namespace Scene.TrainingScene
             }
 
             SaveTrainingProgress(activeSession);
+        }
+
+        /// <summary>
+        /// PlayMode中の進行中Runnerを探す
+        /// </summary>
+        public static TrainingFlowRunner FindActiveRunner()
+        {
+            if (activeRunner != null && activeRunner.isRunning && activeRunner.activeSession != null)
+            {
+                return activeRunner;
+            }
+
+            TrainingFlowRunner[] runners =
+                UnityEngine.Object.FindObjectsByType<TrainingFlowRunner>(
+                    FindObjectsInactive.Exclude,
+                    FindObjectsSortMode.None);
+            for (int i = 0; i < runners.Length; i++)
+            {
+                TrainingFlowRunner runner = runners[i];
+                if (runner != null && runner.isRunning && runner.activeSession != null)
+                {
+                    return runner;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// 進行中セッションへデバッグ用に所持アイテムを追加する
+        /// </summary>
+        /// <param name="itemId">商品ID</param>
+        /// <param name="count">追加個数</param>
+        /// <param name="message">結果メッセージ</param>
+        /// <returns>追加できたか</returns>
+        public bool TryDebugAddInventoryItem(string itemId, int count, out string message)
+        {
+            if (!isRunning || activeSession == null || activeSession.IsCompleted)
+            {
+                message = "進行中の育成セッションがありません";
+                return false;
+            }
+
+            if (!TrainingShopCatalog.TryGetById(itemId, out TrainingShopItem item))
+            {
+                message = $"未知のアイテムIDです: {itemId}";
+                return false;
+            }
+
+            int addCount = Mathf.Max(1, count);
+            activeSession.AddInventoryItem(item.Id, addCount);
+            CheckpointSave(activeSession);
+            hudView?.BindSession(activeSession);
+            message =
+                $"{item.DisplayName}を{addCount}個追加しました"
+                + $" slot={activeSession.PlayerSlotIndex}";
+            return true;
+        }
+
+        /// <summary>
+        /// デバッグ表示用の所持一覧を返す
+        /// </summary>
+        public IReadOnlyList<TrainingInventoryEntryView> DebugGetInventoryViews()
+        {
+            if (activeSession == null || activeSession.IsCompleted)
+            {
+                return System.Array.Empty<TrainingInventoryEntryView>();
+            }
+
+            return activeSession.BuildInventoryViews();
         }
 
         /// <summary>
@@ -1469,8 +1540,65 @@ namespace Scene.TrainingScene
                     TrainingShopResolver.TryUseItem(session, pageEntries[choice].ItemId);
                 CheckpointSave(session);
                 hudView.BindSession(session);
+
+                if (useResult.Succeeded
+                    && useResult.Item.ItemType == TrainingShopItemType.MotivationBoost)
+                {
+                    await PlayMotivationBallAsync(useResult.Message, cancellationToken);
+                    continue;
+                }
+
                 hudView.SetLogMessage(useResult.Message);
                 await hudView.WaitContinueAsync(cancellationToken);
+            }
+        }
+
+        private async UniTask PlayMotivationBallAsync(
+            string resultMessage,
+            CancellationToken cancellationToken)
+        {
+            EnsureMotivationBallPlay();
+            ApplyRoamDestinationPresentation();
+            StartMonsterRoam(cancellationToken);
+            hudView.HideLocationChoices();
+            hudView.SetLogMessage("ボールを長押しして離すと投げる");
+            await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
+
+            if (motivationBallPlay != null)
+            {
+                await motivationBallPlay.PlayAsync(cancellationToken);
+            }
+            else
+            {
+                Debug.LogError(
+                    "[TrainingFlowRunner] motivationBallPlayが未配線です",
+                    this);
+            }
+
+            hudView.BindSession(activeSession);
+            hudView.SetLogMessage(resultMessage);
+            await hudView.WaitContinueAsync(cancellationToken);
+        }
+
+        private void EnsureMotivationBallPlay()
+        {
+            if (motivationBallPlay != null)
+            {
+                return;
+            }
+
+            if (trainingDisplay != null)
+            {
+                motivationBallPlay =
+                    trainingDisplay.GetComponent<TrainingMotivationBallPlayController>();
+            }
+
+            if (motivationBallPlay == null)
+            {
+                Debug.LogError(
+                    "[TrainingFlowRunner] TrainingMotivationBallPlayControllerが未配線です"
+                    + " TrainingDisplayへ追加して接続してください",
+                    this);
             }
         }
 

@@ -106,7 +106,7 @@ namespace Scene.TrainingScene.Domain
                 TrainingSettings.ShopTrainBoostStrongWeeks),
             new TrainingShopItem(
                 "motivation_boost",
-                "やる気まんじゅう",
+                "サッカーボール",
                 $"やる気が{TrainingSettings.ShopMotivationBoostGain}段階上がる",
                 TrainingSettings.ShopMotivationBoostPrice,
                 TrainingShopItemType.MotivationBoost,

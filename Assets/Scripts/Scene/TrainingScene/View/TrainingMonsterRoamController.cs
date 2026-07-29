@@ -49,7 +49,7 @@ namespace Scene.TrainingScene.View
         [Header("寄ってくる")]
         [Tooltip("カメラからこの距離まで近寄る")]
         [SerializeField] private float approachDistanceFromCamera = 2.8f;
-        [Tooltip("カメラへ近寄る移動速度")]
+        [Tooltip("クリック時の寄る速度とボール追跡で共用する")]
         [SerializeField] private float approachSpeed = 1.35f;
         [Tooltip("近寄ったあとその場に留まる秒数")]
         [SerializeField] private float approachHoldSeconds = 5f;
@@ -58,6 +58,8 @@ namespace Scene.TrainingScene.View
         private int roamSessionId;
         private bool isRoaming;
         private bool isReacting;
+        private bool isChasing;
+        private Transform chaseTarget;
         private bool hasRoamSpawnPlacement;
         private float noticeAnimHeightBoost;
         private Vector3 noticeBaseScale = Vector3.one;
@@ -91,7 +93,7 @@ namespace Scene.TrainingScene.View
 
         private void Update()
         {
-            if (!isRoaming || isReacting || trainingDisplay == null)
+            if (!isRoaming || isReacting || isChasing || trainingDisplay == null)
             {
                 return;
             }
@@ -157,6 +159,74 @@ namespace Scene.TrainingScene.View
             StopRoamInternal(returnToAnchor: true);
         }
 
+        /// <inheritdoc/>
+        public bool TryGetRoamPlanarBounds(out Vector3 center, out Vector2 halfExtents)
+        {
+            if (roamBounds != null && roamBounds.enabled)
+            {
+                Bounds bounds = roamBounds.bounds;
+                center = new Vector3(bounds.center.x, bounds.center.y, bounds.center.z);
+                halfExtents = new Vector2(
+                    Mathf.Max(0.1f, bounds.extents.x),
+                    Mathf.Max(0.1f, bounds.extents.z));
+                return true;
+            }
+
+            Transform anchor = trainingDisplay != null ? trainingDisplay.DisplayAnchor : null;
+            if (anchor == null)
+            {
+                center = Vector3.zero;
+                halfExtents = Vector2.zero;
+                return false;
+            }
+
+            center = anchor.position;
+            halfExtents = new Vector2(
+                Mathf.Max(0.1f, roamHalfExtents.x),
+                Mathf.Max(0.1f, roamHalfExtents.y));
+            return true;
+        }
+
+        /// <inheritdoc/>
+        public Vector3 ClampToRoamArea(Vector3 worldPoint, float keepY)
+        {
+            return ClampToRoamAreaInternal(worldPoint, keepY);
+        }
+
+        /// <inheritdoc/>
+        public float ResolveGroundY(Vector3 nearPosition)
+        {
+            GameObject model = trainingDisplay != null ? trainingDisplay.LoadedModel : null;
+            if (model != null)
+            {
+                return model.transform.position.y;
+            }
+
+            if (TryGetRoamPlanarBounds(out Vector3 center, out _))
+            {
+                return center.y;
+            }
+
+            return nearPosition.y;
+        }
+
+        /// <inheritdoc/>
+        public void StartChase(Transform target)
+        {
+            chaseTarget = target;
+            isChasing = target != null;
+            isReacting = false;
+            ResetNoticeVisual();
+            SetNoticeVisible(false);
+        }
+
+        /// <inheritdoc/>
+        public void StopChase()
+        {
+            chaseTarget = null;
+            isChasing = false;
+        }
+
         private void OnDisable()
         {
             StopRoamInternal(returnToAnchor: false);
@@ -172,6 +242,8 @@ namespace Scene.TrainingScene.View
             roamSessionId++;
             isRoaming = false;
             isReacting = false;
+            isChasing = false;
+            chaseTarget = null;
             ResetNoticeVisual();
             SetNoticeVisible(false);
 
@@ -244,6 +316,12 @@ namespace Scene.TrainingScene.View
                         break;
                     }
 
+                    if (isChasing && chaseTarget != null)
+                    {
+                        await ChaseTargetAsync(sessionId, model.transform, motion, cancellationToken);
+                        continue;
+                    }
+
                     await IdleAsync(sessionId, motion, cancellationToken);
                     if (!IsActiveRoamSession(sessionId)
                         || cancellationToken.IsCancellationRequested
@@ -258,6 +336,12 @@ namespace Scene.TrainingScene.View
                         || model == null)
                     {
                         break;
+                    }
+
+                    if (isChasing && chaseTarget != null)
+                    {
+                        await ChaseTargetAsync(sessionId, model.transform, motion, cancellationToken);
+                        continue;
                     }
 
                     Vector3 destination = PickDestination(model.transform.position);
@@ -330,6 +414,70 @@ namespace Scene.TrainingScene.View
                 ResetNoticeVisual();
                 SetNoticeVisible(false);
                 isReacting = false;
+            }
+        }
+
+        private async UniTask ChaseTargetAsync(
+            int sessionId,
+            Transform modelTransform,
+            ProceduralMotionCharacter motion,
+            CancellationToken cancellationToken)
+        {
+            MotionType walkMotion = ClayEditMotionPreview.ResolveRunMotion(motion);
+            motion.SetRootTranslationEnabled(false);
+            motion.Play(walkMotion);
+
+            float speed = Mathf.Max(0.1f, approachSpeed);
+            float arrive = Mathf.Max(0.02f, arriveDistance);
+            bool wasMoving = true;
+            while (IsActiveRoamSession(sessionId)
+                && isChasing
+                && chaseTarget != null
+                && !cancellationToken.IsCancellationRequested)
+            {
+                Vector3 current = modelTransform.position;
+                Vector3 target = chaseTarget.position;
+                target.y = current.y;
+                target = ClampToRoamAreaInternal(target, current.y);
+                Vector3 toTarget = target - current;
+                toTarget.y = 0f;
+                float planarDistance = toTarget.magnitude;
+                if (planarDistance > arrive)
+                {
+                    if (!wasMoving)
+                    {
+                        motion.Play(walkMotion);
+                        wasMoving = true;
+                    }
+
+                    Vector3 step = toTarget.normalized * (speed * Time.deltaTime);
+                    if (step.magnitude > planarDistance)
+                    {
+                        step = toTarget;
+                    }
+
+                    Vector3 next = current + step;
+                    next.y = current.y;
+                    FaceWalkDirection(modelTransform, toTarget);
+                    modelTransform.position = next;
+                    trainingDisplay.SnapDisplayedModelToGround();
+                    motion.OnLayoutPositionChanged();
+                }
+                else if (wasMoving)
+                {
+                    motion.Play(MotionType.Idle);
+                    motion.OnLayoutPositionChanged();
+                    wasMoving = false;
+                }
+
+                await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
+            }
+
+            if (IsActiveRoamSession(sessionId))
+            {
+                motion.SetRootTranslationEnabled(false);
+                motion.Play(MotionType.Idle);
+                motion.OnLayoutPositionChanged();
             }
         }
 
@@ -407,13 +555,13 @@ namespace Scene.TrainingScene.View
 
             destination = cameraPlanar - toCamera.normalized * keepDistance;
             destination.y = currentPosition.y;
-            destination = ClampToRoamArea(destination, currentPosition.y);
+            destination = ClampToRoamAreaInternal(destination, currentPosition.y);
             Vector3 remaining = destination - currentPosition;
             remaining.y = 0f;
             return remaining.sqrMagnitude > arriveDistance * arriveDistance;
         }
 
-        private Vector3 ClampToRoamArea(Vector3 worldPoint, float keepY)
+        private Vector3 ClampToRoamAreaInternal(Vector3 worldPoint, float keepY)
         {
             if (roamBounds != null && roamBounds.enabled)
             {
@@ -604,6 +752,11 @@ namespace Scene.TrainingScene.View
                     return;
                 }
 
+                if (isChasing)
+                {
+                    return;
+                }
+
                 elapsed += Time.deltaTime;
                 await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
             }
@@ -629,6 +782,11 @@ namespace Scene.TrainingScene.View
                 if (isReacting)
                 {
                     await WaitWhileReactingAsync(sessionId, cancellationToken);
+                    return;
+                }
+
+                if (isChasing)
+                {
                     return;
                 }
 
