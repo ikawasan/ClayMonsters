@@ -345,7 +345,15 @@ namespace Scene.TrainingScene
                 return false;
             }
 
-            ApplyDefaultDestinationPresentation();
+            if (IsTrainingStartProgress(progress))
+            {
+                ApplyDefaultDestinationPresentation();
+            }
+            else
+            {
+                ApplyRoamDestinationPresentation();
+            }
+
             hudView.ShowOverlayHost();
             hudView.ShowResumeChoices(TrainingSlotProgressMapper.BuildResumePresentation(slot, progress));
 
@@ -396,6 +404,12 @@ namespace Scene.TrainingScene
             }
 
             TrainingSession session = TrainingSlotProgressMapper.FromSaveData(slotIndex, progress);
+            if (!IsTrainingStartProgress(progress))
+            {
+                ApplyRoamDestinationPresentation();
+                StartMonsterRoam(cancellationToken);
+            }
+
             await RunActiveTrainingAsync(session, slot.modelName, cancellationToken);
             return true;
         }
@@ -1471,8 +1485,9 @@ namespace Scene.TrainingScene
                 {
                     hudView.HideLocationChoices();
 
-                    // 徘徊停止による位置戻しを見せないため暗転中に行う
-                    ApplyDefaultDestinationPresentation();
+                    // 徘徊位置の切り替えを見せないため暗転中に行う
+                    ApplyRoamDestinationPresentation();
+                    StartMonsterRoam(cancellationToken);
                 });
             session.ApplyAction(result);
             CheckpointSave(session);
@@ -1631,7 +1646,8 @@ namespace Scene.TrainingScene
             }
 
             hudView.BindSession(session);
-            ApplyDefaultDestinationPresentation();
+            ApplyRoamDestinationPresentation();
+            StartMonsterRoam(cancellationToken);
 
             if (!battleResult.Played)
             {
@@ -1745,7 +1761,7 @@ namespace Scene.TrainingScene
 
             if (!battleResult.Played)
             {
-                ApplyDefaultDestinationPresentation();
+                ApplyPostBattleDestinationPresentation(session, cancellationToken);
                 hudView.SetLogMessage("放課後の戦闘を開始できませんでした");
                 session.CompletePeriod();
                 await FadeInAfterBattleResultReadyAsync(cancellationToken);
@@ -1753,7 +1769,7 @@ namespace Scene.TrainingScene
                 return;
             }
 
-            ApplyDefaultDestinationPresentation();
+            ApplyPostBattleDestinationPresentation(session, cancellationToken);
 
             if (battleResult.PlayerWon)
             {
@@ -2029,6 +2045,39 @@ namespace Scene.TrainingScene
             StopMonsterRoam();
             backgroundView?.ShowDefaultBackground();
             locationCameraView?.ApplyDefaultView();
+        }
+
+        /// <summary>
+        /// 放課後戦闘復帰後の背景を適用する
+        /// 最終日のみDefaultそれ以外はRoam
+        /// </summary>
+        /// <param name="session">育成セッション</param>
+        /// <param name="cancellationToken">キャンセルトークン</param>
+        private void ApplyPostBattleDestinationPresentation(
+            TrainingSession session,
+            CancellationToken cancellationToken)
+        {
+            if (IsLastTrainingDay(session))
+            {
+                ApplyDefaultDestinationPresentation();
+                return;
+            }
+
+            ApplyRoamDestinationPresentation();
+            StartMonsterRoam(cancellationToken);
+        }
+
+        private static bool IsLastTrainingDay(TrainingSession session)
+        {
+            return session != null
+                && (int)session.CurrentDay >= TrainingSettings.TotalDays;
+        }
+
+        private static bool IsTrainingStartProgress(TrainingSlotProgress progress)
+        {
+            return progress != null
+                && progress.day <= (int)TrainingDayOfWeek.Monday
+                && progress.turnIndexInDay <= 0;
         }
 
         /// <summary>

@@ -11,7 +11,6 @@ using LighthouseExtends.UIComponent.Button;
 using SaveData;
 using SaveData.Interface;
 using Scene.BattleNpcScene.Interface;
-using Scene.BattleNpcScene.View;
 using Scene.Core;
 using Scene.Core.Interface;
 using System.Threading;
@@ -58,7 +57,7 @@ namespace Scene.BattleNpcScene
         private IBattleCanvasTransition presentationTransition;
         private IBgmService bgmService;
         private ISeService seService;
-        private IBattleNpcView battleNpcView;
+        private IBattleDualVictoryReturnView victoryDualReturnView;
         private IClayMonsterSceneManager sceneManager;
         private IMonsterSelectionSession selectionSession;
 
@@ -92,8 +91,11 @@ namespace Scene.BattleNpcScene
         /// <summary>レベルデザイン</summary>
         public BattleLevelDesignSettings LevelDesignSettings => levelDesignSettings;
 
-        /// <summary>勝利後戻るUI</summary>
-        public IBattleNpcView VictoryReturnView => battleNpcView;
+        /// <summary>勝利後の単一戻りUI(Dual優先のため通常は未使用)</summary>
+        public IBattleVictoryReturnView VictoryReturnView => null;
+
+        /// <summary>勝利後のタイトル戻りと再戦UI</summary>
+        public IBattleDualVictoryReturnView VictoryDualReturnView => victoryDualReturnView;
 
         /// <summary>ヒット演出</summary>
         public BattleHitEffectView HitEffect => GetComponent<BattleHitEffectView>();
@@ -109,7 +111,7 @@ namespace Scene.BattleNpcScene
             IBattleCanvasTransition presentationTransition,
             IBgmService bgmService,
             ISeService seService,
-            IBattleNpcView battleNpcView,
+            IBattleDualVictoryReturnView victoryDualReturnView,
             IClayMonsterSceneManager sceneManager,
             IMonsterSelectionSession selectionSession)
         {
@@ -119,7 +121,7 @@ namespace Scene.BattleNpcScene
             this.presentationTransition = presentationTransition;
             this.bgmService = bgmService;
             this.seService = seService;
-            this.battleNpcView = battleNpcView;
+            this.victoryDualReturnView = victoryDualReturnView;
             this.sceneManager = sceneManager;
             this.selectionSession = selectionSession;
 
@@ -187,8 +189,18 @@ namespace Scene.BattleNpcScene
                     bgmService,
                     seService);
 
-                await flow.RunAsync(cancellationToken);
-                await ReturnToTitleAsync(cancellationToken);
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    BattleVictoryReturnChoice choice = await flow.RunAsync(cancellationToken);
+                    if (choice == BattleVictoryReturnChoice.Rematch)
+                    {
+                        await PrepareRematchAsync(cancellationToken);
+                        continue;
+                    }
+
+                    await ReturnToTitleAsync(cancellationToken);
+                    break;
+                }
             }
             catch (System.OperationCanceledException)
             {
@@ -222,9 +234,29 @@ namespace Scene.BattleNpcScene
             ClearSpawnedModels(playerSpawn);
             ClearSpawnedModels(enemySpawn);
             CanvasVisibilityUtility.SetCanvasEnabled(battleUiCanvas, false);
+            VictoryDualReturnView?.SetDualButtonsVisible(false);
             ResolveTipsView()?.HideAll();
             staging?.PrepareSelectionEntry();
             presentationTransition?.ReleasePresentationInput();
+        }
+
+        private async UniTask PrepareRematchAsync(CancellationToken cancellationToken)
+        {
+            DestroyTrackedParticipants();
+            ClearSpawnedModels(playerSpawn);
+            ClearSpawnedModels(enemySpawn);
+            CanvasVisibilityUtility.SetCanvasEnabled(battleUiCanvas, false);
+            VictoryDualReturnView?.SetDualButtonsVisible(false);
+            ResolveTipsView()?.HideAll();
+            staging?.PrepareSelectionEntry();
+
+            // 再戦は自分のキャラ選択からやり直す
+            selectionSession?.PrepareEntry();
+
+            if (presentationTransition != null)
+            {
+                await presentationTransition.FadeOutAsync(cancellationToken);
+            }
         }
 
         private void OnNpcBattleSettled(
@@ -284,6 +316,14 @@ namespace Scene.BattleNpcScene
         {
             if (sceneManager == null || sceneManager.IsTransition)
             {
+                return;
+            }
+
+            // 敵選択中の戻るはタイトルではなくプレイヤー選択へ戻す
+            if (selectionSession != null
+                && selectionSession.SavePool == ModelSavePool.Enemy)
+            {
+                selectionSession.CancelWaitingSelection();
                 return;
             }
 

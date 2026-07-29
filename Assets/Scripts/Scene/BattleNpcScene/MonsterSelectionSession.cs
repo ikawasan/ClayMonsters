@@ -21,6 +21,7 @@ namespace Scene.BattleNpcScene
         private readonly IBattleCanvasTransition presentationTransition;
         private readonly ISceneFade sceneFade;
         private bool isRevealed;
+        private bool selectionCancelled;
         private int selectedSlotIndex = -1;
         private EnemyStrengthTier selectedStrengthTier = EnemyStrengthTier.Normal;
 
@@ -48,9 +49,13 @@ namespace Scene.BattleNpcScene
         public EnemyStrengthTier SelectedStrengthTier => selectedStrengthTier;
 
         /// <inheritdoc />
+        public bool WasSelectionCancelled => selectionCancelled;
+
+        /// <inheritdoc />
         public void PrepareEntry()
         {
             isRevealed = false;
+            selectionCancelled = false;
             selectedSlotIndex = -1;
             selectedStrengthTier = EnemyStrengthTier.Normal;
             loadSlotView?.HideForLeave();
@@ -64,6 +69,7 @@ namespace Scene.BattleNpcScene
         {
             selectedSlotIndex = -1;
             selectedStrengthTier = EnemyStrengthTier.Normal;
+            selectionCancelled = false;
             // 次のWaitForModelAsyncでFadeIn付き再表示が必要なので解除する
             isRevealed = false;
             loadSlotView?.ClearLoadedModelForNewSelection();
@@ -79,6 +85,7 @@ namespace Scene.BattleNpcScene
                 return null;
             }
 
+            selectionCancelled = false;
             await EnsureRevealedAsync(cancellationToken);
             loadSlotView.PrepareForSelectionWait();
 
@@ -86,8 +93,22 @@ namespace Scene.BattleNpcScene
             using (loadSlotView.OnModelLoaded.Subscribe(model => selected = model))
             {
                 await UniTask.WaitUntil(
-                    () => selected != null || loadSlotView.LoadedModel != null,
+                    () => selectionCancelled
+                        || selected != null
+                        || loadSlotView.LoadedModel != null,
                     cancellationToken: cancellationToken);
+            }
+
+            if (selectionCancelled)
+            {
+                if (presentationTransition != null)
+                {
+                    await presentationTransition.FadeOutAsync(cancellationToken);
+                }
+
+                loadSlotView.HideSelectionUi();
+                presentationTransition?.ReleasePresentationInput();
+                return null;
             }
 
             selectedSlotIndex = loadSlotView.SelectedSlotIndex;
@@ -96,6 +117,12 @@ namespace Scene.BattleNpcScene
             loadSlotView.HideSelectionUi();
             presentationTransition?.ReleasePresentationInput();
             return model;
+        }
+
+        /// <inheritdoc />
+        public void CancelWaitingSelection()
+        {
+            selectionCancelled = true;
         }
 
         /// <inheritdoc />
@@ -115,6 +142,7 @@ namespace Scene.BattleNpcScene
             isRevealed = false;
             selectedSlotIndex = -1;
             selectedStrengthTier = EnemyStrengthTier.Normal;
+            selectionCancelled = false;
             loadSlotView?.HideForLeave();
             Hide();
         }

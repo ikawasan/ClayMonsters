@@ -14,8 +14,8 @@ namespace UI.ClayEditor.View
     {
         private static readonly Color SelectedColor = new Color(1f, 0.86f, 0.42f, 1f);
         private static readonly Color NormalColor = new Color(1f, 1f, 1f, 1f);
-        private static readonly Color LockedButtonColor = new Color(0.5f, 0.5f, 0.5f, 1f);
-        private static readonly Color LockedDimmerColor = new Color(0.35f, 0.35f, 0.35f, 0.55f);
+        private static readonly Color LockedButtonColor = new Color(0.45f, 0.45f, 0.45f, 1f);
+        private static readonly Color LockedDimmerColor = new Color(0.45f, 0.45f, 0.45f, 1f);
 
         [Header("表示制御")]
         [SerializeField] private Canvas rootCanvas;

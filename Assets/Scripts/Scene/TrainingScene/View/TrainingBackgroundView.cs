@@ -8,7 +8,7 @@ namespace Scene.TrainingScene.View
 {
     /// <summary>
     /// 育成シーンの背景オブジェクトを切り替える
-    /// 初期と戦闘後はDefault訓練後は徘徊用背景を使う
+    /// 開始時と最終放課後のみDefaultそれ以外の訓練後はRoamを使う
     /// </summary>
     public sealed class TrainingBackgroundView : MonoBehaviour, ITrainingBackgroundView
     {

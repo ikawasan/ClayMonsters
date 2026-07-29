@@ -5,8 +5,6 @@ using Camera.View;
 using ClayEditor.Rigging;
 using SaveData;
 using SaveData.Interface;
-using Scene.BattleNpcScene.Interface;
-using Scene.BattleNpcScene.View;
 using UI.Battle.View;
 using UnityEngine;
 
@@ -45,6 +43,7 @@ namespace Scene.BattleNpcScene
                 FinishPresentation = runner.Staging != null ? runner.Staging.FinishPresentation : null,
                 PartBreakPresentation = runner.Staging != null ? runner.Staging.PartBreakPresentation : null,
                 VictoryReturnView = runner.VictoryReturnView,
+                VictoryDualReturnView = runner.VictoryDualReturnView,
                 TipsView = runner.TipsView,
                 LevelDesignSettings = runner.LevelDesignSettings,
                 AutoStartMatchup = false,

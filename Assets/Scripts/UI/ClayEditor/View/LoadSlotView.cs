@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
@@ -25,6 +26,10 @@ namespace UI.ClayEditor.View
     {
         private const int SelectionCanvasSortingOrder = 500;
         private const int ConfirmCanvasSortingOrder = SelectionCanvasSortingOrder + 1;
+        private const string PlayerSelectionInstruction =
+            "あなたのモンスターを選択してください";
+        private const string EnemySelectionInstruction =
+            "敵のモンスターを選択してください";
 
         [Inject] private readonly IClayModelSaveService saveService;
         [Inject] private readonly IClayModelImporter importer;
@@ -37,6 +42,9 @@ namespace UI.ClayEditor.View
 
         [Tooltip("育成済み用5×10グリッド一覧")]
         [SerializeField] private TrainedSaveSlotGridView trainedSlotGrid;
+
+        [Tooltip("選択画面上部の案内テキスト")]
+        [SerializeField] private TMP_Text selectionInstructionText;
 
         [Tooltip("全画面入力ブロッカー背景。未設定ならブロッカー設定をスキップする")]
         [SerializeField] private Image inputBlocker;
@@ -177,6 +185,7 @@ namespace UI.ClayEditor.View
                 emptySlotLabel = emptyLabel;
             }
 
+            ApplySelectionInstructionText();
             if (isInitialized)
             {
                 RefreshSlots();
@@ -244,6 +253,7 @@ namespace UI.ClayEditor.View
         public void EnsureSelectionReady()
         {
             RestoreSelectionInteractable();
+            ApplySelectionInstructionText();
 
             if (UsesTrainedSlotGrid())
             {
@@ -391,6 +401,7 @@ namespace UI.ClayEditor.View
         {
             ClearLoadedModelForNewSelection();
             SetConfirmPanelActive(false);
+            ApplySelectionInstructionText();
             SetSelectionContentVisible(true);
             PrepareLayout();
             EnsureSelectionInputEnabled();
@@ -1016,6 +1027,29 @@ namespace UI.ClayEditor.View
             {
                 selectionCanvas = GetComponent<Canvas>();
             }
+        }
+
+        private void ApplySelectionInstructionText()
+        {
+            if (selectionInstructionText == null)
+            {
+                Debug.LogError(
+                    "[LoadSlotView] selectionInstructionTextが未配線です"
+                    + " LoadSlotCanvas上部にTMP_Textを配置し接続してください",
+                    this);
+                return;
+            }
+
+            selectionInstructionText.text = savePool == ModelSavePool.Enemy
+                ? EnemySelectionInstruction
+                : PlayerSelectionInstruction;
+            TitleClayUiVisualUtility.EnsureTextFontOnly(selectionInstructionText);
+            if (!selectionInstructionText.gameObject.activeSelf)
+            {
+                selectionInstructionText.gameObject.SetActive(true);
+            }
+
+            selectionInstructionText.enabled = true;
         }
 
         private void SetConfirmPanelActive(bool visible)

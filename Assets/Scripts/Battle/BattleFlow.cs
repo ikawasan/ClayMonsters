@@ -296,8 +296,19 @@ namespace Battle
                                 cancellationToken);
                             if (!enemy.IsValid)
                             {
-                                Debug.LogError("[BattleFlow] “GNPC‘I‘ð‚ªŠ®—¹‚µ‚Ü‚¹‚ñ‚Å‚µ‚½");
                                 DestroyParticipantModels(playerModel, null);
+                                spawnedPlayerModel = null;
+                                context.RegisterSpawnedParticipants?.Invoke(null, null);
+
+                                if (selectionSession.WasSelectionCancelled)
+                                {
+                                    selectionSession.ConfigureSavePool(ModelSavePool.TrainedPlayer);
+                                    await selectionSession.RestoreAfterParticipantFailureAsync(
+                                        cancellationToken);
+                                    continue;
+                                }
+
+                                Debug.LogError("[BattleFlow] “GNPC‘I‘ð‚ªŠ®—¹‚µ‚Ü‚¹‚ñ‚Å‚µ‚½");
                                 return BattleVictoryReturnChoice.Title;
                             }
 
@@ -348,6 +359,16 @@ namespace Battle
                                 }
 
                                 DestroyParticipantModels(playerModel, null);
+                                spawnedPlayerModel = null;
+                                context.RegisterSpawnedParticipants?.Invoke(null, null);
+                                if (selectionSession.WasSelectionCancelled)
+                                {
+                                    selectionSession.ConfigureSavePool(ModelSavePool.TrainedPlayer);
+                                    await selectionSession.RestoreAfterParticipantFailureAsync(
+                                        cancellationToken);
+                                    continue;
+                                }
+
                                 return BattleVictoryReturnChoice.Title;
                             }
 

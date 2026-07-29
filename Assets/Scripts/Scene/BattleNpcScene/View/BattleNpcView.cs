@@ -1,3 +1,4 @@
+using Battle;
 using Battle.Interface;
 using Cysharp.Threading.Tasks;
 using Extensions;
@@ -11,13 +12,19 @@ using UnityEngine.Events;
 namespace Scene.BattleNpcScene.View
 {
     /// <summary>
-    /// BattleNpcシーンの戻るボタンUI
-    /// 位置と文言はBattleVictoryReturnSingleプレハブ側で設定する
+    /// BattleNpcシーンの勝利後戻り/再戦UI
+    /// 位置と文言はBattleVictoryReturnDualプレハブ側で設定する
     /// </summary>
-    public class BattleNpcView : MonoBehaviour, IBattleNpcView
+    public class BattleNpcView : MonoBehaviour, IBattleNpcView, IBattleDualVictoryReturnView
     {
+        private const int VisibleSortingOrder = 1100;
+
         [SerializeField] private Canvas rootCanvas;
         [SerializeField] private LHButton returnButton;
+        [SerializeField] private LHButton rematchButton;
+
+        private int cachedSortingOrder = 320;
+        private bool hasCachedSortingOrder;
 
         private void Awake()
         {
@@ -27,7 +34,9 @@ namespace Scene.BattleNpcScene.View
             }
 
             returnButton?.EnsureUiSoundFeedback();
-            SetReturnButtonVisible(false);
+            rematchButton?.EnsureUiSoundFeedback();
+            CacheSortingOrderIfNeeded();
+            SetDualButtonsVisible(false);
         }
 
         /// <inheritdoc/>
@@ -36,46 +45,120 @@ namespace Scene.BattleNpcScene.View
         /// <inheritdoc/>
         public void SetReturnButtonVisible(bool visible)
         {
+            SetDualButtonsVisible(visible);
+        }
+
+        /// <inheritdoc/>
+        public void SetDualButtonsVisible(bool visible)
+        {
             if (rootCanvas != null)
             {
-                rootCanvas.enabled = visible;
+                CacheSortingOrderIfNeeded();
+                if (visible)
+                {
+                    rootCanvas.overrideSorting = true;
+                    rootCanvas.sortingOrder = VisibleSortingOrder;
+                }
+                else
+                {
+                    rootCanvas.sortingOrder = cachedSortingOrder;
+                }
             }
 
-            if (returnButton == null)
-            {
-                return;
-            }
-
-            // 表示はCanvas.enabledのみボタンGOは常時有効
-            if (!returnButton.gameObject.activeSelf)
-            {
-                returnButton.gameObject.SetActive(true);
-            }
-
-            returnButton.interactable = visible;
+            CanvasVisibilityUtility.SetCanvasEnabled(rootCanvas, visible);
+            EnsureButtonReady(returnButton, visible);
+            EnsureButtonReady(rematchButton, visible);
         }
 
         /// <inheritdoc/>
         public async UniTask WaitReturnButtonClickAsync(CancellationToken cancellationToken)
         {
-            if (returnButton == null)
+            await WaitVictoryReturnChoiceAsync(cancellationToken);
+        }
+
+        /// <inheritdoc/>
+        public async UniTask<BattleVictoryReturnChoice> WaitVictoryReturnChoiceAsync(CancellationToken cancellationToken)
+        {
+            if (returnButton == null && rematchButton == null)
             {
+                Debug.LogError("[BattleNpcView] 戻る/再戦ボタン参照がありません", this);
                 await UniTask.WaitUntilCanceled(cancellationToken);
-                return;
+                return BattleVictoryReturnChoice.Title;
             }
 
-            bool pressed = false;
-            void OnClick() => pressed = true;
-            returnButton.onClick.AddListener(OnClick);
+            BattleVictoryReturnChoice choice = BattleVictoryReturnChoice.Title;
+            bool decided = false;
+
+            void OnTitleClick()
+            {
+                choice = BattleVictoryReturnChoice.Title;
+                decided = true;
+            }
+
+            void OnRematchClick()
+            {
+                choice = BattleVictoryReturnChoice.Rematch;
+                decided = true;
+            }
+
+            if (returnButton != null)
+            {
+                returnButton.onClick.AddListener(OnTitleClick);
+            }
+
+            if (rematchButton != null)
+            {
+                rematchButton.onClick.AddListener(OnRematchClick);
+            }
 
             try
             {
-                await UniTask.WaitUntil(() => pressed, cancellationToken: cancellationToken);
+                await UniTask.WaitUntil(() => decided, cancellationToken: cancellationToken);
+                return choice;
             }
             finally
             {
-                returnButton.onClick.RemoveListener(OnClick);
+                if (returnButton != null)
+                {
+                    returnButton.onClick.RemoveListener(OnTitleClick);
+                }
+
+                if (rematchButton != null)
+                {
+                    rematchButton.onClick.RemoveListener(OnRematchClick);
+                }
             }
+        }
+
+        private void CacheSortingOrderIfNeeded()
+        {
+            if (hasCachedSortingOrder || rootCanvas == null)
+            {
+                return;
+            }
+
+            if (rootCanvas.sortingOrder != VisibleSortingOrder)
+            {
+                cachedSortingOrder = rootCanvas.sortingOrder;
+            }
+
+            hasCachedSortingOrder = true;
+        }
+
+        private static void EnsureButtonReady(LHButton button, bool visible)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            // 親Canvas配下は常時有効にし表示はCanvas.enabledで制御する
+            if (!button.gameObject.activeSelf)
+            {
+                button.gameObject.SetActive(true);
+            }
+
+            button.interactable = visible;
         }
     }
 }

@@ -26,6 +26,11 @@ namespace Battle.Interface
         EnemyStrengthTier SelectedStrengthTier { get; }
 
         /// <summary>
+        /// 直近のWaitForModelAsyncが戻る操作でキャンセルされたか
+        /// </summary>
+        bool WasSelectionCancelled { get; }
+
+        /// <summary>
         /// シーン入場時の準備(レイアウト整備と非表示)
         /// </summary>
         void PrepareEntry();
@@ -41,6 +46,11 @@ namespace Battle.Interface
         /// </summary>
         /// <param name="cancellationToken">キャンセルトークン</param>
         UniTask<GameObject> WaitForModelAsync(CancellationToken cancellationToken);
+
+        /// <summary>
+        /// 待機中の選択を戻る操作としてキャンセルする
+        /// </summary>
+        void CancelWaitingSelection();
 
         /// <summary>
         /// 選択UIを非表示にする

@@ -18,8 +18,7 @@ namespace UI.ClayEditor.View
         IPointerEnterHandler,
         IPointerExitHandler
     {
-        private static readonly Color LockedSlotColor = new Color(0.5f, 0.5f, 0.5f, 1f);
-        private static readonly Color LockedDimmerColor = new Color(0.35f, 0.35f, 0.35f, 0.55f);
+        private static readonly Color LockedDimmerColor = new Color(0.45f, 0.45f, 0.45f, 1f);
         private static readonly Color UnlockedSlotColor = Color.white;
 
         [SerializeField] private LHButton selectButton;
@@ -86,11 +85,21 @@ namespace UI.ClayEditor.View
             slotIndex = index;
             if (nameText != null)
             {
-                nameText.text = slot != null ? slot.modelName : string.Empty;
-                nameText.enabled = true;
+                if (interactable)
+                {
+                    nameText.text = slot != null ? slot.modelName : string.Empty;
+                    nameText.enabled = true;
+                }
+                else
+                {
+                    // ロック中は中身を見せない
+                    nameText.text = string.Empty;
+                    nameText.enabled = false;
+                }
             }
 
-            ApplyThumbnail(thumbnail);
+            // ロック中はサムネイルを出さずディマーのみにする
+            ApplyThumbnail(interactable ? thumbnail : null);
             SetLocked(!interactable);
             SetInteractable(interactable);
         }
@@ -166,7 +175,7 @@ namespace UI.ClayEditor.View
 
             thumbnailImage.sprite = thumbnail;
             thumbnailImage.enabled = true;
-            thumbnailImage.color = isLocked ? LockedSlotColor : UnlockedSlotColor;
+            thumbnailImage.color = UnlockedSlotColor;
             thumbnailImage.preserveAspect = false;
             thumbnailImage.type = Image.Type.Simple;
             thumbnailImage.maskable = true;
@@ -181,14 +190,11 @@ namespace UI.ClayEditor.View
                 ValidateLockRefs();
             }
 
-            if (thumbnailImage != null && thumbnailImage.enabled)
-            {
-                thumbnailImage.color = locked ? LockedSlotColor : UnlockedSlotColor;
-            }
-
             if (selectButton != null && selectButton.targetGraphic != null)
             {
-                selectButton.targetGraphic.color = locked ? LockedSlotColor : UnlockedSlotColor;
+                selectButton.targetGraphic.color = locked
+                    ? LockedDimmerColor
+                    : UnlockedSlotColor;
             }
 
             if (lockDimmer != null)

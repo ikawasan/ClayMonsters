@@ -866,7 +866,7 @@ namespace Scene.TrainingScene
 
             // Staging無効化後にもう一度隠しOnDisable副作用を潰す
             HideBattleFieldForTraining();
-            trainingBackgroundView?.ShowDefaultBackground();
+            trainingBackgroundView?.ShowRoamBackground();
 
             if (playerModel != null)
             {
@@ -916,7 +916,7 @@ namespace Scene.TrainingScene
         /// </summary>
         private void ApplyTrainingCameraView()
         {
-            locationCameraView?.ApplyDefaultView();
+            locationCameraView?.ApplyRoamView();
         }
 
 
