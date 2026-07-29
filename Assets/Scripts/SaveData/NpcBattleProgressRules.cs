@@ -23,7 +23,7 @@ namespace SaveData
         /// <summary>
         /// 敵スロット数の上限
         /// </summary>
-        public static int MaxEnemyCount => ModelSavePoolSettings.SlotCount;
+        public static int MaxEnemyCount => ModelSavePoolSettings.EnemySlotCount;
 
         /// <summary>
         /// 強さ段階数の上限

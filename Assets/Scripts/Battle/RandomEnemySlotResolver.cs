@@ -24,7 +24,7 @@ namespace Battle
             }
 
             var usedSlots = new List<int>();
-            for (int i = 0; i < ModelSavePoolSettings.SlotCount; i++)
+            for (int i = 0; i < ModelSavePoolSettings.GetSlotCount(ModelSavePool.Enemy); i++)
             {
                 ModelSaveSlot slot = saveService.GetSlot(ModelSavePool.Enemy, i);
                 if (slot != null && slot.isUsed && !string.IsNullOrEmpty(slot.glbFileName))

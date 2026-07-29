@@ -136,19 +136,19 @@ namespace SaveData
     }
 
     /// <summary>
-    /// 全スロット(最大10個)のセーブデータ
-    /// JsonUtilityでシリアライズするためのコンテナ
+    /// モデルセーブデータのコンテナ
+    /// 要素数はプールごとにModelSavePoolSettings.GetSlotCountが正
     /// </summary>
     [System.Serializable]
     public class ClayModelSaveData
     {
         /// <summary>
-        /// 保存できるスロットの最大数
+        /// 互換用の旧最大スロット数(未育成プールと同値)
         /// </summary>
-        public const int SlotCount = ModelSavePoolSettings.SlotCount;
+        public const int SlotCount = ModelSavePoolSettings.PlayerSlotCount;
 
         /// <summary>
-        /// 各スロットのデータ(要素数はSlotCount)
+        /// 各スロットのデータ
         /// </summary>
         public List<ModelSaveSlot> slots = new List<ModelSaveSlot>();
     }

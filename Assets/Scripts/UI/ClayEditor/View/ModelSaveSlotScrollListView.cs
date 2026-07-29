@@ -46,7 +46,7 @@ namespace UI.ClayEditor.View
 
 
 
-        private readonly List<SlotRow> rows = new List<SlotRow>(ModelSavePoolSettings.SlotCount);
+        private readonly List<SlotRow> rows = new List<SlotRow>(ModelSavePoolSettings.PlayerSlotCount);
 
 
 
@@ -319,17 +319,34 @@ namespace UI.ClayEditor.View
                 return;
             }
 
+            int slotCount = ModelSavePoolSettings.GetSlotCount(pool);
+            if (rows.Count < slotCount)
+            {
+                Debug.LogError(
+                    "[ModelSaveSlotScrollListView] スロット行が不足しています"
+                    + $" need={slotCount} found={rows.Count}"
+                    + " ModelSaveSlotScrollListプレハブの行数を増やしてください",
+                    this);
+            }
+
             for (int i = 0; i < rows.Count; i++)
             {
+                bool visible = i < slotCount;
+                if (rows[i].RowWrapper != null)
+                {
+                    rows[i].RowWrapper.gameObject.SetActive(visible);
+                }
+
+                if (!visible)
+                {
+                    continue;
+                }
+
                 ModelSaveSlot slot = saveService.GetSlot(pool, i);
                 bool used = IsLoadableSlot(slot);
                 ApplyRowContent(rows[i], slot, used, i, emptySlotLabel, contentMode);
                 ApplyThumbnail(rows[i].Elements, used, pool, i, saveService, runtimeThumbnailObjects);
                 rows[i].Button.interactable = used || allowEmptySlotSelection;
-                if (rows[i].RowWrapper != null)
-                {
-                    rows[i].RowWrapper.gameObject.SetActive(true);
-                }
             }
         }
 
@@ -743,7 +760,7 @@ namespace UI.ClayEditor.View
             }
 
             Transform content = scrollRoot.Find("Viewport/Content");
-            return content == null || content.childCount < ModelSavePoolSettings.SlotCount;
+            return content == null || content.childCount < ModelSavePoolSettings.PlayerSlotCount;
         }
 
         /// <summary>

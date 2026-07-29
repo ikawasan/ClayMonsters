@@ -27,9 +27,19 @@ namespace SaveData
     public static class ModelSavePoolSettings
     {
         /// <summary>
-        /// 未育成・敵プールのスロット数
+        /// 未育成プールのスロット数
         /// </summary>
-        public const int SlotCount = 10;
+        public const int PlayerSlotCount = 25;
+
+        /// <summary>
+        /// 敵プールのスロット数
+        /// </summary>
+        public const int EnemySlotCount = 25;
+
+        /// <summary>
+        /// 互換用の旧共通スロット数(未育成・敵と同値)
+        /// </summary>
+        public const int SlotCount = PlayerSlotCount;
 
         /// <summary>
         /// 育成済みプールのスロット数(5列×10行)
@@ -52,9 +62,13 @@ namespace SaveData
         /// <param name="pool">セーブプール</param>
         public static int GetSlotCount(ModelSavePool pool)
         {
-            return pool == ModelSavePool.TrainedPlayer
-                ? TrainedSlotCount
-                : SlotCount;
+            return pool switch
+            {
+                ModelSavePool.Player => PlayerSlotCount,
+                ModelSavePool.TrainedPlayer => TrainedSlotCount,
+                ModelSavePool.Enemy => EnemySlotCount,
+                _ => PlayerSlotCount
+            };
         }
 
         /// <summary>

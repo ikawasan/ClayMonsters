@@ -123,7 +123,7 @@ namespace Scene.TrainingScene.Domain
                 return false;
             }
 
-            for (int i = 0; i < ModelSavePoolSettings.SlotCount; i++)
+            for (int i = 0; i < ModelSavePoolSettings.GetSlotCount(ModelSavePool.Player); i++)
             {
                 TrainingSlotProgress candidate =
                     saveService.GetTrainingProgress(ModelSavePool.Player, i);

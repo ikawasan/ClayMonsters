@@ -292,7 +292,7 @@ namespace Scene.TitleScene
         private List<int> CollectUsedPlayerSlots()
         {
             var result = new List<int>();
-            for (int i = 0; i < ClayModelSaveData.SlotCount; i++)
+            for (int i = 0; i < ModelSavePoolSettings.GetSlotCount(ModelSavePool.Player); i++)
             {
                 if (IsSlotLoadable(ModelSavePool.Player, i))
                 {

@@ -18,7 +18,8 @@ namespace UI.ClayEditor.View
         IPointerEnterHandler,
         IPointerExitHandler
     {
-        private static readonly Color LockedSlotColor = new Color(0f, 0f, 0f, 1f);
+        private static readonly Color LockedSlotColor = new Color(0.5f, 0.5f, 0.5f, 1f);
+        private static readonly Color LockedDimmerColor = new Color(0.35f, 0.35f, 0.35f, 0.55f);
         private static readonly Color UnlockedSlotColor = Color.white;
 
         [SerializeField] private LHButton selectButton;
@@ -195,7 +196,7 @@ namespace UI.ClayEditor.View
                 lockDimmer.enabled = locked;
                 if (locked)
                 {
-                    lockDimmer.color = new Color(0f, 0f, 0f, 0.82f);
+                    lockDimmer.color = LockedDimmerColor;
                     lockDimmer.raycastTarget = false;
                 }
             }

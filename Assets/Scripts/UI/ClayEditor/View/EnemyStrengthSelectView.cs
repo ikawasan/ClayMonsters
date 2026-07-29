@@ -14,7 +14,8 @@ namespace UI.ClayEditor.View
     {
         private static readonly Color SelectedColor = new Color(1f, 0.86f, 0.42f, 1f);
         private static readonly Color NormalColor = new Color(1f, 1f, 1f, 1f);
-        private static readonly Color LockedButtonColor = new Color(0f, 0f, 0f, 1f);
+        private static readonly Color LockedButtonColor = new Color(0.5f, 0.5f, 0.5f, 1f);
+        private static readonly Color LockedDimmerColor = new Color(0.35f, 0.35f, 0.35f, 0.55f);
 
         [Header("表示制御")]
         [SerializeField] private Canvas rootCanvas;
@@ -292,7 +293,7 @@ namespace UI.ClayEditor.View
                 dimmer.enabled = locked;
                 if (locked)
                 {
-                    dimmer.color = new Color(0f, 0f, 0f, 0.82f);
+                    dimmer.color = LockedDimmerColor;
                     dimmer.raycastTarget = false;
                 }
             }

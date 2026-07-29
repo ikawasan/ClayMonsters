@@ -143,8 +143,17 @@ namespace UI.ClayEditor.View
 
                 if (i >= poolSlotCount)
                 {
-                    cell.BindEmpty(i, emptySlotLabel, false);
+                    if (cell.gameObject.activeSelf)
+                    {
+                        cell.gameObject.SetActive(false);
+                    }
+
                     continue;
+                }
+
+                if (!cell.gameObject.activeSelf)
+                {
+                    cell.gameObject.SetActive(true);
                 }
 
                 ModelSaveSlot slot = saveService.GetSlot(pool, i);
