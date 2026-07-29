@@ -145,35 +145,39 @@ namespace Battle
 
         /// <summary>
         /// 使用できる間合い(x=最小, y=最大)を返す。距離の単位は最大間合いに合わせる。
+        /// 近距離帯上限4中距離帯上限7に合わせ近12種中6種に振り分ける
         /// </summary>
         public static Vector2 GetRange(MotionType motion)
         {
             switch (motion)
             {
-                case MotionType.Punch: return new Vector2(0f, 5f);
-                case MotionType.Elbow: return new Vector2(0f, 4.5f);
-                case MotionType.Kick: return new Vector2(0.5f, 6.5f);
-                case MotionType.Stomp: return new Vector2(0f, 4.5f);
-                case MotionType.Tackle: return new Vector2(0f, 5.5f);
-                case MotionType.SpinTackle: return new Vector2(0f, 4.5f);
-                case MotionType.TailWhip: return new Vector2(3f, 7f);
-                case MotionType.Headbutt: return new Vector2(0f, 5f);
-                case MotionType.BodySlam: return new Vector2(0f, 5f);
-                case MotionType.Uppercut: return new Vector2(0f, 4.5f);
-                case MotionType.Knee: return new Vector2(0f, 4.5f);
-                case MotionType.ShoulderRam: return new Vector2(0f, 5f);
-                case MotionType.BellyFlop: return new Vector2(0f, 5f);
-                case MotionType.HipCheck: return new Vector2(0f, 4.5f);
-                case MotionType.GroundPound: return new Vector2(0f, 4.5f);
-                case MotionType.Slap: return new Vector2(0f, 5f);
-                case MotionType.LowSweep: return new Vector2(0f, 5.5f);
-                case MotionType.Bite: return new Vector2(0f, 4.5f);
+                // 近距離技(近距離帯0〜4のみ)12種
+                case MotionType.Punch: return new Vector2(0f, 4f);
+                case MotionType.Elbow: return new Vector2(0f, 3.5f);
+                case MotionType.Stomp: return new Vector2(0f, 4f);
+                case MotionType.Headbutt: return new Vector2(0f, 4f);
+                case MotionType.BodySlam: return new Vector2(0f, 4f);
+                case MotionType.Uppercut: return new Vector2(0f, 3.5f);
+                case MotionType.Knee: return new Vector2(0f, 4f);
+                case MotionType.BellyFlop: return new Vector2(0f, 4f);
+                case MotionType.HipCheck: return new Vector2(0f, 3.5f);
+                case MotionType.GroundPound: return new Vector2(0f, 4f);
+                case MotionType.Slap: return new Vector2(0f, 4f);
+                case MotionType.Bite: return new Vector2(0f, 3.5f);
+                // 中距離技(中距離帯4〜7)6種
+                case MotionType.Kick: return new Vector2(4f, 7f);
+                case MotionType.TailWhip: return new Vector2(4f, 7f);
+                case MotionType.Tackle: return new Vector2(4f, 6.5f);
+                case MotionType.LowSweep: return new Vector2(4f, 7f);
+                case MotionType.SpinTackle: return new Vector2(4f, 7f);
+                case MotionType.ShoulderRam: return new Vector2(4f, 6.5f);
+                // 遠距離技(全帯)
                 case MotionType.Fireball:
                 case MotionType.WindSlasher:
                 case MotionType.DiamondDust:
                 case MotionType.ThunderShock:
                     return new Vector2(0f, 10f);
-                default: return new Vector2(0f, 5.5f);
+                default: return new Vector2(0f, 4f);
             }
         }
 
