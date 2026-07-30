@@ -18,7 +18,7 @@ namespace Battle
         private readonly HashSet<int> removedLimbs = new HashSet<int>();
 
         private readonly int speed;
-        private readonly float baseGutsGain;
+        private float baseGutsGain;
         private readonly float lossSpeedBonusPerPart;
 
         public BattleUnit(
@@ -28,7 +28,7 @@ namespace Battle
             ProceduralMotionCharacter motion,
             ModelPartLossController partLoss,
             float maxGuts = 100f,
-            float baseGutsGainPerSecond = 16f,
+            float baseGutsGainPerSecond = 7f,
             float lossSpeedBonusPerPart = 0.15f)
         {
             Name = name;
@@ -195,12 +195,18 @@ namespace Battle
         public bool CanAct => RecoveryTimer <= 0f;
 
         /// <summary>
-        /// 戦闘開始時ガッツを設定する
+        /// 戦闘開始時ガッツと回復速度を設定する
         /// </summary>
-        public void InitializeBattleGuts(float initialGuts)
+        /// <param name="initialGuts">開幕ガッツ</param>
+        /// <param name="gutsGainPerSecond">基本のガッツ回復速度(/秒)0以下なら変更しない</param>
+        public void InitializeBattleGuts(float initialGuts, float gutsGainPerSecond = -1f)
         {
             InitialGuts = Mathf.Clamp(initialGuts, 0f, MaxGuts);
             Guts = InitialGuts;
+            if (gutsGainPerSecond > 0f)
+            {
+                baseGutsGain = gutsGainPerSecond;
+            }
         }
 
         /// <summary>

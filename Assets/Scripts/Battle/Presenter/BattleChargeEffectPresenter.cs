@@ -120,9 +120,7 @@ namespace Battle.Presenter
             }
 
             // エフェクトの発生停止タイミング(攻撃直前のフェード開始)に尺を合わせる
-            float effectDuration = Mathf.Max(
-                0.05f,
-                windUpDuration - BattleChargeEffectView.ChargeEmissionLeadOutSeconds);
+            float effectDuration = BattleChargeEffectView.ResolveEmissionDuration(windUpDuration);
             seService.PlayTimed(SeTrackId.PowerCharge, effectDuration);
             isChargeSePlaying = true;
         }

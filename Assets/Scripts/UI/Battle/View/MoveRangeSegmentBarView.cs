@@ -14,8 +14,8 @@ namespace UI.Battle.View
         public const int SegmentCount = 3;
         public const float DefaultMaxDistance = 10f;
         // BattleDistanceBandResolverの近中境界と揃える
-        private const float CloseMaxDistance = 4f;
-        private const float MidMaxDistance = 7f;
+        private const float CloseMaxDistance = 3f;
+        private const float MidMaxDistance = 6f;
         public const float BattleBarWidth = 64f;
         public const float BattleBarHeight = 10f;
         public const float BattleSegmentWidth = 20f;

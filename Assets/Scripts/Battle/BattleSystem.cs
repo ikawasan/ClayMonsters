@@ -18,6 +18,7 @@ namespace Battle
         public float MaxDistance;
         public float TimeLimit;
         public float InitialGuts;
+        public float GutsGainPerSecond;
         public float KnockbackCloseThreshold;
         public float KnockbackPushDistance;
         public float KnockbackGutsCost;
@@ -157,8 +158,8 @@ namespace Battle
 
             Distance = settings.MaxDistance;
             TimeRemaining = settings.TimeLimit;
-            player.InitializeBattleGuts(settings.InitialGuts);
-            enemy.InitializeBattleGuts(settings.InitialGuts);
+            player.InitializeBattleGuts(settings.InitialGuts, settings.GutsGainPerSecond);
+            enemy.InitializeBattleGuts(settings.InitialGuts, settings.GutsGainPerSecond);
             player.SuspendPartLossRebuild();
             enemy.SuspendPartLossRebuild();
         }

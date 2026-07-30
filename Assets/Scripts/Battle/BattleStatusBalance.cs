@@ -9,6 +9,10 @@ namespace Battle
     public static class BattleStatusBalance
     {
         public const int MinHp = 400;
+        /// <summary>
+        /// 育成後を含む戦闘上限
+        /// </summary>
+        public const int MaxHp = 999;
         public const int DefaultHp = ModelStatusDefaults.DefaultHp;
         public const int MinAttack = ModelStatusDefaults.MinAttack;
         /// <summary>
@@ -63,7 +67,7 @@ namespace Battle
             ModelStatus source = status ?? new ModelStatus();
 
             int rawHp = source.hp > 0 ? source.hp : DefaultHp;
-            hp = Mathf.Max(MinHp, rawHp);
+            hp = Mathf.Clamp(rawHp, MinHp, MaxHp);
 
             int rawAttack = source.attack > 0 ? source.attack : DefaultAttack;
             attack = Mathf.Clamp(rawAttack, MinAttack, MaxAttack);

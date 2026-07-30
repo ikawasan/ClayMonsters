@@ -16,6 +16,7 @@ MonoBehaviour:
   minCloseSeparation: 0.6
   timeLimit: 99
   initialGuts: 50
+  gutsGainPerSecond: 7
   knockbackCloseThreshold: 2.5
   knockbackPushDistance: 3.5
   knockbackGutsCost: 15

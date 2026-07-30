@@ -29,12 +29,12 @@ namespace Battle
         /// <summary>
         /// 近距離帯の上限(この値以下が近距離)
         /// </summary>
-        public const float CloseMaxDistance = 4f;
+        public const float CloseMaxDistance = 3f;
 
         /// <summary>
         /// 中距離帯の上限(この値以下が中距離超えは遠距離)
         /// </summary>
-        public const float MidMaxDistance = 7f;
+        public const float MidMaxDistance = 6f;
 
         /// <summary>
         /// 距離帯セグメント数(近中遠)

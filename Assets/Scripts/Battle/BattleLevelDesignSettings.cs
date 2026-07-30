@@ -22,6 +22,8 @@ namespace Battle
         [SerializeField] private float timeLimit = 60f;
         [Tooltip("開幕ガッツ")]
         [SerializeField] private float initialGuts = 50f;
+        [Tooltip("ガッツ回復速度(/秒)攻撃中は停止")]
+        [SerializeField] private float gutsGainPerSecond = 7f;
 
         [Header("Knockback")]
         [Tooltip("ふきとばし可能な最大間合い")]
@@ -73,6 +75,7 @@ namespace Battle
                 MaxDistance = maxDistance,
                 TimeLimit = timeLimit,
                 InitialGuts = initialGuts,
+                GutsGainPerSecond = gutsGainPerSecond,
                 KnockbackCloseThreshold = knockbackCloseThreshold,
                 KnockbackPushDistance = knockbackPushDistance,
                 KnockbackGutsCost = knockbackGutsCost,

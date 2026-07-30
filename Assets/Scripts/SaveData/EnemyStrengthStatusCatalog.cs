@@ -9,7 +9,7 @@ namespace SaveData
         /// <summary>
         /// バランス改訂番号(不一致なら段階ステータスを再生成する)
         /// </summary>
-        public const int BalanceVersion = 2;
+        public const int BalanceVersion = 3;
 
         /// <summary>
         /// 弱い倍率(未育成=基準)
@@ -34,17 +34,17 @@ namespace SaveData
         /// <summary>
         /// 敵HP上限
         /// </summary>
-        public const int MaxHp = 900;
+        public const int MaxHp = 999;
 
         /// <summary>
         /// 敵攻撃上限
         /// </summary>
-        public const int MaxAttack = 250;
+        public const int MaxAttack = 999;
 
         /// <summary>
         /// 敵防御上限
         /// </summary>
-        public const int MaxDefense = 250;
+        public const int MaxDefense = 999;
 
         /// <summary>
         /// 敵速さ上限

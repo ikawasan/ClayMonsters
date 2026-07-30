@@ -111,73 +111,78 @@ namespace Battle
         }
 
         /// <summary>
-        /// 攻撃の基礎威力倍率を返す。
+        /// 攻撃の基礎威力倍率を返す
+        /// 星が多いほど威力とコストと射程のコスパが良い
+        /// 星1:約2.5 星2:約3.6 星3:約4.1(表示威力/ガッツ)
         /// </summary>
         public static float GetPower(MotionType motion)
         {
             switch (motion)
             {
-                case MotionType.Punch: return 0.9f;
-                case MotionType.Elbow: return 1.05f;
-                case MotionType.Kick: return 1.0f;
-                case MotionType.Stomp: return 1.15f;
-                case MotionType.Tackle: return 0.95f;
-                case MotionType.SpinTackle: return 1.25f;
-                case MotionType.TailWhip: return 1.1f;
-                case MotionType.Headbutt: return 1.0f;
-                case MotionType.BodySlam: return 1.2f;
-                case MotionType.Uppercut: return 1.08f;
-                case MotionType.Knee: return 1.02f;
-                case MotionType.ShoulderRam: return 1f;
-                case MotionType.BellyFlop: return 1.18f;
-                case MotionType.HipCheck: return 0.98f;
-                case MotionType.GroundPound: return 1.12f;
-                case MotionType.Slap: return 0.88f;
-                case MotionType.LowSweep: return 0.92f;
-                case MotionType.Bite: return 1.05f;
-                case MotionType.Fireball: return 1.22f;
-                case MotionType.WindSlasher: return 1.18f;
-                case MotionType.DiamondDust: return 1.2f;
-                case MotionType.ThunderShock: return 1.25f;
-                default: return 0.9f;
+                // 星1
+                case MotionType.Slap: return 0.50f;
+                case MotionType.LowSweep: return 0.55f;
+                case MotionType.Punch: return 0.58f;
+                case MotionType.HipCheck: return 0.65f;
+                case MotionType.Tackle: return 0.68f;
+                // 星2
+                case MotionType.Elbow: return 0.88f;
+                case MotionType.Bite: return 0.90f;
+                case MotionType.ShoulderRam: return 0.92f;
+                case MotionType.Uppercut: return 0.95f;
+                case MotionType.Knee: return 0.98f;
+                case MotionType.Kick: return 1.00f;
+                case MotionType.Headbutt: return 1.05f;
+                case MotionType.TailWhip: return 1.05f;
+                // 星3
+                case MotionType.Stomp: return 1.25f;
+                case MotionType.WindSlasher: return 1.30f;
+                case MotionType.GroundPound: return 1.32f;
+                case MotionType.Fireball: return 1.35f;
+                case MotionType.BellyFlop: return 1.38f;
+                case MotionType.DiamondDust: return 1.40f;
+                case MotionType.BodySlam: return 1.45f;
+                case MotionType.SpinTackle: return 1.48f;
+                case MotionType.ThunderShock: return 1.50f;
+                default: return 0.58f;
             }
         }
 
         /// <summary>
-        /// 使用できる間合い(x=最小, y=最大)を返す。距離の単位は最大間合いに合わせる。
-        /// 近距離帯上限4中距離帯上限7に合わせ近12種中6種に振り分ける
+        /// 使用できる間合い(x=最小 y=最大)を返す
+        /// 近距離帯0〜3中距離帯3〜6
+        /// 星が多いほど帯内の射程幅が広い
         /// </summary>
         public static Vector2 GetRange(MotionType motion)
         {
             switch (motion)
             {
-                // 近距離技(近距離帯0〜4のみ)12種
-                case MotionType.Punch: return new Vector2(0f, 4f);
-                case MotionType.Elbow: return new Vector2(0f, 3.5f);
-                case MotionType.Stomp: return new Vector2(0f, 4f);
-                case MotionType.Headbutt: return new Vector2(0f, 4f);
-                case MotionType.BodySlam: return new Vector2(0f, 4f);
-                case MotionType.Uppercut: return new Vector2(0f, 3.5f);
-                case MotionType.Knee: return new Vector2(0f, 4f);
-                case MotionType.BellyFlop: return new Vector2(0f, 4f);
-                case MotionType.HipCheck: return new Vector2(0f, 3.5f);
-                case MotionType.GroundPound: return new Vector2(0f, 4f);
-                case MotionType.Slap: return new Vector2(0f, 4f);
-                case MotionType.Bite: return new Vector2(0f, 3.5f);
-                // 中距離技(中距離帯4〜7)6種
-                case MotionType.Kick: return new Vector2(4f, 7f);
-                case MotionType.TailWhip: return new Vector2(4f, 7f);
-                case MotionType.Tackle: return new Vector2(4f, 6.5f);
-                case MotionType.LowSweep: return new Vector2(4f, 7f);
-                case MotionType.SpinTackle: return new Vector2(4f, 7f);
-                case MotionType.ShoulderRam: return new Vector2(4f, 6.5f);
-                // 遠距離技(全帯)
-                case MotionType.Fireball:
-                case MotionType.WindSlasher:
-                case MotionType.DiamondDust:
-                case MotionType.ThunderShock:
-                    return new Vector2(0f, 10f);
-                default: return new Vector2(0f, 4f);
+                // 星1 狭い
+                case MotionType.Slap: return new Vector2(0f, 1.8f);
+                case MotionType.Punch: return new Vector2(0f, 2.0f);
+                case MotionType.HipCheck: return new Vector2(0f, 2.2f);
+                case MotionType.LowSweep: return new Vector2(3f, 4.5f);
+                case MotionType.Tackle: return new Vector2(3f, 5.0f);
+                // 星2 中程度
+                case MotionType.Bite: return new Vector2(0f, 2.2f);
+                case MotionType.Elbow: return new Vector2(0f, 2.4f);
+                case MotionType.Uppercut: return new Vector2(0f, 2.5f);
+                case MotionType.Knee: return new Vector2(0f, 2.6f);
+                case MotionType.Headbutt: return new Vector2(0f, 2.8f);
+                case MotionType.ShoulderRam: return new Vector2(3f, 5.2f);
+                case MotionType.Kick: return new Vector2(3f, 5.5f);
+                case MotionType.TailWhip: return new Vector2(3f, 5.8f);
+                // 星3 帯を広く使う
+                case MotionType.Stomp: return new Vector2(0f, 3f);
+                case MotionType.GroundPound: return new Vector2(0f, 3f);
+                case MotionType.BellyFlop: return new Vector2(0f, 3f);
+                case MotionType.BodySlam: return new Vector2(0f, 3f);
+                case MotionType.SpinTackle: return new Vector2(3f, 6f);
+                case MotionType.WindSlasher: return new Vector2(3f, 10f);
+                case MotionType.Fireball: return new Vector2(2f, 10f);
+                case MotionType.DiamondDust: return new Vector2(1f, 9f);
+                case MotionType.ThunderShock: return new Vector2(0f, 10f);
+                default: return new Vector2(0f, 2f);
             }
         }
 
@@ -260,135 +265,122 @@ namespace Battle
         }
 
         /// <summary>
-        /// 必要ガッツ(行動力)を返す。
+        /// 必要ガッツ(行動力)を返す
+        /// 星が多いほど威力あたりのコストが下がる
+        /// 星1:約2.5 星2:約3.6 星3:約4.1(表示威力/ガッツ)
         /// </summary>
         public static float GetGutsCost(MotionType motion)
         {
             switch (motion)
             {
-                case MotionType.Punch: return 20f;
-                case MotionType.Elbow: return 18f;
-                case MotionType.Kick: return 30f;
-                case MotionType.Stomp: return 28f;
-                case MotionType.Tackle: return 25f;
-                case MotionType.SpinTackle: return 45f;
-                case MotionType.TailWhip: return 35f;
-                case MotionType.Headbutt: return 22f;
-                case MotionType.BodySlam: return 38f;
-                case MotionType.Uppercut: return 22f;
-                case MotionType.Knee: return 24f;
-                case MotionType.ShoulderRam: return 22f;
-                case MotionType.BellyFlop: return 32f;
-                case MotionType.HipCheck: return 20f;
-                case MotionType.GroundPound: return 30f;
-                case MotionType.Slap: return 18f;
-                case MotionType.LowSweep: return 26f;
-                case MotionType.Bite: return 24f;
-                case MotionType.Fireball: return 30f;
-                case MotionType.WindSlasher: return 28f;
-                case MotionType.DiamondDust: return 32f;
-                case MotionType.ThunderShock: return 30f;
-                default: return 25f;
+                // 星1 コスパが悪い
+                case MotionType.Slap: return 20f;
+                case MotionType.LowSweep: return 22f;
+                case MotionType.Punch: return 22f;
+                case MotionType.HipCheck: return 25f;
+                case MotionType.Tackle: return 26f;
+                // 星2
+                case MotionType.Elbow: return 24f;
+                case MotionType.Bite: return 25f;
+                case MotionType.ShoulderRam: return 26f;
+                case MotionType.Uppercut: return 26f;
+                case MotionType.Knee: return 27f;
+                case MotionType.Kick: return 28f;
+                case MotionType.Headbutt: return 28f;
+                case MotionType.TailWhip: return 30f;
+                // 星3 コスパが良い
+                case MotionType.Stomp: return 30f;
+                case MotionType.WindSlasher: return 32f;
+                case MotionType.GroundPound: return 32f;
+                case MotionType.Fireball: return 33f;
+                case MotionType.BellyFlop: return 34f;
+                case MotionType.DiamondDust: return 34f;
+                case MotionType.BodySlam: return 35f;
+                case MotionType.SpinTackle: return 36f;
+                case MotionType.ThunderShock: return 36f;
+                default: return 22f;
             }
         }
 
         /// <summary>
-        /// 命中率(0〜1)を返す。
+        /// 命中率(0〜1)を返す
         /// </summary>
         public static float GetAccuracy(MotionType motion)
         {
             switch (motion)
             {
-                case MotionType.Punch: return 0.9f;
+                // 星1
+                case MotionType.Slap: return 0.93f;
+                case MotionType.Punch: return 0.91f;
+                case MotionType.HipCheck: return 0.90f;
+                case MotionType.LowSweep: return 0.88f;
+                case MotionType.Tackle: return 0.89f;
+                // 星2
                 case MotionType.Elbow: return 0.88f;
-                case MotionType.Kick: return 0.8f;
-                case MotionType.Stomp: return 0.82f;
-                case MotionType.Tackle: return 0.85f;
-                case MotionType.SpinTackle: return 0.6f;
-                case MotionType.TailWhip: return 0.75f;
+                case MotionType.Uppercut: return 0.86f;
+                case MotionType.Knee: return 0.85f;
+                case MotionType.Bite: return 0.85f;
                 case MotionType.Headbutt: return 0.86f;
-                case MotionType.BodySlam: return 0.78f;
-                case MotionType.Uppercut: return 0.87f;
-                case MotionType.Knee: return 0.84f;
-                case MotionType.ShoulderRam: return 0.88f;
-                case MotionType.BellyFlop: return 0.76f;
-                case MotionType.HipCheck: return 0.9f;
-                case MotionType.GroundPound: return 0.8f;
-                case MotionType.Slap: return 0.91f;
-                case MotionType.LowSweep: return 0.83f;
-                case MotionType.Bite: return 0.86f;
-                case MotionType.Fireball: return 0.78f;
-                case MotionType.WindSlasher: return 0.8f;
-                case MotionType.DiamondDust: return 0.76f;
-                case MotionType.ThunderShock: return 0.74f;
-                default: return 0.8f;
+                case MotionType.ShoulderRam: return 0.85f;
+                case MotionType.Kick: return 0.84f;
+                case MotionType.TailWhip: return 0.83f;
+                // 星3
+                case MotionType.Stomp: return 0.82f;
+                case MotionType.GroundPound: return 0.81f;
+                case MotionType.BellyFlop: return 0.80f;
+                case MotionType.BodySlam: return 0.79f;
+                case MotionType.SpinTackle: return 0.78f;
+                case MotionType.WindSlasher: return 0.82f;
+                case MotionType.Fireball: return 0.80f;
+                case MotionType.DiamondDust: return 0.79f;
+                case MotionType.ThunderShock: return 0.78f;
+                default: return 0.88f;
             }
         }
 
         /// <summary>
-        /// 使用後の硬直時間(秒)を返す。
+        /// 使用後の硬直時間(秒)を返す
         /// </summary>
         public static float GetRecovery(MotionType motion)
         {
             switch (motion)
             {
-                case MotionType.Punch: return 0.85f;
-                case MotionType.Elbow: return 0.78f;
-                case MotionType.Kick: return 1.05f;
-                case MotionType.Stomp: return 0.98f;
-                case MotionType.Tackle: return 1.05f;
-                case MotionType.SpinTackle: return 1.45f;
-                case MotionType.TailWhip: return 1.25f;
+                // 星1
+                case MotionType.Slap: return 0.55f;
+                case MotionType.Punch: return 0.60f;
+                case MotionType.HipCheck: return 0.65f;
+                case MotionType.LowSweep: return 0.72f;
+                case MotionType.Tackle: return 0.78f;
+                // 星2
+                case MotionType.Elbow: return 0.82f;
+                case MotionType.Uppercut: return 0.85f;
+                case MotionType.Knee: return 0.88f;
+                case MotionType.Bite: return 0.90f;
                 case MotionType.Headbutt: return 0.92f;
-                case MotionType.BodySlam: return 1.25f;
-                case MotionType.Uppercut: return 0.8f;
-                case MotionType.Knee: return 0.85f;
                 case MotionType.ShoulderRam: return 0.95f;
-                case MotionType.BellyFlop: return 1.2f;
-                case MotionType.HipCheck: return 0.88f;
+                case MotionType.Kick: return 1.00f;
+                case MotionType.TailWhip: return 1.05f;
+                // 星3
+                case MotionType.Stomp: return 1.10f;
                 case MotionType.GroundPound: return 1.15f;
-                case MotionType.Slap: return 0.82f;
-                case MotionType.LowSweep: return 1f;
-                case MotionType.Bite: return 0.9f;
-                case MotionType.Fireball: return 1.3f;
-                case MotionType.WindSlasher: return 1.25f;
-                case MotionType.DiamondDust: return 1.35f;
-                case MotionType.ThunderShock: return 1.4f;
-                default: return 1f;
+                case MotionType.BellyFlop: return 1.18f;
+                case MotionType.WindSlasher: return 1.15f;
+                case MotionType.Fireball: return 1.20f;
+                case MotionType.BodySlam: return 1.22f;
+                case MotionType.DiamondDust: return 1.25f;
+                case MotionType.SpinTackle: return 1.28f;
+                case MotionType.ThunderShock: return 1.30f;
+                default: return 0.70f;
             }
         }
 
         /// <summary>
-        /// 攻撃前の溜め時間(秒)を返す。
+        /// 攻撃前の溜め時間(秒)を返す
+        /// 全技共通
         /// </summary>
         public static float GetWindUpDuration(MotionType motion)
         {
-            switch (motion)
-            {
-                case MotionType.Punch: return 0.75f;
-                case MotionType.Elbow: return 0.68f;
-                case MotionType.Kick: return 0.9f;
-                case MotionType.Stomp: return 0.82f;
-                case MotionType.Tackle: return 0.82f;
-                case MotionType.SpinTackle: return 1.15f;
-                case MotionType.TailWhip: return 0.95f;
-                case MotionType.Headbutt: return 0.72f;
-                case MotionType.BodySlam: return 1.05f;
-                case MotionType.Uppercut: return 0.7f;
-                case MotionType.Knee: return 0.72f;
-                case MotionType.ShoulderRam: return 0.75f;
-                case MotionType.BellyFlop: return 0.95f;
-                case MotionType.HipCheck: return 0.68f;
-                case MotionType.GroundPound: return 0.88f;
-                case MotionType.Slap: return 0.7f;
-                case MotionType.LowSweep: return 0.78f;
-                case MotionType.Bite: return 0.74f;
-                case MotionType.Fireball: return 1.05f;
-                case MotionType.WindSlasher: return 1f;
-                case MotionType.DiamondDust: return 1.1f;
-                case MotionType.ThunderShock: return 1.15f;
-                default: return 0.8f;
-            }
+            return 0.8f;
         }
 
         /// <summary>

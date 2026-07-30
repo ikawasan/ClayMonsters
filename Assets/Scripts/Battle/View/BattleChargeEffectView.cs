@@ -13,13 +13,36 @@ namespace Battle.View
         private const string AdditiveParticleMaterialResourcePath = "Material/Battle/M_BattleHitParticleAdditive";
         private const int ParticleBufferSize = 512;
         private const float FadeOutDuration = 0.28f;
-        // 攻撃開始前に発生を止めフェードへ入る余裕
-        private const float StopBeforeWindUpEnd = 0.42f;
+        // 攻撃直前に発生を止める最大秒数
+        private const float MaxStopBeforeWindUpEnd = 0.42f;
+        // 溜め尺に対する発生停止の割合上限
+        private const float MaxLeadOutRatio = 0.35f;
 
         /// <summary>
         /// 溜めエフェクト発生を攻撃直前に止める秒数
+        /// 短い溜めでは尺の一定割合に抑えて即消えを防ぐ
         /// </summary>
-        public static float ChargeEmissionLeadOutSeconds => StopBeforeWindUpEnd;
+        /// <param name="windUpDuration">攻撃前溜め秒数</param>
+        public static float ResolveEmissionLeadOutSeconds(float windUpDuration)
+        {
+            float duration = Mathf.Max(0.05f, windUpDuration);
+            return Mathf.Min(MaxStopBeforeWindUpEnd, duration * MaxLeadOutRatio);
+        }
+
+        /// <summary>
+        /// 粒子発生を続ける秒数を返す
+        /// </summary>
+        /// <param name="windUpDuration">攻撃前溜め秒数</param>
+        public static float ResolveEmissionDuration(float windUpDuration)
+        {
+            float duration = Mathf.Max(0.05f, windUpDuration);
+            return Mathf.Max(0.05f, duration - ResolveEmissionLeadOutSeconds(duration));
+        }
+
+        /// <summary>
+        /// 互換用の発生停止秒数
+        /// </summary>
+        public static float ChargeEmissionLeadOutSeconds => MaxStopBeforeWindUpEnd;
 
         [SerializeField] private float heightFallback = 1.1f;
         [SerializeField] private float baseAbsorbRadius = 1.2f;
@@ -124,7 +147,7 @@ namespace Battle.View
             if (isPlaying)
             {
                 playElapsed += deltaTime;
-                float stopAt = Mathf.Max(0f, playDuration - StopBeforeWindUpEnd);
+                float stopAt = ResolveEmissionDuration(playDuration);
                 if (playElapsed >= stopAt)
                 {
                     BeginFadeOut();
