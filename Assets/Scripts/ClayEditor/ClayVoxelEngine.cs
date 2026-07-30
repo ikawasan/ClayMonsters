@@ -1600,6 +1600,7 @@ namespace ClayEditor
         /// <param name="meshVertexColors">頂点カラーnull時は形状のみ復元し既定の粘土色を使う</param>
         /// <param name="cancellationToken">キャンセルトークン</param>
         /// <param name="applyAutoOrientation">trueのときY-up自動補正を行う</param>
+        /// <param name="fitToGrid">trueならグリッドへ拡大縮小してフィットするfalseなら元サイズを保つ</param>
         /// <returns>成功した場合trueと空文字失敗時はfalseと理由</returns>
         public async UniTask<(bool success, string errorMessage)> TryImportFromWorldMeshAsync(
             Mesh mesh,
@@ -1607,7 +1608,8 @@ namespace ClayEditor
             Transform meshTransform,
             Color[] meshVertexColors,
             CancellationToken cancellationToken,
-            bool applyAutoOrientation = true)
+            bool applyAutoOrientation = true,
+            bool fitToGrid = true)
         {
             if (!IsBackendReady || mesh == null || engineSpaceTransform == null || meshTransform == null)
             {
@@ -1641,7 +1643,8 @@ namespace ClayEditor
                 triangles,
                 meshLocalToEngine,
                 boundsSize,
-                applyAutoOrientation);
+                applyAutoOrientation,
+                fitToGrid);
             Vector3 gridHalf = Vector3.one * CenterOffset.x;
             Vector3 gridMin = -gridHalf;
             Vector3 gridMax = gridHalf;

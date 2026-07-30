@@ -16,7 +16,7 @@ namespace SaveData.Service
         /// </summary>
         public NpcBattleProgressService()
         {
-            Reload();
+            ReloadFromDisk();
         }
 
         /// <inheritdoc />
@@ -123,11 +123,34 @@ namespace SaveData.Service
         }
 
         /// <inheritdoc />
+        public void UnlockAllProgress()
+        {
+            int maxEnemy = NpcBattleProgressRules.MaxEnemyCount;
+            progress = new NpcBattleProgressSaveData
+            {
+                unlockedEnemyCount = maxEnemy,
+                slotUnlockedStrengthCounts =
+                    NpcBattleProgressRules.CreateFullyUnlockedSlotStrengthCounts()
+            };
+            Persist();
+            Debug.Log(
+                "[NpcBattleProgressService] CPU戦進捗を全解放しました"
+                + $" unlockedEnemyCount={progress.unlockedEnemyCount}"
+                + $" strength={NpcBattleProgressRules.MaxStrengthCount}");
+        }
+
+        /// <inheritdoc />
         public void ResetProgress()
         {
             progress = CreateInitialProgress();
             Persist();
             Debug.Log("[NpcBattleProgressService] CPU戦進捗を初期化しました");
+        }
+
+        /// <inheritdoc />
+        public void Reload()
+        {
+            ReloadFromDisk();
         }
 
         private int GetSlotStrengthCount(int slotIndex)
@@ -148,7 +171,7 @@ namespace SaveData.Service
             Normalize(progress);
         }
 
-        private void Reload()
+        private void ReloadFromDisk()
         {
             SaveData saveData = SaveDataManager.Load();
             progress = saveData.NpcBattleProgress ?? CreateInitialProgress();

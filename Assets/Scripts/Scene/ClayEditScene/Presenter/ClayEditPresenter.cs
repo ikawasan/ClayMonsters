@@ -77,6 +77,7 @@ namespace Scene.ClayEditScene.Presenter
             remakeLoadSlotView.OnCancelled
                 .Subscribe(_ =>
                 {
+                    remakeLoadSlotView.Hide();
                     entryView.Show();
                     SetEditorInteractable(false);
                 })
@@ -151,17 +152,26 @@ namespace Scene.ClayEditScene.Presenter
         private void BeginRemakeFlow()
         {
             entryView.Hide();
-            remakeLoadSlotView.Show();
+            remakeLoadSlotView.Show(ModelSavePool.Player);
         }
 
         private void OnRemakeModelLoaded(ClayEditRemakeSelection selection)
         {
-            sessionContext.BeginRemake(selection.SlotIndex, selection.ModelName);
+            sessionContext.BeginRemake(selection.SlotIndex, selection.ModelName, selection.Pool);
             historyManager.Clear();
             remakeLoadSlotView.Hide();
             editorUiGate.SetEditorVisible(true);
             saveSlotView.ShowEditorChrome();
+
+            // GLB取り込み後も編集カメラを確実に戻す
+            cameraView.SetCameraEnable(true);
+            cameraView.SetFocusPosition(Vector3.zero);
+            cameraView.SetInitializeView();
             SetEditorInteractable(true);
+
+            Debug.Log(
+                $"[ClayEditPresenter] 作り直し編集開始 pool={selection.Pool}"
+                + $" slot={selection.SlotIndex} name={selection.ModelName}");
         }
 
         void OpenToModeSelectSceneButton()

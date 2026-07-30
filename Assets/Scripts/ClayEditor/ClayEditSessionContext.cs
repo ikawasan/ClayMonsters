@@ -1,3 +1,5 @@
+using SaveData;
+
 namespace ClayEditor
 {
     /// <summary>
@@ -26,7 +28,12 @@ namespace ClayEditor
         public ClayEditStartMode StartMode { get; private set; } = ClayEditStartMode.Pending;
 
         /// <summary>
-        /// 作り直し対象のプレイヤースロット番号
+        /// 作り直し対象のセーブプール
+        /// </summary>
+        public ModelSavePool RemakePool { get; private set; } = ModelSavePool.Player;
+
+        /// <summary>
+        /// 作り直し対象のスロット番号
         /// </summary>
         public int RemakeSlotIndex { get; private set; } = -1;
 
@@ -41,6 +48,7 @@ namespace ClayEditor
         public void BeginNewCreate()
         {
             StartMode = ClayEditStartMode.NewCreate;
+            RemakePool = ModelSavePool.Player;
             RemakeSlotIndex = -1;
             RemakeModelName = string.Empty;
             IsEditorReady = true;
@@ -51,9 +59,11 @@ namespace ClayEditor
         /// </summary>
         /// <param name="slotIndex">対象スロット番号</param>
         /// <param name="modelName">対象モデル名</param>
-        public void BeginRemake(int slotIndex, string modelName)
+        /// <param name="pool">対象セーブプール</param>
+        public void BeginRemake(int slotIndex, string modelName, ModelSavePool pool)
         {
             StartMode = ClayEditStartMode.Remake;
+            RemakePool = pool;
             RemakeSlotIndex = slotIndex;
             RemakeModelName = modelName ?? string.Empty;
             IsEditorReady = true;
@@ -65,6 +75,7 @@ namespace ClayEditor
         public void Reset()
         {
             StartMode = ClayEditStartMode.Pending;
+            RemakePool = ModelSavePool.Player;
             RemakeSlotIndex = -1;
             RemakeModelName = string.Empty;
             IsEditorReady = false;

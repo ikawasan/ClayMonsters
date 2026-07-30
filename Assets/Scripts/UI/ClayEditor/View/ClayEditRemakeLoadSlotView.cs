@@ -26,6 +26,7 @@ namespace UI.ClayEditor.View
         [Inject] private readonly IClayModelSaveService saveService;
         [Inject] private readonly IClayModelImporter importer;
         [Inject] private readonly ClayEditSavedModelImporter savedModelImporter;
+        [Inject] private readonly ClayVoxelEngine voxelEngine;
 
         [Tooltip("ONのときフォールバックUIを実行時生成しない")]
         [SerializeField] private bool useSceneCanvasLayout = true;
@@ -46,17 +47,22 @@ namespace UI.ClayEditor.View
         [SerializeField] private ModelSaveSlotDeletePromptView deletePromptView;
 
         [Header("ロード設定")]
+        [Tooltip("一時インポート親未設定時はシーンルートへ置く")]
         [SerializeField] private Transform spawnParent;
-        [SerializeField] private Material clayMaterial;
 
         private readonly Subject<ClayEditRemakeSelection> remakeConfirmedSubject = new();
         private readonly Subject<Unit> cancelledSubject = new();
         private readonly List<Object> runtimeThumbnailObjects = new();
 
         private int selectedSlot = -1;
+        private ModelSavePool currentPool = ModelSavePool.Player;
+#if UNITY_EDITOR
+        private ModelSavePool? pendingPoolSwitch;
+#endif
         private bool isLoading;
         private bool isInitialized;
         private bool slotScrollListInitialized;
+        private bool isSelectionVisible;
 
         /// <summary>
         /// 作り直し対象が確定しボクセル化が完了した通知
@@ -70,6 +76,13 @@ namespace UI.ClayEditor.View
 
         private void Start()
         {
+            // VContainer未登録の重複インスタンスは初期化しない
+            if (saveService == null || importer == null || savedModelImporter == null)
+            {
+                enabled = false;
+                return;
+            }
+
             EnsureSlotScrollListReady();
 
             if (selectButton != null)
@@ -108,12 +121,45 @@ namespace UI.ClayEditor.View
             }
         }
 
+        private void Update()
+        {
+#if UNITY_EDITOR
+            if (pendingPoolSwitch == null || isLoading)
+            {
+                return;
+            }
+
+            ModelSavePool nextPool = pendingPoolSwitch.Value;
+            pendingPoolSwitch = null;
+            SwitchPool(nextPool);
+#endif
+        }
+
         /// <summary>
         /// 作り直し用スロット選択UIを表示する
         /// </summary>
         public void Show()
         {
+            Show(ModelSavePool.Player);
+        }
+
+        /// <summary>
+        /// 指定プールの作り直し用スロット選択UIを表示する
+        /// </summary>
+        /// <param name="pool">セーブプール</param>
+        public void Show(ModelSavePool pool)
+        {
+            if (!CanSelectPool(pool))
+            {
+                Debug.LogError(
+                    $"[ClayEditRemakeLoadSlotView] プール{pool}は作り直し対象にできません",
+                    this);
+                return;
+            }
+
+            currentPool = pool;
             selectedSlot = -1;
+            isSelectionVisible = true;
             SetConfirmVisible(false);
             Canvas canvas = GetComponent<Canvas>();
             if (canvas != null)
@@ -138,6 +184,8 @@ namespace UI.ClayEditor.View
         {
             selectedSlot = -1;
             isLoading = false;
+            isSelectionVisible = false;
+            currentPool = ModelSavePool.Player;
             loadConfirmView?.Clear();
             deletePromptView?.Hide();
             SetConfirmVisible(false);
@@ -160,7 +208,7 @@ namespace UI.ClayEditor.View
 
             ClearRuntimeThumbnails();
             slotScrollList.RefreshSlots(
-                ModelSavePool.Player,
+                currentPool,
                 saveService,
                 emptySlotLabel,
                 runtimeThumbnailObjects,
@@ -229,7 +277,7 @@ namespace UI.ClayEditor.View
 
         private void OnSlotSelected(int slotIndex)
         {
-            ModelSaveSlot slot = saveService.GetSlot(ModelSavePool.Player, slotIndex);
+            ModelSaveSlot slot = saveService.GetSlot(currentPool, slotIndex);
             if (slot == null || string.IsNullOrEmpty(slot.glbFileName))
             {
                 return;
@@ -270,7 +318,7 @@ namespace UI.ClayEditor.View
                 return;
             }
 
-            ModelSaveSlot slot = saveService.GetSlot(ModelSavePool.Player, selectedSlot);
+            ModelSaveSlot slot = saveService.GetSlot(currentPool, selectedSlot);
             if (slot == null || string.IsNullOrEmpty(slot.glbFileName))
             {
                 return;
@@ -292,7 +340,7 @@ namespace UI.ClayEditor.View
                 return;
             }
 
-            saveService.DeleteSlot(ModelSavePool.Player, selectedSlot);
+            saveService.DeleteSlot(currentPool, selectedSlot);
             selectedSlot = -1;
             loadConfirmView?.Clear();
             SetConfirmVisible(false);
@@ -301,92 +349,205 @@ namespace UI.ClayEditor.View
 
         private async UniTaskVoid LoadAndImportAsync(int slotIndex, CancellationToken cancellationToken)
         {
-            ModelSaveSlot slot = saveService.GetSlot(ModelSavePool.Player, slotIndex);
-            if (slot == null || string.IsNullOrEmpty(slot.glbFileName))
+            ModelSavePool pool = currentPool;
+            ModelSaveSlot slot = saveService.GetSlot(pool, slotIndex);
+            if (slot == null)
             {
                 Debug.LogWarning("[ClayEditRemakeLoadSlotView] スロットにモデルデータがありません");
                 return;
             }
 
-            string filePath = ModelSaveStorage.ResolveReadPath(slot.glbFileName);
-            if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
-            {
-                Debug.LogError($"[ClayEditRemakeLoadSlotView] glbファイルが見つかりません: {slot.glbFileName}");
-                return;
-            }
-
             isLoading = true;
+            GameObject importHolder = null;
+            bool completed = false;
             try
             {
+                // 変換中にUIを消すと背景だけに見えるので確認パネルだけ閉じる
                 SetConfirmVisible(false);
-                SetCanvasEnabled(GetComponent<Canvas>(), false);
+                SetSelectionInteractable(false);
 
-                (bool snapshotSuccess, string snapshotError) = await savedModelImporter.TryImportFromSnapshotAsync(
-                    ModelSavePool.Player,
-                    slotIndex,
-                    cancellationToken);
-                if (snapshotSuccess)
+                string voxelFileName = ModelSavePoolSettings.GetVoxelFileName(pool, slotIndex);
+                bool voxelExists = ModelSaveStorage.Exists(voxelFileName);
+                Debug.Log(
+                    $"[ClayEditRemakeLoadSlotView] 作り直し開始 pool={pool} slot={slotIndex}"
+                    + $" name={slot.modelName} voxelExists={voxelExists} file={voxelFileName}");
+
+                // 敵は過去の誤変換voxelが残るとサイズ色が壊れたままになるため常にGLBから再変換する
+                // 未育成プレイヤーは従来どおりvoxelスナップショットを優先する
+                bool preferSnapshot = pool != ModelSavePool.Enemy;
+                if (preferSnapshot)
                 {
-                    remakeConfirmedSubject.OnNext(new ClayEditRemakeSelection(slotIndex, slot.modelName));
+                    (bool snapshotSuccess, string snapshotError) = await savedModelImporter.TryImportFromSnapshotAsync(
+                        pool,
+                        slotIndex,
+                        cancellationToken);
+                    if (snapshotSuccess)
+                    {
+                        if (!HasRestoredMesh())
+                        {
+                            Debug.LogError(
+                                "[ClayEditRemakeLoadSlotView] ボクセル復元後にメッシュがありません",
+                                this);
+                            return;
+                        }
+
+                        CompleteRemake(slotIndex, slot.modelName);
+                        completed = true;
+                        return;
+                    }
+
+                    Debug.LogWarning(
+                        $"[ClayEditRemakeLoadSlotView] ボクセルスナップショット復元に失敗しました: {snapshotError}"
+                        + " GLBからの再変換を試みます");
+                }
+                else
+                {
+                    Debug.Log(
+                        "[ClayEditRemakeLoadSlotView] 敵スロットはGLBからボクセル化します(スナップショットは使いません)");
+                }
+
+                if (string.IsNullOrEmpty(slot.glbFileName))
+                {
+                    Debug.LogError("[ClayEditRemakeLoadSlotView] glbファイル名が空です");
                     return;
                 }
 
-                Debug.LogWarning(
-                    $"[ClayEditRemakeLoadSlotView] ボクセルスナップショット復元に失敗しました: {snapshotError} GLBからの再変換を試みます");
+                string filePath = ModelSaveStorage.ResolveReadPath(slot.glbFileName);
+                if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
+                {
+                    Debug.LogError($"[ClayEditRemakeLoadSlotView] glbファイルが見つかりません: {slot.glbFileName}");
+                    return;
+                }
 
-                GameObject imported = await importer.ImportFromGlbAsync(filePath, spawnParent, cancellationToken);
+                // シーンに出さず非アクティブの一時親へ取り込む
+                importHolder = new GameObject("ClayEditRemakeImportHolder");
+                importHolder.SetActive(false);
+                GameObject imported = await importer.ImportFromGlbAsync(
+                    filePath,
+                    importHolder.transform,
+                    cancellationToken);
                 if (imported == null)
                 {
                     Debug.LogError("[ClayEditRemakeLoadSlotView] モデルのロードに失敗しました");
-                    Show();
                     return;
                 }
 
+                SetImportedRenderersEnabled(imported, false);
                 imported.transform.localPosition = Vector3.zero;
-                imported.transform.localRotation = Quaternion.identity;
+                // 敵GLBの向きを造形空間に合わせる
+                imported.transform.localRotation = Quaternion.Euler(0f, 90f, 0f);
                 imported.transform.localScale = Vector3.one;
 
-                ApplyClayMaterial(imported);
-                SetImportedRenderersEnabled(imported, false);
+                // 変換用に一時有効化するが表示はレンダラー無効のまま
+                importHolder.SetActive(true);
+                await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
 
+                Debug.Log($"[ClayEditRemakeLoadSlotView] GLBボクセル化開始 slot={slotIndex}");
                 (bool importSuccess, string errorMessage) = await savedModelImporter.TryImportFromLoadedModelAsync(
                     imported,
                     cancellationToken);
                 if (!importSuccess)
                 {
                     Debug.LogError($"[ClayEditRemakeLoadSlotView] ボクセル化に失敗しました: {errorMessage}");
-                    Destroy(imported);
-                    Show();
                     return;
                 }
 
-                Destroy(imported);
-                remakeConfirmedSubject.OnNext(new ClayEditRemakeSelection(slotIndex, slot.modelName));
+                PersistVoxelSnapshot(pool, slotIndex);
+                if (!HasRestoredMesh())
+                {
+                    Debug.LogError(
+                        "[ClayEditRemakeLoadSlotView] ボクセル化後にメッシュがありません",
+                        this);
+                    return;
+                }
+
+                Debug.Log($"[ClayEditRemakeLoadSlotView] GLBボクセル化完了 slot={slotIndex}");
+                CompleteRemake(slotIndex, slot.modelName);
+                completed = true;
+            }
+            catch (System.OperationCanceledException)
+            {
+                Debug.LogWarning("[ClayEditRemakeLoadSlotView] 作り直しがキャンセルされました");
+            }
+            catch (System.Exception exception)
+            {
+                Debug.LogException(exception);
+                Debug.LogError($"[ClayEditRemakeLoadSlotView] 作り直し中に例外: {exception.Message}", this);
             }
             finally
             {
+                if (importHolder != null)
+                {
+                    Destroy(importHolder);
+                }
+
+                RestoreEditCamera();
                 isLoading = false;
+
+                if (!completed && isSelectionVisible)
+                {
+                    SetSelectionInteractable(true);
+                    SetCanvasEnabled(GetComponent<Canvas>(), true, SelectionCanvasSortingOrder);
+                    SetConfirmVisible(selectedSlot >= 0);
+                }
             }
         }
 
-        private void ApplyClayMaterial(GameObject importedRoot)
+        private void SetSelectionInteractable(bool interactable)
         {
-            if (clayMaterial == null || importedRoot == null)
+            SetSelectionRaycastsEnabled(interactable);
+            if (slotScrollList != null)
+            {
+                CanvasGroup listGroup = slotScrollList.GetComponent<CanvasGroup>();
+                if (listGroup != null)
+                {
+                    listGroup.interactable = interactable;
+                    listGroup.blocksRaycasts = interactable;
+                }
+            }
+        }
+
+        private void CompleteRemake(int slotIndex, string modelName)
+        {
+            RestoreEditCamera();
+            remakeConfirmedSubject.OnNext(new ClayEditRemakeSelection(slotIndex, modelName, currentPool));
+        }
+
+        private void PersistVoxelSnapshot(ModelSavePool pool, int slotIndex)
+        {
+            if (voxelEngine == null || !voxelEngine.HasMesh())
             {
                 return;
             }
 
-            SkinnedMeshRenderer[] skinnedRenderers = importedRoot.GetComponentsInChildren<SkinnedMeshRenderer>(true);
-            for (int i = 0; i < skinnedRenderers.Length; i++)
+            string voxelFilePath = Path.Combine(
+                Application.persistentDataPath,
+                ModelSavePoolSettings.GetVoxelFileName(pool, slotIndex));
+            if (!ClayVoxelSnapshotFile.TryWrite(
+                    voxelFilePath,
+                    voxelEngine.GetVoxelData(),
+                    voxelEngine.GetVoxelColors(),
+                    voxelEngine.size,
+                    voxelEngine.boundsSize))
             {
-                skinnedRenderers[i].sharedMaterial = clayMaterial;
+                Debug.LogWarning(
+                    $"[ClayEditRemakeLoadSlotView] 作り直し用ボクセルスナップショットの保存に失敗しました slot={slotIndex}");
             }
+        }
 
-            MeshRenderer[] meshRenderers = importedRoot.GetComponentsInChildren<MeshRenderer>(true);
-            for (int i = 0; i < meshRenderers.Length; i++)
+        private static void RestoreEditCamera()
+        {
+            // 本格的な編集カメラ復帰はClayEditPresenter側で行う
+            UnityEngine.Camera mainCamera = UnityEngine.Camera.main;
+            if (mainCamera != null && !mainCamera.enabled)
             {
-                meshRenderers[i].sharedMaterial = clayMaterial;
+                mainCamera.enabled = true;
             }
+        }
+
+        private bool HasRestoredMesh()
+        {
+            return voxelEngine != null && voxelEngine.HasMesh();
         }
 
         private static void SetImportedRenderersEnabled(GameObject importedRoot, bool enabled)
@@ -410,7 +571,7 @@ namespace UI.ClayEditor.View
                 return;
             }
 
-            ModelSaveSlot slot = saveService.GetSlot(ModelSavePool.Player, slotIndex);
+            ModelSaveSlot slot = saveService.GetSlot(currentPool, slotIndex);
             if (slot == null)
             {
                 return;
@@ -418,6 +579,85 @@ namespace UI.ClayEditor.View
 
             loadConfirmView.ShowSlot(slot, ModelSaveStorage.ReadThumbnailPng(slot), slotIndex);
         }
+
+        private static bool CanSelectPool(ModelSavePool pool)
+        {
+            if (pool == ModelSavePool.Player)
+            {
+                return true;
+            }
+
+            return pool == ModelSavePool.Enemy && EnemySaveAvailability.IsAvailable;
+        }
+
+#if UNITY_EDITOR
+        private void OnGUI()
+        {
+            if (!isSelectionVisible || isLoading || !Application.isPlaying)
+            {
+                return;
+            }
+
+            if (!EnemySaveAvailability.IsAvailable)
+            {
+                return;
+            }
+
+            Canvas canvas = GetComponent<Canvas>();
+            if (canvas == null || !canvas.enabled)
+            {
+                return;
+            }
+
+            const float width = 280f;
+            const float height = 34f;
+            var area = new Rect(16f, 16f, width, height);
+            GUILayout.BeginArea(area, GUI.skin.box);
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("作り直し元", GUILayout.Width(72f));
+            Color previous = GUI.backgroundColor;
+            GUI.backgroundColor = currentPool == ModelSavePool.Player
+                ? new Color(0.95f, 0.85f, 0.35f, 1f)
+                : Color.white;
+            if (GUILayout.Button("未育成"))
+            {
+                pendingPoolSwitch = ModelSavePool.Player;
+            }
+
+            GUI.backgroundColor = currentPool == ModelSavePool.Enemy
+                ? new Color(0.95f, 0.85f, 0.35f, 1f)
+                : Color.white;
+            if (GUILayout.Button("敵"))
+            {
+                pendingPoolSwitch = ModelSavePool.Enemy;
+            }
+
+            GUI.backgroundColor = previous;
+            GUILayout.EndHorizontal();
+            GUILayout.EndArea();
+        }
+
+        private void SwitchPool(ModelSavePool pool)
+        {
+            if (!CanSelectPool(pool) || currentPool == pool || isLoading)
+            {
+                return;
+            }
+
+            currentPool = pool;
+            selectedSlot = -1;
+            loadConfirmView?.Clear();
+            SetConfirmVisible(false);
+
+            Canvas canvas = GetComponent<Canvas>();
+            CanvasVisibilityUtility.SetCanvasEnabled(canvas, true, SelectionCanvasSortingOrder);
+            gameObject.SetActive(true);
+            isSelectionVisible = true;
+            ApplySelectionCanvasSorting();
+            ModelSaveSlotScrollListView.ApplySelectionCanvasLayout(canvas);
+            RefreshSlots();
+        }
+#endif
 
         private void ApplySelectionCanvasSorting()
         {
@@ -532,6 +772,9 @@ namespace UI.ClayEditor.View
                     "[ClayEditRemakeLoadSlotView] シーン上のUI参照が未設定です。HierarchyでUI参照を確認してください",
                     this);
             }
+
+            // spawnParentは旧実装のGLB直出し先で現在は未使用(シーン参照を維持する)
+            _ = spawnParent;
         }
 
         private void OnDestroy()

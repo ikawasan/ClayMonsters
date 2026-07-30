@@ -72,7 +72,52 @@ namespace SaveData
             }
 
             RemoveDuplicatedSkinnedMeshes(container, filePath);
+            DisableImportedCamerasAndListeners(container);
             return container;
+        }
+
+        /// <summary>
+        /// æ‚è‚İGLB“à‚ÌCamera‚ÆAudioListener‚ğ–³Œø‰»‚·‚é
+        /// MainCamera‚Ìæ‚Áæ‚è‚Å”wŒi‚¾‚¯‚É‚È‚é‚Ì‚ğ–h‚®
+        /// </summary>
+        /// <param name="root">æ‚è‚İƒ‹[ƒg</param>
+        private static void DisableImportedCamerasAndListeners(GameObject root)
+        {
+            if (root == null)
+            {
+                return;
+            }
+
+            UnityEngine.Camera[] cameras = root.GetComponentsInChildren<UnityEngine.Camera>(true);
+            for (int i = 0; i < cameras.Length; i++)
+            {
+                UnityEngine.Camera camera = cameras[i];
+                if (camera == null)
+                {
+                    continue;
+                }
+
+                camera.enabled = false;
+                camera.gameObject.SetActive(false);
+            }
+
+            AudioListener[] listeners = root.GetComponentsInChildren<AudioListener>(true);
+            for (int i = 0; i < listeners.Length; i++)
+            {
+                AudioListener listener = listeners[i];
+                if (listener == null)
+                {
+                    continue;
+                }
+
+                listener.enabled = false;
+            }
+
+            UnityEngine.Camera mainCamera = UnityEngine.Camera.main;
+            if (mainCamera != null && !mainCamera.enabled)
+            {
+                mainCamera.enabled = true;
+            }
         }
 
         /// <summary>

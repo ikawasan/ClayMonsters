@@ -68,12 +68,27 @@ namespace ClayEditor
 
             using (meshSource)
             {
+                Color[] vertexColors = meshSource.VertexColors;
+                if (vertexColors == null)
+                {
+                    Debug.LogWarning(
+                        "[ClayEditSavedModelImporter] GLBメッシュに頂点カラーが無いため既定色でボクセル化します");
+                }
+                else
+                {
+                    Debug.Log(
+                        $"[ClayEditSavedModelImporter] 頂点カラー取得 verts={meshSource.Mesh.vertexCount}"
+                        + $" colors={vertexColors.Length}");
+                }
+
                 return await engine.TryImportFromWorldMeshAsync(
                     meshSource.Mesh,
                     engine.ClayModelTransform,
                     meshSource.MeshTransform,
-                    null,
-                    cancellationToken);
+                    vertexColors,
+                    cancellationToken,
+                    applyAutoOrientation: false,
+                    fitToGrid: false);
             }
         }
     }

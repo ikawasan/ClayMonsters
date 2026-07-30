@@ -308,6 +308,15 @@ namespace UI.ClayEditor.View
         // 作り直し時も保存先スロットを選べる
         private void OnOpenPlayerSaveClicked()
         {
+            if (sessionContext != null
+                && sessionContext.IsRemake
+                && sessionContext.RemakePool == ModelSavePool.Enemy
+                && EnemySaveAvailability.IsAvailable)
+            {
+                OpenSlotCanvas(ModelSavePool.Enemy);
+                return;
+            }
+
             OpenSlotCanvas(ModelSavePool.Player);
         }
 

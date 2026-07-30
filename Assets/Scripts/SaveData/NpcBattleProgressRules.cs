@@ -75,5 +75,20 @@ namespace SaveData
             counts[0] = InitialSlotStrengthCount;
             return counts;
         }
+
+        /// <summary>
+        /// 全敵スロットと全強さを開放した配列を作る
+        /// </summary>
+        public static int[] CreateFullyUnlockedSlotStrengthCounts()
+        {
+            int maxEnemy = MaxEnemyCount;
+            int[] counts = new int[maxEnemy];
+            for (int i = 0; i < maxEnemy; i++)
+            {
+                counts[i] = MaxStrengthCount;
+            }
+
+            return counts;
+        }
     }
 }

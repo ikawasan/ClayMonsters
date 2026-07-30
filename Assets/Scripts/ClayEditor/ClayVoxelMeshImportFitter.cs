@@ -29,8 +29,12 @@ namespace ClayEditor
         /// </summary>
         /// <param name="engineVertices">造形ローカル頂点群</param>
         /// <param name="boundsSize">造形グリッドのワールドサイズ</param>
+        /// <param name="fitToGrid">trueならグリッドへ拡大縮小してフィットするfalseなら元サイズを保ちはみ出すときだけ縮小する</param>
         /// <returns>フィットパラメータ</returns>
-        internal static FitParams ComputeFromVertices(Vector3[] engineVertices, float boundsSize)
+        internal static FitParams ComputeFromVertices(
+            Vector3[] engineVertices,
+            float boundsSize,
+            bool fitToGrid = true)
         {
             if (!TryGetVertexBounds(engineVertices, out Vector3 center, out Vector3 extents))
             {
@@ -39,7 +43,19 @@ namespace ClayEditor
 
             float maxExtent = Mathf.Max(extents.x, Mathf.Max(extents.y, extents.z));
             float targetHalf = boundsSize * FitMarginRatio * 0.5f;
-            float uniformScale = maxExtent > 1e-5f ? targetHalf / maxExtent : 1f;
+            if (maxExtent <= 1e-5f)
+            {
+                return new FitParams(center, 1f);
+            }
+
+            if (!fitToGrid)
+            {
+                // 元サイズを保ちグリッドをはみ出すときだけ縮小する
+                float shrinkOnlyScale = maxExtent > targetHalf ? targetHalf / maxExtent : 1f;
+                return new FitParams(center, shrinkOnlyScale);
+            }
+
+            float uniformScale = targetHalf / maxExtent;
             return new FitParams(center, uniformScale);
         }
 

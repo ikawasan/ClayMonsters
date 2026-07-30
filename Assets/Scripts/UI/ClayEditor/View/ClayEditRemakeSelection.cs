@@ -1,3 +1,5 @@
+using SaveData;
+
 namespace UI.ClayEditor.View
 {
     /// <summary>
@@ -16,14 +18,21 @@ namespace UI.ClayEditor.View
         public string ModelName { get; }
 
         /// <summary>
+        /// 選択されたセーブプール
+        /// </summary>
+        public ModelSavePool Pool { get; }
+
+        /// <summary>
         /// 作り直し選択情報を生成する
         /// </summary>
         /// <param name="slotIndex">スロット番号</param>
         /// <param name="modelName">モデル名</param>
-        public ClayEditRemakeSelection(int slotIndex, string modelName)
+        /// <param name="pool">セーブプール</param>
+        public ClayEditRemakeSelection(int slotIndex, string modelName, ModelSavePool pool)
         {
             SlotIndex = slotIndex;
             ModelName = modelName ?? string.Empty;
+            Pool = pool;
         }
     }
 }

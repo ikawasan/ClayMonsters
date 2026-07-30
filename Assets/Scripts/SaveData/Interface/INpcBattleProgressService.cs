@@ -39,8 +39,18 @@ namespace SaveData.Interface
         bool RegisterVictory(int slotIndex, EnemyStrengthTier tier);
 
         /// <summary>
+        /// 全敵スロットと全強さを開放する
+        /// </summary>
+        void UnlockAllProgress();
+
+        /// <summary>
         /// 進捗を初期状態へ戻す
         /// </summary>
         void ResetProgress();
+
+        /// <summary>
+        /// 永続化データから進捗を再読込する
+        /// </summary>
+        void Reload();
     }
 }
