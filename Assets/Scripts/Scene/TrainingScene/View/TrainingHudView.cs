@@ -1563,7 +1563,6 @@ namespace Scene.TrainingScene.View
 
         /// <summary>
         /// 売店・所持アイテム選択用レイアウト
-        /// ステータスパネルは出さない
         /// </summary>
         private void ApplyItemListLayout()
         {
@@ -1571,7 +1570,7 @@ namespace Scene.TrainingScene.View
             SetPanelVisible(hudHeaderPanel, true);
             SetPanelVisible(movePowerPanel, true);
             SetPanelVisible(moneyPanel, true);
-            SetPanelVisible(statusPanel, false);
+            SetPanelVisible(statusPanel, true);
             attackSwapChoicesView?.Clear();
             SetPanelVisible(attackSwapPanel, false);
             SetPanelVisible(logPanel, true);

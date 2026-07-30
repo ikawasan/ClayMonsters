@@ -1544,7 +1544,10 @@ namespace Scene.TrainingScene
                 if (useResult.Succeeded
                     && useResult.Item.ItemType == TrainingShopItemType.MotivationBoost)
                 {
-                    await PlayMotivationBallAsync(useResult.Message, cancellationToken);
+                    await PlayMotivationBallAsync(
+                        useResult.Item,
+                        useResult.Message,
+                        cancellationToken);
                     continue;
                 }
 
@@ -1554,6 +1557,7 @@ namespace Scene.TrainingScene
         }
 
         private async UniTask PlayMotivationBallAsync(
+            TrainingShopItem item,
             string resultMessage,
             CancellationToken cancellationToken)
         {
@@ -1566,7 +1570,14 @@ namespace Scene.TrainingScene
 
             if (motivationBallPlay != null)
             {
-                await motivationBallPlay.PlayAsync(cancellationToken);
+                TrainingMotivationBallPlayController.ResolveBallVisual(
+                    item.Id,
+                    out string resourcePath,
+                    out float visualScale);
+                await motivationBallPlay.PlayAsync(
+                    resourcePath,
+                    visualScale,
+                    cancellationToken);
             }
             else
             {
@@ -2234,6 +2245,7 @@ namespace Scene.TrainingScene
 
         private void StopMonsterRoam()
         {
+            ClearMotivationBall();
             EnsureMonsterRoamController();
             monsterRoamController?.StopRoam();
         }
@@ -2283,6 +2295,7 @@ namespace Scene.TrainingScene
 
         private async UniTask TransitionTurnAsync(CancellationToken cancellationToken, Action applyWhileBlack = null)
         {
+            ClearMotivationBall();
             if (canvasTransition == null)
             {
                 applyWhileBlack?.Invoke();
@@ -2292,6 +2305,17 @@ namespace Scene.TrainingScene
             await canvasTransition.FadeOutAsync(cancellationToken);
             applyWhileBlack?.Invoke();
             await canvasTransition.FadeInAsync(cancellationToken);
+        }
+
+        private void ClearMotivationBall()
+        {
+            if (motivationBallPlay == null && trainingDisplay != null)
+            {
+                motivationBallPlay =
+                    trainingDisplay.GetComponent<TrainingMotivationBallPlayController>();
+            }
+
+            motivationBallPlay?.ClearBall();
         }
     }
 }

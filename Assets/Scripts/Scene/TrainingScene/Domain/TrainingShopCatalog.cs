@@ -105,16 +105,27 @@ namespace Scene.TrainingScene.Domain
                 TrainingSettings.ShopTrainBoostStrongPercent,
                 TrainingSettings.ShopTrainBoostStrongWeeks),
             new TrainingShopItem(
-                "motivation_boost",
-                "サッカーボール",
-                $"やる気が{TrainingSettings.ShopMotivationBoostGain}段階上がる",
-                TrainingSettings.ShopMotivationBoostPrice,
+                "motivation_tennis",
+                "テニスボール",
+                $"やる気が{TrainingSettings.ShopTennisBallGain}段階上がる",
+                TrainingSettings.ShopTennisBallPrice,
                 TrainingShopItemType.MotivationBoost,
                 default,
                 0,
                 0f,
                 0,
-                TrainingSettings.ShopMotivationBoostGain)
+                TrainingSettings.ShopTennisBallGain),
+            new TrainingShopItem(
+                "motivation_boost",
+                "サッカーボール",
+                $"やる気が{TrainingSettings.ShopSoccerBallGain}段階上がる",
+                TrainingSettings.ShopSoccerBallPrice,
+                TrainingShopItemType.MotivationBoost,
+                default,
+                0,
+                0f,
+                0,
+                TrainingSettings.ShopSoccerBallGain)
         };
 
         /// <summary>

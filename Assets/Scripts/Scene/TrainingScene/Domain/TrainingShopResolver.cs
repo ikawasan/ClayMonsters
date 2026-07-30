@@ -146,7 +146,7 @@ namespace Scene.TrainingScene.Domain
 
             ApplyItemEffect(session, item);
             string message = item.ItemType == TrainingShopItemType.MotivationBoost
-                ? $"{item.DisplayName}を使った\nやる気が上がった"
+                ? $"{item.DisplayName}を使った\nやる気が上昇した"
                 : $"{item.DisplayName}を使った";
             return new TrainingItemUseResult(
                 true,

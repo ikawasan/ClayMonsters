@@ -1,4 +1,5 @@
 using Cysharp.Threading.Tasks;
+using System;
 using System.Threading;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -11,9 +12,14 @@ namespace Scene.TrainingScene.View
     public sealed class TrainingMotivationBallPlayController : MonoBehaviour
     {
         private const string SoccerBallResourcePath = "Field/Item/SoccerBall";
+        private const string TennisBallResourcePath = "Field/Item/TennisBall";
+        private const string TennisBallItemId = "motivation_tennis";
+        private const float DefaultSoccerBallScale = 50f;
+        private const float DefaultTennisBallScale = 28f;
 
         [Header("依存")]
         [SerializeField] private TrainingMonsterRoamController roamController;
+        [SerializeField] private TrainingDisplay trainingDisplay;
         [Tooltip("未設定時はMainCamera")]
         [SerializeField] private UnityEngine.Camera throwCamera;
         [Tooltip("ボール表示ルート未設定時は実行時に生成する")]
@@ -22,7 +28,7 @@ namespace Scene.TrainingScene.View
         [Header("構え")]
         [SerializeField] private float holdDistance = 1.35f;
         [SerializeField] private float holdHeightOffset = -0.12f;
-        [SerializeField] private float ballScale = 50f;
+        [SerializeField] private float ballScale = DefaultSoccerBallScale;
         [SerializeField] private float ballRadius = 25f;
 
         [Header("投げ")]
@@ -39,18 +45,60 @@ namespace Scene.TrainingScene.View
         [SerializeField] private float groundFriction = 0.988f;
         [SerializeField] private float airDrag = 0.02f;
         [SerializeField] private float minBounceSpeed = 0.35f;
+        [Tooltip("モンスター接触またはこの秒数でやる気テキストを出す")]
         [SerializeField] private float playDurationSeconds = 8f;
 
+        [Header("追いかけ遊び")]
+        [Tooltip("追いついたときに弾く速さ")]
+        [SerializeField] private float playKickSpeed = 7.5f;
+        [Tooltip("弾くときの上方向成分")]
+        [SerializeField] private float playKickUpward = 0.55f;
+        [Tooltip("弾き方向のばらつき")]
+        [SerializeField] private float playKickScatter = 0.45f;
+        [Tooltip("連続で弾かないための間隔秒")]
+        [SerializeField] private float playKickCooldownSeconds = 0.55f;
+
         private GameObject ballVisual;
+        private string loadedBallResourcePath = string.Empty;
         private bool ownsBallRoot;
         private Vector3 velocity;
         private bool isInFlight;
+        private bool isBallPersisted;
+        private float nextPlayKickAllowedTime;
+        private CancellationTokenSource lingerCts;
+
+        /// <summary>
+        /// アイテムIDからボール見た目を解決する
+        /// </summary>
+        /// <param name="itemId">商品ID</param>
+        /// <param name="resourcePath">Resourcesパス</param>
+        /// <param name="visualScale">表示スケール</param>
+        public static void ResolveBallVisual(
+            string itemId,
+            out string resourcePath,
+            out float visualScale)
+        {
+            if (itemId == TennisBallItemId)
+            {
+                resourcePath = TennisBallResourcePath;
+                visualScale = DefaultTennisBallScale;
+                return;
+            }
+
+            resourcePath = SoccerBallResourcePath;
+            visualScale = DefaultSoccerBallScale;
+        }
 
         private void Awake()
         {
             if (roamController == null)
             {
                 roamController = GetComponent<TrainingMonsterRoamController>();
+            }
+
+            if (trainingDisplay == null)
+            {
+                trainingDisplay = GetComponent<TrainingDisplay>();
             }
 
             if (roamController == null)
@@ -60,12 +108,20 @@ namespace Scene.TrainingScene.View
                     this);
             }
 
+            if (trainingDisplay == null)
+            {
+                Debug.LogError(
+                    "[TrainingMotivationBallPlayController] trainingDisplayが未配線です",
+                    this);
+            }
+
             EnsureBallRoot();
             SetBallVisible(false);
         }
 
         private void OnDestroy()
         {
+            CancelLinger();
             if (ownsBallRoot && ballRoot != null)
             {
                 Destroy(ballRoot.gameObject);
@@ -73,10 +129,34 @@ namespace Scene.TrainingScene.View
         }
 
         /// <summary>
-        /// カメラ前で構え投げ跳ね回り追いかけを再生する
+        /// ターン経過などで残したボールを消す
         /// </summary>
+        public void ClearBall()
+        {
+            CancelLinger();
+            isInFlight = false;
+            velocity = Vector3.zero;
+            isBallPersisted = false;
+            nextPlayKickAllowedTime = 0f;
+            if (roamController != null)
+            {
+                roamController.StopChase();
+            }
+
+            SetBallVisible(false);
+        }
+
+        /// <summary>
+        /// カメラ前で構え投げ跳ね回り追いかけを再生する
+        /// 接触または制限時間で完了しボールはターン経過まで残す
+        /// </summary>
+        /// <param name="ballResourcePath">Resources上のボールprefabパス</param>
+        /// <param name="visualScale">表示スケール</param>
         /// <param name="cancellationToken">キャンセルトークン</param>
-        public async UniTask PlayAsync(CancellationToken cancellationToken)
+        public async UniTask PlayAsync(
+            string ballResourcePath,
+            float visualScale,
+            CancellationToken cancellationToken)
         {
             if (roamController == null)
             {
@@ -86,8 +166,10 @@ namespace Scene.TrainingScene.View
                 return;
             }
 
+            ClearBall();
+            ballScale = Mathf.Max(0.01f, visualScale);
             EnsureBallRoot();
-            EnsureBallVisual();
+            EnsureBallVisual(ballResourcePath);
             if (ballRoot == null || ballVisual == null)
             {
                 return;
@@ -95,6 +177,7 @@ namespace Scene.TrainingScene.View
 
             isInFlight = false;
             velocity = Vector3.zero;
+            nextPlayKickAllowedTime = 0f;
             ApplyBallScale();
             SetBallVisible(true);
 
@@ -102,13 +185,14 @@ namespace Scene.TrainingScene.View
             {
                 await WaitThrowAsync(cancellationToken);
                 roamController.StartChase(ballRoot);
-                await SimulateFlightAsync(cancellationToken);
+                await SimulateUntilContactOrTimeoutAsync(cancellationToken);
+                isBallPersisted = true;
+                StartLingerPhysics();
             }
-            finally
+            catch (OperationCanceledException)
             {
-                isInFlight = false;
-                roamController.StopChase();
-                SetBallVisible(false);
+                ClearBall();
+                throw;
             }
         }
 
@@ -227,10 +311,10 @@ namespace Scene.TrainingScene.View
             isInFlight = true;
         }
 
-        private async UniTask SimulateFlightAsync(CancellationToken cancellationToken)
+        private async UniTask SimulateUntilContactOrTimeoutAsync(CancellationToken cancellationToken)
         {
             float elapsed = 0f;
-            float duration = Mathf.Max(1f, playDurationSeconds);
+            float duration = Mathf.Max(0.1f, playDurationSeconds);
             while (elapsed < duration && !cancellationToken.IsCancellationRequested)
             {
                 if (isInFlight)
@@ -238,9 +322,128 @@ namespace Scene.TrainingScene.View
                     StepPhysics(Time.deltaTime);
                 }
 
+                if (IsMonsterTouchingBall())
+                {
+                    TryKickBallForPlay();
+                    return;
+                }
+
                 elapsed += Time.deltaTime;
                 await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
             }
+        }
+
+        private void StartLingerPhysics()
+        {
+            CancelLinger();
+            if (!isBallPersisted || ballRoot == null)
+            {
+                return;
+            }
+
+            lingerCts = new CancellationTokenSource();
+            RunLingerPhysicsAsync(lingerCts.Token).Forget();
+        }
+
+        private async UniTaskVoid RunLingerPhysicsAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                while (isBallPersisted
+                    && ballRoot != null
+                    && !cancellationToken.IsCancellationRequested)
+                {
+                    if (isInFlight)
+                    {
+                        StepPhysics(Time.deltaTime);
+                    }
+
+                    TryKickBallForPlay();
+                    await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+            }
+        }
+
+        private void TryKickBallForPlay()
+        {
+            if (!IsMonsterTouchingBall() || ballRoot == null || trainingDisplay == null)
+            {
+                return;
+            }
+
+            if (Time.time < nextPlayKickAllowedTime)
+            {
+                return;
+            }
+
+            GameObject model = trainingDisplay.LoadedModel;
+            if (model == null)
+            {
+                return;
+            }
+
+            Vector3 fromMonster = ballRoot.position - model.transform.position;
+            fromMonster.y = 0f;
+            if (fromMonster.sqrMagnitude < 0.0001f)
+            {
+                float angle = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
+                fromMonster = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+            }
+
+            Vector3 kickDirection = fromMonster.normalized;
+            Vector3 scatter = UnityEngine.Random.insideUnitSphere * Mathf.Max(0f, playKickScatter);
+            scatter.y = Mathf.Abs(scatter.y);
+            kickDirection = (kickDirection + scatter).normalized;
+            if (kickDirection.sqrMagnitude < 0.0001f)
+            {
+                kickDirection = Vector3.forward;
+            }
+
+            kickDirection.y = Mathf.Max(kickDirection.y, Mathf.Max(0.15f, playKickUpward));
+            kickDirection.Normalize();
+
+            float speed = Mathf.Max(1f, playKickSpeed);
+            velocity = kickDirection * speed;
+            isInFlight = true;
+            nextPlayKickAllowedTime = Time.time + Mathf.Max(0.1f, playKickCooldownSeconds);
+
+            if (roamController != null)
+            {
+                roamController.StartChase(ballRoot);
+            }
+        }
+
+        private void CancelLinger()
+        {
+            if (lingerCts == null)
+            {
+                return;
+            }
+
+            lingerCts.Cancel();
+            lingerCts.Dispose();
+            lingerCts = null;
+        }
+
+        private bool IsMonsterTouchingBall()
+        {
+            if (ballRoot == null || trainingDisplay == null)
+            {
+                return false;
+            }
+
+            GameObject model = trainingDisplay.LoadedModel;
+            if (model == null)
+            {
+                return false;
+            }
+
+            float touchDistance = ResolveBallRadius();
+            float sqr = (model.transform.position - ballRoot.position).sqrMagnitude;
+            return sqr <= touchDistance * touchDistance;
         }
 
         private void StepPhysics(float deltaTime)
@@ -328,17 +531,17 @@ namespace Scene.TrainingScene.View
                 return;
             }
 
-            ApplyBallScale();
             Transform cameraTransform = camera.transform;
             ballRoot.position = cameraTransform.position
                 + cameraTransform.forward * holdDistance
-                + cameraTransform.up * holdHeightOffset;
+                + Vector3.up * holdHeightOffset;
             ballRoot.rotation = Quaternion.LookRotation(cameraTransform.forward, Vector3.up);
+            ApplyBallScale();
         }
 
-        private bool TryGetPointerWorldOnHoldPlane(out Vector3 worldPosition)
+        private bool TryGetPointerWorldOnHoldPlane(out Vector3 worldPos)
         {
-            worldPosition = default;
+            worldPos = default;
             UnityEngine.Camera camera = ResolveCamera();
             if (camera == null || ballRoot == null)
             {
@@ -353,15 +556,15 @@ namespace Scene.TrainingScene.View
             Transform cameraTransform = camera.transform;
             Vector3 planePoint = cameraTransform.position
                 + cameraTransform.forward * holdDistance
-                + cameraTransform.up * holdHeightOffset;
-            Plane holdPlane = new Plane(-cameraTransform.forward, planePoint);
+                + Vector3.up * holdHeightOffset;
+            var plane = new Plane(-cameraTransform.forward, planePoint);
             Ray ray = camera.ScreenPointToRay(screenPosition);
-            if (!holdPlane.Raycast(ray, out float enter))
+            if (!plane.Raycast(ray, out float enter))
             {
                 return false;
             }
 
-            worldPosition = ray.GetPoint(enter);
+            worldPos = ray.GetPoint(enter);
             return true;
         }
 
@@ -373,47 +576,67 @@ namespace Scene.TrainingScene.View
             }
 
             GameObject rootObject = new GameObject("MotivationBall");
-            rootObject.transform.SetParent(transform, false);
+            rootObject.transform.SetParent(null, false);
             ballRoot = rootObject.transform;
             ownsBallRoot = true;
         }
 
-        private void EnsureBallVisual()
+        private void EnsureBallVisual(string ballResourcePath)
         {
             if (ballRoot == null)
             {
                 return;
             }
 
-            if (ballVisual != null)
+            string resourcePath = string.IsNullOrEmpty(ballResourcePath)
+                ? SoccerBallResourcePath
+                : ballResourcePath;
+            if (ballVisual != null && loadedBallResourcePath == resourcePath)
             {
                 ApplyBallScale();
                 return;
             }
 
-            if (ballRoot.childCount > 0)
-            {
-                ballVisual = ballRoot.GetChild(0).gameObject;
-                ApplyBallScale();
-                StripImportedCameras(ballVisual);
-                return;
-            }
+            ClearBallVisual();
 
-            GameObject prefab = Resources.Load<GameObject>(SoccerBallResourcePath);
+            GameObject prefab = Resources.Load<GameObject>(resourcePath);
             if (prefab == null)
             {
                 Debug.LogError(
-                    $"[TrainingMotivationBallPlayController] Resources/{SoccerBallResourcePath}が見つかりません",
+                    $"[TrainingMotivationBallPlayController] Resources/{resourcePath}が見つかりません",
                     this);
                 return;
             }
 
             ballVisual = Instantiate(prefab, ballRoot);
-            ballVisual.name = "SoccerBallVisual";
+            ballVisual.name = resourcePath == TennisBallResourcePath
+                ? "TennisBallVisual"
+                : "SoccerBallVisual";
             ballVisual.transform.localPosition = Vector3.zero;
             ballVisual.transform.localRotation = Quaternion.identity;
-            ApplyBallScale();
+            loadedBallResourcePath = resourcePath;
             StripImportedCameras(ballVisual);
+            ApplyBallScale();
+        }
+
+        private void ClearBallVisual()
+        {
+            if (ballVisual != null)
+            {
+                Destroy(ballVisual);
+                ballVisual = null;
+            }
+
+            loadedBallResourcePath = string.Empty;
+            if (ballRoot == null)
+            {
+                return;
+            }
+
+            for (int i = ballRoot.childCount - 1; i >= 0; i--)
+            {
+                Destroy(ballRoot.GetChild(i).gameObject);
+            }
         }
 
         private void ApplyBallScale()
@@ -439,7 +662,7 @@ namespace Scene.TrainingScene.View
                 if (renderer != null)
                 {
                     Bounds bounds = renderer.bounds;
-                    return Mathf.Max(0.05f, bounds.extents.y);
+                    return Mathf.Max(0.05f, bounds.extents.magnitude);
                 }
             }
 
@@ -453,30 +676,14 @@ namespace Scene.TrainingScene.View
                 return;
             }
 
-            // FBX付属カメラがMainCameraを乗っ取り投げ時に視点が動くのを防ぐ
             UnityEngine.Camera[] cameras = root.GetComponentsInChildren<UnityEngine.Camera>(true);
             for (int i = 0; i < cameras.Length; i++)
             {
-                UnityEngine.Camera importedCamera = cameras[i];
-                if (importedCamera == null)
+                if (cameras[i] != null)
                 {
-                    continue;
+                    cameras[i].enabled = false;
+                    cameras[i].gameObject.SetActive(false);
                 }
-
-                importedCamera.enabled = false;
-                importedCamera.gameObject.SetActive(false);
-            }
-
-            AudioListener[] listeners = root.GetComponentsInChildren<AudioListener>(true);
-            for (int i = 0; i < listeners.Length; i++)
-            {
-                AudioListener listener = listeners[i];
-                if (listener == null)
-                {
-                    continue;
-                }
-
-                listener.enabled = false;
             }
         }
 

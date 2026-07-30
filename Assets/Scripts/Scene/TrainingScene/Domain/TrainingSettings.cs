@@ -205,14 +205,34 @@ namespace Scene.TrainingScene.Domain
         public const int ShopTrainBoostStrongWeeks = 2;
 
         /// <summary>
-        /// やる気回復アイテム価格
+        /// テニスボール価格
         /// </summary>
-        public const int ShopMotivationBoostPrice = 150;
+        public const int ShopTennisBallPrice = 100;
 
         /// <summary>
-        /// やる気回復アイテムの上昇段階数
+        /// テニスボールのやる気上昇段階数
         /// </summary>
-        public const int ShopMotivationBoostGain = 1;
+        public const int ShopTennisBallGain = 1;
+
+        /// <summary>
+        /// サッカーボール価格
+        /// </summary>
+        public const int ShopSoccerBallPrice = 200;
+
+        /// <summary>
+        /// サッカーボールのやる気上昇段階数
+        /// </summary>
+        public const int ShopSoccerBallGain = 2;
+
+        /// <summary>
+        /// 旧やる気回復アイテム価格(互換)
+        /// </summary>
+        public const int ShopMotivationBoostPrice = ShopSoccerBallPrice;
+
+        /// <summary>
+        /// 旧やる気回復アイテムの上昇段階数(互換)
+        /// </summary>
+        public const int ShopMotivationBoostGain = ShopSoccerBallGain;
 
         /// <summary>
         /// 開始時のやる気
