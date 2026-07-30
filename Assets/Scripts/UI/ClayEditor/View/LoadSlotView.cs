@@ -252,7 +252,11 @@ namespace UI.ClayEditor.View
         /// </summary>
         public void EnsureSelectionReady()
         {
-            RestoreSelectionInteractable();
+            if (!IsConfirmPanelVisible())
+            {
+                RestoreSelectionInteractable();
+            }
+
             ApplySelectionInstructionText();
 
             if (UsesTrainedSlotGrid())
@@ -392,13 +396,34 @@ namespace UI.ClayEditor.View
         /// <inheritdoc />
         public void Refresh()
         {
-            RestoreSelectionInteractable();
+            if (!IsConfirmPanelVisible())
+            {
+                RestoreSelectionInteractable();
+            }
+
+            RefreshSlots();
+        }
+
+        /// <summary>
+        /// 選択状態を保ったままスロット一覧だけ更新する
+        /// </summary>
+        public void RefreshSlotsOnly()
+        {
             RefreshSlots();
         }
 
         /// <inheritdoc />
         public void PrepareForSelectionWait()
         {
+            // 確認画面への遷移中は選択状態を消さない
+            if (IsConfirmPanelVisible() || selectedSlot >= 0)
+            {
+                ApplySelectionInstructionText();
+                EnsureSelectionInputEnabled();
+                RefreshSlots();
+                return;
+            }
+
             ClearLoadedModelForNewSelection();
             SetConfirmPanelActive(false);
             ApplySelectionInstructionText();
@@ -424,14 +449,37 @@ namespace UI.ClayEditor.View
 
         /// <summary>
         /// 再戦などで選択UIを再表示するとき入力状態を復元する
+        /// 確認画面表示中は選択中スロットを消さない
         /// </summary>
         private void RestoreSelectionInteractable()
         {
+            if (IsConfirmPanelVisible())
+            {
+                return;
+            }
+
             ClearLoadedModelReference();
             selectedSlot = -1;
             isLoading = false;
             loadConfirmView?.Clear();
             ShowSelectionUi();
+        }
+
+        private bool IsConfirmPanelVisible()
+        {
+            EnsureConfirmPanelRoot();
+            if (confirmPanelRoot == null || !confirmPanelRoot.activeInHierarchy)
+            {
+                return false;
+            }
+
+            Canvas confirmCanvas = confirmPanelRoot.GetComponent<Canvas>();
+            if (confirmCanvas != null)
+            {
+                return confirmCanvas.enabled;
+            }
+
+            return confirmPanelRoot.activeSelf;
         }
 
         private void DestroyOwnedLoadedModel()
@@ -599,17 +647,26 @@ namespace UI.ClayEditor.View
                 return;
             }
 
+            // 暗転中にRefreshがselectedSlotを消す競合を避ける
+            int slotIndex = selectedSlot;
+            if (slotIndex < 0)
+            {
+                Debug.LogWarning("[LoadSlotView] 確認対象スロットが未選択です");
+                return;
+            }
+
             if (canvasTransition != null)
             {
                 await canvasTransition.FadeOutAsync(cancellationToken);
             }
 
+            selectedSlot = slotIndex;
             EnsureConfirmPanelInFront();
             SetSelectionContentVisible(false);
             SetConfirmPanelActive(true);
             ModelSaveSlotScrollListView.EnsureSelectionBackground(
                 confirmPanelRoot != null ? confirmPanelRoot.transform : null);
-            RefreshLoadConfirm(selectedSlot);
+            RefreshLoadConfirm(slotIndex);
             if (confirmPanelRoot != null)
             {
                 confirmPanelRoot.transform.SetAsLastSibling();
@@ -618,6 +675,12 @@ namespace UI.ClayEditor.View
             if (canvasTransition != null)
             {
                 await canvasTransition.FadeInAsync(cancellationToken);
+            }
+
+            // 明転後にも再反映しTMPの未更新を防ぐ
+            if (selectedSlot == slotIndex && IsConfirmPanelVisible())
+            {
+                RefreshLoadConfirm(slotIndex);
             }
         }
 
@@ -1008,6 +1071,12 @@ namespace UI.ClayEditor.View
                 }
 
                 CanvasVisibilityUtility.SetUiVisible(child.gameObject, visible);
+            }
+
+            // SetUiVisibleは非アクティブ子孫を再有効化するためプール件数を再適用する
+            if (visible)
+            {
+                RefreshSlots();
             }
         }
 
