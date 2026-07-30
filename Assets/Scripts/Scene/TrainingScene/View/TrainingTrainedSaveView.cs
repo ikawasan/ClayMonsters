@@ -140,8 +140,7 @@ namespace Scene.TrainingScene.View
                 cancellationToken: cancellationToken);
 
             ClearInheritanceHoverHandlers();
-            HideAll();
-            uiMode = UiMode.Idle;
+            // 暗転前にCanvasを落とすと背景が露出するためHideはFlow側のFadeOut後に行う
             if (isCancelled || inheritanceParentA < 0 || inheritanceParentB < 0)
             {
                 return (-1, -1);

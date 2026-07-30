@@ -189,6 +189,8 @@ namespace Scene.BattleNpcScene
             loadSlotView.DetachSelectionUiToSceneRoot(sceneRoot);
             loadSlotView.PrepareLayout();
             loadSlotView.EnsureSelectionReady();
+            // 明転前に一覧を確定しクリック競合で確認内容が消えるのを防ぐ
+            loadSlotView.PrepareForSelectionWait();
 
             Canvas selectionCanvas = loadSlotView.SelectionCanvas;
             if (presentationTransition != null)
@@ -225,7 +227,7 @@ namespace Scene.BattleNpcScene
             loadSlotView.DetachSelectionUiToSceneRoot(loadSlotView.transform.root);
             loadSlotView.PrepareLayout();
             loadSlotView.EnsureSelectionReady();
-            loadSlotView.Refresh();
+            loadSlotView.RefreshSlotsOnly();
 
             await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate, cancellationToken);
             Canvas.ForceUpdateCanvases();

@@ -828,6 +828,9 @@ namespace Scene.TrainingScene
 
             if (InheritancePresentation != null && trainingDisplay != null)
             {
+                // 明転前に継承背景を先に出し読み込み中の露出を防ぐ
+                backgroundView?.ShowInheritanceBackground();
+
                 if (trainingDisplay.LoadedModel != null)
                 {
                     trainingDisplay.LoadedModel.SetActive(true);
