@@ -13,8 +13,8 @@ namespace Scene.BattleNpcScene.View
     /// </summary>
     public sealed class BattleMatchupStatusPanelView : MonoBehaviour
     {
-        // HP攻撃防御速さ命中の表示上限
-        private static readonly float[] DisplayMaxValues = { 900f, 250f, 250f, 99f, 99f };
+        // HP攻撃防御速さ命中の表示上限(BattleStatusBalanceと揃える)
+        private static readonly float[] DisplayMaxValues = { 999f, 999f, 999f, 99f, 99f };
 
         [Header("表示制御")]
         [SerializeField] private Canvas buttonCanvas;
