@@ -34,13 +34,13 @@ namespace Battle
         /// 育成後を含む戦闘上限
         /// 作成時上限より高い
         /// </summary>
-        public const int MaxSpeed = 99;
+        public const int MaxSpeed = 999;
         public const int MinHit = ModelStatusDefaults.MinHit;
         /// <summary>
         /// 育成後を含む戦闘上限
         /// 作成時上限(ModelStatusDefaults.MaxHit)より高い
         /// </summary>
-        public const int MaxHit = 99;
+        public const int MaxHit = 999;
         public const int DefaultHit = ModelStatusDefaults.DefaultHit;
         /// <summary>
         /// 既定速度時の通常移動速度
@@ -48,8 +48,9 @@ namespace Battle
         public const float BaseMoveSpeed = 0.4f;
         /// <summary>
         /// 既定速度からの1上昇あたりの移動速度加算
+        /// MaxSpeed到達時に旧上限99相当の伸びになるよう調整
         /// </summary>
-        public const float MoveSpeedPerPointAboveDefault = 0.008f;
+        public const float MoveSpeedPerPointAboveDefault = 0.00072f;
         public const float MinMoveSpeed = 0.35f;
         public const float MinStepDistanceRatio = 0.45f;
 

@@ -9,7 +9,7 @@ namespace SaveData
         /// <summary>
         /// バランス改訂番号(不一致なら段階ステータスを再生成する)
         /// </summary>
-        public const int BalanceVersion = 3;
+        public const int BalanceVersion = 4;
 
         /// <summary>
         /// 弱い倍率(未育成=基準)
@@ -49,12 +49,12 @@ namespace SaveData
         /// <summary>
         /// 敵速さ上限
         /// </summary>
-        public const int MaxSpeed = 99;
+        public const int MaxSpeed = 999;
 
         /// <summary>
         /// 敵命中上限
         /// </summary>
-        public const int MaxHit = 99;
+        public const int MaxHit = 999;
 
         /// <summary>
         /// 強さ段階の表示名を返す
