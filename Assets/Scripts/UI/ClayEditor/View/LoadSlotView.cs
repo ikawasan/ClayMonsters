@@ -1,4 +1,5 @@
 using Battle.Interface;
+using ClayEditor.Rigging;
 using Cysharp.Threading.Tasks;
 using Extensions;
 using LighthouseExtends.UIComponent.Button;
@@ -881,7 +882,12 @@ namespace UI.ClayEditor.View
                 }
 
                 ModelStatus status = EnemyStrengthStatusCatalog.Resolve(slot, SelectedStrengthTier);
-                loadConfirmView.ShowSlot(slot, thumbnailPng, slotIndex, status);
+                loadConfirmView.ShowSlot(
+                    slot,
+                    thumbnailPng,
+                    slotIndex,
+                    status,
+                    ResolveEnemyConfirmAttacks(slot, slotIndex, SelectedStrengthTier));
                 return;
             }
 
@@ -915,7 +921,20 @@ namespace UI.ClayEditor.View
                 slot,
                 ModelSaveStorage.ReadThumbnailPng(slot),
                 selectedSlot,
-                status);
+                status,
+                ResolveEnemyConfirmAttacks(slot, selectedSlot, tier));
+        }
+
+        private static IReadOnlyList<MotionType> ResolveEnemyConfirmAttacks(
+            ModelSaveSlot slot,
+            int slotIndex,
+            EnemyStrengthTier tier)
+        {
+            return EnemyStrengthAttackCatalog.ResolveForConfirmPreview(
+                tier,
+                slot?.attackMotions,
+                slotIndex,
+                ModelAttackMotionUtility.SlotCount);
         }
 
         private Func<int, bool> ResolveEnemySlotUnlockPredicate()

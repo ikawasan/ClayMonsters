@@ -53,6 +53,19 @@ namespace UI.ClayEditor.View
             int slotIndex,
             ModelStatus statusOverride)
         {
+            ShowSlot(slot, thumbnailPng, slotIndex, statusOverride, attackOverride: null);
+        }
+
+        /// <summary>
+        /// 保存済みスロット内容を指定ステータスと攻撃で表示する
+        /// </summary>
+        public void ShowSlot(
+            ModelSaveSlot slot,
+            byte[] thumbnailPng,
+            int slotIndex,
+            ModelStatus statusOverride,
+            IReadOnlyList<MotionType> attackOverride)
+        {
             _ = slotIndex;
             ValidateSerializedReferences();
             SetLegacyMessageVisible(false);
@@ -63,12 +76,11 @@ namespace UI.ClayEditor.View
                 return;
             }
 
-            if (statusOverride != null)
+            if (statusOverride != null || attackOverride != null)
             {
-                rowElementRefs?.BindConfirmPreview(
-                    slot.modelName,
-                    statusOverride,
-                    slot.attackMotions);
+                ModelStatus status = statusOverride ?? slot.status;
+                IReadOnlyList<MotionType> attacks = attackOverride ?? slot.attackMotions;
+                rowElementRefs?.BindConfirmPreview(slot.modelName, status, attacks);
             }
             else
             {

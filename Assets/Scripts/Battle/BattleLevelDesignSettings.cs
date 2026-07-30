@@ -63,7 +63,7 @@ namespace Battle
 
         [Header("Part Repair")]
         [Tooltip("部位1本あたりの修理時間(秒)")]
-        [SerializeField] private float partRepairSecondsPerLimb = 1.1f;
+        [SerializeField] private float partRepairSecondsPerLimb = 3f;
 
         /// <summary>
         /// ランタイム用BattleSettingsへ変換する

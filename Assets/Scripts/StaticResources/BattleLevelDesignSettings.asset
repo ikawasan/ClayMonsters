@@ -31,4 +31,4 @@ MonoBehaviour:
   stepDistance: 2
   stepDuration: 0.25
   stepCooldown: 1.2
-  partRepairSecondsPerLimb: 1.1
+  partRepairSecondsPerLimb: 3

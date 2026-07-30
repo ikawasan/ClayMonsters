@@ -46,26 +46,43 @@ namespace Battle
         /// <summary>
         /// その攻撃が相手のどの部位を破壊できるかを返す
         /// Bodyは破壊部位なし
+        /// 使用部位と同じ部位は狙わない
         /// </summary>
         public static BonePart GetTargetDestroyPart(MotionType motion)
         {
             switch (motion)
             {
+                // 腕技→頭や脚や後ろを狙う
                 case MotionType.Punch:
-                case MotionType.Elbow:
-                case MotionType.Uppercut:
-                case MotionType.Slap:
-                    return BonePart.Arm;
-                case MotionType.Kick:
-                case MotionType.Stomp:
-                case MotionType.Knee:
-                case MotionType.LowSweep:
-                    return BonePart.Leg;
-                case MotionType.TailWhip:
-                    return BonePart.Back;
-                case MotionType.Headbutt:
-                case MotionType.Bite:
                     return BonePart.Front;
+                case MotionType.Elbow:
+                    return BonePart.Leg;
+                case MotionType.Uppercut:
+                    return BonePart.Front;
+                case MotionType.Slap:
+                    return BonePart.Back;
+
+                // 脚技→腕や頭や後ろを狙う
+                case MotionType.Kick:
+                    return BonePart.Front;
+                case MotionType.Stomp:
+                    return BonePart.Arm;
+                case MotionType.Knee:
+                    return BonePart.Back;
+                case MotionType.LowSweep:
+                    return BonePart.Arm;
+
+                // 前技→腕や脚を狙う
+                case MotionType.Headbutt:
+                    return BonePart.Arm;
+                case MotionType.Bite:
+                    return BonePart.Leg;
+
+                // 後ろ技→脚を狙う
+                case MotionType.TailWhip:
+                    return BonePart.Leg;
+
+                // 胴体技と魔法は破壊部位なし
                 case MotionType.Tackle:
                 case MotionType.SpinTackle:
                 case MotionType.BodySlam:
@@ -73,6 +90,12 @@ namespace Battle
                 case MotionType.BellyFlop:
                 case MotionType.HipCheck:
                 case MotionType.GroundPound:
+                case MotionType.Fireball:
+                case MotionType.WindSlasher:
+                case MotionType.DiamondDust:
+                case MotionType.ThunderShock:
+                    return BonePart.Body;
+
                 default:
                     return BonePart.Body;
             }

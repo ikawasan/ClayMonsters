@@ -38,7 +38,7 @@ namespace Battle
         public BonePart RequiredPart { get; }
 
         /// <summary>
-        /// 命中時に相手のどの部位を破壊できるか(Bodyは残存部位から選ぶ)。
+        /// 命中時に相手のどの部位を破壊できるか(Bodyは破壊なし)
         /// </summary>
         public BonePart TargetDestroyPart { get; }
 

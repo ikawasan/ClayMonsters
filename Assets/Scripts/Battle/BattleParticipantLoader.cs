@@ -154,7 +154,7 @@ namespace Battle
             ModelPartLossController partLoss = model.GetComponent<ModelPartLossController>();
             if (motion == null || !motion.IsReady)
             {
-                return BuildParticipant(model, slot, status);
+                return BuildParticipant(model, slot, status, strengthTier, slotIndex);
             }
 
             NormalizeStatus(status, out int hp, out int attack, out int defense, out int speed, out int hit);
@@ -165,7 +165,7 @@ namespace Battle
                 defense,
                 speed,
                 hit,
-                ResolveAttackMotions(slot, partLoss),
+                ResolveAttackMotions(slot, model, partLoss, strengthTier, slotIndex),
                 motion,
                 partLoss);
 
@@ -277,7 +277,7 @@ namespace Battle
             ModelStatus status = strengthTier.HasValue
                 ? EnemyStrengthStatusCatalog.Resolve(slot, strengthTier.Value)
                 : ModelStatus.CloneOrDefault(slot.status);
-            BattleParticipant participant = BuildParticipant(model, slot, status);
+            BattleParticipant participant = BuildParticipant(model, slot, status, strengthTier, slotIndex);
             return FinalizeSpawnPlacement(participant, spawn);
         }
 
@@ -316,10 +316,23 @@ namespace Battle
 
         private BattleParticipant BuildParticipant(GameObject model, ModelSaveSlot slot)
         {
-            return BuildParticipant(model, slot, ModelStatus.CloneOrDefault(slot.status));
+            return BuildParticipant(model, slot, ModelStatus.CloneOrDefault(slot.status), null, -1);
         }
 
-        private BattleParticipant BuildParticipant(GameObject model, ModelSaveSlot slot, ModelStatus status)
+        private BattleParticipant BuildParticipant(
+            GameObject model,
+            ModelSaveSlot slot,
+            ModelStatus status)
+        {
+            return BuildParticipant(model, slot, status, null, -1);
+        }
+
+        private BattleParticipant BuildParticipant(
+            GameObject model,
+            ModelSaveSlot slot,
+            ModelStatus status,
+            EnemyStrengthTier? strengthTier,
+            int slotIndex)
         {
             LoadedModelConfigurator.Result cfg = configurator.Configure(model);
 
@@ -339,7 +352,7 @@ namespace Battle
             var unit = new BattleUnit(
                 slot.modelName,
                 hp, attack, defense, speed, hit,
-                ResolveAttackMotions(slot, cfg.PartLoss),
+                ResolveAttackMotions(slot, model, cfg.PartLoss, strengthTier, slotIndex),
                 cfg.Motion,
                 cfg.PartLoss);
 
@@ -358,19 +371,129 @@ namespace Battle
             BattleStatusBalance.Normalize(status, out hp, out attack, out defense, out speed, out hit);
         }
 
-        // 必要部位が無い技を捨て使用可能攻撃でスロットを埋めてから返す
-        private static IReadOnlyList<MotionType> ResolveAttackMotions(
+        // 敵は強さ段階で技を差し替えプレイヤーは保存技を使う
+        // 候補は骨格解析で使える技だけに限定する
+        private IReadOnlyList<MotionType> ResolveAttackMotions(
             ModelSaveSlot slot,
-            ModelPartLossController partLoss)
+            GameObject model,
+            ModelPartLossController partLoss,
+            EnemyStrengthTier? strengthTier,
+            int slotIndex)
         {
+            List<MotionType> usableAttacks = CollectUsableAttacks(model);
             HashSet<BonePart> availableParts = ModelAttackMotionUtility.CollectAvailableParts(partLoss);
+
+            if (strengthTier.HasValue)
+            {
+                int seedSlot = slotIndex >= 0 ? slotIndex : 0;
+                IReadOnlyList<MotionType> pool = usableAttacks.Count > 0
+                    ? usableAttacks
+                    : AttackMotionSelector.CollectAttacksForAvailableParts(availableParts);
+                if (usableAttacks.Count == 0)
+                {
+                    Debug.LogError(
+                        "[BattleParticipantLoader] 骨格の使用可能技が空のため部位集合から候補を作りました");
+                }
+
+                List<MotionType> byTier = EnemyStrengthAttackCatalog.Resolve(
+                    strengthTier.Value,
+                    pool,
+                    seedSlot,
+                    ModelAttackMotionUtility.SlotCount);
+
+                // 強さ抽選結果を壊さないよう使用不可技だけ落とし補充はしない
+                return KeepUsableOnly(byTier, pool, ModelAttackMotionUtility.SlotCount);
+            }
+
             IReadOnlyList<MotionType> source = slot.attackMotions != null && slot.attackMotions.Count > 0
                 ? slot.attackMotions
                 : DefaultAttackMotions;
+            if (usableAttacks.Count > 0)
+            {
+                return ModelAttackMotionUtility.SanitizeForUsableAttacks(
+                    source,
+                    usableAttacks,
+                    ModelAttackMotionUtility.SlotCount);
+            }
+
             return ModelAttackMotionUtility.SanitizeForAvailableParts(
                 source,
                 availableParts,
                 ModelAttackMotionUtility.SlotCount);
+        }
+
+        private List<MotionType> CollectUsableAttacks(GameObject model)
+        {
+            var empty = new List<MotionType>();
+            if (model == null)
+            {
+                return empty;
+            }
+
+            if (configurator == null || configurator.PartAnalyzer == null)
+            {
+                Debug.LogError(
+                    "[BattleParticipantLoader] PartAnalyzerが未配線のため使用可能技を骨格判定できません");
+                return empty;
+            }
+
+            SkinnedMeshRenderer renderer = model.GetComponentInChildren<SkinnedMeshRenderer>(true);
+            if (renderer == null || renderer.bones == null || renderer.bones.Length == 0)
+            {
+                Debug.LogError("[BattleParticipantLoader] ボーンが無いため使用可能技を判定できません");
+                return empty;
+            }
+
+            return AttackMotionSelector.CollectUsableAttacks(configurator.PartAnalyzer, renderer.bones);
+        }
+
+        private static List<MotionType> KeepUsableOnly(
+            IReadOnlyList<MotionType> attacks,
+            IReadOnlyList<MotionType> usableAttacks,
+            int slotCount)
+        {
+            var usableSet = new HashSet<MotionType>();
+            if (usableAttacks != null)
+            {
+                for (int i = 0; i < usableAttacks.Count; i++)
+                {
+                    MotionType motion = usableAttacks[i];
+                    if (ProceduralMotionCharacter.IsAttackMotion(motion))
+                    {
+                        usableSet.Add(motion);
+                    }
+                }
+            }
+
+            var result = new List<MotionType>();
+            if (attacks == null)
+            {
+                return result;
+            }
+
+            for (int i = 0; i < attacks.Count; i++)
+            {
+                MotionType motion = attacks[i];
+                if (!usableSet.Contains(motion))
+                {
+                    Debug.LogError(
+                        $"[BattleParticipantLoader] 部位条件を満たさない攻撃{motion}を除外しました");
+                    continue;
+                }
+
+                if (result.Contains(motion))
+                {
+                    continue;
+                }
+
+                result.Add(motion);
+                if (result.Count >= slotCount)
+                {
+                    break;
+                }
+            }
+
+            return result;
         }
     }
 }
