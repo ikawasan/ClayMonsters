@@ -14,8 +14,14 @@ namespace Scene.TrainingScene.View
         private const string SoccerBallResourcePath = "Field/Item/SoccerBall";
         private const string TennisBallResourcePath = "Field/Item/TennisBall";
         private const string TennisBallItemId = "motivation_tennis";
-        private const float DefaultSoccerBallScale = 50f;
-        private const float DefaultTennisBallScale = 28f;
+        /// <summary>
+        /// サッカーボールの目標ワールド直径
+        /// </summary>
+        private const float DefaultSoccerBallDiameter = 1.0f;
+        /// <summary>
+        /// テニスボールの目標ワールド直径
+        /// </summary>
+        private const float DefaultTennisBallDiameter = 0.55f;
 
         [Header("依存")]
         [SerializeField] private TrainingMonsterRoamController roamController;
@@ -28,8 +34,9 @@ namespace Scene.TrainingScene.View
         [Header("構え")]
         [SerializeField] private float holdDistance = 1.35f;
         [SerializeField] private float holdHeightOffset = -0.12f;
-        [SerializeField] private float ballScale = DefaultSoccerBallScale;
-        [SerializeField] private float ballRadius = 25f;
+        [Tooltip("目標ワールド直径モデル固有スケール差は実行時に正規化する")]
+        [SerializeField] private float ballScale = DefaultSoccerBallDiameter;
+        [SerializeField] private float ballRadius = 0.5f;
 
         [Header("投げ")]
         [SerializeField] private float minThrowSpeed = 4.5f;
@@ -60,6 +67,7 @@ namespace Scene.TrainingScene.View
 
         private GameObject ballVisual;
         private string loadedBallResourcePath = string.Empty;
+        private float nativeBallDiameter = 1f;
         private bool ownsBallRoot;
         private Vector3 velocity;
         private bool isInFlight;
@@ -72,7 +80,7 @@ namespace Scene.TrainingScene.View
         /// </summary>
         /// <param name="itemId">商品ID</param>
         /// <param name="resourcePath">Resourcesパス</param>
-        /// <param name="visualScale">表示スケール</param>
+        /// <param name="visualScale">目標ワールド直径</param>
         public static void ResolveBallVisual(
             string itemId,
             out string resourcePath,
@@ -81,12 +89,12 @@ namespace Scene.TrainingScene.View
             if (itemId == TennisBallItemId)
             {
                 resourcePath = TennisBallResourcePath;
-                visualScale = DefaultTennisBallScale;
+                visualScale = DefaultTennisBallDiameter;
                 return;
             }
 
             resourcePath = SoccerBallResourcePath;
-            visualScale = DefaultSoccerBallScale;
+            visualScale = DefaultSoccerBallDiameter;
         }
 
         private void Awake()
@@ -151,7 +159,7 @@ namespace Scene.TrainingScene.View
         /// 接触または制限時間で完了しボールはターン経過まで残す
         /// </summary>
         /// <param name="ballResourcePath">Resources上のボールprefabパス</param>
-        /// <param name="visualScale">表示スケール</param>
+        /// <param name="visualScale">目標ワールド直径</param>
         /// <param name="cancellationToken">キャンセルトークン</param>
         public async UniTask PlayAsync(
             string ballResourcePath,
@@ -178,8 +186,9 @@ namespace Scene.TrainingScene.View
             isInFlight = false;
             velocity = Vector3.zero;
             nextPlayKickAllowedTime = 0f;
-            ApplyBallScale();
             SetBallVisible(true);
+            CacheNativeBallDiameter();
+            ApplyBallScale();
 
             try
             {
@@ -614,9 +623,11 @@ namespace Scene.TrainingScene.View
                 : "SoccerBallVisual";
             ballVisual.transform.localPosition = Vector3.zero;
             ballVisual.transform.localRotation = Quaternion.identity;
+            ballVisual.transform.localScale = Vector3.one;
             loadedBallResourcePath = resourcePath;
+            nativeBallDiameter = 1f;
             StripImportedCameras(ballVisual);
-            ApplyBallScale();
+            StripImportedLights(ballVisual);
         }
 
         private void ClearBallVisual()
@@ -628,6 +639,7 @@ namespace Scene.TrainingScene.View
             }
 
             loadedBallResourcePath = string.Empty;
+            nativeBallDiameter = 1f;
             if (ballRoot == null)
             {
                 return;
@@ -639,6 +651,22 @@ namespace Scene.TrainingScene.View
             }
         }
 
+        private void CacheNativeBallDiameter()
+        {
+            if (ballVisual == null)
+            {
+                nativeBallDiameter = 1f;
+                return;
+            }
+
+            ballVisual.transform.localScale = Vector3.one;
+            nativeBallDiameter = MeasureRendererDiameter(ballVisual);
+            if (nativeBallDiameter < 0.0001f)
+            {
+                nativeBallDiameter = 1f;
+            }
+        }
+
         private void ApplyBallScale()
         {
             if (ballVisual == null)
@@ -646,12 +674,50 @@ namespace Scene.TrainingScene.View
                 return;
             }
 
-            float scale = Mathf.Max(0.01f, ballScale);
+            float targetDiameter = Mathf.Max(0.01f, ballScale);
+            float nativeDiameter = Mathf.Max(0.0001f, nativeBallDiameter);
+            float scale = targetDiameter / nativeDiameter;
             Vector3 target = Vector3.one * scale;
             if ((ballVisual.transform.localScale - target).sqrMagnitude > 0.000001f)
             {
                 ballVisual.transform.localScale = target;
             }
+        }
+
+        private static float MeasureRendererDiameter(GameObject root)
+        {
+            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
+            if (renderers == null || renderers.Length == 0)
+            {
+                return 0f;
+            }
+
+            bool hasBounds = false;
+            Bounds bounds = default;
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer == null || renderer is ParticleSystemRenderer)
+                {
+                    continue;
+                }
+
+                if (!hasBounds)
+                {
+                    bounds = renderer.bounds;
+                    hasBounds = true;
+                    continue;
+                }
+
+                bounds.Encapsulate(renderer.bounds);
+            }
+
+            if (!hasBounds)
+            {
+                return 0f;
+            }
+
+            return Mathf.Max(bounds.size.x, Mathf.Max(bounds.size.y, bounds.size.z));
         }
 
         private float ResolveBallRadius()
@@ -683,6 +749,24 @@ namespace Scene.TrainingScene.View
                 {
                     cameras[i].enabled = false;
                     cameras[i].gameObject.SetActive(false);
+                }
+            }
+        }
+
+        private static void StripImportedLights(GameObject root)
+        {
+            if (root == null)
+            {
+                return;
+            }
+
+            Light[] lights = root.GetComponentsInChildren<Light>(true);
+            for (int i = 0; i < lights.Length; i++)
+            {
+                if (lights[i] != null)
+                {
+                    lights[i].enabled = false;
+                    lights[i].gameObject.SetActive(false);
                 }
             }
         }
