@@ -32,7 +32,7 @@ namespace Scene.TrainingScene.View
         [SerializeField] private TMP_Text dayText;
         [Tooltip("現在の時間割。1時間目〜放課後。完了時はモデル名")]
         [SerializeField] private TMP_Text periodText;
-        [Tooltip("現在ターン数。ターン n/9 または完了メッセージ")]
+        [Tooltip("未使用。ターン表示は出さない")]
         [SerializeField] private TMP_Text turnText;
         [Tooltip("体力の数値表示。体力 現在/最大")]
         [SerializeField] private TMP_Text staminaText;
@@ -92,7 +92,7 @@ namespace Scene.TrainingScene.View
         [SerializeField] private TrainingAttackSwapChoicesView attackSwapChoicesView;
 
         [Header("Panels")]
-        [Tooltip("曜日・時間・ターン表示パネル")]
+        [Tooltip("曜日・時間表示パネル")]
         [FormerlySerializedAs("hudHeaderGroup")]
         [SerializeField] private GameObject hudHeaderPanel;
         [Tooltip("行動体力表示パネル")]
@@ -160,6 +160,7 @@ namespace Scene.TrainingScene.View
         private void Awake()
         {
             EnsureSerializedReferences();
+            HideTurnText();
             BindUi();
             Hide();
         }
@@ -328,7 +329,7 @@ namespace Scene.TrainingScene.View
                 dayText.text = TrainingDayCatalog.GetDisplayName(session.CurrentDay);
             }
 
-            // periodTextとturnTextはBindSession(session,period,turnNumber)側が正
+            // periodTextはBindSession(session,period,turnNumber)側が正
             // ここであんぶん表示を書くと訓練成功ログ表示時に時間割が壊れる
 
             if (moneyText != null)
@@ -374,11 +375,6 @@ namespace Scene.TrainingScene.View
             if (periodText != null)
             {
                 periodText.text = TrainingPeriodCatalog.GetDisplayName(period);
-            }
-
-            if (turnText != null)
-            {
-                turnText.text = $"ターン {turnNumber}";
             }
         }
 
@@ -1640,7 +1636,6 @@ namespace Scene.TrainingScene.View
 
             if (dayText == null
                 || periodText == null
-                || turnText == null
                 || staminaText == null
                 || motivationText == null
                 || motivationIcon == null
@@ -1687,6 +1682,17 @@ namespace Scene.TrainingScene.View
                     "[TrainingHudView] inventoryWindowViewが未配線です",
                     this);
             }
+        }
+
+        private void HideTurnText()
+        {
+            if (turnText == null)
+            {
+                return;
+            }
+
+            turnText.text = string.Empty;
+            SetPanelVisible(turnText.gameObject, false);
         }
 
         private static void SetPanelVisible(GameObject panel, bool visible)
