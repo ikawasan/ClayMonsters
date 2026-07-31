@@ -26,6 +26,11 @@ namespace Scene.TitleScene.Interface
         IDisposable SubscribeTrainingButtonClick(UnityAction action);
 
         /// <summary>
+        /// スキルツリーボタン押下を購読する
+        /// </summary>
+        IDisposable SubscribeSkillTreeButtonClick(UnityAction action);
+
+        /// <summary>
         /// オプションボタン押下を購読する
         /// </summary>
         IDisposable SubscribeOptionButtonClick(UnityAction action);

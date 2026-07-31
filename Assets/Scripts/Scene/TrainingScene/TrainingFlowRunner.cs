@@ -49,6 +49,7 @@ namespace Scene.TrainingScene
         private ITrainingAmbushView ambushView;
         private IClayMonsterSceneManager sceneManager;
         private IBattleCanvasTransition canvasTransition;
+        private ISkillTreeService skillTreeService;
         private TrainingBattleRunner battleRunner;
         private CancellationTokenSource flowCts;
         private bool isRunning;
@@ -71,6 +72,7 @@ namespace Scene.TrainingScene
             ITrainingAmbushView ambushView,
             IClayMonsterSceneManager sceneManager,
             IBattleCanvasTransition canvasTransition,
+            ISkillTreeService skillTreeService,
             TrainingBattleRunner battleRunner)
         {
             this.saveService = saveService;
@@ -82,6 +84,7 @@ namespace Scene.TrainingScene
             this.ambushView = ambushView;
             this.sceneManager = sceneManager;
             this.canvasTransition = canvasTransition;
+            this.skillTreeService = skillTreeService;
             this.battleRunner = battleRunner;
         }
 
@@ -475,6 +478,11 @@ namespace Scene.TrainingScene
             }
 
             TrainingSession session = TrainingSlotProgressMapper.FromSaveData(slotIndex, progress);
+            if (skillTreeService != null)
+            {
+                session.ApplySkillTreeRuntimeBonuses(skillTreeService.Bonuses);
+            }
+
             if (!IsTrainingStartProgress(progress))
             {
                 ApplyRoamDestinationPresentation();
@@ -728,15 +736,28 @@ namespace Scene.TrainingScene
             // 途中データの削除は再開UIで最初からを選んだときだけ行う
             // ここで消すと再開失敗時に進行データが消える
 
+            TrainingSession session;
             if (inheritance != null && inheritance.Applied)
             {
-                return new TrainingSession(
+                session = new TrainingSession(
                     slotIndex,
                     inheritance.Status,
                     SanitizeAttacks(inheritance.AttackMotions));
             }
+            else
+            {
+                session = new TrainingSession(
+                    slotIndex,
+                    slot.status,
+                    SanitizeAttacks(slot.attackMotions));
+            }
 
-            return new TrainingSession(slotIndex, slot.status, SanitizeAttacks(slot.attackMotions));
+            if (skillTreeService != null)
+            {
+                session.ApplySkillTreeBonuses(skillTreeService.Bonuses);
+            }
+
+            return session;
         }
 
         private IReadOnlyList<MotionType> SanitizeAttacks(IReadOnlyList<MotionType> attacks)
@@ -842,7 +863,10 @@ namespace Scene.TrainingScene
                     parentA,
                     parentB,
                     trainingDisplay.UsableAttacks,
-                    random);
+                    random,
+                    skillTreeService != null
+                        ? skillTreeService.Bonuses.InheritancePercentBonus
+                        : 0);
 
                 await InheritancePresentation.PrepareAsync(
                     trainingDisplay.LoadedModel,
@@ -890,7 +914,10 @@ namespace Scene.TrainingScene
                 parentA,
                 parentB,
                 trainingDisplay != null ? trainingDisplay.UsableAttacks : null,
-                random);
+                random,
+                skillTreeService != null
+                    ? skillTreeService.Bonuses.InheritancePercentBonus
+                    : 0);
             fallbackResolved = await PresentInheritanceResultAsync(fallbackResolved, cancellationToken);
 
             if (canvasTransition != null)

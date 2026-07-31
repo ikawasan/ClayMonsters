@@ -50,6 +50,25 @@ namespace SaveData.Service
         }
 
         /// <inheritdoc />
+        public bool TrySpendPoints(int amount)
+        {
+            if (amount <= 0)
+            {
+                return false;
+            }
+
+            if (Points < amount)
+            {
+                return false;
+            }
+
+            pointsProperty.Value = BattlePointsRules.ClampHeldPoints(Points - amount);
+            Persist();
+            Debug.Log($"[PointsService] ポイント消費 amount={amount} total={Points}");
+            return true;
+        }
+
+        /// <inheritdoc />
         public void Reload()
         {
             ReloadFromDisk();

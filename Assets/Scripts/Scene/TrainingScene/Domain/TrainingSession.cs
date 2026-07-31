@@ -175,6 +175,16 @@ namespace Scene.TrainingScene.Domain
         public int TrainGreatSuccessBonusWeeks { get; private set; }
 
         /// <summary>
+        /// スキルツリー由来の大成功率加算
+        /// </summary>
+        public float SkillTreeGreatSuccessBonusPercent { get; private set; }
+
+        /// <summary>
+        /// スキルツリー由来の獲得金百分率加算
+        /// </summary>
+        public float SkillTreeMoneyGainPercent { get; private set; }
+
+        /// <summary>
         /// 所持アイテム一覧
         /// </summary>
         public IReadOnlyList<TrainingInventoryEntry> Inventory => inventory;
@@ -596,6 +606,46 @@ namespace Scene.TrainingScene.Domain
         }
 
         /// <summary>
+        /// スキルツリーの開始時ボーナスを適用する
+        /// </summary>
+        /// <param name="bonuses">集計済みボーナス</param>
+        public void ApplySkillTreeBonuses(SkillTreeBonuses bonuses)
+        {
+            ApplySkillTreeRuntimeBonuses(bonuses);
+
+            if (bonuses.StartingMoney > 0)
+            {
+                Money += bonuses.StartingMoney;
+            }
+
+            int all = Mathf.Max(0, bonuses.StartingAll);
+            var gain = new TrainingStatGain(
+                Mathf.Max(0, bonuses.StartingHp) + all,
+                Mathf.Max(0, bonuses.StartingAttack) + all,
+                Mathf.Max(0, bonuses.StartingDefense) + all,
+                Mathf.Max(0, bonuses.StartingSpeed) + all,
+                Mathf.Max(0, bonuses.StartingHit) + all);
+            if (gain.Hp != 0
+                || gain.Attack != 0
+                || gain.Defense != 0
+                || gain.Speed != 0
+                || gain.Hit != 0)
+            {
+                ApplyEventStatGain(gain);
+            }
+        }
+
+        /// <summary>
+        /// 再開時など開始ボーナスなしで実行時効果だけ適用する
+        /// </summary>
+        /// <param name="bonuses">集計済みボーナス</param>
+        public void ApplySkillTreeRuntimeBonuses(SkillTreeBonuses bonuses)
+        {
+            SkillTreeGreatSuccessBonusPercent = Mathf.Max(0f, bonuses.GreatSuccessBonusPercent);
+            SkillTreeMoneyGainPercent = Mathf.Max(0f, bonuses.TrainingMoneyGainPercent);
+        }
+
+        /// <summary>
         /// 所持金を加算する
         /// </summary>
         /// <param name="amount">加算額</param>
@@ -606,7 +656,13 @@ namespace Scene.TrainingScene.Domain
                 return;
             }
 
-            Money += amount;
+            int adjusted = amount;
+            if (SkillTreeMoneyGainPercent > 0f)
+            {
+                adjusted += Mathf.FloorToInt(amount * SkillTreeMoneyGainPercent / 100f);
+            }
+
+            Money += Mathf.Max(0, adjusted);
         }
 
         /// <summary>

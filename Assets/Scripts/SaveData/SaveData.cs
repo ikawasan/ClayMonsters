@@ -28,5 +28,10 @@ namespace SaveData
         /// 育成ゴールドとは別のゲーム内ポイント
         /// </summary>
         public int Points;
+
+        /// <summary>
+        /// スキルツリー解放進捗
+        /// </summary>
+        public SkillTreeSaveData SkillTree = new SkillTreeSaveData();
     }
 }

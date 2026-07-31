@@ -55,6 +55,7 @@ namespace Scene.BattleNpcScene
         private IClayModelSaveService saveService;
         private INpcBattleProgressService npcBattleProgress;
         private IPointsService pointsService;
+        private ISkillTreeService skillTreeService;
         private IBattleCanvasTransition presentationTransition;
         private IBgmService bgmService;
         private ISeService seService;
@@ -110,6 +111,7 @@ namespace Scene.BattleNpcScene
             IClayModelSaveService saveService,
             INpcBattleProgressService npcBattleProgress,
             IPointsService pointsService,
+            ISkillTreeService skillTreeService,
             IBattleCanvasTransition presentationTransition,
             IBgmService bgmService,
             ISeService seService,
@@ -121,6 +123,7 @@ namespace Scene.BattleNpcScene
             this.saveService = saveService;
             this.npcBattleProgress = npcBattleProgress;
             this.pointsService = pointsService;
+            this.skillTreeService = skillTreeService;
             this.presentationTransition = presentationTransition;
             this.bgmService = bgmService;
             this.seService = seService;
@@ -288,6 +291,11 @@ namespace Scene.BattleNpcScene
             }
 
             int reward = BattlePointsRules.ResolveNpcVictoryPoints(settledStrengthTier);
+            if (skillTreeService != null)
+            {
+                reward = skillTreeService.ApplyPointsGainBonus(reward);
+            }
+
             pointsService.AddPoints(reward);
         }
 

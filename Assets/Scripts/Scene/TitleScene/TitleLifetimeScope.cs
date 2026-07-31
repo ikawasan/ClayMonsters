@@ -5,6 +5,8 @@ using SaveData.Interface;
 using SaveData.Service;
 using Scene.TitleScene.Presenter;
 using Scene.TitleScene.View;
+using UI.SkillTree.Presenter;
+using UI.SkillTree.View;
 using UnityEngine;
 using VContainer;
 using VContainer.Unity;
@@ -16,6 +18,7 @@ namespace Scene.TitleScene
         [SerializeField] TitleScene titleScene;
         [SerializeField] TitleView titleView;
         [SerializeField] TitleMessageWindowView messageWindowView;
+        [SerializeField] SkillTreeView skillTreeView;
 
         [Header("Camera")]
         [SerializeField] ClayEditCameraView cameraView;
@@ -41,6 +44,17 @@ namespace Scene.TitleScene
             {
                 builder.RegisterComponent(messageWindowView).AsImplementedInterfaces();
             }
+
+            if (skillTreeView == null)
+            {
+                Debug.LogError("[TitleLifetimeScope] skillTreeViewが未配線です", this);
+            }
+            else
+            {
+                builder.RegisterComponent(skillTreeView).AsImplementedInterfaces();
+            }
+
+            builder.Register<SkillTreePresenter>(Lifetime.Singleton).AsImplementedInterfaces();
             builder.Register<TitlePresenter>(Lifetime.Singleton).AsImplementedInterfaces();
 
             builder.RegisterComponent(cameraView).AsImplementedInterfaces();

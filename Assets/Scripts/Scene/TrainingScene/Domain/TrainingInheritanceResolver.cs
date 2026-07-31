@@ -50,7 +50,8 @@ namespace Scene.TrainingScene.Domain
             ModelSaveSlot parentA,
             ModelSaveSlot parentB,
             IReadOnlyList<MotionType> usableAttacks,
-            System.Random random)
+            System.Random random,
+            int inheritancePercentBonus = 0)
         {
             if (parentA == null || parentB == null || random == null)
             {
@@ -58,7 +59,10 @@ namespace Scene.TrainingScene.Domain
             }
 
             ModelStatus status = ModelStatus.CloneOrDefault(baseStatus);
-            TrainingStatGain gain = BuildStatGain(parentA.status, parentB.status);
+            TrainingStatGain gain = BuildStatGain(
+                parentA.status,
+                parentB.status,
+                inheritancePercentBonus);
             status.hp += gain.Hp;
             status.attack += gain.Attack;
             status.defense += gain.Defense;
@@ -134,10 +138,13 @@ namespace Scene.TrainingScene.Domain
         /// 1体の継承元から得られるステータス上昇を返す
         /// </summary>
         /// <param name="parentStatus">継承元ステータス</param>
-        public static TrainingStatGain BuildStatGainFromParent(ModelStatus parentStatus)
+        public static TrainingStatGain BuildStatGainFromParent(
+            ModelStatus parentStatus,
+            int inheritancePercentBonus = 0)
         {
             ModelStatus parent = parentStatus ?? new ModelStatus();
-            int percent = TrainingSettings.InheritanceStatPercentPerParent;
+            int percent = TrainingSettings.InheritanceStatPercentPerParent
+                + Mathf.Max(0, inheritancePercentBonus);
             return new TrainingStatGain(
                 CalcInheritedStatFromParent(parent.hp, percent),
                 CalcInheritedStatFromParent(parent.attack, percent),
@@ -164,9 +171,13 @@ namespace Scene.TrainingScene.Domain
             return $"{modelName}\n継承上昇 HP+{gain.Hp} 攻撃+{gain.Attack} 防御+{gain.Defense} 速度+{gain.Speed} 命中+{gain.Hit}";
         }
 
-        private static TrainingStatGain BuildStatGain(ModelStatus parentA, ModelStatus parentB)
+        private static TrainingStatGain BuildStatGain(
+            ModelStatus parentA,
+            ModelStatus parentB,
+            int inheritancePercentBonus = 0)
         {
-            return BuildStatGainFromParent(parentA).Add(BuildStatGainFromParent(parentB));
+            return BuildStatGainFromParent(parentA, inheritancePercentBonus)
+                .Add(BuildStatGainFromParent(parentB, inheritancePercentBonus));
         }
 
         private static int CalcInheritedStatFromParent(int parentStat, int percent)

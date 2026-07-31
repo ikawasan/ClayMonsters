@@ -19,6 +19,7 @@ namespace Scene.TitleScene.View
         [SerializeField] private LHButton battleNpcButton;
         [SerializeField] private LHButton battlePvpButton;
         [SerializeField] private LHButton trainingButton;
+        [SerializeField] private LHButton skillTreeButton;
         [SerializeField] private LHButton optionButton;
         [SerializeField] private LHButton quitGameButton;
         [SerializeField] private Image titleLogoImage;
@@ -44,6 +45,13 @@ namespace Scene.TitleScene.View
                     "[TitleView] pointsTextが未配線です。Titleシーン右上にTMPを配置しInspectorで接続してください",
                     this);
             }
+
+            if (skillTreeButton == null)
+            {
+                Debug.LogError(
+                    "[TitleView] skillTreeButtonが未配線です",
+                    this);
+            }
         }
 
         public IDisposable SubscribeClayEditButtonClick(UnityAction action) => clayEditButton.SubscribeOnClick(action);
@@ -60,6 +68,17 @@ namespace Scene.TitleScene.View
             }
 
             return trainingButton.SubscribeOnClick(action);
+        }
+
+        /// <inheritdoc />
+        public IDisposable SubscribeSkillTreeButtonClick(UnityAction action)
+        {
+            if (skillTreeButton == null)
+            {
+                return new EmptyDisposable();
+            }
+
+            return skillTreeButton.SubscribeOnClick(action);
         }
 
         public IDisposable SubscribeOptionButtonClick(UnityAction action) => optionButton.SubscribeOnClick(action);

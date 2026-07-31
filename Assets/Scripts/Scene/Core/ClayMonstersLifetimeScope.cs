@@ -55,6 +55,7 @@ namespace Scene.Core
             builder.Register<OptionService>(Lifetime.Singleton).AsImplementedInterfaces();
             builder.Register<NpcBattleProgressService>(Lifetime.Singleton).AsImplementedInterfaces();
             builder.Register<PointsService>(Lifetime.Singleton).AsImplementedInterfaces();
+            builder.Register<SkillTreeService>(Lifetime.Singleton).AsImplementedInterfaces();
             builder.RegisterComponent(optionViewPrefab).AsImplementedInterfaces();
             builder.Register<OptionPresenter>(Lifetime.Singleton).AsImplementedInterfaces();
 

@@ -62,6 +62,7 @@ namespace Scene.BattlePvpArena
         private IClayModelImporter importer;
         private IClayModelSaveService saveService;
         private IPointsService pointsService;
+        private ISkillTreeService skillTreeService;
         private ISceneFade sceneFade;
         private IBattleCanvasTransition canvasTransition;
         private IBgmService bgmService;
@@ -88,6 +89,7 @@ namespace Scene.BattlePvpArena
             IClayModelImporter importer,
             IClayModelSaveService saveService,
             IPointsService pointsService,
+            ISkillTreeService skillTreeService,
             ISceneFade sceneFade,
             IBattleCanvasTransition canvasTransition,
             IBgmService bgmService,
@@ -102,6 +104,7 @@ namespace Scene.BattlePvpArena
             this.importer = importer;
             this.saveService = saveService;
             this.pointsService = pointsService;
+            this.skillTreeService = skillTreeService;
             this.sceneFade = sceneFade;
             this.canvasTransition = canvasTransition;
             this.bgmService = bgmService;
@@ -551,6 +554,11 @@ namespace Scene.BattlePvpArena
             if (reward <= 0)
             {
                 return;
+            }
+
+            if (skillTreeService != null)
+            {
+                reward = skillTreeService.ApplyPointsGainBonus(reward);
             }
 
             pointsService.AddPoints(reward);

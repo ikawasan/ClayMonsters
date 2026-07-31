@@ -95,6 +95,14 @@ namespace SaveData
 
             data.Points = BattlePointsRules.ClampHeldPoints(data.Points);
 
+            if (data.SkillTree == null)
+            {
+                data.SkillTree = new SkillTreeSaveData();
+            }
+
+            data.SkillTree.nodeIds ??= Array.Empty<int>();
+            data.SkillTree.levels ??= Array.Empty<int>();
+
             data.NpcBattleProgress.unlockedEnemyCount =
                 NpcBattleProgressRules.ClampUnlockedEnemyCount(
                     data.NpcBattleProgress.unlockedEnemyCount);

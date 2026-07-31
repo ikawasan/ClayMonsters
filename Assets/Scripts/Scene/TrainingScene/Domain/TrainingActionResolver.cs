@@ -22,6 +22,10 @@ namespace Scene.TrainingScene.Domain
             System.Random random = null)
         {
             float bonus = session != null ? session.TrainGreatSuccessBonusPercent : 0f;
+            if (session != null)
+            {
+                bonus += session.SkillTreeGreatSuccessBonusPercent;
+            }
             float motivationMultiplier = session != null
                 ? TrainingMotivationCatalog.GetTrainGainMultiplier(session.Motivation)
                 : 1f;
@@ -48,6 +52,10 @@ namespace Scene.TrainingScene.Domain
             System.Random random = null)
         {
             float bonus = session != null ? session.TrainGreatSuccessBonusPercent : 0f;
+            if (session != null)
+            {
+                bonus += session.SkillTreeGreatSuccessBonusPercent;
+            }
             float motivationMultiplier = session != null
                 ? TrainingMotivationCatalog.GetTrainGainMultiplier(session.Motivation)
                 : 1f;

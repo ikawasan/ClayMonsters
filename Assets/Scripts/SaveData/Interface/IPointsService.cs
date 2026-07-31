@@ -24,6 +24,13 @@ namespace SaveData.Interface
         void AddPoints(int amount);
 
         /// <summary>
+        /// ポイントを消費して保存する
+        /// </summary>
+        /// <param name="amount">消費量</param>
+        /// <returns>消費できた場合true</returns>
+        bool TrySpendPoints(int amount);
+
+        /// <summary>
         /// 永続化データから再読込する
         /// </summary>
         void Reload();
