@@ -33,6 +33,7 @@ namespace Audio
                 SeTrackId.InheritanceLightRise => InheritanceRoot + "InheritanceLightRise",
                 SeTrackId.InheritanceLightFall => InheritanceRoot + "InheritanceLightFall",
                 SeTrackId.InheritanceLightGlow => InheritanceRoot + "InheritanceLightGlow",
+                SeTrackId.Reaction => ResourceRoot + "Reaction",
                 _ => string.Empty
             };
         }

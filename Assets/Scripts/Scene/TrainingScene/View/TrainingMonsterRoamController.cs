@@ -1,3 +1,5 @@
+using Audio;
+using Audio.Interface;
 using ClayEditor.Rigging;
 using Cysharp.Threading.Tasks;
 using Scene.TrainingScene.Interface;
@@ -6,6 +8,7 @@ using System.Threading;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+using VContainer;
 
 namespace Scene.TrainingScene.View
 {
@@ -53,6 +56,8 @@ namespace Scene.TrainingScene.View
         [SerializeField] private float approachSpeed = 1.35f;
         [Tooltip("近寄ったあとその場に留まる秒数")]
         [SerializeField] private float approachHoldSeconds = 5f;
+
+        [Inject] private readonly ISeService seService;
 
         private CancellationTokenSource roamCts;
         private int roamSessionId;
@@ -615,6 +620,7 @@ namespace Scene.TrainingScene.View
             }
 
             SetNoticeVisible(true);
+            seService.Play(SeTrackId.Reaction);
             noticeAnimHeightBoost = 0f;
             SetNoticeScale(0f);
             UpdateNoticeMarkTransform();

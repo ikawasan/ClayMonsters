@@ -78,6 +78,11 @@ namespace Audio
         /// <summary>
         /// 継承演出で継承先が光る
         /// </summary>
-        InheritanceLightGlow
+        InheritanceLightGlow,
+
+        /// <summary>
+        /// 育成でキャラクリック時の感嘆符
+        /// </summary>
+        Reaction
     }
 }
