@@ -93,6 +93,8 @@ namespace SaveData
                 };
             }
 
+            data.Points = BattlePointsRules.ClampHeldPoints(data.Points);
+
             data.NpcBattleProgress.unlockedEnemyCount =
                 NpcBattleProgressRules.ClampUnlockedEnemyCount(
                     data.NpcBattleProgress.unlockedEnemyCount);

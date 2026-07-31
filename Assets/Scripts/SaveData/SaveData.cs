@@ -23,5 +23,10 @@ namespace SaveData
         public VideoOptionSaveData VideoOptionData = new VideoOptionSaveData();
         public SoundOptionSaveData SoundOptionData = new SoundOptionSaveData();
         public NpcBattleProgressSaveData NpcBattleProgress = new NpcBattleProgressSaveData();
+
+        /// <summary>
+        /// 育成ゴールドとは別のゲーム内ポイント
+        /// </summary>
+        public int Points;
     }
 }

@@ -1,4 +1,5 @@
 using Cysharp.Threading.Tasks;
+using R3;
 using SaveData;
 using SaveData.Interface;
 using Scene.Core.Interface;
@@ -16,15 +17,19 @@ namespace Scene.TitleScene.Presenter
 
         private readonly IClayMonsterSceneManager sceneManager;
         private readonly IClayModelSaveService saveService;
+        private readonly IPointsService pointsService;
         private readonly IPvpLobby pvpLobby;
         private readonly ITitleView titleView;
         private readonly ITitleMessageWindowView messageWindowView;
         private readonly IOptionPresenter optionPresenter;
 
+        private System.IDisposable pointsSubscription;
+
         [Inject]
         public TitlePresenter(
             IClayMonsterSceneManager sceneManager,
             IClayModelSaveService saveService,
+            IPointsService pointsService,
             IPvpLobby pvpLobby,
             ITitleView titleView,
             ITitleMessageWindowView messageWindowView,
@@ -32,6 +37,7 @@ namespace Scene.TitleScene.Presenter
         {
             this.sceneManager = sceneManager;
             this.saveService = saveService;
+            this.pointsService = pointsService;
             this.pvpLobby = pvpLobby;
             this.titleView = titleView;
             this.messageWindowView = messageWindowView;
@@ -47,6 +53,18 @@ namespace Scene.TitleScene.Presenter
             titleView.SubscribeOptionButtonClick(OnClickOptionButton);
             titleView.SubscribeQuitGameButtonClick(OnClickQuitGameButton);
             messageWindowView.SubscribeOkButtonClick(OnClickMessageWindowOk);
+
+            pointsSubscription?.Dispose();
+            pointsSubscription = pointsService.PointsObservable
+                .Subscribe(points => titleView.SetPoints(points));
+            titleView.SetPoints(pointsService.Points);
+        }
+
+        /// <inheritdoc/>
+        void ITitlePresenter.OnEnter()
+        {
+            pointsService.Reload();
+            titleView.SetPoints(pointsService.Points);
         }
 
         /// <inheritdoc/>

@@ -8,8 +8,10 @@ using Cysharp.Threading.Tasks;
 using Extensions;
 using Lighthouse.Scene;
 using LighthouseExtends.UIComponent.Button;
+using SaveData;
 using SaveData.Interface;
 using Scene.BattleNpcScene;
+using Scene.BattlePVPScene;
 using Scene.BattlePVPScene.Interface;
 using Scene.BattlePVPScene.Network;
 using Scene.BattlePVPScene.Service;
@@ -59,6 +61,7 @@ namespace Scene.BattlePvpArena
 
         private IClayModelImporter importer;
         private IClayModelSaveService saveService;
+        private IPointsService pointsService;
         private ISceneFade sceneFade;
         private IBattleCanvasTransition canvasTransition;
         private IBgmService bgmService;
@@ -76,6 +79,7 @@ namespace Scene.BattlePvpArena
         private System.IDisposable titleReturnSubscription;
         private GameObject trackedPlayerModel;
         private GameObject trackedEnemyModel;
+        private BattlePvpMatchMode matchMode = BattlePvpMatchMode.Direct;
 
         private IMonsterSelectionSession selectionSession;
 
@@ -83,6 +87,7 @@ namespace Scene.BattlePvpArena
         public void Construct(
             IClayModelImporter importer,
             IClayModelSaveService saveService,
+            IPointsService pointsService,
             ISceneFade sceneFade,
             IBattleCanvasTransition canvasTransition,
             IBgmService bgmService,
@@ -96,6 +101,7 @@ namespace Scene.BattlePvpArena
         {
             this.importer = importer;
             this.saveService = saveService;
+            this.pointsService = pointsService;
             this.sceneFade = sceneFade;
             this.canvasTransition = canvasTransition;
             this.bgmService = bgmService;
@@ -113,6 +119,15 @@ namespace Scene.BattlePvpArena
                 () => this.GetCancellationTokenOnDestroy());
 
             BindSelectionLeaveButton();
+        }
+
+        /// <summary>
+        /// マッチ方式を設定する
+        /// </summary>
+        /// <param name="mode">特定相手または不特定相手</param>
+        public void SetMatchMode(BattlePvpMatchMode mode)
+        {
+            matchMode = mode;
         }
 
         private void OnDestroy()
@@ -420,6 +435,7 @@ namespace Scene.BattlePvpArena
                 context.OnBattleInputCreated = input => inputRelay?.BeginBattleInput(input);
                 context.OnBattleInputDisposed = () => inputRelay?.EndBattleInput();
                 context.RegisterSpawnedParticipants = RegisterSpawnedParticipants;
+                context.OnLocalBattleOutcomeSettled = OnLocalBattleOutcomeSettled;
 
                 var flow = new BattleFlow(selectionSession, battleView, staging, loader, context, bgmService, seService);
                 while (!cancellationToken.IsCancellationRequested)
@@ -516,6 +532,28 @@ namespace Scene.BattlePvpArena
             }
 
             await RevealSelectionAsync(cancellationToken);
+        }
+
+        private void OnLocalBattleOutcomeSettled(BattleLocalOutcome outcome)
+        {
+            if (pointsService == null)
+            {
+                Debug.LogError("[BattlePvpArena] pointsServiceが未注入です");
+                return;
+            }
+
+            bool isDraw = outcome == BattleLocalOutcome.Draw;
+            bool playerWon = outcome == BattleLocalOutcome.Win;
+            int reward = BattlePointsRules.ResolvePvpPoints(
+                matchMode == BattlePvpMatchMode.Random,
+                playerWon,
+                isDraw);
+            if (reward <= 0)
+            {
+                return;
+            }
+
+            pointsService.AddPoints(reward);
         }
 
         private void RegisterSpawnedParticipants(GameObject playerModel, GameObject enemyModel)

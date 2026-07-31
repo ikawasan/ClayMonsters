@@ -91,6 +91,11 @@ namespace Battle
             /// </summary>
             public Action<bool, int, EnemyStrengthTier> OnNpcBattleSettled;
 
+            /// <summary>
+            /// ローカル視点の勝敗確定時
+            /// </summary>
+            public Action<BattleLocalOutcome> OnLocalBattleOutcomeSettled;
+
             public Func<CancellationToken, UniTask> WaitForMatchupStartAsync;
 
             public IBattlePvpCombatSync CombatSync;
@@ -704,6 +709,12 @@ namespace Battle
                     returnChoice = stagingContext.VictoryReturnChoice;
                     context.OnBattleEnd?.Invoke(winner);
                     bool playerWon = winner != null && winner == stagingContext.Player;
+                    BattleLocalOutcome localOutcome = winner == null
+                        ? BattleLocalOutcome.Draw
+                        : playerWon
+                            ? BattleLocalOutcome.Win
+                            : BattleLocalOutcome.Lose;
+                    context.OnLocalBattleOutcomeSettled?.Invoke(localOutcome);
                     context.OnNpcBattleSettled?.Invoke(
                         playerWon,
                         context.EnemySlotIndex,

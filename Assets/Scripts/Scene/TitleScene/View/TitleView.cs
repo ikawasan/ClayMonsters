@@ -1,92 +1,56 @@
 using Extensions;
-
 using LighthouseExtends.UIComponent.Button;
-
 using Scene.TitleScene.Interface;
-
 using System;
-
+using TMPro;
 using UnityEngine;
-
 using UnityEngine.Events;
-
 using UnityEngine.UI;
 
-
-
 namespace Scene.TitleScene.View
-
 {
-
     /// <summary>
-
     /// タイトル画面のメニューとロゴを表示する
-
     /// UIはTitleシーンのCanvas上に配置する
-
     /// </summary>
-
     public class TitleView : MonoBehaviour, ITitleView
-
     {
-
         [SerializeField] private LHButton clayEditButton;
-
         [SerializeField] private LHButton battleNpcButton;
-
         [SerializeField] private LHButton battlePvpButton;
-
         [SerializeField] private LHButton trainingButton;
-
         [SerializeField] private LHButton optionButton;
-
         [SerializeField] private LHButton quitGameButton;
-
         [SerializeField] private Image titleLogoImage;
-
-
+        [SerializeField] private TMP_Text pointsText;
 
         private void Awake()
-
         {
-
             ValidateSceneUi();
-
         }
-
-
 
         private void ValidateSceneUi()
-
         {
-
             if (titleLogoImage == null || battlePvpButton == null)
-
             {
-
                 Debug.LogError(
-
                     "[TitleView] シーン上のUI参照が未設定です。HierarchyでUI参照を確認してください",
-
                     this);
-
             }
 
+            if (pointsText == null)
+            {
+                Debug.LogError(
+                    "[TitleView] pointsTextが未配線です。Titleシーン右上にTMPを配置しInspectorで接続してください",
+                    this);
+            }
         }
-
-
 
         public IDisposable SubscribeClayEditButtonClick(UnityAction action) => clayEditButton.SubscribeOnClick(action);
 
-
-
         public IDisposable SubscribeBattleNpcButtonClick(UnityAction action) => battleNpcButton.SubscribeOnClick(action);
 
-
-
         public IDisposable SubscribeBattlePvpButtonClick(UnityAction action) => battlePvpButton.SubscribeOnClick(action);
-
-
 
         public IDisposable SubscribeTrainingButtonClick(UnityAction action)
         {
@@ -98,13 +62,20 @@ namespace Scene.TitleScene.View
             return trainingButton.SubscribeOnClick(action);
         }
 
-
-
         public IDisposable SubscribeOptionButtonClick(UnityAction action) => optionButton.SubscribeOnClick(action);
 
-
-
         public IDisposable SubscribeQuitGameButtonClick(UnityAction action) => quitGameButton.SubscribeOnClick(action);
+
+        /// <inheritdoc />
+        public void SetPoints(int points)
+        {
+            if (pointsText == null)
+            {
+                return;
+            }
+
+            pointsText.text = $"{Mathf.Max(0, points)} ポイント";
+        }
 
         private sealed class EmptyDisposable : IDisposable
         {
@@ -112,8 +83,5 @@ namespace Scene.TitleScene.View
             {
             }
         }
-
     }
-
 }
-

@@ -54,6 +54,7 @@ namespace Scene.BattleNpcScene
         private IClayModelImporter importer;
         private IClayModelSaveService saveService;
         private INpcBattleProgressService npcBattleProgress;
+        private IPointsService pointsService;
         private IBattleCanvasTransition presentationTransition;
         private IBgmService bgmService;
         private ISeService seService;
@@ -108,6 +109,7 @@ namespace Scene.BattleNpcScene
             IClayModelImporter importer,
             IClayModelSaveService saveService,
             INpcBattleProgressService npcBattleProgress,
+            IPointsService pointsService,
             IBattleCanvasTransition presentationTransition,
             IBgmService bgmService,
             ISeService seService,
@@ -118,6 +120,7 @@ namespace Scene.BattleNpcScene
             this.importer = importer;
             this.saveService = saveService;
             this.npcBattleProgress = npcBattleProgress;
+            this.pointsService = pointsService;
             this.presentationTransition = presentationTransition;
             this.bgmService = bgmService;
             this.seService = seService;
@@ -272,10 +275,20 @@ namespace Scene.BattleNpcScene
             if (npcBattleProgress == null)
             {
                 Debug.LogError("[BattleFlowRunner] npcBattleProgressが未注入です");
+            }
+            else
+            {
+                npcBattleProgress.RegisterVictory(settledEnemySlotIndex, settledStrengthTier);
+            }
+
+            if (pointsService == null)
+            {
+                Debug.LogError("[BattleFlowRunner] pointsServiceが未注入です");
                 return;
             }
 
-            npcBattleProgress.RegisterVictory(settledEnemySlotIndex, settledStrengthTier);
+            int reward = BattlePointsRules.ResolveNpcVictoryPoints(settledStrengthTier);
+            pointsService.AddPoints(reward);
         }
 
         private void RegisterSpawnedParticipants(GameObject playerModel, GameObject enemyModel)

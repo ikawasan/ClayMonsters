@@ -26,6 +26,7 @@ namespace Scene.PvpLobby.Presenter
         private bool isMatching;
         private bool isRoomCreation;
         private bool isSetup;
+        private BattlePvpMatchMode pendingMatchMode = BattlePvpMatchMode.Direct;
 
         [Inject]
         public PvpLobbyPresenter(
@@ -119,23 +120,29 @@ namespace Scene.PvpLobby.Presenter
         private void OnClickCreateRoomButton()
         {
             isRoomCreation = true;
-            BeginMatching(token => matchmakingService.CreateDirectRoomAsync(token));
+            BeginMatching(
+                BattlePvpMatchMode.Direct,
+                token => matchmakingService.CreateDirectRoomAsync(token));
         }
 
         private void OnClickJoinRoomButton()
         {
             isRoomCreation = false;
-            BeginMatching(token =>
-            {
-                string joinCode = view.GetJoinCodeInput();
-                return matchmakingService.JoinDirectRoomAsync(joinCode, token);
-            });
+            BeginMatching(
+                BattlePvpMatchMode.Direct,
+                token =>
+                {
+                    string joinCode = view.GetJoinCodeInput();
+                    return matchmakingService.JoinDirectRoomAsync(joinCode, token);
+                });
         }
 
         private void OnClickStartRandomMatchButton()
         {
             isRoomCreation = false;
-            BeginMatching(token => matchmakingService.StartRandomMatchAsync(token));
+            BeginMatching(
+                BattlePvpMatchMode.Random,
+                token => matchmakingService.StartRandomMatchAsync(token));
         }
 
         private void OnClickCopyJoinCodeButton()
@@ -160,7 +167,9 @@ namespace Scene.PvpLobby.Presenter
             view.SetJoinCodeText(string.Empty);
         }
 
-        private void BeginMatching(Func<CancellationToken, UniTask<BattlePvpMatchmakingResult>> matchTaskFactory)
+        private void BeginMatching(
+            BattlePvpMatchMode matchMode,
+            Func<CancellationToken, UniTask<BattlePvpMatchmakingResult>> matchTaskFactory)
         {
             if (isMatching)
             {
@@ -168,6 +177,7 @@ namespace Scene.PvpLobby.Presenter
             }
 
             CancelMatching();
+            pendingMatchMode = matchMode;
             isMatching = true;
             matchCts = new CancellationTokenSource();
             view.ShowPanel(BattlePvpUiPanel.Matching);
@@ -217,7 +227,10 @@ namespace Scene.PvpLobby.Presenter
                 isMatching = false;
                 pvpLobby.Hide();
                 await sceneManager.TransitionScene(
-                    new BattlePvpArenaScene.BattlePvpArenaTransitionData());
+                    new BattlePvpArenaScene.BattlePvpArenaTransitionData
+                    {
+                        MatchMode = pendingMatchMode
+                    });
             }
             catch (OperationCanceledException)
             {

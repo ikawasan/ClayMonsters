@@ -34,5 +34,11 @@ namespace Scene.TitleScene.Interface
         /// ゲーム終了ボタン押下を購読する
         /// </summary>
         IDisposable SubscribeQuitGameButtonClick(UnityAction action);
+
+        /// <summary>
+        /// 右上のポイント表示を更新する
+        /// </summary>
+        /// <param name="points">現在ポイント</param>
+        void SetPoints(int points);
     }
 }

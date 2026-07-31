@@ -47,6 +47,7 @@ namespace Scene.TitleScene
         protected override async UniTask OnEnterCore(ISceneTransitionContext context, CancellationToken cancelToken)
         {
             TrainingSceneContentCleanup.DestroyLeakedTrainingBackgrounds();
+            titlePresenter.OnEnter();
             await PrepareSceneViewAsync(cancelToken);
         }
 

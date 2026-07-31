@@ -4,6 +4,7 @@ using Lighthouse.Scene.SceneCamera;
 using Scene.BattleNpcScene;
 using Scene.BattleNpcScene.Interface;
 using Scene.BattleNpcScene.View;
+using Scene.BattlePVPScene;
 using Scene.Core;
 using System.Threading;
 using UI.ClayEditor.View;
@@ -30,6 +31,11 @@ namespace Scene.BattlePvpArena
         public class BattlePvpArenaTransitionData : TransitionDataBase
         {
             public override MainSceneId MainSceneId => ClayMonstersMainSceneId.BattlePvpArena;
+
+            /// <summary>
+            /// 特定相手か不特定相手か
+            /// </summary>
+            public BattlePvpMatchMode MatchMode { get; set; } = BattlePvpMatchMode.Direct;
         }
 
         /// <summary>
@@ -90,6 +96,14 @@ namespace Scene.BattlePvpArena
             BattlePvpArenaFlowRunner runner = ResolveFlowRunner();
             runner?.EnsureSceneReferences(transform);
             runner?.PrepareSelectionLayout();
+
+            BattlePvpMatchMode matchMode = BattlePvpMatchMode.Direct;
+            if (context?.TransitionData is BattlePvpArenaTransitionData transitionData)
+            {
+                matchMode = transitionData.MatchMode;
+            }
+
+            runner?.SetMatchMode(matchMode);
             return UniTask.CompletedTask;
         }
 
