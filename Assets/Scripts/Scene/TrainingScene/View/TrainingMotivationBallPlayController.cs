@@ -149,6 +149,7 @@ namespace Scene.TrainingScene.View
             if (roamController != null)
             {
                 roamController.StopChase();
+                roamController.SetClickReactionSuppressed(false);
             }
 
             SetBallVisible(false);
@@ -186,6 +187,8 @@ namespace Scene.TrainingScene.View
             isInFlight = false;
             velocity = Vector3.zero;
             nextPlayKickAllowedTime = 0f;
+            // 投球操作中のクリックが呼出反応に取られないようにする
+            roamController.SetClickReactionSuppressed(true);
             SetBallVisible(true);
             CacheNativeBallDiameter();
             ApplyBallScale();

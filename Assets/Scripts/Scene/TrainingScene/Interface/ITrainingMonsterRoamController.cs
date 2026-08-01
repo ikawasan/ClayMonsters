@@ -53,5 +53,11 @@ namespace Scene.TrainingScene.Interface
         /// 追いかけを終了して通常徘徊へ戻す
         /// </summary>
         void StopChase();
+
+        /// <summary>
+        /// クリックで呼んで寄る反応の受付を切り替える
+        /// </summary>
+        /// <param name="suppressed">trueなら呼出反応を受け付けない</param>
+        void SetClickReactionSuppressed(bool suppressed);
     }
 }

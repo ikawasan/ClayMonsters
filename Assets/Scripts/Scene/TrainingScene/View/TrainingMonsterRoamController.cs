@@ -61,9 +61,11 @@ namespace Scene.TrainingScene.View
 
         private CancellationTokenSource roamCts;
         private int roamSessionId;
+        private int clickReactionId;
         private bool isRoaming;
         private bool isReacting;
         private bool isChasing;
+        private bool suppressClickReaction;
         private Transform chaseTarget;
         private bool hasRoamSpawnPlacement;
         private float noticeAnimHeightBoost;
@@ -98,7 +100,11 @@ namespace Scene.TrainingScene.View
 
         private void Update()
         {
-            if (!isRoaming || isReacting || isChasing || trainingDisplay == null)
+            if (!isRoaming
+                || isReacting
+                || isChasing
+                || suppressClickReaction
+                || trainingDisplay == null)
             {
                 return;
             }
@@ -220,9 +226,7 @@ namespace Scene.TrainingScene.View
         {
             chaseTarget = target;
             isChasing = target != null;
-            isReacting = false;
-            ResetNoticeVisual();
-            SetNoticeVisible(false);
+            InvalidateClickReaction();
         }
 
         /// <inheritdoc/>
@@ -230,6 +234,16 @@ namespace Scene.TrainingScene.View
         {
             chaseTarget = null;
             isChasing = false;
+        }
+
+        /// <inheritdoc/>
+        public void SetClickReactionSuppressed(bool suppressed)
+        {
+            suppressClickReaction = suppressed;
+            if (suppressed)
+            {
+                InvalidateClickReaction();
+            }
         }
 
         private void OnDisable()
@@ -245,9 +259,11 @@ namespace Scene.TrainingScene.View
         private void StopRoamInternal(bool returnToAnchor)
         {
             roamSessionId++;
+            clickReactionId++;
             isRoaming = false;
             isReacting = false;
             isChasing = false;
+            suppressClickReaction = false;
             chaseTarget = null;
             ResetNoticeVisual();
             SetNoticeVisible(false);
@@ -374,12 +390,16 @@ namespace Scene.TrainingScene.View
 
         private async UniTaskVoid HandleClickReactionAsync(int sessionId, CancellationToken cancellationToken)
         {
-            if (isReacting || !IsActiveRoamSession(sessionId))
+            if (isReacting
+                || isChasing
+                || suppressClickReaction
+                || !IsActiveRoamSession(sessionId))
             {
                 return;
             }
 
             isReacting = true;
+            int reactionId = ++clickReactionId;
             GameObject model = trainingDisplay != null ? trainingDisplay.LoadedModel : null;
             ProceduralMotionCharacter motion = trainingDisplay != null
                 ? trainingDisplay.MotionCharacter
@@ -394,21 +414,35 @@ namespace Scene.TrainingScene.View
                     motion?.OnLayoutPositionChanged();
                 }
 
-                await PlayNoticeAnimationAsync(cancellationToken);
+                await PlayNoticeAnimationAsync(reactionId, cancellationToken);
+                if (!IsClickReactionActive(sessionId, reactionId)
+                    || cancellationToken.IsCancellationRequested)
+                {
+                    return;
+                }
+
                 ResetNoticeVisual();
                 SetNoticeVisible(false);
 
-                if (model != null && motion != null && IsActiveRoamSession(sessionId))
+                if (model != null && motion != null)
                 {
-                    await ApproachCameraAsync(sessionId, model.transform, motion, cancellationToken);
-                    if (IsActiveRoamSession(sessionId) && !cancellationToken.IsCancellationRequested)
+                    await ApproachCameraAsync(
+                        sessionId,
+                        reactionId,
+                        model.transform,
+                        motion,
+                        cancellationToken);
+                    if (!IsClickReactionActive(sessionId, reactionId)
+                        || cancellationToken.IsCancellationRequested)
                     {
-                        FaceCamera(model.transform);
-                        motion.SetRootTranslationEnabled(false);
-                        motion.Play(MotionType.Idle);
-                        motion.OnLayoutPositionChanged();
-                        await WaitApproachHoldAsync(sessionId, cancellationToken);
+                        return;
                     }
+
+                    FaceCamera(model.transform);
+                    motion.SetRootTranslationEnabled(false);
+                    motion.Play(MotionType.Idle);
+                    motion.OnLayoutPositionChanged();
+                    await WaitApproachHoldAsync(sessionId, reactionId, cancellationToken);
                 }
             }
             catch (OperationCanceledException)
@@ -418,8 +452,27 @@ namespace Scene.TrainingScene.View
             {
                 ResetNoticeVisual();
                 SetNoticeVisible(false);
-                isReacting = false;
+                if (reactionId == clickReactionId)
+                {
+                    isReacting = false;
+                }
             }
+        }
+
+        private void InvalidateClickReaction()
+        {
+            clickReactionId++;
+            isReacting = false;
+            ResetNoticeVisual();
+            SetNoticeVisible(false);
+        }
+
+        private bool IsClickReactionActive(int sessionId, int reactionId)
+        {
+            return IsActiveRoamSession(sessionId)
+                && reactionId == clickReactionId
+                && !isChasing
+                && !suppressClickReaction;
         }
 
         private async UniTask ChaseTargetAsync(
@@ -488,6 +541,7 @@ namespace Scene.TrainingScene.View
 
         private async UniTask ApproachCameraAsync(
             int sessionId,
+            int reactionId,
             Transform modelTransform,
             ProceduralMotionCharacter motion,
             CancellationToken cancellationToken)
@@ -503,7 +557,8 @@ namespace Scene.TrainingScene.View
 
             float speed = Mathf.Max(0.1f, approachSpeed);
             float arrive = Mathf.Max(0.02f, arriveDistance);
-            while (IsActiveRoamSession(sessionId) && !cancellationToken.IsCancellationRequested)
+            while (IsClickReactionActive(sessionId, reactionId)
+                && !cancellationToken.IsCancellationRequested)
             {
                 Vector3 current = modelTransform.position;
                 Vector3 toTarget = destination - current;
@@ -587,11 +642,14 @@ namespace Scene.TrainingScene.View
             return worldPoint;
         }
 
-        private async UniTask WaitApproachHoldAsync(int sessionId, CancellationToken cancellationToken)
+        private async UniTask WaitApproachHoldAsync(
+            int sessionId,
+            int reactionId,
+            CancellationToken cancellationToken)
         {
             float hold = Mathf.Max(0f, approachHoldSeconds);
             float elapsed = 0f;
-            while (IsActiveRoamSession(sessionId)
+            while (IsClickReactionActive(sessionId, reactionId)
                 && !cancellationToken.IsCancellationRequested
                 && elapsed < hold)
             {
@@ -600,7 +658,9 @@ namespace Scene.TrainingScene.View
             }
         }
 
-        private async UniTask PlayNoticeAnimationAsync(CancellationToken cancellationToken)
+        private async UniTask PlayNoticeAnimationAsync(
+            int reactionId,
+            CancellationToken cancellationToken)
         {
             float appear = Mathf.Max(0.05f, noticeAppearSeconds);
             float hold = Mathf.Max(0.05f, noticeHoldSeconds);
@@ -626,18 +686,31 @@ namespace Scene.TrainingScene.View
             UpdateNoticeMarkTransform();
             BillboardNoticeMark();
 
-            await AnimateNoticeAppearAsync(appear, cancellationToken);
-            await AnimateNoticeHoldAsync(hold, cancellationToken);
-            await AnimateNoticeHideAsync(hide, cancellationToken);
+            await AnimateNoticeAppearAsync(reactionId, appear, cancellationToken);
+            if (reactionId != clickReactionId || cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
+
+            await AnimateNoticeHoldAsync(reactionId, hold, cancellationToken);
+            if (reactionId != clickReactionId || cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
+
+            await AnimateNoticeHideAsync(reactionId, hide, cancellationToken);
         }
 
         private async UniTask AnimateNoticeAppearAsync(
+            int reactionId,
             float duration,
             CancellationToken cancellationToken)
         {
             float elapsed = 0f;
             float peak = Mathf.Max(1f, noticePopScale);
-            while (elapsed < duration && !cancellationToken.IsCancellationRequested)
+            while (elapsed < duration
+                && reactionId == clickReactionId
+                && !cancellationToken.IsCancellationRequested)
             {
                 float t = Mathf.Clamp01(elapsed / duration);
                 float scale;
@@ -661,17 +734,25 @@ namespace Scene.TrainingScene.View
                 await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
             }
 
+            if (reactionId != clickReactionId)
+            {
+                return;
+            }
+
             SetNoticeScale(1f);
             noticeAnimHeightBoost = 0f;
             UpdateNoticeMarkTransform();
         }
 
         private async UniTask AnimateNoticeHoldAsync(
+            int reactionId,
             float duration,
             CancellationToken cancellationToken)
         {
             float elapsed = 0f;
-            while (elapsed < duration && !cancellationToken.IsCancellationRequested)
+            while (elapsed < duration
+                && reactionId == clickReactionId
+                && !cancellationToken.IsCancellationRequested)
             {
                 float pulse = 1f + Mathf.Sin(elapsed * Mathf.PI * 4f) * 0.06f;
                 SetNoticeScale(pulse);
@@ -682,10 +763,16 @@ namespace Scene.TrainingScene.View
                 await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
             }
 
+            if (reactionId != clickReactionId)
+            {
+                return;
+            }
+
             SetNoticeScale(1f);
         }
 
         private async UniTask AnimateNoticeHideAsync(
+            int reactionId,
             float duration,
             CancellationToken cancellationToken)
         {
@@ -693,7 +780,9 @@ namespace Scene.TrainingScene.View
             float startScale = noticeMarkRoot != null
                 ? noticeMarkRoot.transform.localScale.x / Mathf.Max(0.0001f, noticeBaseScale.x)
                 : 1f;
-            while (elapsed < duration && !cancellationToken.IsCancellationRequested)
+            while (elapsed < duration
+                && reactionId == clickReactionId
+                && !cancellationToken.IsCancellationRequested)
             {
                 float t = Mathf.Clamp01(elapsed / duration);
                 float eased = t * t;
@@ -703,6 +792,11 @@ namespace Scene.TrainingScene.View
                 BillboardNoticeMark();
                 elapsed += Time.deltaTime;
                 await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
+            }
+
+            if (reactionId != clickReactionId)
+            {
+                return;
             }
 
             SetNoticeScale(0f);
