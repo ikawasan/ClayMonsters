@@ -43,6 +43,7 @@ namespace UI.SkillTree.View
         {
             ValidateReferences();
             RebuildNodeMap();
+            ApplyGridLayout();
             InitializeBonusSummaryToggle();
             Hide();
         }
@@ -55,6 +56,7 @@ namespace UI.SkillTree.View
                 return;
             }
 
+            ApplyGridLayout();
             if (panZoom != null)
             {
                 panZoom.ResetView();
@@ -378,6 +380,42 @@ namespace UI.SkillTree.View
                 }
 
                 nodeMap[node.NodeId] = node;
+            }
+        }
+
+        private void ApplyGridLayout()
+        {
+            if (nodeViews == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < nodeViews.Length; i++)
+            {
+                SkillTreeNodeView node = nodeViews[i];
+                if (node == null)
+                {
+                    continue;
+                }
+
+                if (!SkillTreeLayoutCatalog.TryGetGrid(node.NodeId, out Vector2Int grid))
+                {
+                    Debug.LogError(
+                        $"[SkillTreeView] マス配置が未定義です id={node.NodeId}",
+                        node);
+                    continue;
+                }
+
+                RectTransform rect = node.RectTransform;
+                if (rect == null)
+                {
+                    continue;
+                }
+
+                rect.anchorMin = new Vector2(0.5f, 0.5f);
+                rect.anchorMax = new Vector2(0.5f, 0.5f);
+                rect.pivot = new Vector2(0.5f, 0.5f);
+                rect.anchoredPosition = SkillTreeLayoutCatalog.ToAnchoredPosition(grid);
             }
         }
 

@@ -60,7 +60,7 @@ namespace SaveData
                 costPerLevel: 0,
                 SkillTreeEffectType.StartingAttack,
                 effectPerLevel: 6f,
-                SkillTreeNodeId.StartingHp2),
+                SkillTreeNodeId.Center),
             new SkillTreeNodeDefinition(
                 SkillTreeNodeId.StartingAttack2,
                 "基礎攻撃II",
@@ -91,7 +91,7 @@ namespace SaveData
                 costPerLevel: 0,
                 SkillTreeEffectType.StartingDefense,
                 effectPerLevel: 6f,
-                SkillTreeNodeId.StartingHp2),
+                SkillTreeNodeId.Center),
             new SkillTreeNodeDefinition(
                 SkillTreeNodeId.StartingDefense2,
                 "基礎防御II",
@@ -122,7 +122,7 @@ namespace SaveData
                 costPerLevel: 0,
                 SkillTreeEffectType.StartingSpeed,
                 effectPerLevel: 6f,
-                SkillTreeNodeId.StartingHp2),
+                SkillTreeNodeId.Center),
             new SkillTreeNodeDefinition(
                 SkillTreeNodeId.StartingSpeed2,
                 "基礎速度II",
@@ -153,7 +153,7 @@ namespace SaveData
                 costPerLevel: 0,
                 SkillTreeEffectType.StartingHit,
                 effectPerLevel: 6f,
-                SkillTreeNodeId.StartingHp2),
+                SkillTreeNodeId.Center),
             new SkillTreeNodeDefinition(
                 SkillTreeNodeId.StartingHit2,
                 "基礎命中II",
