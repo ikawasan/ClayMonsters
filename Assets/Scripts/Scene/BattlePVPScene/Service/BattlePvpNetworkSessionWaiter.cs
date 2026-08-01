@@ -8,6 +8,7 @@ namespace Scene.BattlePVPScene.Service
 {
     /// <summary>
     /// Netcode接続完了をイベントとポーリングで待機する
+    /// タイムアウトせずキャンセルのみで中断する
     /// </summary>
     public static class BattlePvpNetworkSessionWaiter
     {
@@ -17,16 +18,18 @@ namespace Scene.BattlePVPScene.Service
         /// <summary>
         /// ホストまたはクライアントのセッション準備完了を待つ
         /// </summary>
-        public static async UniTask<bool> WaitUntilReadyAsync(
+        /// <param name="networkManager">NetworkManager</param>
+        /// <param name="isHostSide">ホスト側待ちか</param>
+        /// <param name="cancellationToken">キャンセルトークン</param>
+        public static async UniTask WaitUntilReadyAsync(
             NetworkManager networkManager,
             bool isHostSide,
-            float timeoutSeconds,
             CancellationToken cancellationToken)
         {
             if (IsReady(networkManager, isHostSide))
             {
                 LogReady(networkManager, isHostSide, "即時");
-                return true;
+                return;
             }
 
             bool signaledReady = false;
@@ -44,14 +47,13 @@ namespace Scene.BattlePVPScene.Service
 
             try
             {
-                float elapsed = 0f;
                 float nextLogTime = 0f;
-                while (elapsed < timeoutSeconds && !cancellationToken.IsCancellationRequested)
+                while (!cancellationToken.IsCancellationRequested)
                 {
                     if (signaledReady || IsReady(networkManager, isHostSide))
                     {
                         LogReady(networkManager, isHostSide, "待機後");
-                        return true;
+                        return;
                     }
 
                     if (Time.realtimeSinceStartup >= nextLogTime)
@@ -60,29 +62,12 @@ namespace Scene.BattlePVPScene.Service
                         LogWaiting(networkManager, isHostSide);
                     }
 
-                    elapsed += PollIntervalSeconds;
                     await UniTask.Delay(
                         TimeSpan.FromSeconds(PollIntervalSeconds),
                         cancellationToken: cancellationToken);
                 }
 
-                bool ready = IsReady(networkManager, isHostSide);
-                if (ready)
-                {
-                    LogReady(networkManager, isHostSide, "タイムアウト直前");
-                }
-                else
-                {
-                    Debug.LogWarning(
-                        "[BattlePvpMatchmaking] セッション待機タイムアウト"
-                        + $" isHostSide={isHostSide}"
-                        + $" isHost={networkManager.IsHost}"
-                        + $" isClient={networkManager.IsClient}"
-                        + $" isConnectedClient={networkManager.IsConnectedClient}"
-                        + $" 接続数={networkManager.ConnectedClientsIds.Count}");
-                }
-
-                return ready;
+                cancellationToken.ThrowIfCancellationRequested();
             }
             finally
             {

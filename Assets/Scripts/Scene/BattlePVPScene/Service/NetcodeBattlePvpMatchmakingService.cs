@@ -19,7 +19,6 @@ namespace Scene.BattlePVPScene.Service
     /// </summary>
     public sealed class NetcodeBattlePvpMatchmakingService : IBattlePvpMatchmakingService, IDisposable
     {
-        private const float HostWaitSeconds = 60f;
         private const float LobbyPollSeconds = 1f;
         private const float LobbyHeartbeatSeconds = 15f;
         private const string LobbyName = "ClayMonstersPvp";
@@ -105,16 +104,16 @@ namespace Scene.BattlePVPScene.Service
                 CurrentRoomCode = joinCode;
 
                 PublishStatus($"参加コード: {joinCode}\n相手にこのコードを伝えてください");
-                bool matched = await WaitUntilSessionReadyAsync(true, HostWaitSeconds, operationCts.Token);
-                if (!matched)
-                {
-                    CancelInternal(shutdownNetwork: true);
-                    return BattlePvpMatchmakingResult.Failed("相手が参加しませんでした");
-                }
+                await WaitUntilSessionReadyAsync(true, operationCts.Token);
 
                 PublishStatus("対戦相手と接続しました");
                 TrySpawnSessionPlayers();
                 return BattlePvpMatchmakingResult.Succeeded(true, joinCode);
+            }
+            catch (OperationCanceledException)
+            {
+                CancelInternal(shutdownNetwork: true);
+                throw;
             }
             catch (Exception exception)
             {
@@ -158,16 +157,16 @@ namespace Scene.BattlePVPScene.Service
                     + $" isClient={activeManager.IsClient}"
                     + $" isConnectedClient={activeManager.IsConnectedClient}");
 
-                bool matched = await WaitUntilSessionReadyAsync(false, HostWaitSeconds, operationCts.Token);
-                if (!matched)
-                {
-                    CancelInternal(shutdownNetwork: true);
-                    return BattlePvpMatchmakingResult.Failed("ルームが見つからないか満員です");
-                }
+                await WaitUntilSessionReadyAsync(false, operationCts.Token);
 
                 PublishStatus("対戦相手と接続しました");
                 TrySpawnSessionPlayers();
                 return BattlePvpMatchmakingResult.Succeeded(false, joinCode);
+            }
+            catch (OperationCanceledException)
+            {
+                CancelInternal(shutdownNetwork: true);
+                throw;
             }
             catch (Exception exception)
             {
@@ -204,12 +203,7 @@ namespace Scene.BattlePVPScene.Service
                     PublishStatus("対戦相手の参加を待っています…");
                     string joinCode = await HostRelayForLobbyAsync(joinedLobby.Id, operationCts.Token);
                     CurrentRoomCode = joinCode;
-                    bool matched = await WaitUntilSessionReadyAsync(true, HostWaitSeconds, operationCts.Token);
-                    if (!matched)
-                    {
-                        CancelInternal(shutdownNetwork: true);
-                        return BattlePvpMatchmakingResult.Failed("対戦相手が見つかりませんでした");
-                    }
+                    await WaitUntilSessionReadyAsync(true, operationCts.Token);
 
                     PublishStatus("対戦相手と接続しました");
                     TrySpawnSessionPlayers();
@@ -218,16 +212,16 @@ namespace Scene.BattlePVPScene.Service
 
                 PublishStatus("ホストの準備を待っています…");
                 await JoinRelayFromLobbyAsync(joinedLobby.Id, operationCts.Token);
-                bool clientMatched = await WaitUntilSessionReadyAsync(false, HostWaitSeconds, operationCts.Token);
-                if (!clientMatched)
-                {
-                    CancelInternal(shutdownNetwork: true);
-                    return BattlePvpMatchmakingResult.Failed("接続がタイムアウトしました");
-                }
+                await WaitUntilSessionReadyAsync(false, operationCts.Token);
 
                 PublishStatus("対戦相手と接続しました");
                 TrySpawnSessionPlayers();
                 return BattlePvpMatchmakingResult.Succeeded(false, CurrentRoomCode);
+            }
+            catch (OperationCanceledException)
+            {
+                CancelInternal(shutdownNetwork: true);
+                throw;
             }
             catch (Exception exception)
             {
@@ -360,8 +354,7 @@ namespace Scene.BattlePVPScene.Service
 
         private async UniTask<string> HostRelayForLobbyAsync(string lobbyId, CancellationToken cancellationToken)
         {
-            float elapsed = 0f;
-            while (elapsed < HostWaitSeconds && !cancellationToken.IsCancellationRequested)
+            while (!cancellationToken.IsCancellationRequested)
             {
                 Lobby lobby = await LobbyService.Instance.GetLobbyAsync(lobbyId);
                 if (lobby.Players.Count >= 2)
@@ -388,17 +381,16 @@ namespace Scene.BattlePVPScene.Service
                     return joinCode;
                 }
 
-                elapsed += LobbyPollSeconds;
                 await UniTask.Delay(TimeSpan.FromSeconds(LobbyPollSeconds), cancellationToken: cancellationToken);
             }
 
-            throw new TimeoutException("対戦相手の参加待ちがタイムアウトしました");
+            cancellationToken.ThrowIfCancellationRequested();
+            throw new OperationCanceledException(cancellationToken);
         }
 
         private async UniTask JoinRelayFromLobbyAsync(string lobbyId, CancellationToken cancellationToken)
         {
-            float elapsed = 0f;
-            while (elapsed < HostWaitSeconds && !cancellationToken.IsCancellationRequested)
+            while (!cancellationToken.IsCancellationRequested)
             {
                 Lobby lobby = await LobbyService.Instance.GetLobbyAsync(lobbyId);
                 if (lobby.Data != null
@@ -415,28 +407,25 @@ namespace Scene.BattlePVPScene.Service
                     return;
                 }
 
-                elapsed += LobbyPollSeconds;
                 await UniTask.Delay(TimeSpan.FromSeconds(LobbyPollSeconds), cancellationToken: cancellationToken);
             }
 
-            throw new TimeoutException("ホストの準備がタイムアウトしました");
+            cancellationToken.ThrowIfCancellationRequested();
         }
 
-        private async UniTask<bool> WaitUntilSessionReadyAsync(
+        private async UniTask WaitUntilSessionReadyAsync(
             bool isHostSide,
-            float timeoutSeconds,
             CancellationToken cancellationToken)
         {
             NetworkManager activeManager = ResolveActiveNetworkManager();
             if (activeManager == null)
             {
-                return false;
+                throw new InvalidOperationException("NetworkManagerがありません");
             }
 
-            return await BattlePvpNetworkSessionWaiter.WaitUntilReadyAsync(
+            await BattlePvpNetworkSessionWaiter.WaitUntilReadyAsync(
                 activeManager,
                 isHostSide,
-                timeoutSeconds,
                 cancellationToken);
         }
 
