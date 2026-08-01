@@ -5,6 +5,7 @@ using SaveData.Interface;
 using Scene.Core.Interface;
 using Scene.PvpLobby.Interface;
 using Scene.TitleScene.Interface;
+using UI.ModelGallery.Interface;
 using UI.Option.Interface;
 using UI.SkillTree.Interface;
 using VContainer;
@@ -24,6 +25,7 @@ namespace Scene.TitleScene.Presenter
         private readonly ITitleMessageWindowView messageWindowView;
         private readonly IOptionPresenter optionPresenter;
         private readonly ISkillTreePresenter skillTreePresenter;
+        private readonly IModelGalleryPresenter modelGalleryPresenter;
 
         private System.IDisposable pointsSubscription;
 
@@ -36,7 +38,8 @@ namespace Scene.TitleScene.Presenter
             ITitleView titleView,
             ITitleMessageWindowView messageWindowView,
             IOptionPresenter optionPresenter,
-            ISkillTreePresenter skillTreePresenter)
+            ISkillTreePresenter skillTreePresenter,
+            IModelGalleryPresenter modelGalleryPresenter)
         {
             this.sceneManager = sceneManager;
             this.saveService = saveService;
@@ -46,6 +49,7 @@ namespace Scene.TitleScene.Presenter
             this.messageWindowView = messageWindowView;
             this.optionPresenter = optionPresenter;
             this.skillTreePresenter = skillTreePresenter;
+            this.modelGalleryPresenter = modelGalleryPresenter;
         }
 
         void ITitlePresenter.Setup()
@@ -55,10 +59,12 @@ namespace Scene.TitleScene.Presenter
             titleView.SubscribeBattlePvpButtonClick(OnClickBattlePvpButton);
             titleView.SubscribeTrainingButtonClick(OnClickTrainingButton);
             titleView.SubscribeSkillTreeButtonClick(OnClickSkillTreeButton);
+            titleView.SubscribeModelGalleryButtonClick(OnClickModelGalleryButton);
             titleView.SubscribeOptionButtonClick(OnClickOptionButton);
             titleView.SubscribeQuitGameButtonClick(OnClickQuitGameButton);
             messageWindowView.SubscribeOkButtonClick(OnClickMessageWindowOk);
             skillTreePresenter.Setup();
+            modelGalleryPresenter.Setup();
 
             pointsSubscription?.Dispose();
             pointsSubscription = pointsService.PointsObservable
@@ -79,6 +85,7 @@ namespace Scene.TitleScene.Presenter
             messageWindowView.Hide();
             optionPresenter.Hide();
             skillTreePresenter.Hide();
+            modelGalleryPresenter.Hide();
         }
 
         private void OnClickClayEditButton()
@@ -142,6 +149,11 @@ namespace Scene.TitleScene.Presenter
         private void OnClickSkillTreeButton()
         {
             skillTreePresenter.Show();
+        }
+
+        private void OnClickModelGalleryButton()
+        {
+            modelGalleryPresenter.Show();
         }
 
         private void OnClickMessageWindowOk()

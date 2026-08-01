@@ -16,7 +16,7 @@ namespace UI.ClayEditor.View
 
         [Header("§–ñ")]
         [Tooltip("–¼‘O‚ÌÅ‘å•¶š”")]
-        [SerializeField] private int maxLength = 12;
+        [SerializeField] private int maxLength = 8;
 
         [Tooltip("‹ó•¶š‚Ì‚Æ‚«‚Ég‚¤Šù’è–¼")]
         [SerializeField] private string defaultName = "Monster";

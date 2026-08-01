@@ -173,5 +173,25 @@ namespace SaveData.Interface
             SkinnedMeshRenderer runtimeRenderer,
             Transform boneRoot,
             CancellationToken cancellationToken);
+
+        /// <summary>
+        /// 外部パッケージの育成前モデルを未育成スロットへ取り込む
+        /// </summary>
+        /// <param name="slotIndex">保存先未育成スロット番号</param>
+        /// <param name="modelName">モデル名</param>
+        /// <param name="status">モデルステータス</param>
+        /// <param name="attackMotions">攻撃構成</param>
+        /// <param name="glbBytes">glbバイナリ</param>
+        /// <param name="thumbnailPng">サムネイルPNGなければnull</param>
+        /// <param name="overwrite">使用中スロットへの上書きを許可するか</param>
+        /// <returns>取り込みに成功したか</returns>
+        bool ImportUntrainedSlot(
+            int slotIndex,
+            string modelName,
+            ModelStatus status,
+            IReadOnlyList<MotionType> attackMotions,
+            byte[] glbBytes,
+            byte[] thumbnailPng,
+            bool overwrite = false);
     }
 }

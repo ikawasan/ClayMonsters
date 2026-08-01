@@ -564,6 +564,85 @@ namespace SaveData.Service
         }
 
         /// <inheritdoc />
+        /// <inheritdoc />
+        public bool ImportUntrainedSlot(
+            int slotIndex,
+            string modelName,
+            ModelStatus status,
+            IReadOnlyList<MotionType> attackMotions,
+            byte[] glbBytes,
+            byte[] thumbnailPng,
+            bool overwrite = false)
+        {
+            if (!ModelSavePoolSettings.IsValidSlotIndex(ModelSavePool.Player, slotIndex))
+            {
+                Debug.LogError($"[ClayModelSaveService] スロット番号が範囲外です: {slotIndex}");
+                return false;
+            }
+
+            if (glbBytes == null || glbBytes.Length == 0)
+            {
+                Debug.LogError("[ClayModelSaveService] 取込用glbが空です");
+                return false;
+            }
+
+            if (status == null)
+            {
+                Debug.LogError("[ClayModelSaveService] 取込用ステータスがnullです");
+                return false;
+            }
+
+            ClayModelSaveData data = LoadOrCreate(ModelSavePool.Player);
+            ModelSaveSlot existing = data.slots[slotIndex];
+            if (existing != null && existing.isUsed)
+            {
+                if (!overwrite)
+                {
+                    Debug.LogError($"[ClayModelSaveService] スロット{slotIndex}は使用中のため取込できません");
+                    return false;
+                }
+
+                // 取込では書き換えない付帯ファイルを先に消す
+                if (!string.IsNullOrEmpty(existing.glbFileName))
+                {
+                    ModelSaveStorage.Delete(existing.glbFileName);
+                }
+
+                if (!string.IsNullOrEmpty(existing.thumbnailFileName))
+                {
+                    ModelSaveStorage.Delete(existing.thumbnailFileName);
+                }
+
+                string voxelFileName = ModelSavePoolSettings.GetVoxelFileName(ModelSavePool.Player, slotIndex);
+                ModelSaveStorage.Delete(voxelFileName);
+                DeleteTrainingProgressFile(ModelSavePool.Player, slotIndex);
+            }
+
+            string glbFileName = ModelSavePoolSettings.GetGlbFileName(ModelSavePool.Player, slotIndex);
+            ModelSaveStorage.WriteAllBytes(glbFileName, glbBytes);
+
+            string thumbnailFileName = null;
+            if (thumbnailPng != null && thumbnailPng.Length > 0)
+            {
+                thumbnailFileName = ModelSavePoolSettings.GetThumbnailFileName(ModelSavePool.Player, slotIndex);
+                ModelSaveStorage.WriteAllBytes(thumbnailFileName, thumbnailPng);
+            }
+
+            List<MotionType> attacks = ModelAttackMotionUtility.Normalize(attackMotions, AttackMotionCount);
+            data.slots[slotIndex] = new ModelSaveSlot
+            {
+                isUsed = true,
+                modelName = string.IsNullOrEmpty(modelName) ? "GalleryMonster" : modelName,
+                status = ModelStatus.CloneOrDefault(status),
+                glbFileName = glbFileName,
+                thumbnailFileName = thumbnailFileName,
+                attackMotions = attacks
+            };
+            WriteToFile(ModelSavePool.Player, data);
+            return true;
+        }
+
+        /// <inheritdoc />
         public bool SwapSlots(ModelSavePool pool, int slotIndexA, int slotIndexB)
         {
             if (!ModelSavePoolSettings.IsValidSlotIndex(pool, slotIndexA)

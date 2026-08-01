@@ -5,6 +5,9 @@ using SaveData.Interface;
 using SaveData.Service;
 using Scene.TitleScene.Presenter;
 using Scene.TitleScene.View;
+using UI.ModelGallery.Presenter;
+using UI.ModelGallery.Service;
+using UI.ModelGallery.View;
 using UI.SkillTree.Presenter;
 using UI.SkillTree.View;
 using UnityEngine;
@@ -19,6 +22,7 @@ namespace Scene.TitleScene
         [SerializeField] TitleView titleView;
         [SerializeField] TitleMessageWindowView messageWindowView;
         [SerializeField] SkillTreeView skillTreeView;
+        [SerializeField] ModelGalleryView modelGalleryView;
 
         [Header("Camera")]
         [SerializeField] ClayEditCameraView cameraView;
@@ -54,7 +58,20 @@ namespace Scene.TitleScene
                 builder.RegisterComponent(skillTreeView).AsImplementedInterfaces();
             }
 
+            if (modelGalleryView == null)
+            {
+                Debug.LogError(
+                    "[TitleLifetimeScope] modelGalleryViewが未配線です。展示室UIを配置しInspectorで接続してください",
+                    this);
+            }
+            else
+            {
+                builder.RegisterComponent(modelGalleryView).AsImplementedInterfaces();
+            }
+
             builder.Register<SkillTreePresenter>(Lifetime.Singleton).AsImplementedInterfaces();
+            builder.Register<LocalModelGalleryService>(Lifetime.Singleton).AsImplementedInterfaces();
+            builder.Register<ModelGalleryPresenter>(Lifetime.Singleton).AsImplementedInterfaces();
             builder.Register<TitlePresenter>(Lifetime.Singleton).AsImplementedInterfaces();
 
             builder.RegisterComponent(cameraView).AsImplementedInterfaces();

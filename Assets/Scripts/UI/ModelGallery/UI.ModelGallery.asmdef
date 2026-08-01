@@ -1,0 +1,25 @@
+{
+    "name": "UI.ModelGallery",
+    "rootNamespace": "UI.ModelGallery",
+    "references": [
+        "GUID:55a1ca089b0a4ca48aa79b5d0adfbfc8",
+        "GUID:5c4b256d253b6bf468f434f1f469979a",
+        "GUID:5cb540fc3fb439447b33fd6ccb6fbfca",
+        "GUID:b0214a6008ed146ff8f122a6a9c2f6cc",
+        "GUID:f51ebe6a0ceec4240a699833d6309b23",
+        "GUID:6055be8ebefd69e48b49212b09b47b2f",
+        "GUID:bee37dbb2f5a2a1469693801075ea4b6",
+        "GUID:8f4e2c1a9b3d5e7f6a8c0d2e4f6a8b0c",
+        "GUID:2ba7e454df3c3aa499897b9ee04fe70a",
+        "GUID:77221876cc6b8244180b96e320b1bcd4"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

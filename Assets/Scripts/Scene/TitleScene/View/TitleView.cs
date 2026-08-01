@@ -20,6 +20,7 @@ namespace Scene.TitleScene.View
         [SerializeField] private LHButton battlePvpButton;
         [SerializeField] private LHButton trainingButton;
         [SerializeField] private LHButton skillTreeButton;
+        [SerializeField] private LHButton modelGalleryButton;
         [SerializeField] private LHButton optionButton;
         [SerializeField] private LHButton quitGameButton;
         [SerializeField] private Image titleLogoImage;
@@ -52,6 +53,13 @@ namespace Scene.TitleScene.View
                     "[TitleView] skillTreeButtonが未配線です",
                     this);
             }
+
+            if (modelGalleryButton == null)
+            {
+                Debug.LogError(
+                    "[TitleView] modelGalleryButtonが未配線です。ModelGalleryButton配下のLHButtonを接続してください",
+                    this);
+            }
         }
 
         public IDisposable SubscribeClayEditButtonClick(UnityAction action) => clayEditButton.SubscribeOnClick(action);
@@ -79,6 +87,17 @@ namespace Scene.TitleScene.View
             }
 
             return skillTreeButton.SubscribeOnClick(action);
+        }
+
+        /// <inheritdoc />
+        public IDisposable SubscribeModelGalleryButtonClick(UnityAction action)
+        {
+            if (modelGalleryButton == null)
+            {
+                return new EmptyDisposable();
+            }
+
+            return modelGalleryButton.SubscribeOnClick(action);
         }
 
         public IDisposable SubscribeOptionButtonClick(UnityAction action) => optionButton.SubscribeOnClick(action);
