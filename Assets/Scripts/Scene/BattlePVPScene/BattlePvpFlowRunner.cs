@@ -7,6 +7,7 @@ using ClayEditor.Rigging;
 using Cysharp.Threading.Tasks;
 using Extensions;
 using Lighthouse.Scene;
+using SaveData;
 using SaveData.Interface;
 using Scene.BattleNpcScene;
 using Scene.BattlePVPScene.Interface;
@@ -199,7 +200,8 @@ namespace Scene.BattlePVPScene
             disconnectHandler.Bind(
                 StopFlow,
                 ReturnToTitleAsync,
-                () => this.GetCancellationTokenOnDestroy());
+                () => this.GetCancellationTokenOnDestroy(),
+                () => sceneFade?.ForceRelease());
         }
 
         /// <summary>
@@ -585,10 +587,12 @@ namespace Scene.BattlePVPScene
             catch (System.OperationCanceledException)
             {
                 Debug.LogWarning("[BattlePvpFlow] RunAsyncキャンセル");
+                sceneFade?.ForceRelease();
             }
             catch (System.Exception exception)
             {
                 Debug.LogException(exception);
+                sceneFade?.ForceRelease();
             }
             finally
             {
@@ -669,8 +673,15 @@ namespace Scene.BattlePVPScene
 
         private async UniTask ReturnToTitleAsync(CancellationToken cancellationToken)
         {
-            if (sceneManager == null || sceneManager.IsTransition)
+            sceneFade?.ForceRelease();
+            if (sceneManager == null)
             {
+                return;
+            }
+
+            if (sceneManager.IsTransition)
+            {
+                Debug.LogWarning("[BattlePvpFlow] Title遷移保留 IsTransition中のためフェードのみ解除しました");
                 return;
             }
 
@@ -730,14 +741,58 @@ namespace Scene.BattlePVPScene
                 return default;
             }
 
-            Debug.Log($"[BattlePvpFlow] スロット送信 localSlot={localSlot} IsOwner={inputRelay.IsOwner}");
+            ModelSaveSlot localModelSlot = saveService != null
+                ? saveService.GetSlot(ModelSavePool.TrainedPlayer, localSlot)
+                : null;
+            if (localModelSlot == null || string.IsNullOrEmpty(localModelSlot.glbFileName))
+            {
+                Debug.LogError($"[BattlePvpFlow] ローカルスロット{localSlot}のモデルがありません");
+                return default;
+            }
+
+            byte[] localGlb = ModelSaveStorage.ReadAllBytes(localModelSlot.glbFileName);
+            if (localGlb == null || localGlb.Length == 0)
+            {
+                Debug.LogError(
+                    $"[BattlePvpFlow] ローカルglbが読めません slot={localSlot} file={localModelSlot.glbFileName}");
+                return default;
+            }
+
+            string metaJson = BattlePvpRemoteModelMeta.FromSlot(localModelSlot).ToJson();
+            Debug.Log(
+                $"[BattlePvpFlow] スロット送信 localSlot={localSlot} IsOwner={inputRelay.IsOwner} glbBytes={localGlb.Length}");
+            // 選択確定時の暗転のまま相手待ちすると真っ黒に見えるため先に明転する
+            if (sceneFade != null && sceneFade.IsOpaque)
+            {
+                await sceneFade.FadeInAsync(cancellationToken);
+            }
+
             inputRelay.SubmitSlotSelection(localSlot);
+            await inputRelay.PublishLocalModelAsync(metaJson, localGlb, cancellationToken);
             await BattlePvpOpponentWaitScope.RunAsync(
                 opponentWaitView,
                 inputRelay.WaitForBothSlotsAsync,
                 cancellationToken);
-            Debug.Log($"[BattlePvpFlow] 両者スロット確定 opponentSlot={inputRelay.OpponentSlotIndex}");
-            return await loader.LoadPlayerSlotAsync(inputRelay.OpponentSlotIndex, enemySpawn, cancellationToken);
+            await BattlePvpOpponentWaitScope.RunAsync(
+                opponentWaitView,
+                inputRelay.WaitForOpponentModelAsync,
+                cancellationToken);
+
+            BattlePvpReceivedRemoteModel remoteModel = inputRelay.GetOpponentReceivedModel();
+            if (remoteModel == null || !remoteModel.IsValid)
+            {
+                Debug.LogError("[BattlePvpFlow] 相手モデルの受信に失敗しました");
+                return default;
+            }
+
+            Debug.Log(
+                $"[BattlePvpFlow] 両者モデル確定 opponentSlot={inputRelay.OpponentSlotIndex}"
+                + $" opponentName={remoteModel.Meta.modelName}");
+            return await loader.LoadFromGlbBytesAsync(
+                remoteModel.Meta.ToTemporarySlot(),
+                remoteModel.GlbBytes,
+                enemySpawn,
+                cancellationToken);
         }
 
         private static void SetCanvasEnabled(Canvas canvas, bool isEnabled)

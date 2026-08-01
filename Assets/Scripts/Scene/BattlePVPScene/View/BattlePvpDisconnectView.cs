@@ -2,6 +2,7 @@ using Cysharp.Threading.Tasks;
 using Extensions;
 using LighthouseExtends.UIComponent.Button;
 using Scene.BattlePVPScene.Interface;
+using System;
 using System.Threading;
 using TMPro;
 using UnityEngine;
@@ -16,7 +17,9 @@ namespace Scene.BattlePVPScene.View
     {
         private const string DisconnectMessage = "通信が切れました";
         private const string CloseButtonLabel = "閉じる";
-        private const int VisibleSortingOrder = 1200;
+        // SceneFade(32000)より前面に出し暗転下に埋もれないようにする
+        private const int VisibleSortingOrder = 33000;
+        private const float MissingButtonFallbackSeconds = 1.5f;
 
         [Tooltip("ONのときフォールバックUIを実行時生成しない")]
         [SerializeField] private bool useSceneCanvasLayout = true;
@@ -79,7 +82,9 @@ namespace Scene.BattlePVPScene.View
             if (titleReturnButton == null)
             {
                 Debug.LogError("[BattlePvpDisconnectView] 閉じるボタン参照がありません", this);
-                await UniTask.WaitUntilCanceled(cancellationToken);
+                await UniTask.Delay(
+                    TimeSpan.FromSeconds(MissingButtonFallbackSeconds),
+                    cancellationToken: cancellationToken);
                 return;
             }
 

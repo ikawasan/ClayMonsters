@@ -119,7 +119,8 @@ namespace Scene.BattlePvpArena
             disconnectHandler.Bind(
                 StopFlow,
                 ReturnToTitleAsync,
-                () => this.GetCancellationTokenOnDestroy());
+                () => this.GetCancellationTokenOnDestroy(),
+                () => sceneFade?.ForceRelease());
 
             BindSelectionLeaveButton();
         }
@@ -459,6 +460,8 @@ namespace Scene.BattlePvpArena
             {
                 Debug.LogWarning($"[BattlePvpArena] RunAsyncキャンセル version={version}");
                 ClearPreviousSpawnedModels();
+                // 暗転のまま固まるのを防ぐ
+                sceneFade?.ForceRelease();
             }
             catch (System.Exception exception)
             {
@@ -795,20 +798,64 @@ namespace Scene.BattlePvpArena
                 return default;
             }
 
+            ModelSaveSlot localModelSlot = saveService != null
+                ? saveService.GetSlot(ModelSavePool.TrainedPlayer, localSlot)
+                : null;
+            if (localModelSlot == null || string.IsNullOrEmpty(localModelSlot.glbFileName))
+            {
+                Debug.LogError($"[BattlePvpArena] ローカルスロット{localSlot}のモデルがありません");
+                return default;
+            }
+
+            byte[] localGlb = ModelSaveStorage.ReadAllBytes(localModelSlot.glbFileName);
+            if (localGlb == null || localGlb.Length == 0)
+            {
+                Debug.LogError(
+                    $"[BattlePvpArena] ローカルglbが読めません slot={localSlot} file={localModelSlot.glbFileName}");
+                return default;
+            }
+
+            string metaJson = BattlePvpRemoteModelMeta.FromSlot(localModelSlot).ToJson();
             Debug.Log(
                 "[BattlePvpArena] スロット送信"
                 + $" localSlot={localSlot}"
-                + $" IsOwner={inputRelay.IsOwner}");
+                + $" IsOwner={inputRelay.IsOwner}"
+                + $" glbBytes={localGlb.Length}");
+            // 選択確定時の暗転のまま相手待ちすると真っ黒に見えるため先に明転する
+            if (sceneFade != null && sceneFade.IsOpaque)
+            {
+                await sceneFade.FadeInAsync(cancellationToken);
+            }
+
             inputRelay.SubmitSlotSelection(localSlot);
+            await inputRelay.PublishLocalModelAsync(metaJson, localGlb, cancellationToken);
             await BattlePvpOpponentWaitScope.RunAsync(
                 opponentWaitView,
                 inputRelay.WaitForBothSlotsAsync,
                 cancellationToken);
+            await BattlePvpOpponentWaitScope.RunAsync(
+                opponentWaitView,
+                inputRelay.WaitForOpponentModelAsync,
+                cancellationToken);
+
+            BattlePvpReceivedRemoteModel remoteModel = inputRelay.GetOpponentReceivedModel();
+            if (remoteModel == null || !remoteModel.IsValid)
+            {
+                Debug.LogError("[BattlePvpArena] 相手モデルの受信に失敗しました");
+                return default;
+            }
+
             Debug.Log(
-                "[BattlePvpArena] 両者スロット確定"
+                "[BattlePvpArena] 両者モデル確定"
                 + $" localSlot={localSlot}"
-                + $" opponentSlot={inputRelay.OpponentSlotIndex}");
-            return await loader.LoadPlayerSlotAsync(inputRelay.OpponentSlotIndex, enemySpawn, cancellationToken);
+                + $" opponentSlot={inputRelay.OpponentSlotIndex}"
+                + $" opponentName={remoteModel.Meta.modelName}"
+                + $" opponentBytes={remoteModel.GlbBytes.Length}");
+            return await loader.LoadFromGlbBytesAsync(
+                remoteModel.Meta.ToTemporarySlot(),
+                remoteModel.GlbBytes,
+                enemySpawn,
+                cancellationToken);
         }
 
         private void OnClickTitleReturn()
@@ -929,8 +976,15 @@ namespace Scene.BattlePvpArena
 
         private async UniTask ReturnToTitleAsync(CancellationToken cancellationToken)
         {
-            if (sceneManager == null || sceneManager.IsTransition)
+            sceneFade?.ForceRelease();
+            if (sceneManager == null)
             {
+                return;
+            }
+
+            if (sceneManager.IsTransition)
+            {
+                Debug.LogWarning("[BattlePvpArena] Title遷移保留 IsTransition中のためフェードのみ解除しました");
                 return;
             }
 

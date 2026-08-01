@@ -133,10 +133,7 @@ namespace Scene.Core.View
             ApplyPresentationState(false);
         }
 
-        /// <summary>
-        /// 暗転状態と入力ブロックを強制的に解除する
-        /// フロー中断時の復旧用
-        /// </summary>
+        /// <inheritdoc />
         public void ForceRelease()
         {
             fadeGeneration++;

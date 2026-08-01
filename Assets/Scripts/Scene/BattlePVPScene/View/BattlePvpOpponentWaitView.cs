@@ -28,10 +28,15 @@ namespace Scene.BattlePVPScene.View
         {
             if (rootCanvas != null)
             {
+                if (visible)
+                {
+                    // SceneFade(32000)より前面に出し暗転下に埋もれないようにする
+                    rootCanvas.overrideSorting = true;
+                    rootCanvas.sortingOrder = 32500;
+                }
+
                 rootCanvas.enabled = visible;
             }
-
-            gameObject.SetActive(visible);
         }
 
         private void ValidateSceneLayout()

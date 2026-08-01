@@ -16,6 +16,7 @@ namespace Scene.BattlePVPScene.Service
         private Func<CancellationToken, UniTask> returnToTitleAsync;
         private Func<CancellationToken> destroyTokenProvider;
         private Action stopBattleFlow;
+        private Action releaseSceneFade;
         private bool isHandling;
         private bool isDisposed;
         private CancellationTokenSource subscribeRetryCts;
@@ -35,11 +36,13 @@ namespace Scene.BattlePVPScene.Service
         public void Bind(
             Action stopBattleFlow,
             Func<CancellationToken, UniTask> returnToTitleAsync,
-            Func<CancellationToken> destroyTokenProvider)
+            Func<CancellationToken> destroyTokenProvider,
+            Action releaseSceneFade = null)
         {
             this.stopBattleFlow = stopBattleFlow;
             this.returnToTitleAsync = returnToTitleAsync;
             this.destroyTokenProvider = destroyTokenProvider;
+            this.releaseSceneFade = releaseSceneFade;
         }
 
         /// <summary>
@@ -147,6 +150,8 @@ namespace Scene.BattlePVPScene.Service
             try
             {
                 Debug.LogWarning("[BattlePvpDisconnect] 切断UIを表示します");
+                // 暗転の下に切断UIが埋もれないよう先にフェードを解除する
+                releaseSceneFade?.Invoke();
                 stopBattleFlow?.Invoke();
 
                 if (disconnectView != null)

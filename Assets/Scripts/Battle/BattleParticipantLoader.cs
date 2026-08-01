@@ -114,6 +114,70 @@ namespace Battle
         }
 
         /// <summary>
+        /// glbバイナリとスロットメタから参加者を構築する
+        /// </summary>
+        /// <param name="slot">表示と技に使うスロット</param>
+        /// <param name="glbBytes">glbバイナリ</param>
+        /// <param name="spawn">配置先</param>
+        /// <param name="cancellationToken">キャンセルトークン</param>
+        public async UniTask<BattleParticipant> LoadFromGlbBytesAsync(
+            ModelSaveSlot slot,
+            byte[] glbBytes,
+            Transform spawn,
+            CancellationToken cancellationToken)
+        {
+            if (slot == null || glbBytes == null || glbBytes.Length == 0)
+            {
+                Debug.LogError("[BattleParticipantLoader] 対人戦の受信モデルが空です");
+                return default;
+            }
+
+            string tempFileName = $"PvpRemoteOpponent_{System.Guid.NewGuid():N}.glb";
+            string tempPath = Path.Combine(Application.temporaryCachePath, tempFileName);
+            try
+            {
+                await UniTask.RunOnThreadPool(
+                    () => File.WriteAllBytes(tempPath, glbBytes),
+                    cancellationToken: cancellationToken);
+
+                await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate, cancellationToken);
+                GameObject model = await ImportWithTimeoutAsync(
+                    ModelSavePool.TrainedPlayer,
+                    -1,
+                    tempPath,
+                    cancellationToken);
+                if (model == null)
+                {
+                    Debug.LogError("[BattleParticipantLoader] 対人戦受信モデルのインポートに失敗しました");
+                    return default;
+                }
+
+                BattleParticipant participant = BuildParticipant(
+                    model,
+                    slot,
+                    ModelStatus.CloneOrDefault(slot.status),
+                    null,
+                    -1);
+                return FinalizeSpawnPlacement(participant, spawn);
+            }
+            finally
+            {
+                try
+                {
+                    if (File.Exists(tempPath))
+                    {
+                        File.Delete(tempPath);
+                    }
+                }
+                catch (System.Exception exception)
+                {
+                    Debug.LogWarning(
+                        $"[BattleParticipantLoader] 一時glb削除に失敗しました: {exception.Message}");
+                }
+            }
+        }
+
+        /// <summary>
         /// すでに読み込み済みのモデルから参加者を構築する(プレイヤーの選択済みモデル用)
         /// </summary>
         public BattleParticipant BuildFromLoadedModel(

@@ -24,6 +24,26 @@ namespace Scene.BattlePVPScene.Network
             NetworkVariableReadPermission.Everyone,
             NetworkVariableWritePermission.Owner);
 
+        private readonly NetworkVariable<bool> ownerModelReady = new NetworkVariable<bool>(
+            false,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Owner);
+
+        private const int ModelChunkSize = 16 * 1024;
+        private const int MaxModelBytes = 8 * 1024 * 1024;
+        private const float SlotSyncTimeoutSeconds = 60f;
+        private const float ModelSyncTimeoutSeconds = 120f;
+        private const float MatchupReadyTimeoutSeconds = 60f;
+
+        private int receiveTransferId = -1;
+        private int receiveTotalBytes;
+        private int receiveTotalChunks;
+        private bool[] receiveChunkFlags;
+        private byte[] receiveBuffer;
+        private string receiveMetaJson = string.Empty;
+        private BattlePvpReceivedRemoteModel receivedRemoteModel;
+        private bool isPublishingModel;
+
         private readonly NetworkVariable<int> ownerStepSequence = new NetworkVariable<int>(
             0,
             NetworkVariableReadPermission.Everyone,
@@ -378,6 +398,7 @@ namespace Scene.BattlePVPScene.Network
             }
 
             ownerMatchupReady.Value = false;
+            ownerModelReady.Value = false;
         }
 
         /// <summary>
@@ -392,6 +413,7 @@ namespace Scene.BattlePVPScene.Network
 
             ownerSlotIndex.Value = -1;
             ownerMatchupReady.Value = false;
+            ownerModelReady.Value = false;
             ownerStepSequence.Value = 0;
             ownerStepDirection.Value = 0;
             ownerStepStartDistance.Value = 0f;
@@ -411,6 +433,8 @@ namespace Scene.BattlePVPScene.Network
             ownerDistanceSequence.Value = 0;
             ownerAuthoritativeDistance.Value = 0f;
             ownerMatchGeneration.Value++;
+            ClearReceivedRemoteModel();
+            ResolveOpponentRelay()?.ClearReceivedRemoteModel();
         }
 
         /// <summary>
@@ -478,6 +502,211 @@ namespace Scene.BattlePVPScene.Network
 
             ownerSlotIndex.Value = slotIndex;
             Debug.Log($"[BattlePvpRelay] スロット送信完了 slotIndex={slotIndex}");
+        }
+
+        /// <summary>
+        /// ローカル選択モデルを相手へ送信する
+        /// </summary>
+        /// <param name="metaJson">メタJSON</param>
+        /// <param name="glbBytes">glbバイナリ</param>
+        /// <param name="cancellationToken">キャンセルトークン</param>
+        public async UniTask PublishLocalModelAsync(
+            string metaJson,
+            byte[] glbBytes,
+            CancellationToken cancellationToken)
+        {
+            if (!IsOwner)
+            {
+                Debug.LogWarning("[BattlePvpRelay] モデル送信スキップ IsOwner=false");
+                return;
+            }
+
+            if (glbBytes == null || glbBytes.Length == 0)
+            {
+                Debug.LogError("[BattlePvpRelay] 送信するglbが空です");
+                ownerModelReady.Value = false;
+                return;
+            }
+
+            if (glbBytes.Length > MaxModelBytes)
+            {
+                Debug.LogError(
+                    $"[BattlePvpRelay] glbが大きすぎます size={glbBytes.Length} max={MaxModelBytes}");
+                ownerModelReady.Value = false;
+                return;
+            }
+
+            if (isPublishingModel)
+            {
+                Debug.LogWarning("[BattlePvpRelay] モデル送信中のため再送を無視します");
+                return;
+            }
+
+            isPublishingModel = true;
+            ownerModelReady.Value = false;
+            try
+            {
+                int transferId = ownerMatchGeneration.Value;
+                int totalChunks = Mathf.Max(1, (glbBytes.Length + ModelChunkSize - 1) / ModelChunkSize);
+                BeginRemoteModelRpc(transferId, glbBytes.Length, totalChunks, metaJson ?? string.Empty);
+                await UniTask.Yield(cancellationToken);
+
+                for (int chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    int offset = chunkIndex * ModelChunkSize;
+                    int length = Mathf.Min(ModelChunkSize, glbBytes.Length - offset);
+                    var chunk = new byte[length];
+                    Buffer.BlockCopy(glbBytes, offset, chunk, 0, length);
+                    ReceiveModelChunkRpc(transferId, chunkIndex, chunk);
+                    await UniTask.Yield(cancellationToken);
+                }
+
+                ownerModelReady.Value = true;
+                Debug.Log(
+                    "[BattlePvpRelay] モデル送信完了"
+                    + $" bytes={glbBytes.Length}"
+                    + $" chunks={totalChunks}"
+                    + $" transferId={transferId}");
+            }
+            finally
+            {
+                isPublishingModel = false;
+            }
+        }
+
+        /// <summary>
+        /// 相手モデルの受信完了を待つ
+        /// </summary>
+        /// <param name="cancellationToken">キャンセルトークン</param>
+        public async UniTask WaitForOpponentModelAsync(CancellationToken cancellationToken)
+        {
+            float startedAt = Time.realtimeSinceStartup;
+            float nextLogTime = 0f;
+            await UniTask.WaitUntil(
+                () =>
+                {
+                    BattlePvpReceivedRemoteModel model = GetOpponentReceivedModel();
+                    bool ready = model != null && model.IsValid;
+                    if (!ready && Time.realtimeSinceStartup >= nextLogTime)
+                    {
+                        nextLogTime = Time.realtimeSinceStartup + 1f;
+                        BattlePvpInputRelay opponent = ResolveOpponentRelay();
+                        Debug.Log(
+                            "[BattlePvpRelay] 相手モデル待機中"
+                            + $" opponent={(opponent != null)}"
+                            + $" published={(opponent != null && opponent.ownerModelReady.Value)}"
+                            + $" received={(model != null && model.IsValid)}");
+                    }
+
+                    return ready || Time.realtimeSinceStartup - startedAt >= ModelSyncTimeoutSeconds;
+                },
+                cancellationToken: cancellationToken);
+
+            BattlePvpReceivedRemoteModel received = GetOpponentReceivedModel();
+            if (received == null || !received.IsValid)
+            {
+                throw new TimeoutException(
+                    $"相手モデルの受信がタイムアウトしました ({ModelSyncTimeoutSeconds}秒)");
+            }
+        }
+
+        /// <summary>
+        /// 受信済みの相手モデルを返す
+        /// </summary>
+        /// <returns>相手モデル</returns>
+        public BattlePvpReceivedRemoteModel GetOpponentReceivedModel()
+        {
+            BattlePvpInputRelay opponent = ResolveOpponentRelay();
+            return opponent != null ? opponent.receivedRemoteModel : null;
+        }
+
+        /// <summary>
+        /// 受信バッファを破棄する
+        /// </summary>
+        public void ClearReceivedRemoteModel()
+        {
+            receiveTransferId = -1;
+            receiveTotalBytes = 0;
+            receiveTotalChunks = 0;
+            receiveChunkFlags = null;
+            receiveBuffer = null;
+            receiveMetaJson = string.Empty;
+            receivedRemoteModel = null;
+        }
+
+        [Rpc(SendTo.NotOwner)]
+        private void BeginRemoteModelRpc(int transferId, int totalBytes, int totalChunks, string metaJson)
+        {
+            if (totalBytes <= 0 || totalBytes > MaxModelBytes || totalChunks <= 0)
+            {
+                Debug.LogError(
+                    "[BattlePvpRelay] 不正なモデル転送ヘッダ"
+                    + $" transferId={transferId}"
+                    + $" totalBytes={totalBytes}"
+                    + $" totalChunks={totalChunks}");
+                ClearReceivedRemoteModel();
+                return;
+            }
+
+            receiveTransferId = transferId;
+            receiveTotalBytes = totalBytes;
+            receiveTotalChunks = totalChunks;
+            receiveChunkFlags = new bool[totalChunks];
+            receiveBuffer = new byte[totalBytes];
+            receiveMetaJson = metaJson ?? string.Empty;
+            receivedRemoteModel = null;
+            Debug.Log(
+                "[BattlePvpRelay] モデル受信開始"
+                + $" transferId={transferId}"
+                + $" totalBytes={totalBytes}"
+                + $" totalChunks={totalChunks}");
+        }
+
+        [Rpc(SendTo.NotOwner)]
+        private void ReceiveModelChunkRpc(int transferId, int chunkIndex, byte[] chunk)
+        {
+            if (receiveBuffer == null
+                || receiveChunkFlags == null
+                || receiveTransferId != transferId
+                || chunk == null
+                || chunk.Length == 0
+                || chunkIndex < 0
+                || chunkIndex >= receiveTotalChunks)
+            {
+                return;
+            }
+
+            if (receiveChunkFlags[chunkIndex])
+            {
+                return;
+            }
+
+            int offset = chunkIndex * ModelChunkSize;
+            if (offset >= receiveTotalBytes)
+            {
+                return;
+            }
+
+            int length = Mathf.Min(chunk.Length, receiveTotalBytes - offset);
+            Buffer.BlockCopy(chunk, 0, receiveBuffer, offset, length);
+            receiveChunkFlags[chunkIndex] = true;
+
+            for (int i = 0; i < receiveChunkFlags.Length; i++)
+            {
+                if (!receiveChunkFlags[i])
+                {
+                    return;
+                }
+            }
+
+            BattlePvpRemoteModelMeta meta = BattlePvpRemoteModelMeta.FromJson(receiveMetaJson);
+            receivedRemoteModel = new BattlePvpReceivedRemoteModel(meta, receiveBuffer);
+            Debug.Log(
+                "[BattlePvpRelay] モデル受信完了"
+                + $" transferId={transferId}"
+                + $" bytes={receiveTotalBytes}"
+                + $" name={meta.modelName}");
         }
 
         /// <summary>
@@ -727,6 +956,7 @@ namespace Scene.BattlePVPScene.Network
         /// </summary>
         public async UniTask WaitForBothSlotsAsync(CancellationToken cancellationToken)
         {
+            float startedAt = Time.realtimeSinceStartup;
             float nextLogTime = 0f;
             await UniTask.WaitUntil(
                 () =>
@@ -742,9 +972,16 @@ namespace Scene.BattlePVPScene.Network
                             + $" opponentSlot={(opponent != null ? opponent.ownerSlotIndex.Value : -99)}");
                     }
 
-                    return AreBothSlotsReady;
+                    return AreBothSlotsReady
+                        || Time.realtimeSinceStartup - startedAt >= SlotSyncTimeoutSeconds;
                 },
                 cancellationToken: cancellationToken);
+
+            if (!AreBothSlotsReady)
+            {
+                throw new TimeoutException(
+                    $"相手のスロット選択待ちがタイムアウトしました ({SlotSyncTimeoutSeconds}秒)");
+            }
         }
 
         /// <summary>
@@ -752,6 +989,7 @@ namespace Scene.BattlePVPScene.Network
         /// </summary>
         public async UniTask WaitForBothMatchupReadyAsync(CancellationToken cancellationToken)
         {
+            float startedAt = Time.realtimeSinceStartup;
             float nextLogTime = 0f;
             await UniTask.WaitUntil(
                 () =>
@@ -765,9 +1003,16 @@ namespace Scene.BattlePVPScene.Network
                             + $" opponentReady={OpponentMatchupReady}");
                     }
 
-                    return AreBothMatchupReady;
+                    return AreBothMatchupReady
+                        || Time.realtimeSinceStartup - startedAt >= MatchupReadyTimeoutSeconds;
                 },
                 cancellationToken: cancellationToken);
+
+            if (!AreBothMatchupReady)
+            {
+                throw new TimeoutException(
+                    $"対戦開始準備待ちがタイムアウトしました ({MatchupReadyTimeoutSeconds}秒)");
+            }
         }
 
         public override void OnNetworkSpawn()

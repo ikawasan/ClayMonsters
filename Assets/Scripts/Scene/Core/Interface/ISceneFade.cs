@@ -27,5 +27,11 @@ namespace Scene.Core.Interface
         /// 暗転状態を即時確定する
         /// </summary>
         void EnsureOpaque();
+
+        /// <summary>
+        /// 暗転と入力ブロックを即時解除する
+        /// 切断やフロー中断時の復旧用
+        /// </summary>
+        void ForceRelease();
     }
 }
