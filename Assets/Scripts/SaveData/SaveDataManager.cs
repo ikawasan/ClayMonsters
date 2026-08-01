@@ -17,20 +17,37 @@ namespace SaveData
         /// </summary>
         public static SaveData Load()
         {
-            if (File.Exists(SavePath))
+            if (!File.Exists(SavePath))
             {
-                string json = File.ReadAllText(SavePath);
-                SaveData loaded = JsonUtility.FromJson<SaveData>(json);
-                if (loaded == null)
-                {
-                    return CreateDefault();
-                }
-
-                EnsureDefaults(loaded);
-                return loaded;
+                return CreateDefault();
             }
 
-            return CreateDefault();
+            string raw = File.ReadAllText(SavePath);
+            if (!SaveDataProtection.TryOpenText(raw, out string json, out bool wasLegacyPlain))
+            {
+                Debug.LogError(
+                    "[SaveDataManager] セーブの改ざんまたは破損を検知したため初期化します");
+                BackupCorruptSave();
+                return CreateDefault();
+            }
+
+            SaveData loaded = JsonUtility.FromJson<SaveData>(json);
+            if (loaded == null)
+            {
+                Debug.LogError(
+                    "[SaveDataManager] セーブの解析に失敗したため初期化します");
+                BackupCorruptSave();
+                return CreateDefault();
+            }
+
+            EnsureDefaults(loaded);
+            if (wasLegacyPlain)
+            {
+                // 旧平文を暗号化形式へ移行する
+                Save(loaded);
+            }
+
+            return loaded;
         }
 
         /// <summary>
@@ -46,7 +63,8 @@ namespace SaveData
 
             EnsureDefaults(data);
             string json = JsonUtility.ToJson(data, true);
-            File.WriteAllText(SavePath, json);
+            string sealedText = SaveDataProtection.SealText(json);
+            File.WriteAllText(SavePath, sealedText);
         }
 
         /// <summary>
@@ -63,6 +81,30 @@ namespace SaveData
             SaveData data = Load();
             mutate(data);
             Save(data);
+        }
+
+        private static void BackupCorruptSave()
+        {
+            try
+            {
+                if (!File.Exists(SavePath))
+                {
+                    return;
+                }
+
+                string backupPath = SavePath + ".corrupt";
+                if (File.Exists(backupPath))
+                {
+                    File.Delete(backupPath);
+                }
+
+                File.Move(SavePath, backupPath);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError(
+                    $"[SaveDataManager] 破損セーブの退避に失敗しました error={exception.Message}");
+            }
         }
 
         private static SaveData CreateDefault()

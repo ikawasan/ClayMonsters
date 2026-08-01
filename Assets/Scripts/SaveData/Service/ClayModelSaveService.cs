@@ -530,7 +530,7 @@ namespace SaveData.Service
         {
             string fileName = ModelSavePoolSettings.GetTrainingProgressFileName(pool, slotIndex);
             string json = JsonUtility.ToJson(progress, true);
-            ModelSaveStorage.WriteAllText(fileName, json);
+            ModelSaveStorage.WriteAllText(fileName, ProtectPlayerSaveText(pool, json));
         }
 
         private static TrainingSlotProgress ReadTrainingProgressFile(ModelSavePool pool, int slotIndex)
@@ -541,13 +541,29 @@ namespace SaveData.Service
                 return null;
             }
 
-            string json = ModelSaveStorage.ReadAllText(fileName);
-            if (string.IsNullOrEmpty(json))
+            string raw = ModelSaveStorage.ReadAllText(fileName);
+            if (string.IsNullOrEmpty(raw))
             {
                 return null;
             }
 
-            return JsonUtility.FromJson<TrainingSlotProgress>(json);
+            if (!TryOpenPlayerSaveText(pool, raw, out string json, out bool wasLegacyPlain))
+            {
+                Debug.LogError(
+                    "[ClayModelSaveService] 育成進捗セーブの改ざんまたは破損を検知しました"
+                        + $" pool={pool}"
+                        + $" slot={slotIndex}");
+                ModelSaveStorage.Delete(fileName);
+                return null;
+            }
+
+            TrainingSlotProgress progress = JsonUtility.FromJson<TrainingSlotProgress>(json);
+            if (progress != null && wasLegacyPlain)
+            {
+                WriteTrainingProgressFile(pool, slotIndex, progress);
+            }
+
+            return progress;
         }
 
         private static void DeleteTrainingProgressFile(ModelSavePool pool, int slotIndex)
@@ -779,11 +795,23 @@ namespace SaveData.Service
 
             string metadataFileName = ModelSavePoolSettings.GetMetadataFileName(pool);
             ClayModelSaveData data = null;
+            bool resealLegacy = false;
 
-            string json = ModelSaveStorage.ReadAllText(metadataFileName);
-            if (!string.IsNullOrEmpty(json))
+            string raw = ModelSaveStorage.ReadAllText(metadataFileName);
+            if (!string.IsNullOrEmpty(raw))
             {
-                data = JsonUtility.FromJson<ClayModelSaveData>(json);
+                if (!TryOpenPlayerSaveText(pool, raw, out string json, out bool wasLegacyPlain))
+                {
+                    Debug.LogError(
+                        "[ClayModelSaveService] モデルセーブの改ざんまたは破損を検知したため初期化します"
+                            + $" pool={pool}");
+                    ModelSaveStorage.Delete(metadataFileName);
+                }
+                else
+                {
+                    data = JsonUtility.FromJson<ClayModelSaveData>(json);
+                    resealLegacy = wasLegacyPlain;
+                }
             }
 
             if (data == null)
@@ -809,6 +837,11 @@ namespace SaveData.Service
 
             MigrateLegacyWritableFiles(pool, data);
             EnsureEnemyStrengthStatuses(pool, data);
+
+            if (resealLegacy)
+            {
+                WriteToFile(pool, data);
+            }
 
             if (pool == ModelSavePool.Enemy)
             {
@@ -921,7 +954,9 @@ namespace SaveData.Service
         private void WriteToFile(ModelSavePool pool, ClayModelSaveData data)
         {
             string json = JsonUtility.ToJson(data, true);
-            ModelSaveStorage.WriteAllText(ModelSavePoolSettings.GetMetadataFileName(pool), json);
+            ModelSaveStorage.WriteAllText(
+                ModelSavePoolSettings.GetMetadataFileName(pool),
+                ProtectPlayerSaveText(pool, json));
 #if UNITY_EDITOR
             if (pool == ModelSavePool.Enemy)
             {
@@ -929,6 +964,37 @@ namespace SaveData.Service
                 ModelSaveStorage.MirrorEnemyPoolToStreaming(data);
             }
 #endif
+        }
+
+        private static bool ShouldProtectPool(ModelSavePool pool)
+        {
+            return pool != ModelSavePool.Enemy;
+        }
+
+        private static string ProtectPlayerSaveText(ModelSavePool pool, string plainJson)
+        {
+            if (!ShouldProtectPool(pool))
+            {
+                return plainJson;
+            }
+
+            return SaveDataProtection.SealText(plainJson);
+        }
+
+        private static bool TryOpenPlayerSaveText(
+            ModelSavePool pool,
+            string rawText,
+            out string plainJson,
+            out bool wasLegacyPlain)
+        {
+            if (!ShouldProtectPool(pool))
+            {
+                plainJson = rawText;
+                wasLegacyPlain = false;
+                return !string.IsNullOrEmpty(rawText);
+            }
+
+            return SaveDataProtection.TryOpenText(rawText, out plainJson, out wasLegacyPlain);
         }
     }
 }
