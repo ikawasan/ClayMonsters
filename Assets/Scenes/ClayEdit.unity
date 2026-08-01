@@ -2899,7 +2899,6 @@ MonoBehaviour:
   listBackButton: {fileID: 1717739837}
   deletePromptView: {fileID: 1923894035}
   spawnParent: {fileID: 310977140}
-  clayMaterial: {fileID: 2100000, guid: 0e7962f18c7a2884da9712516f584949, type: 2}
 --- !u!114 &342097874
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -53909,8 +53908,8 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 104883898}
   - {fileID: 1710473907}
+  - {fileID: 104883898}
   m_Father: {fileID: 975624138}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
@@ -56804,8 +56803,8 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 899502848}
   - {fileID: 788748965}
+  - {fileID: 899502848}
   m_Father: {fileID: 975624138}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
