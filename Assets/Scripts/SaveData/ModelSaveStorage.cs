@@ -7,7 +7,8 @@ namespace SaveData
 {
     /// <summary>
     /// モデルセーブファイルの入出力先を解決する
-    /// 書き込みはpersistentDataPath読み取りはpersistentDataPathを優先しStreamingAssetsへフォールバックする
+    /// 書き込みはpersistentDataPath
+    /// 敵カタログはStreamingAssetsから書込先へ展開して読む
     /// </summary>
     public static class ModelSaveStorage
     {
@@ -301,6 +302,28 @@ namespace SaveData
         }
 
         /// <summary>
+        /// 敵プールのメタと実体ファイルをStreamingAssetsへ同期する
+        /// ROM配布時はStreamingAssetsのみが同梱されるため保存後に呼ぶ
+        /// </summary>
+        /// <param name="data">敵セーブメタ</param>
+        public static void MirrorEnemyPoolToStreaming(ClayModelSaveData data)
+        {
+            MirrorWritableToStreaming(ModelSavePoolSettings.GetMetadataFileName(ModelSavePool.Enemy));
+            if (data?.slots == null)
+            {
+                return;
+            }
+
+            int slotCount = ModelSavePoolSettings.EnemySlotCount;
+            for (int i = 0; i < slotCount; i++)
+            {
+                MirrorWritableToStreaming(ModelSavePoolSettings.GetGlbFileName(ModelSavePool.Enemy, i));
+                MirrorWritableToStreaming(ModelSavePoolSettings.GetThumbnailFileName(ModelSavePool.Enemy, i));
+                MirrorWritableToStreaming(ModelSavePoolSettings.GetVoxelFileName(ModelSavePool.Enemy, i));
+            }
+        }
+
+        /// <summary>
         /// スロットのサムネイルPNGを読み込む
         /// </summary>
         /// <param name="slot">対象スロット</param>
@@ -315,6 +338,63 @@ namespace SaveData
             return ReadAllBytes(slot.thumbnailFileName);
         }
 
+        /// <summary>
+        /// 同梱の敵カタログを読める状態にする
+        /// StreamingAssetsの同梱数が書込先より多ければ書込先へ展開する
+        /// 以降の敵読込は展開済み書込先を優先する
+        /// </summary>
+        public static void EnsureEnemyCatalogReadable()
+        {
+            if (enemyCatalogReady)
+            {
+                return;
+            }
+
+            enemyCatalogReady = true;
+
+            int streamingFileCount = CountEnemyFilesInRoot(StreamingRoot);
+            int streamingUsable = CountUsableEnemySlots(StreamingRoot);
+            int writableUsable = CountUsableEnemySlots(WritableRoot);
+
+            Debug.Log(
+                "[ModelSaveStorage] 敵カタログ確認"
+                    + $" streamingFiles={streamingFileCount}"
+                    + $" streamingUsable={streamingUsable}"
+                    + $" writableUsable={writableUsable}"
+                    + $" streamingRoot={StreamingRoot}"
+                    + $" writableRoot={WritableRoot}");
+
+            if (streamingFileCount <= 0 && streamingUsable <= 0)
+            {
+                Debug.LogError(
+                    "[ModelSaveStorage] StreamingAssetsに敵カタログがありません"
+                        + $" path={StreamingRoot}"
+                        + " ビルド成果物のStreamingAssets/ModelSaveを確認してください");
+                return;
+            }
+
+            // 同梱の方が多ければ常に展開する不完全な書込先でくれもんだけになるのを防ぐ
+            if (streamingUsable > writableUsable || streamingFileCount > CountEnemyFilesInRoot(WritableRoot))
+            {
+                InstallEnemyCatalogFromStreaming();
+                writableUsable = CountUsableEnemySlots(WritableRoot);
+                Debug.Log(
+                    "[ModelSaveStorage] 敵カタログ展開後"
+                        + $" writableUsable={writableUsable}"
+                        + $" writableFiles={CountEnemyFilesInRoot(WritableRoot)}");
+            }
+
+            if (writableUsable <= 1 && streamingUsable > 1)
+            {
+                Debug.LogError(
+                    "[ModelSaveStorage] 敵カタログ展開後もusableが不足しています"
+                        + $" writableUsable={writableUsable}"
+                        + $" streamingUsable={streamingUsable}");
+            }
+        }
+
+        private static bool enemyCatalogReady;
+
         private static string ResolveStoredPath(string fileName)
         {
             if (string.IsNullOrEmpty(fileName))
@@ -322,26 +402,156 @@ namespace SaveData
                 return null;
             }
 
-            string writablePath = Path.Combine(WritableRoot, fileName);
-            if (File.Exists(writablePath))
+            // 敵カタログは展開後の書込先を優先する
+            if (IsEnemyCatalogFile(fileName))
             {
-                return writablePath;
+                string writableHit = ResolvePathInRoot(WritableRoot, fileName);
+                if (!string.IsNullOrEmpty(writableHit))
+                {
+                    return writableHit;
+                }
+
+                return ResolvePathInRoot(StreamingRoot, fileName);
             }
 
-            string writableCompressedPath = GetCompressedPath(writablePath);
-            if (File.Exists(writableCompressedPath))
+            string writableOther = ResolvePathInRoot(WritableRoot, fileName);
+            if (!string.IsNullOrEmpty(writableOther))
             {
-                return writableCompressedPath;
+                return writableOther;
             }
 
-            string streamingPath = Path.Combine(StreamingRoot, fileName);
-            if (File.Exists(streamingPath))
+            return ResolvePathInRoot(StreamingRoot, fileName);
+        }
+
+        private static string ResolvePathInRoot(string root, string fileName)
+        {
+            string rawPath = Path.Combine(root, fileName);
+            if (File.Exists(rawPath))
             {
-                return streamingPath;
+                return rawPath;
             }
 
-            string streamingCompressedPath = GetCompressedPath(streamingPath);
-            return File.Exists(streamingCompressedPath) ? streamingCompressedPath : null;
+            string compressedPath = GetCompressedPath(rawPath);
+            return File.Exists(compressedPath) ? compressedPath : null;
+        }
+
+        private static bool IsEnemyCatalogFile(string fileName)
+        {
+            return fileName.StartsWith("EnemyModel", System.StringComparison.Ordinal);
+        }
+
+        private static int CountEnemyFilesInRoot(string root)
+        {
+            if (string.IsNullOrEmpty(root) || !Directory.Exists(root))
+            {
+                return 0;
+            }
+
+            int count = 0;
+            string[] files = Directory.GetFiles(root, "EnemyModel*");
+            for (int i = 0; i < files.Length; i++)
+            {
+                string name = Path.GetFileName(files[i]);
+                if (string.IsNullOrEmpty(name)
+                    || name.EndsWith(".meta", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                count++;
+            }
+
+            return count;
+        }
+
+        private static int CountUsableEnemySlots(string root)
+        {
+            string metaName = ModelSavePoolSettings.GetMetadataFileName(ModelSavePool.Enemy);
+            string metaPath = ResolvePathInRoot(root, metaName);
+            if (string.IsNullOrEmpty(metaPath))
+            {
+                return 0;
+            }
+
+            string json;
+            try
+            {
+                using Stream stream = OpenStoredReadStream(metaPath);
+                using var reader = new StreamReader(stream, Encoding.UTF8);
+                json = reader.ReadToEnd();
+            }
+            catch (System.Exception exception)
+            {
+                Debug.LogError(
+                    $"[ModelSaveStorage] 敵メタ読込に失敗しました root={root} error={exception.Message}");
+                return 0;
+            }
+
+            if (string.IsNullOrEmpty(json))
+            {
+                return 0;
+            }
+
+            ClayModelSaveData data = JsonUtility.FromJson<ClayModelSaveData>(json);
+            if (data?.slots == null)
+            {
+                return 0;
+            }
+
+            int usable = 0;
+            for (int i = 0; i < data.slots.Count; i++)
+            {
+                ModelSaveSlot slot = data.slots[i];
+                if (slot == null || !slot.isUsed || string.IsNullOrEmpty(slot.glbFileName))
+                {
+                    continue;
+                }
+
+                if (!string.IsNullOrEmpty(ResolvePathInRoot(root, slot.glbFileName)))
+                {
+                    usable++;
+                }
+            }
+
+            return usable;
+        }
+
+        private static void InstallEnemyCatalogFromStreaming()
+        {
+            if (!Directory.Exists(StreamingRoot))
+            {
+                Debug.LogError(
+                    $"[ModelSaveStorage] 展開元StreamingAssetsがありません path={StreamingRoot}");
+                return;
+            }
+
+            Directory.CreateDirectory(WritableRoot);
+            string[] files = Directory.GetFiles(StreamingRoot, "EnemyModel*");
+            int copied = 0;
+            for (int i = 0; i < files.Length; i++)
+            {
+                string source = files[i];
+                string name = Path.GetFileName(source);
+                if (string.IsNullOrEmpty(name)
+                    || name.EndsWith(".meta", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                string destination = Path.Combine(WritableRoot, name);
+                File.Copy(source, destination, true);
+                string logicalName = name.EndsWith(CompressedExtension, System.StringComparison.OrdinalIgnoreCase)
+                    ? name.Substring(0, name.Length - CompressedExtension.Length)
+                    : name;
+                DeleteDecompressedCache(logicalName);
+                copied++;
+            }
+
+            Debug.Log(
+                $"[ModelSaveStorage] StreamingAssetsの敵カタログを書込先へ展開しました"
+                    + $" copied={copied}"
+                    + $" from={StreamingRoot}"
+                    + $" to={WritableRoot}");
         }
 
         private static Stream OpenStoredReadStream(string path)

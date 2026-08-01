@@ -772,6 +772,11 @@ namespace SaveData.Service
 
         private ClayModelSaveData LoadOrCreate(ModelSavePool pool)
         {
+            if (pool == ModelSavePool.Enemy)
+            {
+                ModelSaveStorage.EnsureEnemyCatalogReadable();
+            }
+
             string metadataFileName = ModelSavePoolSettings.GetMetadataFileName(pool);
             ClayModelSaveData data = null;
 
@@ -804,7 +809,71 @@ namespace SaveData.Service
 
             MigrateLegacyWritableFiles(pool, data);
             EnsureEnemyStrengthStatuses(pool, data);
+
+            if (pool == ModelSavePool.Enemy)
+            {
+                LogEnemyCatalogLoadResult(data);
+                LogMissingEnemyGlbs(data);
+            }
+
             return data;
+        }
+
+        private static void LogMissingEnemyGlbs(ClayModelSaveData data)
+        {
+            if (data?.slots == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < data.slots.Count; i++)
+            {
+                ModelSaveSlot slot = data.slots[i];
+                if (slot == null || !slot.isUsed || string.IsNullOrEmpty(slot.glbFileName))
+                {
+                    continue;
+                }
+
+                if (ModelSaveStorage.Exists(slot.glbFileName))
+                {
+                    continue;
+                }
+
+                Debug.LogError(
+                    "[ClayModelSaveService] 敵スロットのglbがありません"
+                        + $" slot={i}"
+                        + $" name={slot.modelName}"
+                        + $" file={slot.glbFileName}");
+            }
+        }
+
+        private static void LogEnemyCatalogLoadResult(ClayModelSaveData data)
+        {
+            int used = 0;
+            int loadable = 0;
+            if (data?.slots != null)
+            {
+                for (int i = 0; i < data.slots.Count; i++)
+                {
+                    ModelSaveSlot slot = data.slots[i];
+                    if (slot == null || !slot.isUsed || string.IsNullOrEmpty(slot.glbFileName))
+                    {
+                        continue;
+                    }
+
+                    used++;
+                    if (ModelSaveStorage.Exists(slot.glbFileName))
+                    {
+                        loadable++;
+                    }
+                }
+            }
+
+            Debug.Log(
+                "[ClayModelSaveService] 敵カタログ読込"
+                    + $" used={used}"
+                    + $" loadable={loadable}"
+                    + $" streaming={ModelSaveStorage.StreamingRoot}");
         }
 
         private static void EnsureEnemyStrengthStatuses(ModelSavePool pool, ClayModelSaveData data)
@@ -853,6 +922,13 @@ namespace SaveData.Service
         {
             string json = JsonUtility.ToJson(data, true);
             ModelSaveStorage.WriteAllText(ModelSavePoolSettings.GetMetadataFileName(pool), json);
+#if UNITY_EDITOR
+            if (pool == ModelSavePool.Enemy)
+            {
+                // ROMにはStreamingAssetsのみ同梱されるためEditor保存時にミラーする
+                ModelSaveStorage.MirrorEnemyPoolToStreaming(data);
+            }
+#endif
         }
     }
 }
