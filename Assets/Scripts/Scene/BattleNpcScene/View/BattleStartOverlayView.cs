@@ -480,7 +480,10 @@ namespace Scene.BattleNpcScene.View
             // オーバーレイ配下に親付けしシーン退場で紙吹雪も破棄する
             victoryConfetti.Play(transform);
 
-            bool isDraw = winnerName == "引き分け" || string.IsNullOrWhiteSpace(winnerName);
+            bool isDraw = string.IsNullOrWhiteSpace(winnerName)
+                || winnerName == Localization.LocalizedText.GetOrFallback(
+                    Localization.GameTextKeys.BattleDraw,
+                    "引き分け");
             string title = isDraw ? "Draw" : "Winner";
             EnsureVictoryLabelVisible(victoryTitleText, title, 0f);
             if (!isDraw)

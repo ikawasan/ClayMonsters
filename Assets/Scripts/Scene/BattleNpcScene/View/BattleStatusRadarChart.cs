@@ -1,3 +1,4 @@
+using Localization;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -13,14 +14,17 @@ namespace Scene.BattleNpcScene.View
     {
         private const int AxisCount = 5;
 
-        private static readonly string[] AxisNames =
+        private static string[] ResolveAxisNames()
         {
-            "HP",
-            "攻撃",
-            "防御",
-            "速さ",
-            "命中"
-        };
+            return new[]
+            {
+                "HP",
+                LocalizedText.GetOrFallback(GameTextKeys.BattleRadarAttack, "攻撃"),
+                LocalizedText.GetOrFallback(GameTextKeys.BattleRadarDefense, "防御"),
+                LocalizedText.GetOrFallback(GameTextKeys.BattleRadarSpeed, "速さ"),
+                LocalizedText.GetOrFallback(GameTextKeys.BattleRadarHit, "命中"),
+            };
+        }
 
         [SerializeField] private Color fillColor = new Color(0.35f, 0.75f, 1f, 0.45f);
         [SerializeField] private Color lineColor = new Color(0.85f, 0.95f, 1f, 0.95f);
@@ -80,12 +84,13 @@ namespace Scene.BattleNpcScene.View
         /// <param name="index">頂点番号</param>
         public static string GetAxisName(int index)
         {
-            if (index < 0 || index >= AxisNames.Length)
+            string[] axisNames = ResolveAxisNames();
+            if (index < 0 || index >= axisNames.Length)
             {
                 return string.Empty;
             }
 
-            return AxisNames[index];
+            return axisNames[index];
         }
 
         /// <inheritdoc/>
@@ -138,7 +143,7 @@ namespace Scene.BattleNpcScene.View
                 return;
             }
 
-            text.text = $"{AxisNames[index]}\n{value}";
+            text.text = $"{GetAxisName(index)}\n{value}";
         }
 
         private static Vector2 ResolveDirection(int index)

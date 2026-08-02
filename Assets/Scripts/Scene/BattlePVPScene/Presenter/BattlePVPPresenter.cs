@@ -1,4 +1,5 @@
 using Cysharp.Threading.Tasks;
+using Localization;
 using Scene.BattlePVPScene.Interface;
 using Scene.BattlePVPScene.Interface;
 using Scene.Core.Interface;
@@ -124,7 +125,12 @@ namespace Scene.BattlePVPScene.Presenter
             }
 
             GUIUtility.systemCopyBuffer = roomCode;
-            view.SetStatusText($"参加コード: {roomCode}\nコピーしました");
+            view.SetStatusText(
+                LocalizedText.GetOrFallback(
+                    GameTextKeys.BattlePvpRoomCodeCopied,
+                    "参加コード: {code}\nコピーしました",
+                    "code",
+                    roomCode));
         }
 
         private void OnClickCancelMatchButton()
@@ -149,7 +155,7 @@ namespace Scene.BattlePVPScene.Presenter
             matchCts = new CancellationTokenSource();
             view.ShowPanel(BattlePvpUiPanel.Matching);
             view.SetCopyJoinCodeButtonVisible(false);
-            view.SetStatusText("接続中…");
+            view.SetStatusText(LocalizedText.GetOrFallback(GameTextKeys.BattlePvpConnecting, "接続中…"));
             RunMatchingAsync(matchTaskFactory, matchCts.Token).Forget();
         }
 
@@ -226,13 +232,9 @@ namespace Scene.BattlePVPScene.Presenter
         private void OnMatchmakingStatusChanged(string message)
         {
             view.SetStatusText(message);
-            if (!string.IsNullOrEmpty(message) && message.Contains("参加コード"))
+            if (isRoomCreation && !string.IsNullOrEmpty(matchmakingService.CurrentRoomCode))
             {
-                int index = message.IndexOf(':');
-                if (index >= 0 && index + 1 < message.Length)
-                {
-                    view.SetJoinCodeText(message[(index + 1)..].Trim());
-                }
+                view.SetJoinCodeText(matchmakingService.CurrentRoomCode);
             }
 
             bool canCopy = isRoomCreation && !string.IsNullOrEmpty(matchmakingService.CurrentRoomCode);

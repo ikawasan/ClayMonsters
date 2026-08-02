@@ -38,7 +38,11 @@ namespace Scene.BattleNpcScene
         {
             EnsureSerializedReferences();
 
-            loadSlotView?.ConfigureSavePool(ModelSavePool.TrainedPlayer, "未育成");
+            loadSlotView?.ConfigureSavePool(
+                ModelSavePool.TrainedPlayer,
+                Localization.LocalizedText.GetOrFallback(
+                    Localization.GameTextKeys.SaveUntrainedPool,
+                    "未育成"));
 
             builder.RegisterComponent(battleNpcScene);
             builder.RegisterComponent(victoryDualReturnView).AsImplementedInterfaces();

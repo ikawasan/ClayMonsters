@@ -197,27 +197,41 @@ namespace Battle.Presenter
             {
                 BonePart destroyPart = system.PendingEnemyTargetDestroyPart;
                 string partLabel = MotionPartRequirement.FormatTargetDestroyPartLabel(destroyPart);
-                return $"カウンター！{partLabel}技で迎撃";
+                return Localization.LocalizedText.GetOrFallback(
+                    Localization.GameTextKeys.BattleHintCounter,
+                    $"カウンター！{partLabel}技で迎撃",
+                    new System.Collections.Generic.Dictionary<string, object>
+                    {
+                        { "part", partLabel },
+                    });
             }
 
             if (system.IsAttackLockoutActive)
             {
-                return "攻撃クールダウン中";
+                return Localization.LocalizedText.GetOrFallback(
+                    Localization.GameTextKeys.BattleHintAttackLockout,
+                    "攻撃クールダウン中");
             }
 
             if (system.Player.LostPartCount > 0)
             {
-                return InputGuideTexts.BattleHintPartRepair;
+                return Extensions.InputGuideTexts.BattleHintPartRepair;
             }
 
             if (system.IsKnockbackAvailable)
             {
-                return InputGuideTexts.BattleHintKnockbackReady;
+                return Extensions.InputGuideTexts.BattleHintKnockbackReady;
             }
 
             if (system.PlayerChainCount > 1)
             {
-                return $"チェーン x{system.PlayerChainCount}";
+                return Localization.LocalizedText.GetOrFallback(
+                    Localization.GameTextKeys.BattleHintChain,
+                    $"チェーン x{system.PlayerChainCount}",
+                    new System.Collections.Generic.Dictionary<string, object>
+                    {
+                        { "count", system.PlayerChainCount },
+                    });
             }
 
             return string.Empty;

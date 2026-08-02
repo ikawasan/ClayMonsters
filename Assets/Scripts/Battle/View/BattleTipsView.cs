@@ -1,5 +1,8 @@
 using Battle.Interface;
 using Extensions;
+using LighthouseExtends.TextTable;
+using Localization;
+using R3;
 using System;
 using TMPro;
 using UnityEngine;
@@ -24,6 +27,7 @@ namespace Battle.View
         private bool isFeatureAvailable;
         private bool isCombatSessionActive;
         private bool isOpen;
+        private IDisposable languageSubscription;
 
         /// <inheritdoc />
         public bool IsOpen => isOpen;
@@ -37,6 +41,7 @@ namespace Battle.View
             }
 
             ApplyGuideTexts();
+            SubscribeLanguageChange();
             HideAll();
         }
 
@@ -62,6 +67,18 @@ namespace Battle.View
             {
                 Debug.LogError("[BattleTipsView] hintTextが未配線です", this);
             }
+        }
+
+        private void SubscribeLanguageChange()
+        {
+            ITextTableService textTableService = TextTableService.Instance;
+            if (textTableService == null)
+            {
+                return;
+            }
+
+            languageSubscription?.Dispose();
+            languageSubscription = textTableService.CurrentLanguage.Subscribe(_ => ApplyGuideTexts());
         }
 
         private void ResolveTextsIfNeeded()
@@ -98,6 +115,9 @@ namespace Battle.View
 
         private void OnDestroy()
         {
+            languageSubscription?.Dispose();
+            languageSubscription = null;
+
             if (closeButton != null)
             {
                 closeButton.onClick.RemoveListener(CloseTips);
@@ -137,6 +157,7 @@ namespace Battle.View
         {
             isFeatureAvailable = true;
             isCombatSessionActive = true;
+            ApplyGuideTexts();
             SetHintVisible(true);
             SetTipsVisible(false);
             return new Session(this);
@@ -157,6 +178,7 @@ namespace Battle.View
                 return;
             }
 
+            ApplyGuideTexts();
             isOpen = true;
             GameplayTime.IsPaused = true;
             SetTipsVisible(true);

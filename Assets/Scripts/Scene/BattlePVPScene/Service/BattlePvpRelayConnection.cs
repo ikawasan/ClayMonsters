@@ -32,7 +32,10 @@ namespace Scene.BattlePVPScene.Service
             DisableNetworkSceneManagement(networkManager);
             if (!networkManager.StartHost())
             {
-                throw new System.InvalidOperationException("Relayホストの開始に失敗しました");
+                throw new System.InvalidOperationException(
+                    Localization.LocalizedText.GetOrFallback(
+                        Localization.GameTextKeys.BattlePvpRelayHostFailed,
+                        "Relayホストの開始に失敗しました"));
             }
 
             return joinCode;
@@ -54,7 +57,10 @@ namespace Scene.BattlePVPScene.Service
             DisableNetworkSceneManagement(networkManager);
             if (!networkManager.StartClient())
             {
-                throw new System.InvalidOperationException("Relayクライアントの開始に失敗しました");
+                throw new System.InvalidOperationException(
+                    Localization.LocalizedText.GetOrFallback(
+                        Localization.GameTextKeys.BattlePvpRelayClientFailed,
+                        "Relayクライアントの開始に失敗しました"));
             }
         }
 

@@ -553,7 +553,10 @@ namespace UI.Battle.View
             if (distanceText != null)
             {
                 distanceText.text = string.IsNullOrEmpty(safeBandName)
-                    ? $"距離 {distance:0.0}"
+                    ? Localization.LocalizedText.Get(
+                        Localization.GameTextKeys.BattleDistance,
+                        "distance",
+                        distance.ToString("0.0"))
                     : $"{safeBandName} {distance:0.0}";
             }
         }
@@ -690,7 +693,12 @@ namespace UI.Battle.View
                 return;
             }
 
-            resultText.text = string.IsNullOrEmpty(winnerName) ? "引き分け" : $"{winnerName} の勝利！";
+            resultText.text = string.IsNullOrEmpty(winnerName)
+                ? Localization.LocalizedText.Get(Localization.GameTextKeys.BattleDraw)
+                : Localization.LocalizedText.Get(
+                    Localization.GameTextKeys.BattleVictory,
+                    "winnerName",
+                    winnerName);
             resultText.enabled = true;
         }
 

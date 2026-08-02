@@ -295,7 +295,11 @@ namespace Scene.BattleNpcScene
             {
                 if (overlayView != null)
                 {
-                    string label = winner != null ? winner.Name : "引き分け";
+                    string label = winner != null
+                        ? winner.Name
+                        : Localization.LocalizedText.GetOrFallback(
+                            Localization.GameTextKeys.BattleDraw,
+                            "引き分け");
                     await overlayView.PlayVictoryPresentationAsync(label, cancellationToken);
                 }
 

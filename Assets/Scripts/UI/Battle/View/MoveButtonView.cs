@@ -1,4 +1,5 @@
 using LighthouseExtends.UIComponent.Button;
+using Localization;
 using TMPro;
 using UI.Battle.Interface;
 using UnityEngine;
@@ -12,7 +13,8 @@ namespace UI.Battle.View
     /// </summary>
     public class MoveButtonView : MonoBehaviour
     {
-        private const string RangeLabel = "射程";
+        private static string RangeLabel =>
+            LocalizedText.GetOrFallback(GameTextKeys.BattleRangeLabel, "射程");
 
         [Tooltip("クリック購読に使うボタン本体")]
         [SerializeField] private LHButton button;

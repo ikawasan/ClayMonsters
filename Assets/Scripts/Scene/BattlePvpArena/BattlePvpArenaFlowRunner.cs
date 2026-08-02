@@ -1,3 +1,4 @@
+using Localization;
 using Audio.Interface;
 using Battle;
 using Battle.Interface;
@@ -81,6 +82,7 @@ namespace Scene.BattlePvpArena
         private GameObject trackedPlayerModel;
         private GameObject trackedEnemyModel;
         private BattlePvpMatchMode matchMode = BattlePvpMatchMode.Direct;
+        private LHButton cachedSelectionLeaveButton;
 
         private IMonsterSelectionSession selectionSession;
 
@@ -889,7 +891,7 @@ namespace Scene.BattlePvpArena
                 return;
             }
 
-            ApplyLeaveButtonLabel(leaveButton, "戻る");
+            ApplyLeaveButtonLabel(leaveButton, LocalizedText.Get(GameTextKeys.BattleLeave));
             titleReturnSubscription = leaveButton.SubscribeOnClick(OnClickTitleReturn);
         }
 
@@ -909,6 +911,11 @@ namespace Scene.BattlePvpArena
 
         private LHButton ResolveSelectionLeaveButton()
         {
+            if (cachedSelectionLeaveButton != null)
+            {
+                return cachedSelectionLeaveButton;
+            }
+
             if (selectionCanvas != null)
             {
                 LHButton[] buttons = selectionCanvas.GetComponentsInChildren<LHButton>(true);
@@ -926,8 +933,9 @@ namespace Scene.BattlePvpArena
                     }
 
                     TMP_Text label = button.GetComponentInChildren<TMP_Text>(true);
-                    if (label != null && label.text == "戻る")
+                    if (label != null && IsSelectionLeaveButtonLabel(label.text))
                     {
+                        cachedSelectionLeaveButton = button;
                         return button;
                     }
                 }
@@ -938,10 +946,51 @@ namespace Scene.BattlePvpArena
                 && selectionCanvas != null
                 && titleReturnButton.transform.IsChildOf(selectionCanvas.transform))
             {
+                cachedSelectionLeaveButton = titleReturnButton;
                 return titleReturnButton;
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// 選択退出ボタンのラベルか判定する
+        /// プレハブ原文戻ると翻訳後の戻る/退出表記の両方を認める
+        /// </summary>
+        /// <param name="labelText">ボタン上の文言</param>
+        private static bool IsSelectionLeaveButtonLabel(string labelText)
+        {
+            if (string.IsNullOrEmpty(labelText))
+            {
+                return false;
+            }
+
+            // シーン配置時の原文は常に日本語の戻る
+            if (labelText == "戻る")
+            {
+                return true;
+            }
+
+            string commonReturn = LocalizedText.GetOrFallback(GameTextKeys.CommonReturn, "戻る");
+            if (labelText == commonReturn)
+            {
+                return true;
+            }
+
+            string battleLeave = LocalizedText.GetOrFallback(GameTextKeys.BattleLeave, "戻る");
+            if (labelText == battleLeave)
+            {
+                return true;
+            }
+
+            string commonReturnTable = LocalizedText.Get(GameTextKeys.CommonReturn);
+            if (!string.IsNullOrEmpty(commonReturnTable) && labelText == commonReturnTable)
+            {
+                return true;
+            }
+
+            string battleLeaveTable = LocalizedText.Get(GameTextKeys.BattleLeave);
+            return !string.IsNullOrEmpty(battleLeaveTable) && labelText == battleLeaveTable;
         }
 
         private static bool IsUnderConfirmPanel(Transform target)

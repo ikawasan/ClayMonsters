@@ -212,7 +212,11 @@ namespace Scene.BattlePVPScene
                 loadSlotView = sceneRoot.GetComponentInChildren<LoadSlotView>(true);
             }
 
-            loadSlotView?.ConfigureSavePool(ModelSavePool.TrainedPlayer, "未育成");
+            loadSlotView?.ConfigureSavePool(
+                ModelSavePool.TrainedPlayer,
+                Localization.LocalizedText.GetOrFallback(
+                    Localization.GameTextKeys.SaveUntrainedPool,
+                    "未育成"));
 
             if (pvpVictoryReturnView == null && sceneRoot != null)
             {

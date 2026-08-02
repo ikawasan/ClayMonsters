@@ -1,5 +1,6 @@
 using Extensions;
 using LighthouseExtends.UIComponent.Button;
+using Localization;
 using Scene.BattlePVPScene.Interface;
 using System;
 using TMPro;
@@ -124,7 +125,11 @@ namespace Scene.BattlePVPScene.View
             {
                 directJoinCodeText.text = string.IsNullOrEmpty(joinCode)
                     ? string.Empty
-                    : $"参加コード: {joinCode}";
+                    : LocalizedText.GetOrFallback(
+                        GameTextKeys.BattlePvpJoinCodeLabel,
+                        "参加コード: {code}",
+                        "code",
+                        joinCode);
             }
         }
 

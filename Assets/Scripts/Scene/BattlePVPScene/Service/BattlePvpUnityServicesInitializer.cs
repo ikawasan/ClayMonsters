@@ -12,10 +12,9 @@ namespace Scene.BattlePVPScene.Service
     /// </summary>
     public static class BattlePvpUnityServicesInitializer
     {
-        private const string ServicesSetupGuide =
-            "Unity Gaming Servicesが未設定です。UnityエディタでEdit > Project Settings > Servicesからプロジェクトをリンクし、DashboardでAuthentication・Lobby・Relayを有効化してください";
-
         private static bool isInitialized;
+
+        private static string ServicesSetupGuide => BattlePvpMatchmakingErrorFormatter.ServicesSetupGuide;
 
         /// <summary>
         /// RelayとLobby利用前にサービスを初期化する
@@ -59,12 +58,13 @@ namespace Scene.BattlePVPScene.Service
         private static string FormatInitializationError(Exception exception)
         {
             string detail = BattlePvpMatchmakingErrorFormatter.Format(exception);
-            if (detail.Contains(ServicesSetupGuide, StringComparison.Ordinal))
+            string guide = ServicesSetupGuide;
+            if (string.Equals(detail, guide, StringComparison.Ordinal))
             {
                 return detail;
             }
 
-            return $"{ServicesSetupGuide}\n{detail}";
+            return $"{guide}\n{detail}";
         }
     }
 }

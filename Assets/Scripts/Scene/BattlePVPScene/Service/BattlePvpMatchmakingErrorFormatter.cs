@@ -1,3 +1,4 @@
+using Localization;
 using System;
 using System.Text;
 using Unity.Services.Lobbies;
@@ -9,8 +10,13 @@ namespace Scene.BattlePVPScene.Service
     /// </summary>
     internal static class BattlePvpMatchmakingErrorFormatter
     {
-        private const string ServicesSetupGuide =
-            "Unity Gaming Servicesが未設定です。UnityエディタでEdit > Project Settings > Servicesからプロジェクトをリンクし、DashboardでAuthentication・Lobby・Relayを有効化してください";
+        /// <summary>
+        /// Services未設定時の案内文言
+        /// </summary>
+        public static string ServicesSetupGuide =>
+            LocalizedText.GetOrFallback(
+                GameTextKeys.BattlePvpServicesSetup,
+                "Unity Gaming Servicesが未設定です。UnityエディタでEdit > Project Settings > Servicesからプロジェクトをリンクし、DashboardでAuthentication・Lobby・Relayを有効化してください");
 
         /// <summary>
         /// 例外から表示用メッセージを生成する
@@ -19,7 +25,9 @@ namespace Scene.BattlePVPScene.Service
         {
             if (exception == null)
             {
-                return "不明なエラーが発生しました";
+                return LocalizedText.GetOrFallback(
+                    GameTextKeys.BattlePvpUnknownError,
+                    "不明なエラーが発生しました");
             }
 
             if (exception is AggregateException aggregateException
@@ -30,7 +38,11 @@ namespace Scene.BattlePVPScene.Service
 
             if (exception is LobbyServiceException lobbyException)
             {
-                return $"マッチングエラー: {lobbyException.Message}";
+                return LocalizedText.GetOrFallback(
+                    GameTextKeys.BattlePvpMatchmakingError,
+                    "マッチングエラー: {message}",
+                    "message",
+                    lobbyException.Message);
             }
 
             string message = exception.Message ?? string.Empty;

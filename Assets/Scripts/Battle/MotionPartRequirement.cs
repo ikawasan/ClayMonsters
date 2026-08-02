@@ -108,12 +108,23 @@ namespace Battle
         {
             switch (part)
             {
-                case BonePart.Arm: return "腕";
-                case BonePart.Leg: return "脚";
-                case BonePart.Front: return "前";
-                case BonePart.Back: return "後";
-                case BonePart.Body: return "なし";
-                default: return part.ToString();
+                case BonePart.Arm:
+                    return Localization.LocalizedText.GetOrFallback(
+                        Localization.GameTextKeys.BattlePartArm, "腕");
+                case BonePart.Leg:
+                    return Localization.LocalizedText.GetOrFallback(
+                        Localization.GameTextKeys.BattlePartLeg, "脚");
+                case BonePart.Front:
+                    return Localization.LocalizedText.GetOrFallback(
+                        Localization.GameTextKeys.BattlePartFront, "前");
+                case BonePart.Back:
+                    return Localization.LocalizedText.GetOrFallback(
+                        Localization.GameTextKeys.BattlePartBack, "後");
+                case BonePart.Body:
+                    return Localization.LocalizedText.GetOrFallback(
+                        Localization.GameTextKeys.BattlePartBody, "なし");
+                default:
+                    return part.ToString();
             }
         }
 
@@ -438,32 +449,36 @@ namespace Battle
 
         private static string GetDisplayNameInternal(MotionType motion)
         {
+            string key = Localization.GameTextKeys.Motion(motion.ToString());
+            string japanese;
             switch (motion)
             {
-                case MotionType.Punch: return "パンチ";
-                case MotionType.Elbow: return "エルボー";
-                case MotionType.Kick: return "キック";
-                case MotionType.Stomp: return "ストンプ";
-                case MotionType.Tackle: return "タックル";
-                case MotionType.SpinTackle: return "回転タックル";
-                case MotionType.TailWhip: return "しっぽ攻撃";
-                case MotionType.Headbutt: return "頭突き";
-                case MotionType.BodySlam: return "ボディスラム";
-                case MotionType.Uppercut: return "アッパー";
-                case MotionType.Knee: return "膝蹴り";
-                case MotionType.ShoulderRam: return "ショルダー";
-                case MotionType.BellyFlop: return "のしかかり";
-                case MotionType.HipCheck: return "腰ブン";
-                case MotionType.GroundPound: return "地叩き";
-                case MotionType.Slap: return "平打ち";
-                case MotionType.LowSweep: return "足払い";
-                case MotionType.Bite: return "噛みつき";
-                case MotionType.Fireball: return "ファイアーボール";
-                case MotionType.WindSlasher: return "ウィンドスラッシャー";
-                case MotionType.DiamondDust: return "ダイヤモンドダスト";
-                case MotionType.ThunderShock: return "サンダーショック";
-                default: return motion.ToString();
+                case MotionType.Punch: japanese = "パンチ"; break;
+                case MotionType.Elbow: japanese = "エルボー"; break;
+                case MotionType.Kick: japanese = "キック"; break;
+                case MotionType.Stomp: japanese = "ストンプ"; break;
+                case MotionType.Tackle: japanese = "タックル"; break;
+                case MotionType.SpinTackle: japanese = "回転タックル"; break;
+                case MotionType.TailWhip: japanese = "しっぽ攻撃"; break;
+                case MotionType.Headbutt: japanese = "頭突き"; break;
+                case MotionType.BodySlam: japanese = "ボディスラム"; break;
+                case MotionType.Uppercut: japanese = "アッパー"; break;
+                case MotionType.Knee: japanese = "膝蹴り"; break;
+                case MotionType.ShoulderRam: japanese = "ショルダー"; break;
+                case MotionType.BellyFlop: japanese = "のしかかり"; break;
+                case MotionType.HipCheck: japanese = "腰ブン"; break;
+                case MotionType.GroundPound: japanese = "地叩き"; break;
+                case MotionType.Slap: japanese = "平打ち"; break;
+                case MotionType.LowSweep: japanese = "足払い"; break;
+                case MotionType.Bite: japanese = "噛みつき"; break;
+                case MotionType.Fireball: japanese = "ファイアーボール"; break;
+                case MotionType.WindSlasher: japanese = "ウィンドスラッシャー"; break;
+                case MotionType.DiamondDust: japanese = "ダイヤモンドダスト"; break;
+                case MotionType.ThunderShock: japanese = "サンダーショック"; break;
+                default: japanese = motion.ToString(); break;
             }
+
+            return Localization.LocalizedText.GetOrFallback(key, japanese);
         }
 
         private static string NormalizeDisplayName(string displayName)

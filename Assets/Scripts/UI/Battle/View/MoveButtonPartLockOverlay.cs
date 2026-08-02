@@ -18,7 +18,10 @@ namespace UI.Battle.View
         private const float MessageHeight = 36f;
         private const float MessageYOffsetFromTop = 6f;
         private const float MessageMinWidth = 280f;
-        private const string LockedMessage = "部位が破壊されています";
+        private static string LockedMessage =>
+            Localization.LocalizedText.GetOrFallback(
+                Localization.GameTextKeys.BattlePartLocked,
+                "部位が破壊されています");
 
         [SerializeField] private Image veilImage;
         [SerializeField] private Image chainImage;

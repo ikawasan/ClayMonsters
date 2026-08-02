@@ -118,10 +118,17 @@ namespace Battle
         {
             switch (band)
             {
-                case BattleDistanceBand.Close: return "近距離";
-                case BattleDistanceBand.Mid: return "中距離";
-                case BattleDistanceBand.Far: return "遠距離";
-                default: return string.Empty;
+                case BattleDistanceBand.Close:
+                    return Localization.LocalizedText.GetOrFallback(
+                        Localization.GameTextKeys.BattleBandClose, "近距離");
+                case BattleDistanceBand.Mid:
+                    return Localization.LocalizedText.GetOrFallback(
+                        Localization.GameTextKeys.BattleBandMid, "中距離");
+                case BattleDistanceBand.Far:
+                    return Localization.LocalizedText.GetOrFallback(
+                        Localization.GameTextKeys.BattleBandFar, "遠距離");
+                default:
+                    return string.Empty;
             }
         }
 

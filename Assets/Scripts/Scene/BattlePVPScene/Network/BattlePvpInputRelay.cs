@@ -607,7 +607,11 @@ namespace Scene.BattlePVPScene.Network
             if (received == null || !received.IsValid)
             {
                 throw new TimeoutException(
-                    $"相手モデルの受信がタイムアウトしました ({ModelSyncTimeoutSeconds}秒)");
+                    Localization.LocalizedText.GetOrFallback(
+                        Localization.GameTextKeys.BattlePvpModelTimeout,
+                        "相手モデルの受信がタイムアウトしました ({seconds}秒)",
+                        "seconds",
+                        ModelSyncTimeoutSeconds));
             }
         }
 
@@ -980,7 +984,11 @@ namespace Scene.BattlePVPScene.Network
             if (!AreBothSlotsReady)
             {
                 throw new TimeoutException(
-                    $"相手のスロット選択待ちがタイムアウトしました ({SlotSyncTimeoutSeconds}秒)");
+                    Localization.LocalizedText.GetOrFallback(
+                        Localization.GameTextKeys.BattlePvpSlotTimeout,
+                        "相手のスロット選択待ちがタイムアウトしました ({seconds}秒)",
+                        "seconds",
+                        SlotSyncTimeoutSeconds));
             }
         }
 
@@ -1011,7 +1019,11 @@ namespace Scene.BattlePVPScene.Network
             if (!AreBothMatchupReady)
             {
                 throw new TimeoutException(
-                    $"対戦開始準備待ちがタイムアウトしました ({MatchupReadyTimeoutSeconds}秒)");
+                    Localization.LocalizedText.GetOrFallback(
+                        Localization.GameTextKeys.BattlePvpMatchupTimeout,
+                        "対戦開始準備待ちがタイムアウトしました ({seconds}秒)",
+                        "seconds",
+                        MatchupReadyTimeoutSeconds));
             }
         }
 

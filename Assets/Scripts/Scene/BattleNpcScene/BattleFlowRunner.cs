@@ -1,3 +1,4 @@
+using Localization;
 using Audio.Interface;
 using Battle;
 using Battle.Interface;
@@ -137,7 +138,7 @@ namespace Scene.BattleNpcScene
                 TMP_Text label = titleReturnButton.GetComponentInChildren<TMP_Text>(true);
                 if (label != null)
                 {
-                    label.text = "戻る";
+                    label.text = LocalizedText.Get(GameTextKeys.BattleLeave);
                 }
 
                 titleReturnSubscription = titleReturnButton.SubscribeOnClick(OnClickTitleReturn);

@@ -1,3 +1,4 @@
+using Localization;
 using UI.Battle.Interface;
 
 namespace UI.Battle.View
@@ -10,12 +11,14 @@ namespace UI.Battle.View
         /// <summary>
         /// 必要部位の行頭ラベル
         /// </summary>
-        public const string RequiredRoleLabel = "要";
+        public static string RequiredRoleLabel =>
+            LocalizedText.GetOrFallback(GameTextKeys.BattleRoleRequired, "要");
 
         /// <summary>
         /// 破壊部位の行頭ラベル
         /// </summary>
-        public const string TargetRoleLabel = "破";
+        public static string TargetRoleLabel =>
+            LocalizedText.GetOrFallback(GameTextKeys.BattleRoleTarget, "破");
 
         /// <summary>
         /// 部位識別子の短い表示名を返す
@@ -25,19 +28,19 @@ namespace UI.Battle.View
             switch (partId)
             {
                 case MoveTargetPartId.Arm:
-                    return "腕";
+                    return LocalizedText.GetOrFallback(GameTextKeys.BattlePartArm, "腕");
                 case MoveTargetPartId.Leg:
-                    return "脚";
+                    return LocalizedText.GetOrFallback(GameTextKeys.BattlePartLeg, "脚");
                 case MoveTargetPartId.Front:
-                    return "前";
+                    return LocalizedText.GetOrFallback(GameTextKeys.BattlePartFront, "前");
                 case MoveTargetPartId.Back:
-                    return "後";
+                    return LocalizedText.GetOrFallback(GameTextKeys.BattlePartBack, "後");
                 case MoveTargetPartId.Body:
                 case MoveTargetPartId.Any:
                 case MoveTargetPartId.None:
-                    return "なし";
+                    return LocalizedText.GetOrFallback(GameTextKeys.SaveSummaryNone, "なし");
                 default:
-                    return "なし";
+                    return LocalizedText.GetOrFallback(GameTextKeys.SaveSummaryNone, "なし");
             }
         }
 

@@ -40,20 +40,24 @@ namespace Battle
         {
             if (hitRate >= 0.85f)
             {
-                return "高";
+                return Localization.LocalizedText.GetOrFallback(
+                    Localization.GameTextKeys.BattleHitHigh, "高");
             }
 
             if (hitRate >= 0.65f)
             {
-                return "中";
+                return Localization.LocalizedText.GetOrFallback(
+                    Localization.GameTextKeys.BattleHitMid, "中");
             }
 
             if (hitRate >= 0.4f)
             {
-                return "低";
+                return Localization.LocalizedText.GetOrFallback(
+                    Localization.GameTextKeys.BattleHitLow, "低");
             }
 
-            return "極低";
+            return Localization.LocalizedText.GetOrFallback(
+                Localization.GameTextKeys.BattleHitVeryLow, "極低");
         }
     }
 }

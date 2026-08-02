@@ -1,6 +1,7 @@
 using Cysharp.Threading.Tasks;
 using Extensions;
 using LighthouseExtends.UIComponent.Button;
+using Localization;
 using Scene.BattlePVPScene.Interface;
 using System;
 using System.Threading;
@@ -15,8 +16,11 @@ namespace Scene.BattlePVPScene.View
     /// </summary>
     public sealed class BattlePvpDisconnectView : MonoBehaviour, IBattlePvpDisconnectView
     {
-        private const string DisconnectMessage = "通信が切れました";
-        private const string CloseButtonLabel = "閉じる";
+        private static string DisconnectMessage =>
+            LocalizedText.Get(GameTextKeys.BattlePvpDisconnectMessage);
+
+        private static string CloseButtonLabel =>
+            LocalizedText.Get(GameTextKeys.BattlePvpDisconnectClose);
         // SceneFade(32000)より前面に出し暗転下に埋もれないようにする
         private const int VisibleSortingOrder = 33000;
         private const float MissingButtonFallbackSeconds = 1.5f;

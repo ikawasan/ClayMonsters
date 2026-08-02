@@ -1,4 +1,5 @@
 using Cysharp.Threading.Tasks;
+using Localization;
 using Scene.BattlePVPScene.Interface;
 using Scene.BattlePVPScene.Network;
 using System;
@@ -94,7 +95,8 @@ namespace Scene.BattlePVPScene.Service
             {
                 BeginOperation(cancellationToken);
                 await BattlePvpUnityServicesInitializer.EnsureInitializedAsync(operationCts.Token);
-                PublishStatus("ルームを作成しています…");
+                PublishStatus(
+                    LocalizedText.GetOrFallback(GameTextKeys.BattlePvpCreatingRoom, "ルームを作成しています…"));
 
                 NetworkManager activeManager = ResolveActiveNetworkManager();
                 string joinCode = await BattlePvpRelayConnection.StartHostAsync(
@@ -103,10 +105,18 @@ namespace Scene.BattlePVPScene.Service
                     operationCts.Token);
                 CurrentRoomCode = joinCode;
 
-                PublishStatus($"参加コード: {joinCode}\n相手にこのコードを伝えてください");
+                PublishStatus(
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.BattlePvpShareJoinCode,
+                        "参加コード: {code}\n相手にこのコードを伝えてください",
+                        "code",
+                        joinCode));
                 await WaitUntilSessionReadyAsync(true, operationCts.Token);
 
-                PublishStatus("対戦相手と接続しました");
+                PublishStatus(
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.BattlePvpConnectedOpponent,
+                        "対戦相手と接続しました"));
                 TrySpawnSessionPlayers();
                 return BattlePvpMatchmakingResult.Succeeded(true, joinCode);
             }
@@ -129,7 +139,10 @@ namespace Scene.BattlePVPScene.Service
         {
             if (string.IsNullOrWhiteSpace(roomCode))
             {
-                return BattlePvpMatchmakingResult.Failed("参加コードを入力してください");
+                return BattlePvpMatchmakingResult.Failed(
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.BattlePvpNeedJoinCode,
+                        "参加コードを入力してください"));
             }
 
             if (!TryValidateNetwork(out string validationError))
@@ -143,7 +156,8 @@ namespace Scene.BattlePVPScene.Service
                 BeginOperation(cancellationToken);
                 await BattlePvpUnityServicesInitializer.EnsureInitializedAsync(operationCts.Token);
                 CurrentRoomCode = joinCode;
-                PublishStatus("ルームへ接続しています…");
+                PublishStatus(
+                    LocalizedText.GetOrFallback(GameTextKeys.BattlePvpJoiningRoom, "ルームへ接続しています…"));
 
                 NetworkManager activeManager = ResolveActiveNetworkManager();
                 Debug.Log($"[BattlePvpMatchmaking] JoinDirectRoom開始 code={joinCode}");
@@ -159,7 +173,10 @@ namespace Scene.BattlePVPScene.Service
 
                 await WaitUntilSessionReadyAsync(false, operationCts.Token);
 
-                PublishStatus("対戦相手と接続しました");
+                PublishStatus(
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.BattlePvpConnectedOpponent,
+                        "対戦相手と接続しました"));
                 TrySpawnSessionPlayers();
                 return BattlePvpMatchmakingResult.Succeeded(false, joinCode);
             }
@@ -187,7 +204,10 @@ namespace Scene.BattlePVPScene.Service
             {
                 BeginOperation(cancellationToken);
                 await BattlePvpUnityServicesInitializer.EnsureInitializedAsync(operationCts.Token);
-                PublishStatus("対戦相手を探しています…");
+                PublishStatus(
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.BattlePvpSearchingOpponent,
+                        "対戦相手を探しています…"));
 
                 Lobby joinedLobby = await TryQuickJoinLobbyAsync(operationCts.Token);
                 if (joinedLobby == null)
@@ -200,21 +220,33 @@ namespace Scene.BattlePVPScene.Service
                 if (isLobbyHost)
                 {
                     StartLobbyHeartbeat(joinedLobby.Id);
-                    PublishStatus("対戦相手の参加を待っています…");
+                    PublishStatus(
+                        LocalizedText.GetOrFallback(
+                            GameTextKeys.BattlePvpWaitingOpponentJoin,
+                            "対戦相手の参加を待っています…"));
                     string joinCode = await HostRelayForLobbyAsync(joinedLobby.Id, operationCts.Token);
                     CurrentRoomCode = joinCode;
                     await WaitUntilSessionReadyAsync(true, operationCts.Token);
 
-                    PublishStatus("対戦相手と接続しました");
+                    PublishStatus(
+                        LocalizedText.GetOrFallback(
+                            GameTextKeys.BattlePvpConnectedOpponent,
+                            "対戦相手と接続しました"));
                     TrySpawnSessionPlayers();
                     return BattlePvpMatchmakingResult.Succeeded(true, joinCode);
                 }
 
-                PublishStatus("ホストの準備を待っています…");
+                PublishStatus(
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.BattlePvpWaitingHostReady,
+                        "ホストの準備を待っています…"));
                 await JoinRelayFromLobbyAsync(joinedLobby.Id, operationCts.Token);
                 await WaitUntilSessionReadyAsync(false, operationCts.Token);
 
-                PublishStatus("対戦相手と接続しました");
+                PublishStatus(
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.BattlePvpConnectedOpponent,
+                        "対戦相手と接続しました"));
                 TrySpawnSessionPlayers();
                 return BattlePvpMatchmakingResult.Succeeded(false, CurrentRoomCode);
             }
@@ -275,13 +307,17 @@ namespace Scene.BattlePVPScene.Service
             NetworkManager activeManager = ResolveActiveNetworkManager();
             if (activeManager == null)
             {
-                errorMessage = "NetworkManagerが見つかりません";
+                errorMessage = LocalizedText.GetOrFallback(
+                    GameTextKeys.BattlePvpNetworkManagerMissing,
+                    "NetworkManagerが見つかりません");
                 return false;
             }
 
             if (ResolveTransport(activeManager) == null)
             {
-                errorMessage = "UnityTransportが設定されていません";
+                errorMessage = LocalizedText.GetOrFallback(
+                    GameTextKeys.BattlePvpUnityTransportMissing,
+                    "UnityTransportが設定されていません");
                 return false;
             }
 
@@ -420,7 +456,10 @@ namespace Scene.BattlePVPScene.Service
             NetworkManager activeManager = ResolveActiveNetworkManager();
             if (activeManager == null)
             {
-                throw new InvalidOperationException("NetworkManagerがありません");
+                throw new InvalidOperationException(
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.BattlePvpNetworkManagerMissing,
+                        "NetworkManagerが見つかりません"));
             }
 
             await BattlePvpNetworkSessionWaiter.WaitUntilReadyAsync(

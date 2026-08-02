@@ -96,7 +96,11 @@ namespace Scene.BattlePvpArena
                     this);
             }
 
-            loadSlotView?.ConfigureSavePool(ModelSavePool.TrainedPlayer, "未育成");
+            loadSlotView?.ConfigureSavePool(
+                ModelSavePool.TrainedPlayer,
+                Localization.LocalizedText.GetOrFallback(
+                    Localization.GameTextKeys.SaveUntrainedPool,
+                    "未育成"));
         }
     }
 }

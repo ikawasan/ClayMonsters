@@ -36,7 +36,12 @@ namespace Battle.View
         /// <inheritdoc/>
         public void PlayMiss(Vector3 worldPosition)
         {
-            SpawnFloatingLabel(worldPosition, "ミス！", missColor, missFontSize, "MissPopup");
+            SpawnFloatingLabel(
+                worldPosition,
+                Localization.LocalizedText.Get(Localization.GameTextKeys.BattleMiss),
+                missColor,
+                missFontSize,
+                "MissPopup");
         }
 
         /// <inheritdoc/>
