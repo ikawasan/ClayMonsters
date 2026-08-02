@@ -15,6 +15,9 @@ namespace UI.Battle.View
         private const float UnlockFadeDuration = 0.16f;
         private const float PadlockAnchoredSize = 0.4f;
         private const float TemporaryMessageDuration = 1.4f;
+        private const float MessageHeight = 36f;
+        private const float MessageYOffsetFromTop = 6f;
+        private const float MessageMinWidth = 280f;
         private const string LockedMessage = "部位が破壊されています";
 
         [SerializeField] private Image veilImage;
@@ -288,11 +291,6 @@ namespace UI.Battle.View
             {
                 padlockImage.maskable = maskable;
             }
-
-            if (lockedMessageText != null)
-            {
-                lockedMessageText.maskable = maskable;
-            }
         }
 
         private Image ResolveOrCreateImage(string childName, bool stretch, bool preserveAspect)
@@ -323,15 +321,56 @@ namespace UI.Battle.View
 
         private TMP_Text ResolveOrCreateMessageText(string childName)
         {
-            Transform child = transform.Find(childName);
+            Transform host = ResolveMessageHost();
+            Transform child = host.Find(childName);
+            if (child == null && transform != host)
+            {
+                // 旧実装でマスク内に残っている文言を引き上げる
+                Transform nested = transform.Find(childName);
+                if (nested != null)
+                {
+                    nested.SetParent(host, false);
+                    child = nested;
+                }
+            }
+
             if (child != null && child.TryGetComponent(out TextMeshProUGUI existing))
             {
+                EnsureIgnoreLayout(child.gameObject);
                 return existing;
             }
 
-            var go = new GameObject(childName, typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
-            go.transform.SetParent(transform, false);
+            var go = new GameObject(
+                childName,
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(TextMeshProUGUI),
+                typeof(LayoutElement));
+            go.transform.SetParent(host, false);
+            EnsureIgnoreLayout(go);
             return go.GetComponent<TextMeshProUGUI>();
+        }
+
+        private Transform ResolveMessageHost()
+        {
+            // マスク外(攻撃ボタン直下)に置きボタン上へはみ出して1行表示する
+            return transform.parent != null ? transform.parent : transform;
+        }
+
+        private static void EnsureIgnoreLayout(GameObject target)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            var layoutElement = target.GetComponent<LayoutElement>();
+            if (layoutElement == null)
+            {
+                layoutElement = target.AddComponent<LayoutElement>();
+            }
+
+            layoutElement.ignoreLayout = true;
         }
 
         private static void ConfigureImage(Image image, bool preserveAspect)
@@ -355,19 +394,17 @@ namespace UI.Battle.View
             }
 
             text.raycastTarget = false;
-            text.maskable = true;
+            text.maskable = false;
             text.text = LockedMessage;
             text.alignment = TextAlignmentOptions.Center;
-            text.enableWordWrapping = true;
-            text.overflowMode = TextOverflowModes.Ellipsis;
-            text.fontSize = 13f;
-            text.fontSizeMin = 9f;
-            text.fontSizeMax = 14f;
-            text.enableAutoSizing = true;
-            text.characterSpacing = -1f;
-            text.lineSpacing = -8f;
+            text.enableWordWrapping = false;
+            text.overflowMode = TextOverflowModes.Overflow;
+            text.enableAutoSizing = false;
+            text.fontSize = 20f;
+            text.characterSpacing = 0f;
+            text.lineSpacing = 0f;
             AppTmpFontUtility.ApplyDefaultFont(text);
-            BattleHudVisualUtility.ApplyLabelOutline(text, 0.28f);
+            BattleHudVisualUtility.ApplyLabelOutline(text, 0.08f);
         }
 
         private static void StretchRect(RectTransform rectTransform)
@@ -398,22 +435,19 @@ namespace UI.Battle.View
             rect.anchorMax = new Vector2(0.5f, 0.5f);
             rect.pivot = new Vector2(0.5f, 0.5f);
             rect.localRotation = Quaternion.identity;
+            rect.anchoredPosition = Vector2.zero;
 
             RectTransform parentRect = rect.parent as RectTransform;
-            float parentW = 120f;
-            float parentH = 120f;
+            float parentMin = 120f;
             if (parentRect != null)
             {
-                parentW = parentRect.rect.width;
-                parentH = parentRect.rect.height;
-                if (parentW < 1f || parentH < 1f)
+                parentMin = Mathf.Min(parentRect.rect.width, parentRect.rect.height);
+                if (parentMin < 1f)
                 {
-                    parentW = Mathf.Max(parentRect.sizeDelta.x, 120f);
-                    parentH = Mathf.Max(parentRect.sizeDelta.y, 120f);
+                    parentMin = Mathf.Min(parentRect.sizeDelta.x, parentRect.sizeDelta.y);
                 }
             }
 
-            float parentMin = Mathf.Min(parentW, parentH);
             if (parentMin < 40f)
             {
                 parentMin = 120f;
@@ -421,26 +455,36 @@ namespace UI.Battle.View
 
             float size = parentMin * PadlockAnchoredSize;
             rect.sizeDelta = new Vector2(size, size);
-            // 文言を下に出すため錠をやや上へずらす
-            rect.anchoredPosition = new Vector2(0f, parentH * 0.08f);
             rect.localScale = Vector3.one;
         }
 
-        private static void ConfigureMessageRect(TMP_Text text)
+        private void ConfigureMessageRect(TMP_Text text)
         {
             if (text == null)
             {
                 return;
             }
 
+            Transform host = ResolveMessageHost();
+            if (text.transform.parent != host)
+            {
+                text.transform.SetParent(host, false);
+            }
+
+            EnsureIgnoreLayout(text.gameObject);
+
             RectTransform rect = text.rectTransform;
-            rect.anchorMin = new Vector2(0.06f, 0.04f);
-            rect.anchorMax = new Vector2(0.94f, 0.32f);
-            rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.offsetMin = Vector2.zero;
-            rect.offsetMax = Vector2.zero;
+            // 攻撃ボタン上端の少し上に1行で載せる
+            rect.anchorMin = new Vector2(0.5f, 1f);
+            rect.anchorMax = new Vector2(0.5f, 1f);
+            rect.pivot = new Vector2(0.5f, 0f);
+            rect.anchoredPosition = new Vector2(0f, MessageYOffsetFromTop);
             rect.localScale = Vector3.one;
             rect.localRotation = Quaternion.identity;
+
+            float preferredWidth = text.GetPreferredValues(LockedMessage, 4096f, MessageHeight).x;
+            float width = Mathf.Max(MessageMinWidth, preferredWidth + 20f);
+            rect.sizeDelta = new Vector2(width, MessageHeight);
             rect.SetAsLastSibling();
         }
 
