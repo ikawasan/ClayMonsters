@@ -2,6 +2,7 @@ using ClayEditor;
 using Cysharp.Threading.Tasks;
 using Extensions;
 using LighthouseExtends.UIComponent.Button;
+using Localization;
 using R3;
 using SaveData;
 using SaveData.Interface;
@@ -210,7 +211,7 @@ namespace UI.ClayEditor.View
             slotScrollList.RefreshSlots(
                 currentPool,
                 saveService,
-                emptySlotLabel,
+                LocalizedText.GetOrFallback(GameTextKeys.CommonEmpty, emptySlotLabel),
                 runtimeThumbnailObjects,
                 allowEmptySlotSelection: false);
         }

@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
+using Localization;
+
 namespace UI.ClayEditor.View
 {
     /// <summary>
@@ -33,7 +35,7 @@ namespace UI.ClayEditor.View
             if (headerText != null)
             {
                 headerText.enabled = true;
-                headerText.text = "▼技構成";
+                headerText.text = LocalizedText.Get(GameTextKeys.TrainingAttackComposition);
             }
 
             if (emptyText != null)
@@ -262,14 +264,14 @@ namespace UI.ClayEditor.View
             if (emptyText != null)
             {
                 emptyText.enabled = true;
-                emptyText.text = "▼技構成\nなし";
+                emptyText.text = LocalizedText.Get(GameTextKeys.TrainingAttackCompositionNone);
                 return;
             }
 
             if (headerText != null)
             {
                 headerText.enabled = true;
-                headerText.text = "▼技構成\nなし";
+                headerText.text = LocalizedText.Get(GameTextKeys.TrainingAttackCompositionNone);
             }
         }
 

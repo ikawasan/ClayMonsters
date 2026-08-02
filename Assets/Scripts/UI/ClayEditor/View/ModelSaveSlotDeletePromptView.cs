@@ -1,3 +1,4 @@
+using Localization;
 using Extensions;
 using LighthouseExtends.UIComponent.Button;
 using System;
@@ -44,8 +45,10 @@ namespace UI.ClayEditor.View
             pendingConfirmAction = onConfirmed;
             if (messageText != null)
             {
-                string safeName = string.IsNullOrEmpty(modelName) ? "名称未設定" : modelName;
-                messageText.text = $"スロット{slotIndex + 1}「{safeName}」を削除しますか？";
+                string safeName = string.IsNullOrEmpty(modelName)
+                    ? LocalizedText.GetOrFallback(GameTextKeys.SaveUnnamedModel, "名称未設定")
+                    : modelName;
+                messageText.text = LocalizedText.Get(GameTextKeys.TrainingDeleteConfirm, new System.Collections.Generic.Dictionary<string, object> { { "slot", slotIndex + 1 }, { "name", safeName } });
             }
 
             if (canvas != null)

@@ -1,3 +1,4 @@
+using Localization;
 using Extensions;
 using LighthouseExtends.UIComponent.Button;
 using SaveData;
@@ -116,7 +117,7 @@ namespace UI.ClayEditor.View
             if (nameText != null)
             {
                 nameText.text = string.IsNullOrEmpty(emptyLabel)
-                    ? $"スロット{index + 1}"
+                    ? LocalizedText.Get(GameTextKeys.CommonSlot, "index", index + 1)
                     : emptyLabel;
                 nameText.enabled = true;
             }

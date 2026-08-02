@@ -2,6 +2,7 @@ using Battle;
 using ClayEditor.Rigging;
 using Extensions;
 using GameData;
+using Localization;
 using SaveData;
 using System.Collections.Generic;
 using TMPro;
@@ -1057,7 +1058,7 @@ namespace UI.ClayEditor.View
 
             if (row.NameText != null)
             {
-                row.NameText.text = "スロット" + (slotIndex + 1);
+                row.NameText.text = LocalizedText.Get(GameTextKeys.CommonSlot, "index", slotIndex + 1);
             }
 
             SetNameTextVisible(row, true);
@@ -1098,7 +1099,10 @@ namespace UI.ClayEditor.View
         {
             if (slot == null || string.IsNullOrEmpty(slot.modelName))
             {
-                BindScrollListEmpty(row, "空き", slotIndex);
+                BindScrollListEmpty(
+                    row,
+                    LocalizedText.GetOrFallback(GameTextKeys.CommonEmpty, "空き"),
+                    slotIndex);
                 return;
             }
 
@@ -1152,7 +1156,7 @@ namespace UI.ClayEditor.View
                 row.AttacksPanel?.Clear(preserveLayoutSpace: true);
                 if (row.NameText != null)
                 {
-                    row.NameText.text = emptySlotLabel + "  スロット" + (slotIndex + 1);
+                    row.NameText.text = emptySlotLabel + "  " + LocalizedText.Get(GameTextKeys.CommonSlot, "index", slotIndex + 1);
                 }
 
                 if (row.ParamsText != null)
@@ -1167,7 +1171,7 @@ namespace UI.ClayEditor.View
             ApplySlotEmptyImage(row.ThumbnailImage);
 
             SetIndexRowVisible(row, false);
-            row.NameText.text = emptySlotLabel + "  スロット" + (slotIndex + 1);
+            row.NameText.text = emptySlotLabel + "  " + LocalizedText.Get(GameTextKeys.CommonSlot, "index", slotIndex + 1);
             row.NameText.gameObject.SetActive(true);
             row.ParamsText.text = string.Empty;
             row.ParamsText.gameObject.SetActive(false);
@@ -1191,7 +1195,10 @@ namespace UI.ClayEditor.View
         {
             if (slot == null || string.IsNullOrEmpty(slot.modelName))
             {
-                BindConfirmEmpty(row, "空き", slotIndex);
+                BindConfirmEmpty(
+                    row,
+                    LocalizedText.GetOrFallback(GameTextKeys.CommonEmpty, "空き"),
+                    slotIndex);
                 return;
             }
 

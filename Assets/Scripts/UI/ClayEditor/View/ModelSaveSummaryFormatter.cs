@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Text;
 using Battle;
 using ClayEditor.Rigging;
+using Localization;
 using SaveData;
 
 namespace UI.ClayEditor.View
@@ -68,7 +69,18 @@ namespace UI.ClayEditor.View
                 out int speed,
                 out int hit);
             string attacks = FormatAttacksCompact(CollectAttackMotions(slot.attackMotions));
-            return $"HP{hp} 攻撃{attack} 防御{defense} 速度{speed} 命中{hit} / {attacks}";
+            return LocalizedText.GetOrFallback(
+                GameTextKeys.SaveSummaryStatsCompact,
+                "HP{hp} 攻撃{atk} 防御{def} 速度{spd} 命中{hit} / {attacks}",
+                new Dictionary<string, object>
+                {
+                    { "hp", hp },
+                    { "atk", attack },
+                    { "def", defense },
+                    { "spd", speed },
+                    { "hit", hit },
+                    { "attacks", attacks },
+                });
         }
 
         /// <summary>
@@ -96,7 +108,7 @@ namespace UI.ClayEditor.View
                 out int defense,
                 out int speed,
                 out int hit);
-            return $"HP {hp}\n攻撃 {attack}\n防御 {defense}\n速度 {speed}\n命中 {hit}";
+            return FormatStatsBlock(hp, attack, defense, speed, hit);
         }
 
         /// <summary>
@@ -110,7 +122,12 @@ namespace UI.ClayEditor.View
                 return string.Empty;
             }
 
-            return $"HP {status.hp}\n攻撃 {status.attack}\n防御 {status.defense}\n速度 {status.speed}\n命中 {status.hit}";
+            return FormatStatsBlock(
+                status.hp,
+                status.attack,
+                status.defense,
+                status.speed,
+                status.hit);
         }
 
         /// <summary>
@@ -132,14 +149,16 @@ namespace UI.ClayEditor.View
         /// <summary>
         /// 育成完了画面と同じ範囲ラベルを返す
         /// </summary>
-        public const string TrainingAttackRangeLabel = "範囲:";
+        public static string TrainingAttackRangeLabel =>
+            LocalizedText.GetOrFallback(GameTextKeys.SaveSummaryRangeLabel, "範囲:");
 
         /// <summary>
         /// 育成完了画面と同じダメージ表示を返す
         /// </summary>
         public static string FormatTrainingAttackDamageText(MotionType motion)
         {
-            return "ダメージ: " + MotionPartRequirement.GetPowerDisplayValue(motion);
+            return LocalizedText.GetOrFallback(GameTextKeys.SaveSummaryDamage, "ダメージ: ")
+                + MotionPartRequirement.GetPowerDisplayValue(motion);
         }
 
         /// <summary>
@@ -147,7 +166,8 @@ namespace UI.ClayEditor.View
         /// </summary>
         public static string FormatTrainingAttackCostText(MotionType motion)
         {
-            return "コスト: " + MotionPartRequirement.GetGutsCostDisplayValue(motion);
+            return LocalizedText.GetOrFallback(GameTextKeys.SaveSummaryCostLabel, "コスト: ")
+                + MotionPartRequirement.GetGutsCostDisplayValue(motion);
         }
 
         /// <summary>
@@ -175,6 +195,21 @@ namespace UI.ClayEditor.View
             return parameters + "\n" + attacks;
         }
 
+        private static string FormatStatsBlock(int hp, int attack, int defense, int speed, int hit)
+        {
+            return LocalizedText.GetOrFallback(
+                GameTextKeys.SaveSummaryStatsBlock,
+                "HP {hp}\n攻撃 {atk}\n防御 {def}\n速度 {spd}\n命中 {hit}",
+                new Dictionary<string, object>
+                {
+                    { "hp", hp },
+                    { "atk", attack },
+                    { "def", defense },
+                    { "spd", speed },
+                    { "hit", hit },
+                });
+        }
+
         private static string FormatDetail(
             int hp,
             int attack,
@@ -185,16 +220,29 @@ namespace UI.ClayEditor.View
             bool isPreSavePreview)
         {
             var builder = new StringBuilder(256);
-            builder.AppendLine("【パラメータ】");
-            builder.Append("HP ").Append(hp)
-                .Append(" / 攻撃 ").Append(attack)
-                .Append(" / 防御 ").Append(defense)
-                .Append(" / 速度 ").Append(speed)
-                .Append(" / 命中 ").Append(hit);
+            builder.AppendLine(
+                LocalizedText.GetOrFallback(GameTextKeys.SaveSummaryParams, "【パラメータ】"));
+            builder.Append(
+                LocalizedText.GetOrFallback(
+                    GameTextKeys.SaveSummaryDetailStatLine,
+                    "HP {hp} / 攻撃 {atk} / 防御 {def} / 速度 {spd} / 命中 {hit}",
+                    new Dictionary<string, object>
+                    {
+                        { "hp", hp },
+                        { "atk", attack },
+                        { "def", defense },
+                        { "spd", speed },
+                        { "hit", hit },
+                    }));
 
             builder.AppendLine();
             builder.AppendLine();
-            builder.AppendLine(isPreSavePreview ? "【登録される攻撃】" : "【攻撃】");
+            builder.AppendLine(
+                isPreSavePreview
+                    ? LocalizedText.GetOrFallback(
+                        GameTextKeys.SaveSummaryRegisteredAttacks,
+                        "【登録される攻撃】")
+                    : LocalizedText.GetOrFallback(GameTextKeys.SaveSummaryAttacks, "【攻撃】"));
             builder.Append(FormatAttacksDetail(attacks));
 
             return builder.ToString().TrimEnd();
@@ -204,7 +252,7 @@ namespace UI.ClayEditor.View
         {
             if (attacks == null || attacks.Count == 0)
             {
-                return "なし";
+                return LocalizedText.GetOrFallback(GameTextKeys.SaveSummaryNone, "なし");
             }
 
             var builder = new StringBuilder();
@@ -217,10 +265,17 @@ namespace UI.ClayEditor.View
 
                 MotionType motion = attacks[i];
                 builder.Append(MotionPartRequirement.FormatDisplayNameWithStrengthRank(motion));
-                builder.Append('(').Append(MotionPartRequirement.FormatTargetDestroyPartLabel(motion));
-                builder.Append('/').Append(MotionPartRequirement.FormatRangeLabel(motion));
-                builder.Append("/威力").Append(MotionPartRequirement.GetPowerDisplayValue(motion));
-                builder.Append("/コスト").Append(MotionPartRequirement.GetGutsCostDisplayValue(motion)).Append(')');
+                builder.Append(
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.SaveSummaryAttackMeta,
+                        "({part}/{range}/威力{power}/コスト{cost})",
+                        new Dictionary<string, object>
+                        {
+                            { "part", MotionPartRequirement.FormatTargetDestroyPartLabel(motion) },
+                            { "range", MotionPartRequirement.FormatRangeLabel(motion) },
+                            { "power", MotionPartRequirement.GetPowerDisplayValue(motion) },
+                            { "cost", MotionPartRequirement.GetGutsCostDisplayValue(motion) },
+                        }));
             }
 
             return builder.ToString();
@@ -230,7 +285,7 @@ namespace UI.ClayEditor.View
         {
             if (attacks == null || attacks.Count == 0)
             {
-                return "攻撃なし";
+                return LocalizedText.GetOrFallback(GameTextKeys.SaveSummaryNoAttacks, "攻撃なし");
             }
 
             string firstAttack = MotionPartRequirement.FormatDisplayNameWithStrengthRank(attacks[0]);
@@ -240,7 +295,13 @@ namespace UI.ClayEditor.View
                 return firstAttack + firstTargetPart;
             }
 
-            return firstAttack + firstTargetPart + " 他" + (attacks.Count - 1);
+            return firstAttack
+                + firstTargetPart
+                + LocalizedText.GetOrFallback(
+                    GameTextKeys.SaveSummaryAndMore,
+                    " 他{count}",
+                    "count",
+                    attacks.Count - 1);
         }
 
         private static List<MotionType> CollectAttackMotions(IReadOnlyList<MotionType> motions)

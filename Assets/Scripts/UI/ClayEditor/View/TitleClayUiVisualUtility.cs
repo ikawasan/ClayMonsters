@@ -1,3 +1,4 @@
+using Localization;
 using Extensions;
 using LighthouseExtends.UIComponent.Button;
 using TMPro;
@@ -522,7 +523,8 @@ namespace UI.ClayEditor.View
             {
                 if (placeholder.text == "Enter text...")
                 {
-                    placeholder.text = "モデル名を入力";
+                    placeholder.text = LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingModelNamePlaceholder, "モデル名を入力");
                 }
 
                 EnsureTextFontOnly(placeholder);

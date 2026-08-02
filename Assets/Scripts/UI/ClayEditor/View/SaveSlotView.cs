@@ -4,6 +4,7 @@ using Cysharp.Threading.Tasks;
 using Extensions;
 using GameData;
 using LighthouseExtends.UIComponent.Button;
+using Localization;
 using R3;
 using SaveData;
 using SaveData.Interface;
@@ -375,7 +376,7 @@ namespace UI.ClayEditor.View
             slotScrollList.RefreshSlots(
                 currentSavePool,
                 saveService,
-                emptySlotLabel,
+                ResolveEmptySlotLabel(),
                 runtimeThumbnailObjects,
                 allowEmptySlotSelection: true);
         }
@@ -842,7 +843,7 @@ namespace UI.ClayEditor.View
             SetCanvasEnabled(slotActionCanvas, false);
             SetCanvasEnabled(saveConfirmCanvas, false);
             SetConfirmCanvasButtonsVisible(previewVisible: false);
-            saveCompleteView.Show(saveCompleteMessage);
+            saveCompleteView.Show(ResolveSaveCompleteMessage());
             SetSaveUiOpenState(true);
         }
 
@@ -1037,6 +1038,16 @@ namespace UI.ClayEditor.View
             }
 
             runtimeThumbnailObjects.Clear();
+        }
+
+        private string ResolveEmptySlotLabel()
+        {
+            return LocalizedText.GetOrFallback(GameTextKeys.CommonEmpty, emptySlotLabel);
+        }
+
+        private string ResolveSaveCompleteMessage()
+        {
+            return LocalizedText.GetOrFallback(GameTextKeys.SaveComplete, saveCompleteMessage);
         }
 
         private void OnDestroy()

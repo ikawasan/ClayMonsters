@@ -1,6 +1,7 @@
 using Battle;
 using ClayEditor.Rigging;
 using Extensions;
+using Localization;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -13,10 +14,13 @@ namespace UI.ClayEditor.View
     /// </summary>
     public static class MoveAttackPartInfoView
     {
-        private const string RequiredPartLabel = "使用部位:";
-        private const string TargetPartLabel = "破壊部位:";
-
         private static readonly Color LabelColor = new Color(0.78f, 0.82f, 0.88f, 1f);
+
+        private static string RequiredPartLabel =>
+            LocalizedText.GetOrFallback(GameTextKeys.BattleUsePartLabel, "使用部位:");
+
+        private static string TargetPartLabel =>
+            LocalizedText.GetOrFallback(GameTextKeys.BattleBreakPartLabel, "破壊部位:");
 
         /// <summary>
         /// 使用部位と破壊部位のラベル付きアイコン行を親へ生成する

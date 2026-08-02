@@ -3,6 +3,7 @@ using ClayEditor.Rigging;
 using Cysharp.Threading.Tasks;
 using Extensions;
 using LighthouseExtends.UIComponent.Button;
+using Localization;
 using R3;
 using SaveData;
 using SaveData.Interface;
@@ -27,9 +28,9 @@ namespace UI.ClayEditor.View
     {
         private const int SelectionCanvasSortingOrder = 500;
         private const int ConfirmCanvasSortingOrder = SelectionCanvasSortingOrder + 1;
-        private const string PlayerSelectionInstruction =
+        private const string PlayerSelectionInstructionFallback =
             "あなたのモンスターを選択してください";
-        private const string EnemySelectionInstruction =
+        private const string EnemySelectionInstructionFallback =
             "敵のモンスターを選択してください";
 
         [Inject] private readonly IClayModelSaveService saveService;
@@ -549,7 +550,7 @@ namespace UI.ClayEditor.View
                     trainedSlotGrid.Refresh(
                         saveService,
                         savePool,
-                        emptySlotLabel,
+                        ResolveEmptySlotLabel(),
                         allowEmptySlotSelection: false,
                         isSlotUnlocked: ResolveEnemySlotUnlockPredicate());
                     return;
@@ -578,7 +579,7 @@ namespace UI.ClayEditor.View
             slotScrollList.RefreshSlots(
                 savePool,
                 saveService,
-                emptySlotLabel,
+                ResolveEmptySlotLabel(),
                 runtimeThumbnailObjects,
                 allowEmptySlotSelection: false,
                 TrainedSaveSlotListPresentation.ResolveContentMode(savePool));
@@ -1135,8 +1136,12 @@ namespace UI.ClayEditor.View
             }
 
             selectionInstructionText.text = savePool == ModelSavePool.Enemy
-                ? EnemySelectionInstruction
-                : PlayerSelectionInstruction;
+                ? LocalizedText.GetOrFallback(
+                    GameTextKeys.LoadSlotEnemyInstruction,
+                    EnemySelectionInstructionFallback)
+                : LocalizedText.GetOrFallback(
+                    GameTextKeys.LoadSlotPlayerInstruction,
+                    PlayerSelectionInstructionFallback);
             TitleClayUiVisualUtility.EnsureTextFontOnly(selectionInstructionText);
             if (!selectionInstructionText.gameObject.activeSelf)
             {
@@ -1236,6 +1241,16 @@ namespace UI.ClayEditor.View
             }
 
             runtimeThumbnailObjects.Clear();
+        }
+
+        private string ResolveEmptySlotLabel()
+        {
+            if (string.IsNullOrEmpty(emptySlotLabel) || emptySlotLabel == "空き")
+            {
+                return LocalizedText.GetOrFallback(GameTextKeys.CommonEmpty, "空き");
+            }
+
+            return emptySlotLabel;
         }
 
         private void OnDestroy()
