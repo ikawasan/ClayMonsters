@@ -111,6 +111,138 @@ namespace UI.ColorPicker
             ApplySliderStyle(saturationSlider, "GameUi_SliderFill", new Color(0.88f, 0.58f, 0.28f, 1f));
             ApplySliderStyle(valueSlider, "GameUi_SliderFill", new Color(0.88f, 0.58f, 0.28f, 1f));
             ApplyHistoryButtons(historyButtons);
+            ApplyRoundedCorners();
+        }
+
+        private void ApplyRoundedCorners()
+        {
+            // 色プレビューとHSV背景の矩形を角丸マスクでクリップする
+            EnsureRoundedMask(colorPreview, "GameUi_SlotInner");
+            EnsureRoundedMask(hueBackground, "GameUi_SliderFill");
+            EnsureRoundedMask(saturationBackground, "GameUi_SliderFill");
+            EnsureRoundedMask(valueBackground, "GameUi_SliderFill");
+            EnsureRoundedMaskOnSliderTrack(hueSlider);
+            EnsureRoundedMaskOnSliderTrack(saturationSlider);
+            EnsureRoundedMaskOnSliderTrack(valueSlider);
+        }
+
+        private static void EnsureRoundedMaskOnSliderTrack(Slider slider)
+        {
+            if (slider == null)
+            {
+                return;
+            }
+
+            // Background直下やfill親のImageを角丸にする
+            Transform track = slider.transform.Find("Background");
+            if (track != null && track.TryGetComponent(out Image backgroundImage))
+            {
+                EnsureRoundedMask(backgroundImage, "GameUi_SliderFill");
+            }
+
+            if (slider.fillRect != null)
+            {
+                Image fill = slider.fillRect.GetComponent<Image>();
+                EnsureSlicedRoundedSprite(fill, "GameUi_SliderFill", fill != null ? fill.color : Color.white);
+            }
+        }
+
+        private static void EnsureSlicedRoundedSprite(Image image, string spriteName, Color color)
+        {
+            if (image == null)
+            {
+                return;
+            }
+
+            Sprite sprite = Resources.Load<Sprite>("Image/GameUi/" + spriteName);
+            if (sprite == null)
+            {
+                return;
+            }
+
+            image.sprite = sprite;
+            image.type = Image.Type.Sliced;
+            image.pixelsPerUnitMultiplier = 1f;
+            image.color = color;
+            image.maskable = true;
+        }
+
+        private static void EnsureRoundedMask(Image contentImage, string maskSpriteName)
+        {
+            if (contentImage == null)
+            {
+                return;
+            }
+
+            Transform currentParent = contentImage.transform.parent;
+            if (currentParent != null && currentParent.name == "RoundMask")
+            {
+                Mask existingMask = currentParent.GetComponent<Mask>();
+                if (existingMask != null)
+                {
+                    existingMask.showMaskGraphic = false;
+                    contentImage.maskable = true;
+                    EnsureSlicedRoundedSprite(
+                        currentParent.GetComponent<Image>(),
+                        maskSpriteName,
+                        Color.white);
+                    return;
+                }
+            }
+
+            Transform frameParent = currentParent;
+            if (frameParent == null)
+            {
+                Debug.LogError("[ColorPicker] 角丸対象Imageの親がありません: " + contentImage.name);
+                return;
+            }
+
+            RectTransform contentRect = contentImage.rectTransform;
+            Vector2 anchorMin = contentRect.anchorMin;
+            Vector2 anchorMax = contentRect.anchorMax;
+            Vector2 anchoredPosition = contentRect.anchoredPosition;
+            Vector2 sizeDelta = contentRect.sizeDelta;
+            Vector2 pivot = contentRect.pivot;
+            Vector3 localScale = contentRect.localScale;
+            int siblingIndex = contentRect.GetSiblingIndex();
+
+            var maskObject = new GameObject(
+                "RoundMask",
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(Image),
+                typeof(Mask));
+            maskObject.layer = frameParent.gameObject.layer;
+            RectTransform maskRect = maskObject.GetComponent<RectTransform>();
+            maskRect.SetParent(frameParent, false);
+            maskRect.SetSiblingIndex(siblingIndex);
+            maskRect.anchorMin = anchorMin;
+            maskRect.anchorMax = anchorMax;
+            maskRect.anchoredPosition = anchoredPosition;
+            maskRect.sizeDelta = sizeDelta;
+            maskRect.pivot = pivot;
+            // 元Imageのスケールをマスクへ引き継ぎ見た目サイズを維持する
+            maskRect.localScale = localScale;
+            maskRect.localRotation = contentRect.localRotation;
+
+            Image maskImage = maskObject.GetComponent<Image>();
+            EnsureSlicedRoundedSprite(maskImage, maskSpriteName, Color.white);
+            maskImage.raycastTarget = contentImage.raycastTarget;
+            contentImage.raycastTarget = false;
+
+            Mask mask = maskObject.GetComponent<Mask>();
+            mask.showMaskGraphic = false;
+
+            contentRect.SetParent(maskRect, false);
+            contentRect.anchorMin = Vector2.zero;
+            contentRect.anchorMax = Vector2.one;
+            contentRect.anchoredPosition = Vector2.zero;
+            contentRect.offsetMin = Vector2.zero;
+            contentRect.offsetMax = Vector2.zero;
+            contentRect.pivot = new Vector2(0.5f, 0.5f);
+            contentRect.localScale = Vector3.one;
+            contentRect.localRotation = Quaternion.identity;
+            contentImage.maskable = true;
         }
 
         private static void ApplySliderStyle(Slider slider, string spriteName, Color tint)

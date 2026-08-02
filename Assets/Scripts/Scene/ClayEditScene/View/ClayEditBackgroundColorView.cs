@@ -70,6 +70,7 @@ namespace Scene.ClayEditScene.View
             backgroundColorSlider.SetValueWithoutNotify(initialValue);
             InitializeGaugeBackground();
             ClayEditUiVisualUtility.ApplySlider(backgroundColorSlider);
+            ClayEditUiVisualUtility.EnsureRoundedMask(gaugeBackground);
             BindSliderInputBlock();
 
             backgroundColorSlider.onValueChanged.AsObservable()

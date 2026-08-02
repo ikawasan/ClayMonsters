@@ -403,6 +403,110 @@ namespace UI.ClayEditor.View
                 Image handle = slider.handleRect.GetComponent<Image>();
                 ApplySprite(handle, LoadSliderHandleSprite());
             }
+
+            Transform track = slider.transform.Find("Background");
+            if (track != null && track.TryGetComponent(out Image backgroundImage))
+            {
+                EnsureRoundedMask(backgroundImage, LoadSliderFillSprite());
+            }
+        }
+
+        /// <summary>
+        /// Imageを角丸マスク配下へ移してクリップする
+        /// </summary>
+        /// <param name="contentImage">クリップ対象</param>
+        /// <param name="maskSprite">マスク形状(nullならSliderFill)</param>
+        public static void EnsureRoundedMask(Image contentImage, Sprite maskSprite = null)
+        {
+            if (contentImage == null)
+            {
+                return;
+            }
+
+            Sprite resolvedMaskSprite = maskSprite ?? LoadSliderFillSprite();
+            if (resolvedMaskSprite == null)
+            {
+                return;
+            }
+
+            Transform currentParent = contentImage.transform.parent;
+            if (currentParent != null && currentParent.name == "RoundMask")
+            {
+                Mask existingMask = currentParent.GetComponent<Mask>();
+                if (existingMask != null)
+                {
+                    existingMask.showMaskGraphic = false;
+                    contentImage.maskable = true;
+                    Image existingMaskImage = currentParent.GetComponent<Image>();
+                    if (existingMaskImage != null)
+                    {
+                        existingMaskImage.sprite = resolvedMaskSprite;
+                        existingMaskImage.type = Image.Type.Sliced;
+                        existingMaskImage.color = Color.white;
+                        existingMaskImage.raycastTarget = false;
+                    }
+
+                    return;
+                }
+            }
+
+            Transform frameParent = currentParent;
+            if (frameParent == null)
+            {
+                Debug.LogError(
+                    "[ClayEditUiVisualUtility] 角丸対象Imageの親がありません: " + contentImage.name,
+                    contentImage);
+                return;
+            }
+
+            RectTransform contentRect = contentImage.rectTransform;
+            Vector2 anchorMin = contentRect.anchorMin;
+            Vector2 anchorMax = contentRect.anchorMax;
+            Vector2 anchoredPosition = contentRect.anchoredPosition;
+            Vector2 sizeDelta = contentRect.sizeDelta;
+            Vector2 pivot = contentRect.pivot;
+            Vector3 localScale = contentRect.localScale;
+            int siblingIndex = contentRect.GetSiblingIndex();
+            bool contentRaycast = contentImage.raycastTarget;
+
+            var maskObject = new GameObject(
+                "RoundMask",
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(Image),
+                typeof(Mask));
+            maskObject.layer = frameParent.gameObject.layer;
+            RectTransform maskRect = maskObject.GetComponent<RectTransform>();
+            maskRect.SetParent(frameParent, false);
+            maskRect.SetSiblingIndex(siblingIndex);
+            maskRect.anchorMin = anchorMin;
+            maskRect.anchorMax = anchorMax;
+            maskRect.anchoredPosition = anchoredPosition;
+            maskRect.sizeDelta = sizeDelta;
+            maskRect.pivot = pivot;
+            maskRect.localScale = localScale;
+            maskRect.localRotation = contentRect.localRotation;
+
+            Image maskImage = maskObject.GetComponent<Image>();
+            maskImage.sprite = resolvedMaskSprite;
+            maskImage.type = Image.Type.Sliced;
+            maskImage.color = Color.white;
+            maskImage.raycastTarget = contentRaycast;
+            contentImage.raycastTarget = false;
+
+            Mask mask = maskObject.GetComponent<Mask>();
+            mask.showMaskGraphic = false;
+
+            contentRect.SetParent(maskRect, false);
+            contentRect.anchorMin = Vector2.zero;
+            contentRect.anchorMax = Vector2.one;
+            contentRect.anchoredPosition = Vector2.zero;
+            contentRect.offsetMin = Vector2.zero;
+            contentRect.offsetMax = Vector2.zero;
+            contentRect.pivot = new Vector2(0.5f, 0.5f);
+            contentRect.localScale = Vector3.one;
+            contentRect.localRotation = Quaternion.identity;
+            contentImage.maskable = true;
         }
 
         /// <summary>
