@@ -58,7 +58,9 @@ namespace UI.ModelGallery.View
             {
                 nameText.text = isUsed
                     ? (modelName ?? string.Empty)
-                    : "空きスロット";
+                    : Localization.LocalizedText.GetOrFallback(
+                        Localization.GameTextKeys.ModelGalleryEmptySlot,
+                        "空きスロット");
             }
 
             if (paramsText != null)

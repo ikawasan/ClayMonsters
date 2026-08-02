@@ -1,3 +1,4 @@
+using Localization;
 using Cysharp.Threading.Tasks;
 using Extensions;
 using LighthouseExtends.UIComponent.Button;
@@ -171,7 +172,10 @@ namespace UI.ModelGallery.View
         {
             if (pointsText != null)
             {
-                pointsText.text = $"{Mathf.Max(0, points)} ポイント";
+                pointsText.text = Localization.LocalizedText.Get(
+                    Localization.GameTextKeys.ModelGalleryPoints,
+                    "points",
+                    Mathf.Max(0, points));
             }
         }
 
@@ -333,7 +337,8 @@ namespace UI.ModelGallery.View
 
             if (postConfirmMessageText != null)
             {
-                postConfirmMessageText.text = "投稿しますか？";
+                postConfirmMessageText.text = Localization.LocalizedText.Get(
+                    Localization.GameTextKeys.ModelGalleryPostConfirm);
             }
 
             ReplacePostConfirmThumbnail(thumbnail);
@@ -501,7 +506,7 @@ namespace UI.ModelGallery.View
             postSlotScrollList.RefreshSlots(
                 ModelSavePool.Player,
                 saveService,
-                "スロット",
+                LocalizedText.Get(GameTextKeys.ModelGallerySlot),
                 postSlotRuntimeThumbnails,
                 allowEmptySlotSelection: true,
                 ModelSaveSlotListContentMode.Full);

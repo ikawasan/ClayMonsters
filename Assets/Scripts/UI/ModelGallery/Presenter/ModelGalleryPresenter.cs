@@ -269,8 +269,12 @@ namespace UI.ModelGallery.Presenter
             ModelGalleryItemSummary item = browseItems[pendingDownloadItemIndex];
             ModelSaveSlot existing = saveService.GetSlot(ModelSavePool.Player, destinationSlotIndex);
             string message = existing != null
-                ? "既存のセーブデータに上書き保存しますか？"
-                : "このスロットに保存しますか？";
+                ? Localization.LocalizedText.GetOrFallback(
+                    Localization.GameTextKeys.ModelGalleryOverwriteConfirm,
+                    "既存のセーブデータに上書き保存しますか？")
+                : Localization.LocalizedText.GetOrFallback(
+                    Localization.GameTextKeys.ModelGallerySaveToSlotConfirm,
+                    "このスロットに保存しますか？");
 
             Texture2D preview = null;
             try
