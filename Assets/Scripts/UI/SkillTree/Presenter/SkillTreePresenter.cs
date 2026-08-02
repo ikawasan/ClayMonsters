@@ -1,3 +1,4 @@
+using Localization;
 using R3;
 using SaveData;
 using SaveData.Interface;
@@ -154,8 +155,8 @@ namespace UI.SkillTree.Presenter
             {
                 view.SetDetail(
                     string.Empty,
-                    "ノードを選択してください",
-                    "解放",
+                    LocalizedText.Get(GameTextKeys.SkillTreeSelectNode),
+                    LocalizedText.Get(GameTextKeys.SkillTreeUnlock),
                     string.Empty,
                     false);
                 return;
@@ -165,7 +166,9 @@ namespace UI.SkillTree.Presenter
             bool unlocked = level > 0;
             int cost = skillTreeService.GetNextLevelCost(selectedNodeId);
             bool canUnlock = skillTreeService.CanUnlockNextLevel(selectedNodeId);
-            string description = string.Format(
+            string nodeIdName = definition.Id.ToString();
+            string description = LocalizedText.FormatOrdinal(
+                GameTextKeys.SkillTreeNodeDesc(nodeIdName),
                 definition.DescriptionFormat,
                 FormatEffect(definition.EffectType, definition.EffectPerLevel));
 
@@ -173,13 +176,13 @@ namespace UI.SkillTree.Presenter
             string statusLabel;
             if (unlocked)
             {
-                actionLabel = "解放済";
+                actionLabel = LocalizedText.Get(GameTextKeys.SkillTreeUnlocked);
                 statusLabel = string.Empty;
             }
             else if (pointsService.Points < cost)
             {
                 actionLabel = $"{cost} P";
-                statusLabel = "ポイントが不足しています";
+                statusLabel = LocalizedText.Get(GameTextKeys.SkillTreePointsShort);
             }
             else
             {
@@ -188,7 +191,9 @@ namespace UI.SkillTree.Presenter
             }
 
             view.SetDetail(
-                definition.DisplayName,
+                LocalizedText.GetOrFallback(
+                    GameTextKeys.SkillTreeNodeName(nodeIdName),
+                    definition.DisplayName),
                 description,
                 actionLabel,
                 statusLabel,

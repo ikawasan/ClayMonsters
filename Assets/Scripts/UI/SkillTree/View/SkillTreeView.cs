@@ -1,5 +1,6 @@
 using Extensions;
 using LighthouseExtends.UIComponent.Button;
+using Localization;
 using SaveData;
 using System;
 using System.Collections.Generic;
@@ -92,7 +93,11 @@ namespace UI.SkillTree.View
                 return;
             }
 
-            pointsText.text = $"{Mathf.Max(0, points)} ポイント";
+            pointsText.text = LocalizedText.GetOrFallback(
+                GameTextKeys.SkillTreePoints,
+                "{points} ポイント",
+                "points",
+                Mathf.Max(0, points));
         }
 
         /// <inheritdoc />
