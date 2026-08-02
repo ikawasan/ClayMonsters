@@ -3,13 +3,17 @@ using Audio.Interface;
 using Audio.Service;
 using Lighthouse.Scene;
 using Lighthouse.Scene.SceneCamera;
+using LighthouseExtends.Font;
+using LighthouseExtends.Language;
+using LighthouseExtends.TextTable;
 using LighthouseExtends.UIComponent.CanvasSceneObject;
 using LighthouseExtends.UIComponent.InputBlocker;
+using Localization;
 using SampleProduct.Core;
 using SaveData.Service;
+using Scene.Core.View;
 using Scene.PvpLobby;
 using Scene.PvpLobby.Interface;
-using Scene.Core.View;
 using UI.Option;
 using UI.Option.Service;
 using UI.Option.View;
@@ -32,6 +36,8 @@ namespace Scene.Core
         [Header("Global Settings")]
         // アプリ全体で常駐させるオプション画面のプレハブ
         [SerializeField] OptionView optionViewPrefab;
+        [SerializeField] SupportedLanguageSettings supportedLanguageSettings;
+        [SerializeField] LanguageFontSettings languageFontSettings;
 
         [Header("PVP")]
         [SerializeField] GameObject pvpLobbyHostPrefab;
@@ -48,6 +54,9 @@ namespace Scene.Core
             // エントリーポイントと基本設定の登録
             builder.RegisterEntryPoint<ClayMonstersEntryPoint>();
             builder.RegisterInstance(clayMonstersLifetimeScopeSettings);
+
+            RegisterLocalization(builder);
+
             builder.Register<IBgmService, BgmService>(Lifetime.Singleton);
             builder.RegisterInstance(uiSoundSettings);
             builder.Register<IUiSoundService, UiSoundService>(Lifetime.Singleton);
@@ -83,6 +92,40 @@ namespace Scene.Core
 
             // シーン遷移フェード用オーバーレイの登録(常駐)
             builder.RegisterComponentInNewPrefab(sceneFadePrefab, Lifetime.Singleton).DontDestroyOnLoad().AsImplementedInterfaces();
+        }
+
+        private void RegisterLocalization(IContainerBuilder builder)
+        {
+            if (supportedLanguageSettings == null)
+            {
+                Debug.LogError(
+                    "[ClayMonstersLifetimeScope] supportedLanguageSettingsが未配線です",
+                    this);
+            }
+            else
+            {
+                builder.RegisterInstance(supportedLanguageSettings);
+            }
+
+            if (languageFontSettings == null)
+            {
+                Debug.LogError(
+                    "[ClayMonstersLifetimeScope] languageFontSettingsが未配線です",
+                    this);
+            }
+            else
+            {
+                builder.RegisterInstance(languageFontSettings);
+            }
+
+            builder.Register<SupportedLanguageService>(Lifetime.Singleton).As<ISupportedLanguageService>();
+            builder.Register<LanguageService>(Lifetime.Singleton).As<ILanguageService>();
+            builder.Register<StreamingAssetsTextTableLoader>(Lifetime.Singleton).As<ITextTableLoader>();
+            builder.Register<TextTableService>(Lifetime.Singleton).As<ITextTableService>();
+            builder.Register<FontService>(Lifetime.Singleton).As<IFontService>();
+            builder.Register<LanguageOptionStore>(Lifetime.Singleton).As<ILanguageOptionStore>();
+            builder.RegisterEntryPoint<LocalizedFontDriver>();
+            builder.Register<LanguageInitializer>(Lifetime.Singleton).As<ILanguageInitializer>();
         }
     }
 }

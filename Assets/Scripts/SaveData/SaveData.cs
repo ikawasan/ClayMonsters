@@ -18,10 +18,20 @@ namespace SaveData
     }
 
     [Serializable]
+    public class LanguageOptionSaveData
+    {
+        /// <summary>
+        /// 選択中言語コード空文字は未設定
+        /// </summary>
+        public string LanguageCode = string.Empty;
+    }
+
+    [Serializable]
     public class SaveData : ISaveData
     {
         public VideoOptionSaveData VideoOptionData = new VideoOptionSaveData();
         public SoundOptionSaveData SoundOptionData = new SoundOptionSaveData();
+        public LanguageOptionSaveData LanguageOptionData = new LanguageOptionSaveData();
         public NpcBattleProgressSaveData NpcBattleProgress = new NpcBattleProgressSaveData();
 
         /// <summary>

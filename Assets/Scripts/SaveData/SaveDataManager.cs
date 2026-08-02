@@ -126,6 +126,13 @@ namespace SaveData
                 data.SoundOptionData = new SoundOptionSaveData();
             }
 
+            if (data.LanguageOptionData == null)
+            {
+                data.LanguageOptionData = new LanguageOptionSaveData();
+            }
+
+            data.LanguageOptionData.LanguageCode ??= string.Empty;
+
             if (data.NpcBattleProgress == null)
             {
                 data.NpcBattleProgress = new NpcBattleProgressSaveData

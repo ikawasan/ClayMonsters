@@ -1,5 +1,6 @@
 using Extensions;
 using LighthouseExtends.UIComponent.Button;
+using Localization;
 using System;
 using TMPro;
 using UI.Option.Interface;
@@ -15,18 +16,6 @@ namespace UI.Option.View
     /// </summary>
     public sealed class OptionView : MonoBehaviour, IOptionView
     {
-        private const float PanelWidth = 560f;
-        private const float PanelHeight = 860f;
-        private const string PanelResourcePath = "Image/Title/TitleOptionPanel";
-        private const string ButtonNormalResourcePath = "Image/Title/TitleMenuButton_Normal";
-        private const string ButtonHighlightedResourcePath = "Image/Title/TitleMenuButton_Highlighted";
-        private const string ButtonPressedResourcePath = "Image/Title/TitleMenuButton_Pressed";
-        private const string SliderTrackResourcePath = "Image/Title/TitleOptionSlider_Track";
-        private const string SliderFillResourcePath = "Image/Title/TitleOptionSlider_Fill";
-        private const string SliderHandleResourcePath = "Image/Title/TitleOptionSlider_Handle";
-        private const string ToggleOffResourcePath = "Image/Title/TitleOptionToggle_Off";
-        private const string ToggleOnResourcePath = "Image/Title/TitleOptionToggle_On";
-
         [SerializeField] private Canvas canvas;
         [SerializeField] private LHButton closeButton;
         [SerializeField] private Toggle fullScreenToggle;
@@ -34,9 +23,22 @@ namespace UI.Option.View
         [SerializeField] private Slider musicVolumeSlider;
         [SerializeField] private Slider soundEffectSlider;
         [SerializeField] private Image panelImage;
+        [SerializeField] private LHButton languagePrevButton;
+        [SerializeField] private LHButton languageNextButton;
+        [SerializeField] private TMP_Text languageValueText;
+        [SerializeField] private TMP_Text optionTitleText;
+        [SerializeField] private TMP_Text videoTitleText;
+        [SerializeField] private TMP_Text audioTitleText;
+        [SerializeField] private TMP_Text languageTitleText;
+        [SerializeField] private TMP_Text fullScreenLabelText;
+        [SerializeField] private TMP_Text vSyncLabelText;
+        [SerializeField] private TMP_Text musicLabelText;
+        [SerializeField] private TMP_Text soundEffectLabelText;
+        [SerializeField] private TMP_Text closeButtonLabelText;
 
         private void Awake()
         {
+            ValidateReferences();
             HideBrightnessSettingUi();
             Hide();
         }
@@ -64,24 +66,126 @@ namespace UI.Option.View
         /// <inheritdoc/>
         public void InitSoundSettings(float musicVolume, float soundEffectVolume)
         {
-            musicVolumeSlider.SetValueWithoutNotify(musicVolume);
-            soundEffectSlider.SetValueWithoutNotify(soundEffectVolume);
+            if (musicVolumeSlider != null)
+            {
+                musicVolumeSlider.SetValueWithoutNotify(musicVolume);
+            }
+
+            if (soundEffectSlider != null)
+            {
+                soundEffectSlider.SetValueWithoutNotify(soundEffectVolume);
+            }
+        }
+
+        /// <inheritdoc/>
+        public void InitLanguageSetting(string languageDisplayName)
+        {
+            LocalizedFont.SetText(languageValueText, languageDisplayName);
+        }
+
+        /// <inheritdoc/>
+        public void ApplyLocalizedLabels(
+            string title,
+            string videoTitle,
+            string audioTitle,
+            string languageTitle,
+            string fullScreen,
+            string vSync,
+            string music,
+            string soundEffect,
+            string close)
+        {
+            SetText(optionTitleText, title);
+            SetText(videoTitleText, videoTitle);
+            SetText(audioTitleText, audioTitle);
+            SetText(languageTitleText, languageTitle);
+            SetText(fullScreenLabelText, fullScreen);
+            SetText(vSyncLabelText, vSync);
+            SetText(musicLabelText, music);
+            SetText(soundEffectLabelText, soundEffect);
+            SetText(closeButtonLabelText, close);
         }
 
         /// <inheritdoc/>
         public IDisposable SubscribeCloseButtonClick(UnityAction action) => closeButton.SubscribeOnClick(action);
 
         /// <inheritdoc/>
-        public void SubscribeFullScreenChanged(UnityAction<bool> action) => fullScreenToggle.onValueChanged.AddListener(action);
+        public void SubscribeFullScreenChanged(UnityAction<bool> action)
+        {
+            if (fullScreenToggle != null)
+            {
+                fullScreenToggle.onValueChanged.AddListener(action);
+            }
+        }
 
         /// <inheritdoc/>
-        public void SubscribeVSyncChanged(UnityAction<bool> action) => vSyncToggle.onValueChanged.AddListener(action);
+        public void SubscribeVSyncChanged(UnityAction<bool> action)
+        {
+            if (vSyncToggle != null)
+            {
+                vSyncToggle.onValueChanged.AddListener(action);
+            }
+        }
 
         /// <inheritdoc/>
-        public void SubscribeMusicVolumeChanged(UnityAction<float> action) => musicVolumeSlider.onValueChanged.AddListener(action);
+        public void SubscribeMusicVolumeChanged(UnityAction<float> action)
+        {
+            if (musicVolumeSlider != null)
+            {
+                musicVolumeSlider.onValueChanged.AddListener(action);
+            }
+        }
 
         /// <inheritdoc/>
-        public void SubscribeSoundEffectVolumeChanged(UnityAction<float> action) => soundEffectSlider.onValueChanged.AddListener(action);
+        public void SubscribeSoundEffectVolumeChanged(UnityAction<float> action)
+        {
+            if (soundEffectSlider != null)
+            {
+                soundEffectSlider.onValueChanged.AddListener(action);
+            }
+        }
+
+        /// <inheritdoc/>
+        public IDisposable SubscribeLanguagePrevButtonClick(UnityAction action)
+        {
+            if (languagePrevButton == null)
+            {
+                return EmptyDisposable.Instance;
+            }
+
+            return languagePrevButton.SubscribeOnClick(action);
+        }
+
+        /// <inheritdoc/>
+        public IDisposable SubscribeLanguageNextButtonClick(UnityAction action)
+        {
+            if (languageNextButton == null)
+            {
+                return EmptyDisposable.Instance;
+            }
+
+            return languageNextButton.SubscribeOnClick(action);
+        }
+
+        private void ValidateReferences()
+        {
+            if (canvas == null)
+            {
+                Debug.LogError("[OptionView] canvasが未配線です", this);
+            }
+
+            if (closeButton == null)
+            {
+                Debug.LogError("[OptionView] closeButtonが未配線です", this);
+            }
+
+            if (languagePrevButton == null || languageNextButton == null || languageValueText == null)
+            {
+                Debug.LogError(
+                    "[OptionView] 言語切替UIが未配線です languagePrevButton/languageNextButton/languageValueTextをInspectorで接続してください",
+                    this);
+            }
+        }
 
         private void HideBrightnessSettingUi()
         {
@@ -97,208 +201,17 @@ namespace UI.Option.View
             }
         }
 
-        private void ApplyClayStyle()
+        private static void SetText(TMP_Text text, string value)
         {
-            ApplyBlockerStyle();
-            ApplyPanelStyle();
-            ApplyCloseButtonStyle();
-            ApplyTextStyles();
-            ApplySliderStyle(musicVolumeSlider);
-            ApplySliderStyle(soundEffectSlider);
-            ApplyToggleStyle(fullScreenToggle);
-            ApplyToggleStyle(vSyncToggle);
+            LocalizedFont.SetText(text, value);
         }
 
-        private void ApplyBlockerStyle()
+        private sealed class EmptyDisposable : IDisposable
         {
-            Transform blocker = transform.Find("BackgroundBlocker");
-            if (blocker == null || !blocker.TryGetComponent(out Image image))
+            public static readonly EmptyDisposable Instance = new();
+
+            public void Dispose()
             {
-                return;
-            }
-
-            image.raycastTarget = true;
-        }
-
-        private void ApplyPanelStyle()
-        {
-            if (panelImage == null)
-            {
-                Transform panelTransform = transform.Find("OptionPanel");
-                if (panelTransform != null)
-                {
-                    panelImage = panelTransform.GetComponent<Image>();
-                }
-            }
-
-            if (panelImage == null)
-            {
-                return;
-            }
-
-            Sprite panelSprite = Resources.Load<Sprite>(PanelResourcePath);
-            if (panelSprite == null)
-            {
-                panelSprite = Resources.Load<Sprite>(ButtonNormalResourcePath);
-            }
-
-            if (panelSprite == null)
-            {
-                return;
-            }
-
-            panelImage.sprite = panelSprite;
-            panelImage.type = Image.Type.Sliced;
-            panelImage.raycastTarget = false;
-            panelImage.pixelsPerUnitMultiplier = 1f;
-        }
-
-        private void ApplyCloseButtonStyle()
-        {
-            Sprite normalSprite = Resources.Load<Sprite>(ButtonNormalResourcePath);
-            Sprite highlightedSprite = Resources.Load<Sprite>(ButtonHighlightedResourcePath);
-            Sprite pressedSprite = Resources.Load<Sprite>(ButtonPressedResourcePath);
-            if (normalSprite == null)
-            {
-                return;
-            }
-
-            highlightedSprite ??= normalSprite;
-            pressedSprite ??= normalSprite;
-            ApplyButtonStyle(closeButton, normalSprite, highlightedSprite, pressedSprite, "閉じる", TextAlignmentOptions.Center);
-        }
-
-        private void ApplyTextStyles()
-        {
-            foreach (TMP_Text text in GetComponentsInChildren<TMP_Text>(true))
-            {
-                if (text.transform.IsChildOf(closeButton.transform))
-                {
-                    continue;
-                }
-
-                text.raycastTarget = false;
-            }
-        }
-
-        private void ApplySliderStyle(Slider slider)
-        {
-            if (slider == null)
-            {
-                return;
-            }
-
-            Sprite trackSprite = Resources.Load<Sprite>(SliderTrackResourcePath);
-            Sprite fillSprite = Resources.Load<Sprite>(SliderFillResourcePath);
-            Sprite handleSprite = Resources.Load<Sprite>(SliderHandleResourcePath);
-            if (trackSprite == null || fillSprite == null || handleSprite == null)
-            {
-                return;
-            }
-
-            slider.transform.localScale = Vector3.one;
-
-            Image background = slider.transform.Find("Background")?.GetComponent<Image>();
-            if (background != null)
-            {
-                background.sprite = trackSprite;
-                background.type = Image.Type.Sliced;
-            }
-
-            Transform fillArea = slider.fillRect != null ? slider.fillRect.parent : slider.transform.Find("Fill Area");
-            Image fill = slider.fillRect != null ? slider.fillRect.GetComponent<Image>() : fillArea?.Find("Fill")?.GetComponent<Image>();
-            if (fill != null)
-            {
-                fill.sprite = fillSprite;
-                fill.type = Image.Type.Sliced;
-            }
-
-            Image handle = slider.handleRect != null
-                ? slider.handleRect.GetComponent<Image>()
-                : slider.transform.Find("Handle Slide Area/Handle")?.GetComponent<Image>();
-            if (handle != null)
-            {
-                handle.sprite = handleSprite;
-                handle.type = Image.Type.Simple;
-                handle.SetNativeSize();
-            }
-
-            slider.targetGraphic = handle;
-        }
-
-        private void ApplyToggleStyle(Toggle toggle)
-        {
-            if (toggle == null)
-            {
-                return;
-            }
-
-            Sprite offSprite = Resources.Load<Sprite>(ToggleOffResourcePath);
-            Sprite onSprite = Resources.Load<Sprite>(ToggleOnResourcePath);
-            if (offSprite == null || onSprite == null)
-            {
-                return;
-            }
-
-            toggle.transform.localScale = Vector3.one;
-
-            Image background = toggle.transform.Find("Background")?.GetComponent<Image>();
-            if (background != null)
-            {
-                background.sprite = offSprite;
-                background.type = Image.Type.Simple;
-                background.SetNativeSize();
-                toggle.targetGraphic = background;
-            }
-
-            Image checkmark = toggle.graphic as Image;
-            if (checkmark == null)
-            {
-                checkmark = toggle.transform.Find("Checkmark")?.GetComponent<Image>();
-            }
-
-            if (checkmark != null)
-            {
-                checkmark.sprite = onSprite;
-                checkmark.type = Image.Type.Simple;
-                checkmark.SetNativeSize();
-                toggle.graphic = checkmark;
-            }
-        }
-
-        private static void ApplyButtonStyle(
-            LHButton button,
-            Sprite normalSprite,
-            Sprite highlightedSprite,
-            Sprite pressedSprite,
-            string label,
-            TextAlignmentOptions alignment)
-        {
-            if (button == null)
-            {
-                return;
-            }
-
-            if (button.targetGraphic is Image image)
-            {
-                image.sprite = normalSprite;
-                image.type = Image.Type.Sliced;
-                image.pixelsPerUnitMultiplier = 1f;
-            }
-
-            button.transition = Selectable.Transition.SpriteSwap;
-            SpriteState spriteState = button.spriteState;
-            spriteState.highlightedSprite = highlightedSprite;
-            spriteState.pressedSprite = pressedSprite;
-            spriteState.selectedSprite = highlightedSprite;
-            spriteState.disabledSprite = normalSprite;
-            button.spriteState = spriteState;
-
-            TMP_Text labelText = button.GetComponentInChildren<TMP_Text>(true);
-            if (labelText != null)
-            {
-                labelText.text = label;
-                labelText.raycastTarget = false;
             }
         }
     }

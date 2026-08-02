@@ -1,3 +1,6 @@
+using System.Threading;
+using Cysharp.Threading.Tasks;
+
 namespace UI.Option.Interface
 {
     /// <summary>
@@ -26,6 +29,16 @@ namespace UI.Option.Interface
         float GetSoundEffectVolume { get; }
 
         /// <summary>
+        /// 現在の言語コードを返す
+        /// </summary>
+        string GetLanguageCode { get; }
+
+        /// <summary>
+        /// 現在の言語表示名を返す
+        /// </summary>
+        string GetLanguageDisplayName { get; }
+
+        /// <summary>
         /// フルスクリーン設定を更新する
         /// </summary>
         /// <param name="isFullScreen">フルスクリーン</param>
@@ -48,5 +61,12 @@ namespace UI.Option.Interface
         /// </summary>
         /// <param name="volume">音量</param>
         void SetSoundEffectVolume(float volume);
+
+        /// <summary>
+        /// 言語を前後に切り替える
+        /// </summary>
+        /// <param name="delta">移動量</param>
+        /// <param name="cancellationToken">取消トークン</param>
+        UniTask CycleLanguageAsync(int delta, CancellationToken cancellationToken);
     }
 }

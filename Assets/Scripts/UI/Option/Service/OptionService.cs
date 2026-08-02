@@ -1,5 +1,9 @@
 using Audio.Interface;
+using Cysharp.Threading.Tasks;
+using LighthouseExtends.Language;
+using Localization;
 using SaveData;
+using System.Threading;
 using UI.Option.Interface;
 using UnityEngine;
 using VContainer;
@@ -7,7 +11,7 @@ using VContainer;
 namespace UI.Option.Service
 {
     /// <summary>
-    /// オプション設定の保存と画面・音量への反映を行う
+    /// オプション設定の保存と画面・音量・言語への反映を行う
     /// </summary>
     public sealed class OptionService : IOptionService
     {
@@ -15,6 +19,8 @@ namespace UI.Option.Service
         private readonly IBgmService bgmService;
         private readonly IUiSoundService uiSoundService;
         private readonly ISeService seService;
+        private readonly ILanguageInitializer languageInitializer;
+        private readonly ISupportedLanguageService supportedLanguageService;
 
         private const int WindowedWidth = 1600;
         private const int WindowedHeight = 900;
@@ -23,11 +29,15 @@ namespace UI.Option.Service
         public OptionService(
             IBgmService bgmService,
             IUiSoundService uiSoundService,
-            ISeService seService)
+            ISeService seService,
+            ILanguageInitializer languageInitializer,
+            ISupportedLanguageService supportedLanguageService)
         {
             this.bgmService = bgmService;
             this.uiSoundService = uiSoundService;
             this.seService = seService;
+            this.languageInitializer = languageInitializer;
+            this.supportedLanguageService = supportedLanguageService;
             currentSaveData = SaveDataManager.Load();
             ApplySettings();
         }
@@ -39,6 +49,11 @@ namespace UI.Option.Service
         public float GetMusicVolume => currentSaveData.SoundOptionData.MusicVolume;
 
         public float GetSoundEffectVolume => currentSaveData.SoundOptionData.SoundEffectVolume;
+
+        public string GetLanguageCode => languageInitializer.CurrentLanguageCode;
+
+        public string GetLanguageDisplayName =>
+            LanguageDisplayNames.Get(languageInitializer.CurrentLanguageCode);
 
         public void SetFullScreen(bool isFullScreen)
         {
@@ -68,12 +83,46 @@ namespace UI.Option.Service
             SaveOptions();
         }
 
+        /// <inheritdoc/>
+        public async UniTask CycleLanguageAsync(int delta, CancellationToken cancellationToken)
+        {
+            var languages = supportedLanguageService.SupportedLanguages;
+            if (languages == null || languages.Count == 0)
+            {
+                Debug.LogError("[OptionService] 対応言語が空です");
+                return;
+            }
+
+            string current = languageInitializer.CurrentLanguageCode;
+            int index = 0;
+            for (int i = 0; i < languages.Count; i++)
+            {
+                if (string.Equals(languages[i], current, System.StringComparison.Ordinal))
+                {
+                    index = i;
+                    break;
+                }
+            }
+
+            int next = (index + delta) % languages.Count;
+            if (next < 0)
+            {
+                next += languages.Count;
+            }
+
+            await languageInitializer.SetLanguageAsync(languages[next], cancellationToken);
+            currentSaveData.LanguageOptionData ??= new LanguageOptionSaveData();
+            currentSaveData.LanguageOptionData.LanguageCode = languages[next];
+        }
+
         private void SaveOptions()
         {
             SaveDataManager.Update(data =>
             {
                 data.VideoOptionData = currentSaveData.VideoOptionData;
                 data.SoundOptionData = currentSaveData.SoundOptionData;
+                data.LanguageOptionData = currentSaveData.LanguageOptionData
+                    ?? new LanguageOptionSaveData();
             });
         }
 
