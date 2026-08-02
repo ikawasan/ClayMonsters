@@ -694,6 +694,23 @@ namespace UI.Battle.View
             resultText.enabled = true;
         }
 
+        /// <inheritdoc />
+        public void ShowPartBreakLockMessage(int moveIndex)
+        {
+            if (moveButtons == null || moveIndex < 0 || moveIndex >= moveButtons.Length)
+            {
+                return;
+            }
+
+            MoveButtonView moveButton = moveButtons[moveIndex];
+            if (moveButton == null)
+            {
+                return;
+            }
+
+            moveButton.ShowPartLockMessage();
+        }
+
         private void SetBattleHudActive(bool isActive)
         {
             if (battleHudRoots == null)

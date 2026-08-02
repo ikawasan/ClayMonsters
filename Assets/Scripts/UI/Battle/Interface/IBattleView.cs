@@ -4,13 +4,14 @@ using R3;
 namespace UI.Battle.Interface
 {
     /// <summary>
-    /// 1つの技ボタンの表示情報(名前・使用可否・間合い・ガッツ・威力・破壊対象部位識別子)
+    /// 1つの技ボタンの表示情報(名前・使用可否・部位ロック・間合い・ガッツ・威力・破壊対象部位識別子)
     /// </summary>
     public readonly struct MoveDisplay
     {
         public MoveDisplay(
             string name,
             bool usable,
+            bool lockedByMissingPart,
             float rangeMin,
             float rangeMax,
             float gutsCost,
@@ -20,6 +21,7 @@ namespace UI.Battle.Interface
         {
             Name = name;
             Usable = usable;
+            LockedByMissingPart = lockedByMissingPart;
             RangeMin = rangeMin;
             RangeMax = rangeMax;
             GutsCost = gutsCost;
@@ -30,6 +32,12 @@ namespace UI.Battle.Interface
 
         public string Name { get; }
         public bool Usable { get; }
+
+        /// <summary>
+        /// 必要部位の欠損により技が封じられているか
+        /// </summary>
+        public bool LockedByMissingPart { get; }
+
         public float RangeMin { get; }
         public float RangeMax { get; }
         public float GutsCost { get; }
@@ -109,5 +117,11 @@ namespace UI.Battle.Interface
         /// 決着表示(勝者名引き分けはnull)
         /// </summary>
         void ShowResult(string winnerName);
+
+        /// <summary>
+        /// 部位欠損で封じられた技を使おうとした際の案内を表示する
+        /// </summary>
+        /// <param name="moveIndex">技番号</param>
+        void ShowPartBreakLockMessage(int moveIndex);
     }
 }

@@ -53,6 +53,9 @@ namespace UI.Battle.View
         [SerializeField] private Color rangeInactiveColor = MoveRangeSegmentBarView.RangeOutColor;
         [SerializeField] private Color rangeOutOfBandColor = MoveRangeSegmentBarView.RangeOutColor;
 
+        [Tooltip("部位欠損ロック演出(未設定なら子から解決)")]
+        [SerializeField] private MoveButtonPartLockOverlay partLockOverlay;
+
         private bool isUsable;
         private bool isHighlighted;
         private Sprite rangeActiveSprite;
@@ -68,6 +71,7 @@ namespace UI.Battle.View
 
             DisableRaycastOnDecorations();
             EnsureRangeSegmentBarView();
+            EnsurePartLockOverlay();
             if (!HasConfiguredRangeSegments())
             {
                 MoveRangeSegmentBarView.ApplyDefaultSprites(rangeSegments, ref rangeActiveSprite, ref rangeInactiveSprite);
@@ -143,6 +147,10 @@ namespace UI.Battle.View
         {
             isHighlighted = highlighted;
             RefreshBackgroundColor();
+            if (partLockOverlay != null)
+            {
+                partLockOverlay.SetMessageHoverVisible(highlighted);
+            }
         }
 
         /// <summary>
@@ -179,13 +187,98 @@ namespace UI.Battle.View
 
             if (button != null)
             {
-                button.interactable = move.Usable;
+                // 部位ロック中はクリックで案内を出せるよう操作受付は残す
+                button.interactable = move.Usable || move.LockedByMissingPart;
             }
 
             isUsable = move.Usable;
             SetVisualUsable(move.Usable);
+            ApplyPartLockOverlay(move.LockedByMissingPart);
             ApplyRangeSegments(move.RangeMin, move.RangeMax, maxDistance, move.Usable);
             RefreshBackgroundColor();
+        }
+
+        /// <summary>
+        /// 部位破壊ロックの理由メッセージを一時表示する
+        /// </summary>
+        public void ShowPartLockMessage()
+        {
+            EnsurePartLockOverlay();
+            if (partLockOverlay == null)
+            {
+                return;
+            }
+
+            partLockOverlay.ShowMessageTemporary();
+        }
+
+        private void EnsurePartLockOverlay()
+        {
+            if (partLockOverlay != null)
+            {
+                BindPartLockOverlayMask();
+                return;
+            }
+
+            partLockOverlay = GetComponentInChildren<MoveButtonPartLockOverlay>(true);
+            if (partLockOverlay != null)
+            {
+                BindPartLockOverlayMask();
+                return;
+            }
+
+            // プレハブ未配線時のみ最前面に描画用オーバーレイを足す(既存Rectは変更しない)
+            var overlayObject = new GameObject(
+                "PartLockOverlay",
+                typeof(RectTransform),
+                typeof(LayoutElement),
+                typeof(MoveButtonPartLockOverlay));
+            Transform overlayTransform = overlayObject.transform;
+            overlayTransform.SetParent(transform, false);
+            overlayTransform.SetAsLastSibling();
+
+            var rectTransform = (RectTransform)overlayTransform;
+            rectTransform.anchorMin = Vector2.zero;
+            rectTransform.anchorMax = Vector2.one;
+            rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            rectTransform.offsetMin = Vector2.zero;
+            rectTransform.offsetMax = Vector2.zero;
+            rectTransform.localScale = Vector3.one;
+            rectTransform.localRotation = Quaternion.identity;
+
+            var layoutElement = overlayObject.GetComponent<LayoutElement>();
+            layoutElement.ignoreLayout = true;
+
+            partLockOverlay = overlayObject.GetComponent<MoveButtonPartLockOverlay>();
+            BindPartLockOverlayMask();
+        }
+
+        private void BindPartLockOverlayMask()
+        {
+            if (partLockOverlay == null)
+            {
+                return;
+            }
+
+            Image frame = buttonBackground;
+            if (frame == null && button != null)
+            {
+                frame = button.targetGraphic as Image;
+            }
+
+            partLockOverlay.ApplyClipMask(frame);
+        }
+
+        private void ApplyPartLockOverlay(bool lockedByMissingPart)
+        {
+            EnsurePartLockOverlay();
+            if (partLockOverlay == null)
+            {
+                return;
+            }
+
+            partLockOverlay.SetLocked(lockedByMissingPart);
+            partLockOverlay.SetMessageHoverVisible(isHighlighted);
         }
 
         private void ApplyRequiredPartIcon(MoveTargetPartId requiredPartId)

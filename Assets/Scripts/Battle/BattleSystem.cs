@@ -94,6 +94,7 @@ namespace Battle
         private readonly Subject<AttackProjectileStarted> attackProjectileStartedSubject = new Subject<AttackProjectileStarted>();
         private readonly Subject<KnockbackPerformed> knockbackPerformedSubject = new Subject<KnockbackPerformed>();
         private readonly Subject<BattleUnit> battleEndSubject = new Subject<BattleUnit>();
+        private readonly Subject<int> partBreakMoveRejectedSubject = new Subject<int>();
 
         private BattleUnit pendingAttackAttacker;
         private BattleUnit pendingAttackTarget;
@@ -376,6 +377,11 @@ namespace Battle
         public Observable<BattleUnit> OnBattleEnd => battleEndSubject;
 
         /// <summary>
+        /// 部位欠損により技使用が拒否された(技番号)
+        /// </summary>
+        public Observable<int> OnPartBreakMoveRejected => partBreakMoveRejectedSubject;
+
+        /// <summary>
         /// プレイヤーの移動意図を設定する(-1=接近,0=停止,+1=後退)
         /// </summary>
         public void SetPlayerMovement(int sign)
@@ -393,9 +399,20 @@ namespace Battle
                 return false;
             }
 
+            if (moveIndex < 0 || moveIndex >= player.Moves.Count)
+            {
+                return false;
+            }
+
+            if (!player.IsMoveUsableByPart(moveIndex))
+            {
+                partBreakMoveRejectedSubject.OnNext(moveIndex);
+                return false;
+            }
+
             if (IsPlayerCounterMove(moveIndex))
             {
-                if (!player.CanAct || !player.IsMoveUsableByPart(moveIndex))
+                if (!player.CanAct)
                 {
                     return false;
                 }
@@ -1901,6 +1918,7 @@ namespace Battle
             attackProjectileStartedSubject.Dispose();
             knockbackPerformedSubject.Dispose();
             battleEndSubject.Dispose();
+            partBreakMoveRejectedSubject.Dispose();
         }
     }
 }

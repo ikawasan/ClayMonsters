@@ -56,6 +56,22 @@ namespace UI.Battle.View
             return LoadSprite($"{Root}/Range/Inactive");
         }
 
+        /// <summary>
+        /// 部位欠損ロック用の交差鎖画像を読み込む
+        /// </summary>
+        public static Sprite LoadPartLockChain()
+        {
+            return LoadSprite($"{Root}/Battle/MovePartLockChain");
+        }
+
+        /// <summary>
+        /// 部位欠損ロック用の錠画像を読み込む
+        /// </summary>
+        public static Sprite LoadPartLockPadlock()
+        {
+            return LoadSprite($"{Root}/Battle/MovePartLockPadlock");
+        }
+
         private static Sprite LoadSprite(string resourcePath)
         {
             return Resources.Load<Sprite>(resourcePath);

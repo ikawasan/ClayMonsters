@@ -83,6 +83,10 @@ namespace Battle.Presenter
                     system.TryUsePlayerMove(index);
                 })
                 .AddTo(disposables);
+
+            system.OnPartBreakMoveRejected
+                .Subscribe(index => view.ShowPartBreakLockMessage(index))
+                .AddTo(disposables);
         }
 
         private void OnAttackWindUpStarted(AttackWindUpStarted started)
@@ -173,9 +177,11 @@ namespace Battle.Presenter
             {
                 AttackMove m = unit.Moves[i];
                 bool usable = system.IsMoveUsableForUnit(isPlayer, i);
+                bool lockedByMissingPart = !unit.IsMoveUsableByPart(i);
                 destination.Add(new MoveDisplay(
                     m.DisplayName,
                     usable,
+                    lockedByMissingPart,
                     m.RangeMin,
                     m.RangeMax,
                     m.GutsCost,
