@@ -1,3 +1,5 @@
+using Localization;
+
 namespace SaveData
 {
     /// <summary>
@@ -64,11 +66,21 @@ namespace SaveData
         {
             return tier switch
             {
-                EnemyStrengthTier.Weak => "弱い",
-                EnemyStrengthTier.Normal => "普通",
-                EnemyStrengthTier.Strong => "強い",
-                EnemyStrengthTier.VeryStrong => "超強い",
-                _ => "普通"
+                EnemyStrengthTier.Weak => Localization.LocalizedText.GetOrFallback(
+                    Localization.GameTextKeys.EnemyWeak,
+                    "弱い"),
+                EnemyStrengthTier.Normal => Localization.LocalizedText.GetOrFallback(
+                    Localization.GameTextKeys.EnemyNormal,
+                    "普通"),
+                EnemyStrengthTier.Strong => Localization.LocalizedText.GetOrFallback(
+                    Localization.GameTextKeys.EnemyStrong,
+                    "強い"),
+                EnemyStrengthTier.VeryStrong => Localization.LocalizedText.GetOrFallback(
+                    Localization.GameTextKeys.EnemyVeryStrong,
+                    "超強い"),
+                _ => Localization.LocalizedText.GetOrFallback(
+                    Localization.GameTextKeys.EnemyNormal,
+                    "普通"),
             };
         }
 
