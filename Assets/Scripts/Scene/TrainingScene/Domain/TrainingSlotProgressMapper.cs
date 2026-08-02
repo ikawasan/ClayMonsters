@@ -1,3 +1,4 @@
+using Localization;
 using ClayEditor.Rigging;
 using SaveData;
 using SaveData.Interface;
@@ -256,7 +257,7 @@ namespace Scene.TrainingScene.Domain
             string saveResultMessage = "",
             string continueButtonLabel = "保存先を選ぶ",
             byte[] thumbnailPng = null,
-            string titleText = "育成完了")
+            string titleText = null)
         {
             ModelStatus resolvedStatus = status ?? new ModelStatus();
             string statsText =
@@ -269,7 +270,7 @@ namespace Scene.TrainingScene.Domain
                 saveResultMessage ?? string.Empty,
                 continueButtonLabel ?? "保存先を選ぶ",
                 thumbnailPng,
-                titleText ?? "育成完了");
+                titleText ?? LocalizedText.Get(GameTextKeys.TrainingComplete));
         }
     }
 }

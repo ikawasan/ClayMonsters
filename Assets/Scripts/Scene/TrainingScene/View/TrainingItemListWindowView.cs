@@ -1,6 +1,7 @@
 using Cysharp.Threading.Tasks;
 using Extensions;
 using LighthouseExtends.UIComponent.Button;
+using Localization;
 using Scene.TrainingScene.Domain;
 using System.Collections.Generic;
 using System.Threading;
@@ -77,10 +78,10 @@ namespace Scene.TrainingScene.View
         {
             EnsureUiBound();
             BindActionButtons();
-            SetTitle("売店");
+            SetTitle(LocalizedText.GetOrFallback(GameTextKeys.TrainingShopTitle, "売店"));
             SetMoney(currentMoney);
             BindShopSlots(items);
-            ConfigureCloseButton("戻る");
+            ConfigureCloseButton(LocalizedText.GetOrFallback(GameTextKeys.CommonReturn, "戻る"));
             ConfigureNextPageButton(hasNextPage);
             ConfigureOpenInventoryButton(showOpenInventory);
             hasChoice = false;
@@ -96,7 +97,7 @@ namespace Scene.TrainingScene.View
         {
             EnsureUiBound();
             BindActionButtons();
-            SetTitle("所持アイテム");
+            SetTitle(LocalizedText.GetOrFallback(GameTextKeys.TrainingInventoryTitle, "所持アイテム"));
             if (moneyText != null)
             {
                 moneyText.text = string.Empty;
@@ -104,7 +105,7 @@ namespace Scene.TrainingScene.View
             }
 
             BindInventorySlots(entries);
-            ConfigureCloseButton("戻る");
+            ConfigureCloseButton(LocalizedText.GetOrFallback(GameTextKeys.CommonReturn, "戻る"));
             ConfigureNextPageButton(hasNextPage);
             ConfigureOpenInventoryButton(false);
             hasChoice = false;
@@ -207,10 +208,10 @@ namespace Scene.TrainingScene.View
 
                 TrainingShopItem item = items[i];
                 slot.ShowShop(
-                    item.DisplayName,
+                    TrainingShopCatalog.GetLocalizedName(item),
                     TrainingShopThumbnailCatalog.Resolve(item.Id),
                     item.Price,
-                    item.Description);
+                    TrainingShopCatalog.GetLocalizedDescription(item));
                 BindSlotSelect(slot, i);
             }
         }
@@ -297,7 +298,9 @@ namespace Scene.TrainingScene.View
             nextPageButton.interactable = visible;
             if (visible)
             {
-                LhButtonLabelUtility.SetLabel(nextPageButtonLabel, "次のページ");
+                LhButtonLabelUtility.SetLabel(
+                    nextPageButtonLabel,
+                    LocalizedText.GetOrFallback(GameTextKeys.TrainingShopNextPage, "次のページ"));
             }
         }
 
@@ -312,7 +315,9 @@ namespace Scene.TrainingScene.View
             openInventoryButton.interactable = visible;
             if (visible)
             {
-                LhButtonLabelUtility.SetLabel(openInventoryButtonLabel, "所持アイテム");
+                LhButtonLabelUtility.SetLabel(
+                    openInventoryButtonLabel,
+                    LocalizedText.GetOrFallback(GameTextKeys.TrainingShopOpenInventory, "所持アイテム"));
             }
         }
 

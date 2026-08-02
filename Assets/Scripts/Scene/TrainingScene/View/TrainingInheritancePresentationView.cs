@@ -13,6 +13,8 @@ using TMPro;
 using UnityEngine;
 using VContainer;
 
+using Localization;
+
 namespace Scene.TrainingScene.View
 {
     /// <summary>
@@ -1088,7 +1090,7 @@ namespace Scene.TrainingScene.View
                 return;
             }
 
-            inheritanceTitleText.text = "継承";
+            inheritanceTitleText.text = LocalizedText.Get(GameTextKeys.TrainingInheritance);
             Color baseColor = inheritanceTitleText.color;
             baseColor.a = 1f;
             inheritanceTitleText.color = new Color(baseColor.r, baseColor.g, baseColor.b, 0f);
@@ -1206,7 +1208,7 @@ namespace Scene.TrainingScene.View
             {
                 if (visible)
                 {
-                    inheritanceTitleText.text = "継承";
+                    inheritanceTitleText.text = LocalizedText.Get(GameTextKeys.TrainingInheritance);
                     inheritanceTitleText.alpha = 1f;
                 }
                 else

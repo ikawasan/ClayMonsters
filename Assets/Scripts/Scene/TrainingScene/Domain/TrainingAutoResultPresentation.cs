@@ -1,3 +1,4 @@
+using Localization;
 using ClayEditor.Rigging;
 using System.Collections.Generic;
 
@@ -34,7 +35,7 @@ namespace Scene.TrainingScene.Domain
             SaveResultMessage = saveResultMessage ?? string.Empty;
             ContinueButtonLabel = continueButtonLabel ?? string.Empty;
             ThumbnailPng = thumbnailPng;
-            TitleText = string.IsNullOrEmpty(titleText) ? "育成完了" : titleText;
+            TitleText = string.IsNullOrEmpty(titleText) ? LocalizedText.Get(GameTextKeys.TrainingComplete) : titleText;
         }
 
         /// <summary>
@@ -49,7 +50,7 @@ namespace Scene.TrainingScene.Domain
             string statsText,
             IReadOnlyList<MotionType> attacks,
             string saveResultMessage)
-            : this(modelName, statsText, attacks, saveResultMessage, "保存先を選ぶ", null, "育成完了")
+            : this(modelName, statsText, attacks, saveResultMessage, LocalizedText.Get(GameTextKeys.TrainingChooseSave), null, LocalizedText.Get(GameTextKeys.TrainingComplete))
         {
         }
 

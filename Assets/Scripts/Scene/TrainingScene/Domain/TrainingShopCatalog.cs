@@ -1,3 +1,4 @@
+using Localization;
 using System.Collections.Generic;
 
 namespace Scene.TrainingScene.Domain
@@ -127,6 +128,28 @@ namespace Scene.TrainingScene.Domain
                 0,
                 TrainingSettings.ShopSoccerBallGain)
         };
+
+        /// <summary>
+        /// 商品のローカライズ表示名を返す
+        /// </summary>
+        /// <param name="item">商品</param>
+        public static string GetLocalizedName(TrainingShopItem item)
+        {
+            return LocalizedText.GetOrFallback(
+                GameTextKeys.TrainingShopName(item.Id),
+                item.DisplayName);
+        }
+
+        /// <summary>
+        /// 商品のローカライズ説明を返す
+        /// </summary>
+        /// <param name="item">商品</param>
+        public static string GetLocalizedDescription(TrainingShopItem item)
+        {
+            return LocalizedText.GetOrFallback(
+                GameTextKeys.TrainingShopDesc(item.Id),
+                item.Description);
+        }
 
         /// <summary>
         /// 1ページ分の商品を返す

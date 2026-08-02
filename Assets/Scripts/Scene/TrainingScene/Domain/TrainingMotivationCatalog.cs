@@ -1,3 +1,4 @@
+using Localization;
 using UnityEngine;
 
 namespace Scene.TrainingScene.Domain
@@ -28,10 +29,14 @@ namespace Scene.TrainingScene.Domain
         {
             return motivation switch
             {
-                TrainingMotivation.VeryLow => "絶不調",
-                TrainingMotivation.Low => "不調",
-                TrainingMotivation.Normal => "普通",
-                TrainingMotivation.High => "絶好調",
+                TrainingMotivation.VeryLow => LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingMotivationVeryLow, "絶不調"),
+                TrainingMotivation.Low => LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingMotivationLow, "不調"),
+                TrainingMotivation.Normal => LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingMotivationNormal, "普通"),
+                TrainingMotivation.High => LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingMotivationHigh, "絶好調"),
                 _ => motivation.ToString()
             };
         }
@@ -58,7 +63,11 @@ namespace Scene.TrainingScene.Domain
         /// <param name="motivation">やる気</param>
         public static string FormatHudLine(TrainingMotivation motivation)
         {
-            return $"やる気　{GetIconGlyph(motivation)}";
+            return LocalizedText.GetOrFallback(
+                GameTextKeys.TrainingMotivationLabelWithGlyph,
+                "やる気　{glyph}",
+                "glyph",
+                GetIconGlyph(motivation));
         }
 
         /// <summary>

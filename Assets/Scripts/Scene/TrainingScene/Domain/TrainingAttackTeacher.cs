@@ -1,5 +1,6 @@
 using Battle;
 using ClayEditor.Rigging;
+using Localization;
 using System.Collections.Generic;
 using UI.ClayEditor.View;
 using UnityEngine;
@@ -70,7 +71,8 @@ namespace Scene.TrainingScene.Domain
         public static string FormatAttackLabel(MotionType motion)
         {
             return $"{FormatAttackName(motion)}"
-                + $" 威力{MotionPartRequirement.GetPowerDisplayValue(motion)}"
+                + $" {LocalizedText.GetOrFallback(GameTextKeys.TrainingAttackPower, "威力")}"
+                + $"{MotionPartRequirement.GetPowerDisplayValue(motion)}"
                 + $" [{FormatRequiredPartLabel(motion)}]";
         }
 
@@ -82,7 +84,8 @@ namespace Scene.TrainingScene.Domain
         {
             return FormatAttackName(motion)
                 + " [" + FormatRequiredPartLabel(motion) + "]"
-                + "\n破壊:" + MotionPartRequirement.FormatTargetDestroyPartLabel(motion)
+                + "\n" + LocalizedText.GetOrFallback(GameTextKeys.TrainingAttackDestroy, "破壊")
+                + ":" + MotionPartRequirement.FormatTargetDestroyPartLabel(motion)
                 + "  " + FormatAttackStatsLine(motion);
         }
 
@@ -94,11 +97,17 @@ namespace Scene.TrainingScene.Domain
         public static string FormatAttackStatsLine(MotionType motion)
         {
             float accuracy = MotionPartRequirement.GetAccuracy(motion);
-            return "威力:" + MotionPartRequirement.GetPowerDisplayValue(motion)
-                + "  コスト:" + MotionPartRequirement.GetGutsCostDisplayValue(motion)
-                + "  命中:" + BattleCombatRules.ToHitRateLabel(accuracy)
-                + "  硬直:" + MotionPartRequirement.GetRecovery(motion).ToString("0.##") + "秒"
-                + "  溜め:" + MotionPartRequirement.GetWindUpDuration(motion).ToString("0.##") + "秒";
+            string seconds = LocalizedText.GetOrFallback(GameTextKeys.TrainingAttackSeconds, "秒");
+            return LocalizedText.GetOrFallback(GameTextKeys.TrainingAttackPower, "威力")
+                + ":" + MotionPartRequirement.GetPowerDisplayValue(motion)
+                + "  " + LocalizedText.GetOrFallback(GameTextKeys.TrainingAttackCost, "コスト")
+                + ":" + MotionPartRequirement.GetGutsCostDisplayValue(motion)
+                + "  " + LocalizedText.GetOrFallback(GameTextKeys.TrainingAttackHit, "命中")
+                + ":" + BattleCombatRules.ToHitRateLabel(accuracy)
+                + "  " + LocalizedText.GetOrFallback(GameTextKeys.TrainingAttackRecovery, "硬直")
+                + ":" + MotionPartRequirement.GetRecovery(motion).ToString("0.##") + seconds
+                + "  " + LocalizedText.GetOrFallback(GameTextKeys.TrainingAttackWindUp, "溜め")
+                + ":" + MotionPartRequirement.GetWindUpDuration(motion).ToString("0.##") + seconds;
         }
 
         /// <summary>
@@ -112,9 +121,18 @@ namespace Scene.TrainingScene.Domain
             MotionType currentAttack,
             MotionType learnedAttack)
         {
-            return "スロット" + slotNumber + "を入れ替え"
-                + "\n【現在】" + FormatAttackDetail(currentAttack)
-                + "\n【習得】" + FormatAttackDetail(learnedAttack);
+            string header = LocalizedText.GetOrFallback(
+                GameTextKeys.TrainingSwapSlotResult,
+                "スロット{slot}を入れ替え",
+                new Dictionary<string, object>
+                {
+                    { "slot", slotNumber },
+                });
+            string current = LocalizedText.GetOrFallback(GameTextKeys.TrainingAttackCurrent, "現在");
+            string learn = LocalizedText.GetOrFallback(GameTextKeys.TrainingAttackLearn, "習得");
+            return header
+                + "\n【" + current + "】" + FormatAttackDetail(currentAttack)
+                + "\n【" + learn + "】" + FormatAttackDetail(learnedAttack);
         }
 
         /// <summary>
@@ -123,18 +141,24 @@ namespace Scene.TrainingScene.Domain
         /// <param name="motion">攻撃</param>
         public static string FormatResumeAttackDetail(MotionType motion)
         {
-            return "攻撃名 " + FormatAttackName(motion)
-                + "\n必要部位 " + FormatRequiredPartLabel(motion)
-                + "\n破壊部位 " + MotionPartRequirement.FormatTargetDestroyPartLabel(motion)
-                + "\nダメージ " + MotionPartRequirement.GetPowerDisplayValue(motion)
-                + "\nコスト " + MotionPartRequirement.GetGutsCostDisplayValue(motion)
-                + "\n間合い " + MotionPartRequirement.FormatRangeLabel(motion);
+            return LocalizedText.GetOrFallback(GameTextKeys.TrainingAttackNameLabel, "攻撃名")
+                + " " + FormatAttackName(motion)
+                + "\n" + LocalizedText.GetOrFallback(GameTextKeys.TrainingAttackReqPart, "必要部位")
+                + " " + FormatRequiredPartLabel(motion)
+                + "\n" + LocalizedText.GetOrFallback(GameTextKeys.TrainingAttackDestroyPart, "破壊部位")
+                + " " + MotionPartRequirement.FormatTargetDestroyPartLabel(motion)
+                + "\n" + LocalizedText.GetOrFallback(GameTextKeys.TrainingAttackDamage, "ダメージ")
+                + " " + MotionPartRequirement.GetPowerDisplayValue(motion)
+                + "\n" + LocalizedText.GetOrFallback(GameTextKeys.TrainingAttackCost, "コスト")
+                + " " + MotionPartRequirement.GetGutsCostDisplayValue(motion)
+                + "\n" + LocalizedText.GetOrFallback(GameTextKeys.TrainingAttackRange, "間合い")
+                + " " + MotionPartRequirement.FormatRangeLabel(motion);
         }
 
         /// <summary>
         /// 再開確認向けの範囲ラベル
         /// </summary>
-        public const string ResumeAttackRangeLabel = ModelSaveSummaryFormatter.TrainingAttackRangeLabel;
+        public static string ResumeAttackRangeLabel => ModelSaveSummaryFormatter.TrainingAttackRangeLabel;
 
         /// <summary>
         /// 再開確認向けの数値情報テキストを返す
@@ -172,21 +196,21 @@ namespace Scene.TrainingScene.Domain
         {
             if (ProceduralMotionCharacter.IsMagicAttack(motion))
             {
-                return "汎用技";
+                return LocalizedText.GetOrFallback(GameTextKeys.TrainingAttackPartMagic, "汎用技");
             }
 
             switch (MotionPartRequirement.GetRequiredPart(motion))
             {
                 case BonePart.Arm:
-                    return "腕技";
+                    return LocalizedText.GetOrFallback(GameTextKeys.TrainingAttackPartArm, "腕技");
                 case BonePart.Leg:
-                    return "脚技";
+                    return LocalizedText.GetOrFallback(GameTextKeys.TrainingAttackPartLeg, "脚技");
                 case BonePart.Front:
-                    return "前技";
+                    return LocalizedText.GetOrFallback(GameTextKeys.TrainingAttackPartFront, "前技");
                 case BonePart.Back:
-                    return "後技";
+                    return LocalizedText.GetOrFallback(GameTextKeys.TrainingAttackPartBack, "後技");
                 default:
-                    return "体技";
+                    return LocalizedText.GetOrFallback(GameTextKeys.TrainingAttackPartBody, "体技");
             }
         }
 

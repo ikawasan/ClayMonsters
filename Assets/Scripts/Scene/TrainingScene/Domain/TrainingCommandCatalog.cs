@@ -1,3 +1,5 @@
+using Localization;
+
 namespace Scene.TrainingScene.Domain
 {
     /// <summary>
@@ -13,12 +15,18 @@ namespace Scene.TrainingScene.Domain
         {
             return command switch
             {
-                TrainingCommandType.Train => "訓練",
-                TrainingCommandType.SpecialTrain => "特訓",
-                TrainingCommandType.Rest => "休憩",
-                TrainingCommandType.Shop => "売店",
-                TrainingCommandType.UseItem => "アイテム",
-                TrainingCommandType.Tournament => "大会",
+                TrainingCommandType.Train => LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingCommandTrain, "訓練"),
+                TrainingCommandType.SpecialTrain => LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingCommandSpecialTrain, "特訓"),
+                TrainingCommandType.Rest => LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingCommandRest, "休憩"),
+                TrainingCommandType.Shop => LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingCommandShop, "売店"),
+                TrainingCommandType.UseItem => LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingCommandUseItem, "アイテム"),
+                TrainingCommandType.Tournament => LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingCommandTournament, "大会"),
                 _ => command.ToString()
             };
         }

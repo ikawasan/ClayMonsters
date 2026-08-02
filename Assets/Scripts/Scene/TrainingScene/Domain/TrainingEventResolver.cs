@@ -1,4 +1,5 @@
 using ClayEditor.Rigging;
+using Localization;
 using System.Collections.Generic;
 
 namespace Scene.TrainingScene.Domain
@@ -45,8 +46,12 @@ namespace Scene.TrainingScene.Domain
             string label = TrainingAttackTeacher.FormatAttackName(learned);
             outcome = new TrainingEventOutcome(
                 TrainingEventType.LearnAttack,
-                "技習得イベント",
-                $"新しい技「{label}」を覚えるチャンスです\n入れ替えるスロットを選んでください",
+                LocalizedText.GetOrFallback(GameTextKeys.TrainingEventLearnTitle, "技習得イベント"),
+                LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingEventLearnMessage,
+                    "新しい技「{name}」を覚えるチャンスです\n入れ替えるスロットを選んでください",
+                    "name",
+                    label),
                 default,
                 learned);
             return true;
@@ -74,8 +79,18 @@ namespace Scene.TrainingScene.Domain
             TrainingStatGain gain = RollStatBoost(random);
             outcome = new TrainingEventOutcome(
                 TrainingEventType.StatBoost,
-                "特訓イベント",
-                $"HP+{gain.Hp} 攻撃+{gain.Attack} 防御+{gain.Defense} 速度+{gain.Speed} 命中+{gain.Hit}",
+                LocalizedText.GetOrFallback(GameTextKeys.TrainingEventStatTitle, "特訓イベント"),
+                LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingEventStatMessage,
+                    "HP+{hp} 攻撃+{atk} 防御+{def} 速度+{spd} 命中+{hit}",
+                    new Dictionary<string, object>
+                    {
+                        { "hp", gain.Hp },
+                        { "atk", gain.Attack },
+                        { "def", gain.Defense },
+                        { "spd", gain.Speed },
+                        { "hit", gain.Hit },
+                    }),
                 gain,
                 default);
             return true;

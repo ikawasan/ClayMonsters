@@ -1,3 +1,4 @@
+using Localization;
 using Battle.Interface;
 using ClayEditor.Rigging;
 using Cysharp.Threading.Tasks;
@@ -174,13 +175,19 @@ namespace Scene.TrainingScene
         {
             if (!isRunning || activeSession == null || activeSession.IsCompleted)
             {
-                message = "進行中の育成セッションがありません";
+                message = LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingDebugNoSession,
+                    "進行中の育成セッションがありません");
                 return false;
             }
 
             if (!TrainingShopCatalog.TryGetById(itemId, out TrainingShopItem item))
             {
-                message = $"未知のアイテムIDです: {itemId}";
+                message = LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingDebugUnknownItem,
+                    "未知のアイテムIDです: {id}",
+                    "id",
+                    itemId);
                 return false;
             }
 
@@ -189,7 +196,14 @@ namespace Scene.TrainingScene
             CheckpointSave(activeSession);
             hudView?.BindSession(activeSession);
             message =
-                $"{item.DisplayName}を{addCount}個追加しました"
+                LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingDebugItemAdded,
+                    "{name}を{count}個追加しました",
+                    new System.Collections.Generic.Dictionary<string, object>
+                    {
+                        { "name", item.DisplayName },
+                        { "count", addCount },
+                    })
                 + $" slot={activeSession.PlayerSlotIndex}";
             return true;
         }
@@ -552,7 +566,7 @@ namespace Scene.TrainingScene
             ApplyDefaultDestinationPresentation();
 
             float progressStartedAt = Time.unscaledTime;
-            hudView.ShowOverlayMessage("自動育成を実行中...");
+            hudView.ShowOverlayMessage(LocalizedText.GetOrFallback(GameTextKeys.TrainingLogAutoTraining, "自動育成を実行中..."));
             if (canvasTransition != null)
             {
                 await canvasTransition.FadeInAsync(cancellationToken);
@@ -654,7 +668,7 @@ namespace Scene.TrainingScene
                 session.CurrentStatus,
                 session.AttackMotions,
                 saveResultMessage,
-                "タイトルへ戻る",
+                LocalizedText.GetOrFallback(GameTextKeys.TrainingLogReturnToTitle, "タイトルへ戻る"),
                 thumbnailPng));
             await autoResultView.WaitBackToTitleAsync(cancellationToken);
 
@@ -985,14 +999,23 @@ namespace Scene.TrainingScene
             {
                 attacks.Add(learned);
                 hudView.ShowOverlayMessage(
-                    $"技を覚えました\nスロット{attacks.Count}: {TrainingAttackTeacher.FormatAttackName(learned)}");
+                    LocalizedText.Get(
+                        GameTextKeys.TrainingLearnedMove,
+                        new System.Collections.Generic.Dictionary<string, object>
+                        {
+                            { "slot", attacks.Count },
+                            { "name", TrainingAttackTeacher.FormatAttackName(learned) },
+                        }));
                 await hudView.WaitContinueAsync(cancellationToken);
                 hudView.ClearOverlayMessage();
                 return learned;
             }
 
             hudView.ShowOverlayMessage(
-                $"技「{TrainingAttackTeacher.FormatAttackName(learned)}」を覚えるスロットを選んでください");
+                LocalizedText.Get(
+                    GameTextKeys.TrainingChooseLearnSlot,
+                    "name",
+                    TrainingAttackTeacher.FormatAttackName(learned)));
             await hudView.WaitContinueAsync(cancellationToken);
             hudView.ClearOverlayMessage();
 
@@ -1001,7 +1024,10 @@ namespace Scene.TrainingScene
             if (replaceIndex < 0)
             {
                 hudView.ShowOverlayMessage(
-                    $"「{TrainingAttackTeacher.FormatAttackName(learned)}」は覚えませんでした");
+                    LocalizedText.Get(
+                        GameTextKeys.TrainingChooseLearnSlot,
+                        "name",
+                        TrainingAttackTeacher.FormatAttackName(learned)));
                 await hudView.WaitContinueAsync(cancellationToken);
                 hudView.ClearOverlayMessage();
                 return null;
@@ -1009,7 +1035,7 @@ namespace Scene.TrainingScene
 
             if (replaceIndex >= attacks.Count)
             {
-                hudView.ShowOverlayMessage("入れ替えスロットが無効です");
+                hudView.ShowOverlayMessage(LocalizedText.Get(GameTextKeys.TrainingInvalidSwapSlot));
                 await hudView.WaitContinueAsync(cancellationToken);
                 hudView.ClearOverlayMessage();
                 return null;
@@ -1018,8 +1044,13 @@ namespace Scene.TrainingScene
             MotionType oldAttack = attacks[replaceIndex];
             attacks[replaceIndex] = learned;
             hudView.ShowOverlayMessage(
-                $"技を入れ替えました\nスロット{replaceIndex + 1}: {TrainingAttackTeacher.FormatAttackName(oldAttack)}"
-                + $" → {TrainingAttackTeacher.FormatAttackName(learned)}");
+                LocalizedText.Get(
+                    GameTextKeys.TrainingSwappedMove,
+                    new System.Collections.Generic.Dictionary<string, object>
+                    {
+                        { "slot", replaceIndex + 1 },
+                        { "name", TrainingAttackTeacher.FormatAttackName(oldAttack) },
+                    }));
             await hudView.WaitContinueAsync(cancellationToken);
             hudView.ClearOverlayMessage();
             return learned;
@@ -1141,7 +1172,7 @@ namespace Scene.TrainingScene
         private async UniTask PresentLoadFailureAsync(CancellationToken cancellationToken)
         {
             hudView.Show();
-            hudView.SetLogMessage("モデルの読み込みに失敗しました");
+            hudView.SetLogMessage(LocalizedText.GetOrFallback(GameTextKeys.TrainingLogModelLoadFailed, "モデルの読み込みに失敗しました"));
             if (canvasTransition != null)
             {
                 await canvasTransition.FadeInAsync(cancellationToken);
@@ -1252,7 +1283,11 @@ namespace Scene.TrainingScene
                             TrainingDailySchedule.AllPeriods[0],
                             1);
                         hudView.SetLogMessage(
-                            $"{TrainingDayCatalog.GetDisplayName(session.CurrentDay)}が始まりました");
+                            LocalizedText.GetOrFallback(
+                                GameTextKeys.TrainingHudDayStarted,
+                                "{day}が始まりました",
+                                "day",
+                                TrainingDayCatalog.GetDisplayName(session.CurrentDay)));
                     });
                 await hudView.WaitContinueAsync(cancellationToken);
             }
@@ -1273,7 +1308,7 @@ namespace Scene.TrainingScene
         {
             if (!IsValidTrainedSlotIndex(trainedSlotIndex))
             {
-                return (false, "育成済みデータの保存先が選ばれませんでした");
+                return (false, LocalizedText.Get(GameTextKeys.TrainingSaveDestNotSelected));
             }
 
             SkinnedMeshRenderer renderer = null;
@@ -1300,7 +1335,7 @@ namespace Scene.TrainingScene
 
             Debug.LogError(
                 $"[TrainingFlowRunner] 育成済みデータの保存に失敗しました trainedSlot={trainedSlotIndex} playerSlot={session.PlayerSlotIndex}");
-            return (false, "育成済みデータの保存に失敗しました\n未育成データは保持されています");
+            return (false, LocalizedText.Get(GameTextKeys.TrainingSaveFailed));
         }
 
         private static bool IsValidTrainedSlotIndex(int slotIndex)
@@ -1371,7 +1406,7 @@ namespace Scene.TrainingScene
         {
             hudView.BindSession(session, period, turnNumber);
             hudView.HideLocationChoices();
-            hudView.SetLogMessage("昼休みになった\n売店で買い物ができる");
+            hudView.SetLogMessage(LocalizedText.GetOrFallback(GameTextKeys.TrainingLogLunchStart, "昼休みになった\n売店で買い物ができる"));
             await hudView.WaitContinueAsync(cancellationToken);
             await RunShopVisitAsync(session, cancellationToken);
             if (cancellationToken.IsCancellationRequested)
@@ -1381,7 +1416,7 @@ namespace Scene.TrainingScene
 
             session.CompletePeriod();
             hudView.BindSession(session, period, turnNumber);
-            hudView.SetLogMessage("昼休みが終わった");
+            hudView.SetLogMessage(LocalizedText.GetOrFallback(GameTextKeys.TrainingLogLunchEnd, "昼休みが終わった"));
             await hudView.WaitContinueAsync(cancellationToken);
         }
 
@@ -1404,7 +1439,7 @@ namespace Scene.TrainingScene
 
                 if (command == TrainingCommandType.Shop)
                 {
-                    hudView.SetLogMessage("売店は昼休みにだけ利用できる");
+                    hudView.SetLogMessage(LocalizedText.GetOrFallback(GameTextKeys.TrainingLogShopOnlyLunch, "売店は昼休みにだけ利用できる"));
                     await hudView.WaitContinueAsync(cancellationToken);
                     continue;
                 }
@@ -1595,7 +1630,7 @@ namespace Scene.TrainingScene
             ApplyRoamDestinationPresentation();
             StartMonsterRoam(cancellationToken);
             hudView.HideLocationChoices();
-            hudView.SetLogMessage("ボールを長押しして離すと投げる");
+            hudView.SetLogMessage(LocalizedText.GetOrFallback(GameTextKeys.TrainingLogBallThrowHint, "ボールを長押しして離すと投げる"));
             await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
 
             if (motivationBallPlay != null)
@@ -1741,7 +1776,7 @@ namespace Scene.TrainingScene
             }
 
             string enemyName = saveService.GetSlot(ModelSavePool.Enemy, enemySlotIndex)?.modelName
-                ?? "強敵";
+                ?? LocalizedText.Get(GameTextKeys.TrainingAmbushEnemyDefault);
 
             await ambushView.PlayAlertAsync(cancellationToken);
             ambushView.ShowChoice(enemyName);
@@ -1750,7 +1785,7 @@ namespace Scene.TrainingScene
 
             if (choice == TrainingAmbushChoice.Flee)
             {
-                hudView.SetLogMessage($"【強敵急襲】\n{enemyName}から逃げ出した");
+                hudView.SetLogMessage(LocalizedText.Get(GameTextKeys.TrainingFleeAmbush, "name", enemyName));
                 await hudView.WaitContinueAsync(cancellationToken);
                 return true;
             }
@@ -1775,7 +1810,7 @@ namespace Scene.TrainingScene
             if (battleRunner == null || playerModel == null)
             {
                 Debug.LogError("[TrainingFlowRunner] 強敵急襲の戦闘を開始できませんでした");
-                hudView.SetLogMessage("強敵急襲の戦闘を開始できませんでした");
+                hudView.SetLogMessage(LocalizedText.Get(GameTextKeys.TrainingAmbushStartFailed));
                 await hudView.WaitContinueAsync(cancellationToken);
                 return;
             }
@@ -1820,7 +1855,7 @@ namespace Scene.TrainingScene
 
             if (!battleResult.Played)
             {
-                hudView.SetLogMessage("強敵急襲の戦闘を開始できませんでした");
+                hudView.SetLogMessage(LocalizedText.Get(GameTextKeys.TrainingAmbushStartFailed));
                 await FadeInAfterBattleResultReadyAsync(cancellationToken);
                 await hudView.WaitContinueAsync(cancellationToken);
                 return;
@@ -1833,16 +1868,25 @@ namespace Scene.TrainingScene
                 session.AddMoney(TrainingSettings.AmbushVictoryReward);
                 hudView.BindSession(session);
                 hudView.SetLogMessage(
-                    $"【強敵急襲】\n{enemyName}に勝利した"
-                    + $"\n賞金+{TrainingSettings.AmbushVictoryReward}G"
-                    + $"\nHP+{victoryGain.Hp} 攻撃+{victoryGain.Attack} 防御+{victoryGain.Defense}"
-                    + $" 速度+{victoryGain.Speed} 命中+{victoryGain.Hit}");
+                    LocalizedText.Get(GameTextKeys.TrainingWinAmbush, "name", enemyName)
+                    + LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingLogAmbushWinTail,
+                        "\n賞金+{reward}G\nHP+{hp} 攻撃+{atk} 防御+{def} 速度+{spd} 命中+{hit}",
+                        new Dictionary<string, object>
+                        {
+                            { "reward", TrainingSettings.AmbushVictoryReward },
+                            { "hp", victoryGain.Hp },
+                            { "atk", victoryGain.Attack },
+                            { "def", victoryGain.Defense },
+                            { "spd", victoryGain.Speed },
+                            { "hit", victoryGain.Hit },
+                        }));
             }
             else
             {
                 session.LowerMotivation(1);
                 hudView.BindSession(session);
-                hudView.SetLogMessage($"【強敵急襲】\n{enemyName}に敗北した\nやる気が下がった");
+                hudView.SetLogMessage(LocalizedText.Get(GameTextKeys.TrainingLoseAmbush, "name", enemyName));
             }
 
             await FadeInAfterBattleResultReadyAsync(cancellationToken);
@@ -1864,21 +1908,21 @@ namespace Scene.TrainingScene
                     session.CurrentDay,
                     out int enemySlotIndex))
             {
-                hudView.SetLogMessage("放課後の対戦相手が見つかりませんでした");
+                hudView.SetLogMessage(LocalizedText.GetOrFallback(GameTextKeys.TrainingLogAfterSchoolNoOpponent, "放課後の対戦相手が見つかりませんでした"));
                 session.CompletePeriod();
                 await hudView.WaitContinueAsync(cancellationToken);
                 return;
             }
 
-            string enemyName = saveService.GetSlot(ModelSavePool.Enemy, enemySlotIndex)?.modelName ?? "敵";
-            hudView.SetLogMessage($"放課後の戦闘\n{enemyName}との対戦が始まります");
+            string enemyName = saveService.GetSlot(ModelSavePool.Enemy, enemySlotIndex)?.modelName ?? LocalizedText.GetOrFallback(GameTextKeys.TrainingLogEnemyDefault, "敵");
+            hudView.SetLogMessage(LocalizedText.GetOrFallback(GameTextKeys.TrainingLogAfterSchoolStart, "放課後の戦闘\n{name}との対戦が始まります", "name", enemyName));
             await hudView.WaitContinueAsync(cancellationToken);
 
             GameObject playerModel = trainingDisplay != null ? trainingDisplay.LoadedModel : null;
             if (battleRunner == null)
             {
                 Debug.LogError("[TrainingFlowRunner] TrainingBattleRunnerが未注入です");
-                hudView.SetLogMessage("放課後の戦闘を開始できませんでした");
+                hudView.SetLogMessage(LocalizedText.GetOrFallback(GameTextKeys.TrainingLogAfterSchoolStartFailed, "放課後の戦闘を開始できませんでした"));
                 session.CompletePeriod();
                 await hudView.WaitContinueAsync(cancellationToken);
                 return;
@@ -1887,7 +1931,7 @@ namespace Scene.TrainingScene
             if (playerModel == null)
             {
                 Debug.LogError("[TrainingFlowRunner] 表示中のプレイヤーモデルがありません");
-                hudView.SetLogMessage("放課後の戦闘を開始できませんでした");
+                hudView.SetLogMessage(LocalizedText.GetOrFallback(GameTextKeys.TrainingLogAfterSchoolStartFailed, "放課後の戦闘を開始できませんでした"));
                 session.CompletePeriod();
                 await hudView.WaitContinueAsync(cancellationToken);
                 return;
@@ -1931,7 +1975,7 @@ namespace Scene.TrainingScene
             if (!battleResult.Played)
             {
                 ApplyPostBattleDestinationPresentation(session, cancellationToken);
-                hudView.SetLogMessage("放課後の戦闘を開始できませんでした");
+                hudView.SetLogMessage(LocalizedText.GetOrFallback(GameTextKeys.TrainingLogAfterSchoolStartFailed, "放課後の戦闘を開始できませんでした"));
                 session.CompletePeriod();
                 await FadeInAfterBattleResultReadyAsync(cancellationToken);
                 await hudView.WaitContinueAsync(cancellationToken);
@@ -1952,11 +1996,19 @@ namespace Scene.TrainingScene
                 hudView.BindSession(session, period, turnNumber);
                 session.RefreshShopOffer(random);
                 string rewardText = reward > 0
-                    ? $" 賞金+{reward}G"
+                    ? LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingLogRewardMoney,
+                        " 賞金+{reward}G",
+                        "reward",
+                        reward)
                     : string.Empty;
                 hudView.SetLogMessage(
-                    $"放課後の戦闘に勝利した\n体力+{TrainingSettings.AfterSchoolVictoryStaminaRecovery}"
-                    + $"{rewardText}");
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingLogAfterSchoolWin,
+                        "放課後の戦闘に勝利した\n体力+{stamina}",
+                        "stamina",
+                        TrainingSettings.AfterSchoolVictoryStaminaRecovery)
+                    + rewardText);
             }
             else
             {
@@ -1964,7 +2016,9 @@ namespace Scene.TrainingScene
                 session.RefreshShopOffer(random);
                 hudView.BindSession(session, period, turnNumber);
                 hudView.SetLogMessage(
-                    "放課後の戦闘に敗北した\nやる気が下がった");
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingLoseAfterSchool,
+                        "放課後の戦闘に敗北した\nやる気が下がった"));
             }
 
             await FadeInAfterBattleResultReadyAsync(cancellationToken);
@@ -2017,15 +2071,19 @@ namespace Scene.TrainingScene
                         random,
                         out MotionType learned))
                 {
-                    hudView.SetLogMessage("出会いがあったが新しい技はなかった");
+                    hudView.SetLogMessage(LocalizedText.GetOrFallback(GameTextKeys.TrainingLogNoNewMove, "出会いがあったが新しい技はなかった"));
                     await hudView.WaitContinueAsync(cancellationToken);
                     return;
                 }
 
                 learnOutcome = new TrainingEventOutcome(
                     TrainingEventType.LearnAttack,
-                    "出会い",
-                    $"新しい技「{TrainingAttackTeacher.FormatAttackName(learned)}」を覚えるチャンスです",
+                    LocalizedText.GetOrFallback(GameTextKeys.TrainingLogMeetTitle, "出会い"),
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingLogMeetLearnChance,
+                        "新しい技「{name}」を覚えるチャンスです",
+                        "name",
+                        TrainingAttackTeacher.FormatAttackName(learned)),
                     default,
                     learned);
             }
@@ -2046,8 +2104,13 @@ namespace Scene.TrainingScene
                 && session.TryAddAttack(outcome.LearnedAttack))
             {
                 hudView.SetLogMessage(
-                    $"技を覚えました\nスロット{session.AttackMotions.Count}:"
-                    + $" {TrainingAttackTeacher.FormatAttackName(outcome.LearnedAttack)}");
+                    LocalizedText.Get(
+                        GameTextKeys.TrainingLearnedMove,
+                        new System.Collections.Generic.Dictionary<string, object>
+                        {
+                            { "slot", session.AttackMotions.Count },
+                            { "name", TrainingAttackTeacher.FormatAttackName(outcome.LearnedAttack) },
+                        }));
                 await hudView.WaitContinueAsync(cancellationToken);
                 hudView.BindSession(session);
                 return;
@@ -2057,7 +2120,11 @@ namespace Scene.TrainingScene
             int replaceIndex = await hudView.WaitAttackSwapChoiceAsync(cancellationToken);
             if (replaceIndex < 0)
             {
-                hudView.SetLogMessage($"「{TrainingAttackTeacher.FormatAttackName(outcome.LearnedAttack)}」は覚えませんでした");
+                hudView.SetLogMessage(
+                    LocalizedText.Get(
+                        GameTextKeys.TrainingChooseLearnSlot,
+                        "name",
+                        TrainingAttackTeacher.FormatAttackName(outcome.LearnedAttack)));
                 await hudView.WaitContinueAsync(cancellationToken);
                 return;
             }
@@ -2066,8 +2133,13 @@ namespace Scene.TrainingScene
             if (session.TryReplaceAttack(replaceIndex, outcome.LearnedAttack))
             {
                 hudView.SetLogMessage(
-                    $"技を入れ替えました\nスロット{replaceIndex + 1}: {TrainingAttackTeacher.FormatAttackName(oldAttack)}"
-                    + $" → {TrainingAttackTeacher.FormatAttackName(outcome.LearnedAttack)}");
+                    LocalizedText.Get(
+                        GameTextKeys.TrainingSwappedMove,
+                        new System.Collections.Generic.Dictionary<string, object>
+                        {
+                            { "slot", replaceIndex + 1 },
+                            { "name", TrainingAttackTeacher.FormatAttackName(oldAttack) },
+                        }));
             }
 
             await hudView.WaitContinueAsync(cancellationToken);
@@ -2136,26 +2208,52 @@ namespace Scene.TrainingScene
             if (!result.Succeeded)
             {
                 string failReason = result.FailedByLowStamina
-                    ? $"{commandName}は体力不足で失敗した"
-                    : $"{commandName}は失敗した";
-                return $"{failReason}\nやる気が下がった";
+                    ? LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingLogActionFailLowStamina,
+                        "{name}は体力不足で失敗した",
+                        "name",
+                        commandName)
+                    : LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingLogActionFail,
+                        "{name}は失敗した",
+                        "name",
+                        commandName);
+                return failReason
+                    + "\n"
+                    + LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingLogMotivationDown,
+                        "やる気が下がった");
             }
 
             if (result.IsRestAction)
             {
-                string restOutcome = result.IsGreatSuccess ? "休憩大成功" : "休憩";
-                string restLog =
-                    $"{restOutcome}で体力回復 {result.StaminaBefore}→{result.StaminaAfter}";
+                string restOutcome = result.IsGreatSuccess
+                    ? LocalizedText.GetOrFallback(GameTextKeys.TrainingLogRestGreat, "休憩大成功")
+                    : LocalizedText.GetOrFallback(GameTextKeys.TrainingLogRestOk, "休憩");
+                string restLog = LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingLogRestRecover,
+                    "{title}で体力回復 {before}→{after}",
+                    new Dictionary<string, object>
+                    {
+                        { "title", restOutcome },
+                        { "before", result.StaminaBefore },
+                        { "after", result.StaminaAfter },
+                    });
                 if (result.MotivationGain > 0)
                 {
-                    restLog += "\nやる気が上がった";
+                    restLog += "\n"
+                        + LocalizedText.GetOrFallback(
+                            GameTextKeys.TrainingLogMotivationUp,
+                            "やる気が上がった");
                 }
 
                 return restLog;
             }
 
             TrainingStatGain gain = result.AppliedGain;
-            string outcome = result.IsGreatSuccess ? "大成功" : "成功";
+            string outcome = result.IsGreatSuccess
+                ? LocalizedText.GetOrFallback(GameTextKeys.TrainingLogGreatSuccess, "大成功")
+                : LocalizedText.GetOrFallback(GameTextKeys.TrainingLogSuccess, "成功");
             string gainLine = FormatGainLine(gain);
             string log;
             if (result.Command == TrainingCommandType.Train
@@ -2172,7 +2270,12 @@ namespace Scene.TrainingScene
             if (!string.IsNullOrEmpty(result.FoundItemId)
                 && TrainingShopCatalog.TryGetById(result.FoundItemId, out TrainingShopItem item))
             {
-                log += $"\n運よく{item.DisplayName}を拾った";
+                log += "\n"
+                    + LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingLogFoundItem,
+                        "運よく{name}を拾った",
+                        "name",
+                        TrainingShopCatalog.GetLocalizedName(item));
             }
 
             return log;
@@ -2180,33 +2283,60 @@ namespace Scene.TrainingScene
 
         private static string FormatGainLine(TrainingStatGain gain)
         {
-            var parts = new System.Collections.Generic.List<string>(3);
+            var parts = new List<string>(3);
             if (gain.Hp != 0)
             {
-                parts.Add($"HP+{gain.Hp}");
+                parts.Add(
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingLogStatHp,
+                        "HP+{value}",
+                        "value",
+                        gain.Hp));
             }
 
             if (gain.Attack != 0)
             {
-                parts.Add($"攻撃+{gain.Attack}");
+                parts.Add(
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingLogStatAtk,
+                        "攻撃+{value}",
+                        "value",
+                        gain.Attack));
             }
 
             if (gain.Defense != 0)
             {
-                parts.Add($"防御+{gain.Defense}");
+                parts.Add(
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingLogStatDef,
+                        "防御+{value}",
+                        "value",
+                        gain.Defense));
             }
 
             if (gain.Speed != 0)
             {
-                parts.Add($"速度+{gain.Speed}");
+                parts.Add(
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingLogStatSpd,
+                        "速度+{value}",
+                        "value",
+                        gain.Speed));
             }
 
             if (gain.Hit != 0)
             {
-                parts.Add($"命中+{gain.Hit}");
+                parts.Add(
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingLogStatHit,
+                        "命中+{value}",
+                        "value",
+                        gain.Hit));
             }
 
-            return parts.Count > 0 ? string.Join(" ", parts) : "ステ上昇なし";
+            return parts.Count > 0
+                ? string.Join(" ", parts)
+                : LocalizedText.GetOrFallback(GameTextKeys.TrainingLogStatNone, "ステ上昇なし");
         }
 
         private void ApplyDefaultDestinationPresentation()

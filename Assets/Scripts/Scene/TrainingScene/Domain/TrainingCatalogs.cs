@@ -1,3 +1,4 @@
+using Localization;
 using SaveData;
 using UnityEngine;
 
@@ -62,20 +63,27 @@ namespace Scene.TrainingScene.Domain
     public static class TrainingLocationCatalog
     {
         /// <summary>
-        /// 行き先の日本語名を返す
+        /// 行き先の表示名を返す
         /// </summary>
         /// <param name="location">行き先</param>
         public static string GetDisplayName(TrainingLocation location)
         {
             return location switch
             {
-                TrainingLocation.ScienceLab => "理科室",
-                TrainingLocation.HomeEcRoom => "家庭科室",
-                TrainingLocation.CraftRoom => "図工室",
-                TrainingLocation.Library => "図書室",
-                TrainingLocation.MusicRoom => "音楽室",
-                TrainingLocation.Gymnasium => "体育館",
-                TrainingLocation.PrincipalOffice => "校長室",
+                TrainingLocation.ScienceLab => LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingLocationScienceLab, "理科室"),
+                TrainingLocation.HomeEcRoom => LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingLocationHomeEcRoom, "家庭科室"),
+                TrainingLocation.CraftRoom => LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingLocationCraftRoom, "図工室"),
+                TrainingLocation.Library => LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingLocationLibrary, "図書室"),
+                TrainingLocation.MusicRoom => LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingLocationMusicRoom, "音楽室"),
+                TrainingLocation.Gymnasium => LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingLocationGymnasium, "体育館"),
+                TrainingLocation.PrincipalOffice => LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingLocationPrincipalOffice, "校長室"),
                 _ => string.Empty
             };
         }
@@ -120,22 +128,31 @@ namespace Scene.TrainingScene.Domain
     public static class TrainingPeriodCatalog
     {
         /// <summary>
-        /// 時間割の日本語名を返す
+        /// 時間割の表示名を返す
         /// </summary>
         /// <param name="period">時間割</param>
         public static string GetDisplayName(TrainingPeriod period)
         {
             return period switch
             {
-                TrainingPeriod.FirstHour => "1時間目",
-                TrainingPeriod.SecondHour => "2時間目",
-                TrainingPeriod.MorningBreak => "中休み",
-                TrainingPeriod.ThirdHour => "3時間目",
-                TrainingPeriod.FourthHour => "4時間目",
-                TrainingPeriod.LunchBreak => "昼休み",
-                TrainingPeriod.FifthHour => "5時間目",
-                TrainingPeriod.SixthHour => "6時間目",
-                TrainingPeriod.AfterSchool => "放課後",
+                TrainingPeriod.FirstHour => LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingPeriodFirstHour, "1時間目"),
+                TrainingPeriod.SecondHour => LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingPeriodSecondHour, "2時間目"),
+                TrainingPeriod.MorningBreak => LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingPeriodMorningBreak, "中休み"),
+                TrainingPeriod.ThirdHour => LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingPeriodThirdHour, "3時間目"),
+                TrainingPeriod.FourthHour => LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingPeriodFourthHour, "4時間目"),
+                TrainingPeriod.LunchBreak => LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingPeriodLunchBreak, "昼休み"),
+                TrainingPeriod.FifthHour => LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingPeriodFifthHour, "5時間目"),
+                TrainingPeriod.SixthHour => LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingPeriodSixthHour, "6時間目"),
+                TrainingPeriod.AfterSchool => LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingPeriodAfterSchool, "放課後"),
                 _ => string.Empty
             };
         }
@@ -197,18 +214,23 @@ namespace Scene.TrainingScene.Domain
     public static class TrainingDayCatalog
     {
         /// <summary>
-        /// 曜日の日本語名を返す
+        /// 曜日の表示名を返す
         /// </summary>
         /// <param name="day">曜日</param>
         public static string GetDisplayName(TrainingDayOfWeek day)
         {
             return day switch
             {
-                TrainingDayOfWeek.Monday => "月曜日",
-                TrainingDayOfWeek.Tuesday => "火曜日",
-                TrainingDayOfWeek.Wednesday => "水曜日",
-                TrainingDayOfWeek.Thursday => "木曜日",
-                TrainingDayOfWeek.Friday => "金曜日",
+                TrainingDayOfWeek.Monday => LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingDayMonday, "月曜日"),
+                TrainingDayOfWeek.Tuesday => LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingDayTuesday, "火曜日"),
+                TrainingDayOfWeek.Wednesday => LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingDayWednesday, "水曜日"),
+                TrainingDayOfWeek.Thursday => LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingDayThursday, "木曜日"),
+                TrainingDayOfWeek.Friday => LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingDayFriday, "金曜日"),
                 _ => string.Empty
             };
         }

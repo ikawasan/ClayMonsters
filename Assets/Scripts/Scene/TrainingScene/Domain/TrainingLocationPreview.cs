@@ -1,3 +1,4 @@
+using Localization;
 using System.Text;
 using UnityEngine;
 
@@ -110,12 +111,25 @@ namespace Scene.TrainingScene.Domain
             var builder = new StringBuilder();
             builder.Append(locationName);
             builder.Append('\n');
-            builder.Append("期待値 ");
+            builder.Append(LocalizedText.GetOrFallback(GameTextKeys.TrainingPreviewExpected, "期待値"));
+            builder.Append(' ');
             builder.Append(FormatStatGain(preview.ExpectedStatGain));
-            builder.Append($"\n体力 {preview.ExpectedStaminaDelta}");
+            builder.Append('\n');
+            builder.Append(
+                LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingPreviewStamina,
+                    "体力 {value}",
+                    "value",
+                    preview.ExpectedStaminaDelta));
             if (preview.FailurePercent > 0f)
             {
-                builder.Append($"\n失敗率 {preview.FailurePercent:0.#}%");
+                builder.Append('\n');
+                builder.Append(
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingPreviewFailRate,
+                        "失敗率 {value}%",
+                        "value",
+                        preview.FailurePercent.ToString("0.#")));
             }
 
             return builder.ToString();
@@ -126,10 +140,15 @@ namespace Scene.TrainingScene.Domain
         /// </summary>
         public static string FormatRestDisplayText()
         {
-            return "休憩\n"
-                + $"体力+{TrainingSettings.RestStaminaRecovery}"
-                + $"(大成功で+{TrainingSettings.RestGreatSuccessRecovery}"
-                + $" やる気+{TrainingSettings.RestMotivationGain})";
+            return LocalizedText.GetOrFallback(
+                GameTextKeys.TrainingPreviewRest,
+                "休憩\n体力+{base}(大成功で+{great} やる気+{mot})",
+                new System.Collections.Generic.Dictionary<string, object>
+                {
+                    { "base", TrainingSettings.RestStaminaRecovery },
+                    { "great", TrainingSettings.RestGreatSuccessRecovery },
+                    { "mot", TrainingSettings.RestMotivationGain },
+                });
         }
 
         private static TrainingStatGain ResolveSuccessGain(TrainingLocation location)
@@ -168,13 +187,25 @@ namespace Scene.TrainingScene.Domain
         {
             var builder = new StringBuilder();
             AppendStatPart(builder, "HP", gain.Hp);
-            AppendStatPart(builder, "攻撃", gain.Attack);
-            AppendStatPart(builder, "防御", gain.Defense);
-            AppendStatPart(builder, "速度", gain.Speed);
-            AppendStatPart(builder, "命中", gain.Hit);
+            AppendStatPart(
+                builder,
+                LocalizedText.GetOrFallback(GameTextKeys.TrainingPreviewStatAtk, "攻撃"),
+                gain.Attack);
+            AppendStatPart(
+                builder,
+                LocalizedText.GetOrFallback(GameTextKeys.TrainingPreviewStatDef, "防御"),
+                gain.Defense);
+            AppendStatPart(
+                builder,
+                LocalizedText.GetOrFallback(GameTextKeys.TrainingPreviewStatSpd, "速度"),
+                gain.Speed);
+            AppendStatPart(
+                builder,
+                LocalizedText.GetOrFallback(GameTextKeys.TrainingPreviewStatHit, "命中"),
+                gain.Hit);
             if (builder.Length == 0)
             {
-                return "なし";
+                return LocalizedText.GetOrFallback(GameTextKeys.TrainingPreviewNone, "なし");
             }
 
             return builder.ToString().TrimEnd();

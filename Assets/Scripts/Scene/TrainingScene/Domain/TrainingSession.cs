@@ -489,8 +489,8 @@ namespace Scene.TrainingScene.Domain
 
                 views.Add(new TrainingInventoryEntryView(
                     item.Id,
-                    item.DisplayName,
-                    item.Description,
+                    TrainingShopCatalog.GetLocalizedName(item),
+                    TrainingShopCatalog.GetLocalizedDescription(item),
                     entry.count));
             }
 

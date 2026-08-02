@@ -10,6 +10,8 @@ using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
 
+using Localization;
+
 namespace Scene.TrainingScene.View
 {
     /// <summary>
@@ -84,7 +86,7 @@ namespace Scene.TrainingScene.View
 
             if (titleText != null)
             {
-                titleText.text = "育成途中のデータがあります";
+                titleText.text = LocalizedText.Get(GameTextKeys.TrainingResumeTitle);
             }
 
             if (modelNameText != null)

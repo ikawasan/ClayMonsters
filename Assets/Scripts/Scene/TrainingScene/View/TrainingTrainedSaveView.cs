@@ -1,3 +1,4 @@
+using Localization;
 using ClayEditor.Rigging;
 using Cysharp.Threading.Tasks;
 using Extensions;
@@ -297,8 +298,8 @@ namespace Scene.TrainingScene.View
             {
                 int slotNumber = selectedSlotIndex + 1;
                 confirmMessageText.text = willOverwrite
-                    ? $"育成済みスロット{slotNumber}のデータを上書き保存します"
-                    : $"育成済みスロット{slotNumber}へ保存します";
+                    ? LocalizedText.Get(GameTextKeys.TrainingSaveOverwrite, "slot", slotNumber)
+                    : LocalizedText.Get(GameTextKeys.TrainingSaveTo, "slot", slotNumber);
             }
 
             SetSelectionContentVisible(false);
@@ -383,7 +384,12 @@ namespace Scene.TrainingScene.View
             ClearRuntimeThumbnails();
             trainedSlotGrid.Show();
             trainedSlotGrid.Initialize(OnSlotSelected);
-            trainedSlotGrid.Refresh(saveService, "空き", allowEmptySlotSelection);
+            trainedSlotGrid.Refresh(
+                saveService,
+                Localization.LocalizedText.GetOrFallback(
+                    Localization.GameTextKeys.CommonEmpty,
+                    "空き"),
+                allowEmptySlotSelection);
         }
 
         private bool EnsureTrainedSlotGrid()

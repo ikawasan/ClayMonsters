@@ -2,6 +2,7 @@ using ClayEditor.Rigging;
 using Cysharp.Threading.Tasks;
 using Extensions;
 using LighthouseExtends.UIComponent.Button;
+using Localization;
 using SaveData;
 using Scene.TrainingScene.Domain;
 using Scene.TrainingScene.Interface;
@@ -132,11 +133,20 @@ namespace Scene.TrainingScene.View
         private float motivationFrameTimer;
         private TrainingMotivation playingMotivation;
         private const float MotivationFrameSeconds = 0.12f;
-        private const string CommandChoicePrompt = "この時間の行動を選んでください";
-        private const string FocusChoicePrompt = "伸ばすステータスを選んでください";
-        private const string ShopChoicePrompt = "買いたい商品を選んでください";
-        private const string InventoryChoicePrompt = "使うアイテムを選んでください";
-        private const string LocationChoicePrompt = "行き先を選んでください";
+        private static string CommandChoicePrompt =>
+            LocalizedText.GetOrFallback(GameTextKeys.TrainingPromptCommand, "この時間の行動を選んでください");
+
+        private static string FocusChoicePrompt =>
+            LocalizedText.GetOrFallback(GameTextKeys.TrainingPromptFocus, "伸ばすステータスを選んでください");
+
+        private static string ShopChoicePrompt =>
+            LocalizedText.GetOrFallback(GameTextKeys.TrainingPromptShop, "買いたい商品を選んでください");
+
+        private static string InventoryChoicePrompt =>
+            LocalizedText.GetOrFallback(GameTextKeys.TrainingPromptInventory, "使うアイテムを選んでください");
+
+        private static string LocationChoicePrompt =>
+            LocalizedText.GetOrFallback(GameTextKeys.TrainingPromptLocation, "行き先を選んでください");
 
         private enum ChoiceMode
         {
@@ -339,12 +349,19 @@ namespace Scene.TrainingScene.View
 
             if (staminaText != null)
             {
-                staminaText.text = $"体力 {session.Stamina} / {TrainingSettings.MaxStamina}";
+                staminaText.text = LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingHudStamina,
+                    "体力 {current} / {max}",
+                    new System.Collections.Generic.Dictionary<string, object>
+                    {
+                        { "current", session.Stamina },
+                        { "max", TrainingSettings.MaxStamina },
+                    });
             }
 
             if (motivationText != null)
             {
-                motivationText.text = "やる気　";
+                motivationText.text = LocalizedText.Get(GameTextKeys.TrainingMotivation);
             }
 
             if (motivationIcon != null)
@@ -442,7 +459,13 @@ namespace Scene.TrainingScene.View
             HideResumeChoices();
             choiceMode = ChoiceMode.Shop;
             hasChoice = false;
-            SetLogMessage($"{ShopChoicePrompt}\n所持金 {currentMoney}G");
+            SetLogMessage(
+                $"{ShopChoicePrompt}\n"
+                + LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingHudMoneyShop,
+                    "所持金 {money}G",
+                    "money",
+                    currentMoney));
 
             bool windowHandlesNext = shopWindowView != null
                 && shopWindowView.HasNextPageButton;
@@ -468,11 +491,17 @@ namespace Scene.TrainingScene.View
                     restButton.gameObject.SetActive(!windowHandlesClose);
                     if (!windowHandlesClose)
                     {
-                        LhButtonLabelUtility.SetLabel(restButtonLabel, "戻る");
+                        LhButtonLabelUtility.SetLabel(
+                            restButtonLabel,
+                            LocalizedText.GetOrFallback(GameTextKeys.CommonReturn, "戻る"));
                         restButton.onClick.RemoveAllListeners();
                         restButton.onClick.AddListener(
                             () => OnShopClicked(TrainingShopChoiceCodes.Back));
-                        BindShopHover(restButton, "売店を離れる");
+                        BindShopHover(
+                            restButton,
+                            LocalizedText.GetOrFallback(
+                                GameTextKeys.TrainingHoverShopLeave,
+                                "売店を離れる"));
                     }
                 }
 
@@ -518,22 +547,36 @@ namespace Scene.TrainingScene.View
                 if (i == nextSlot)
                 {
                     button.gameObject.SetActive(true);
-                    SetLocationButtonLabel(i, "次のページ");
+                    SetLocationButtonLabel(
+                        i,
+                        LocalizedText.GetOrFallback(GameTextKeys.TrainingShopNextPage, "次のページ"));
                     button.onClick.RemoveAllListeners();
                     button.onClick.AddListener(
                         () => OnShopClicked(TrainingShopChoiceCodes.NextPage));
-                    BindShopHover(button, "次の商品ページを表示する");
+                    BindShopHover(
+                        button,
+                        LocalizedText.GetOrFallback(
+                            GameTextKeys.TrainingHoverShopNextPage,
+                            "次の商品ページを表示する"));
                     continue;
                 }
 
                 if (i == inventorySlot)
                 {
                     button.gameObject.SetActive(true);
-                    SetLocationButtonLabel(i, "所持アイテム");
+                    SetLocationButtonLabel(
+                        i,
+                        LocalizedText.GetOrFallback(
+                            GameTextKeys.TrainingShopOpenInventory,
+                            "所持アイテム"));
                     button.onClick.RemoveAllListeners();
                     button.onClick.AddListener(
                         () => OnShopClicked(TrainingShopChoiceCodes.OpenInventory));
-                    BindShopHover(button, "所持アイテムを使う");
+                    BindShopHover(
+                        button,
+                        LocalizedText.GetOrFallback(
+                            GameTextKeys.TrainingHoverOpenInventory,
+                            "所持アイテムを使う"));
                     continue;
                 }
 
@@ -545,13 +588,19 @@ namespace Scene.TrainingScene.View
                 }
 
                 TrainingShopItem item = items[i];
-                SetLocationButtonLabel(i, $"{item.DisplayName}\n{item.Price}G");
+                SetLocationButtonLabel(i, $"{TrainingShopCatalog.GetLocalizedName(item)}\n{item.Price}G");
                 int captured = i;
                 button.onClick.RemoveAllListeners();
                 button.onClick.AddListener(() => OnShopClicked(captured));
                 BindShopHover(
                     button,
-                    $"{item.DisplayName}\n{item.Description}\n価格 {item.Price}G");
+                    $"{TrainingShopCatalog.GetLocalizedName(item)}\n"
+                    + $"{TrainingShopCatalog.GetLocalizedDescription(item)}\n"
+                    + LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingHudPrice,
+                        "価格 {price}G",
+                        "price",
+                        item.Price));
             }
 
             if (restButton != null)
@@ -559,11 +608,17 @@ namespace Scene.TrainingScene.View
                 restButton.gameObject.SetActive(!windowHandlesClose);
                 if (!windowHandlesClose)
                 {
-                    LhButtonLabelUtility.SetLabel(restButtonLabel, "戻る");
+                    LhButtonLabelUtility.SetLabel(
+                        restButtonLabel,
+                        LocalizedText.GetOrFallback(GameTextKeys.CommonReturn, "戻る"));
                     restButton.onClick.RemoveAllListeners();
                     restButton.onClick.AddListener(
                         () => OnShopClicked(TrainingShopChoiceCodes.Back));
-                    BindShopHover(restButton, "売店を離れる");
+                    BindShopHover(
+                        restButton,
+                        LocalizedText.GetOrFallback(
+                            GameTextKeys.TrainingHoverShopLeave,
+                            "売店を離れる"));
                 }
             }
 
@@ -602,11 +657,17 @@ namespace Scene.TrainingScene.View
                     restButton.gameObject.SetActive(!windowHandlesClose);
                     if (!windowHandlesClose)
                     {
-                        LhButtonLabelUtility.SetLabel(restButtonLabel, "戻る");
+                        LhButtonLabelUtility.SetLabel(
+                        restButtonLabel,
+                        LocalizedText.GetOrFallback(GameTextKeys.CommonReturn, "戻る"));
                         restButton.onClick.RemoveAllListeners();
                         restButton.onClick.AddListener(
                             () => OnInventoryClicked(TrainingInventoryChoiceCodes.Back));
-                        BindInventoryHover(restButton, "所持一覧を閉じる");
+                        BindInventoryHover(
+                        restButton,
+                        LocalizedText.GetOrFallback(
+                            GameTextKeys.TrainingHoverCloseInventory,
+                            "所持一覧を閉じる"));
                     }
                 }
 
@@ -638,11 +699,17 @@ namespace Scene.TrainingScene.View
                 if (showNextOnButton && i == visibleEntryCount)
                 {
                     button.gameObject.SetActive(true);
-                    SetLocationButtonLabel(i, "次のページ");
+                    SetLocationButtonLabel(
+                        i,
+                        LocalizedText.GetOrFallback(GameTextKeys.TrainingShopNextPage, "次のページ"));
                     button.onClick.RemoveAllListeners();
                     button.onClick.AddListener(
                         () => OnInventoryClicked(TrainingInventoryChoiceCodes.NextPage));
-                    BindInventoryHover(button, "次の所持ページを表示する");
+                    BindInventoryHover(
+                        button,
+                        LocalizedText.GetOrFallback(
+                            GameTextKeys.TrainingHoverInventoryNextPage,
+                            "次の所持ページを表示する"));
                     continue;
                 }
 
@@ -668,11 +735,17 @@ namespace Scene.TrainingScene.View
                 restButton.gameObject.SetActive(!windowHandlesClose);
                 if (!windowHandlesClose)
                 {
-                    LhButtonLabelUtility.SetLabel(restButtonLabel, "戻る");
+                    LhButtonLabelUtility.SetLabel(
+                        restButtonLabel,
+                        LocalizedText.GetOrFallback(GameTextKeys.CommonReturn, "戻る"));
                     restButton.onClick.RemoveAllListeners();
                     restButton.onClick.AddListener(
                         () => OnInventoryClicked(TrainingInventoryChoiceCodes.Back));
-                    BindInventoryHover(restButton, "所持一覧を閉じる");
+                    BindInventoryHover(
+                        restButton,
+                        LocalizedText.GetOrFallback(
+                            GameTextKeys.TrainingHoverCloseInventory,
+                            "所持一覧を閉じる"));
                 }
             }
 
@@ -740,10 +813,16 @@ namespace Scene.TrainingScene.View
             if (restButton != null)
             {
                 restButton.gameObject.SetActive(true);
-                LhButtonLabelUtility.SetLabel(restButtonLabel, "戻る");
+                LhButtonLabelUtility.SetLabel(
+                        restButtonLabel,
+                        LocalizedText.GetOrFallback(GameTextKeys.CommonReturn, "戻る"));
                 restButton.onClick.RemoveAllListeners();
                 restButton.onClick.AddListener(OnFocusBackClicked);
-                BindFocusNavHover(restButton, "行動選択へ戻る");
+                BindFocusNavHover(
+                    restButton,
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingHoverBackToCommand,
+                        "行動選択へ戻る"));
             }
 
             SetLocationChoicePanelVisible(true);
@@ -826,7 +905,9 @@ namespace Scene.TrainingScene.View
             }
 
             restButton.gameObject.SetActive(true);
-            LhButtonLabelUtility.SetLabel(restButtonLabel, "休憩");
+            LhButtonLabelUtility.SetLabel(
+                restButtonLabel,
+                LocalizedText.GetOrFallback(GameTextKeys.TrainingCommandRest, "休憩"));
 
             restButton.onClick.RemoveAllListeners();
             restButton.onClick.AddListener(OnRestClicked);
@@ -841,7 +922,9 @@ namespace Scene.TrainingScene.View
             }
 
             restButton.gameObject.SetActive(true);
-            LhButtonLabelUtility.SetLabel(restButtonLabel, "休憩");
+            LhButtonLabelUtility.SetLabel(
+                restButtonLabel,
+                LocalizedText.GetOrFallback(GameTextKeys.TrainingCommandRest, "休憩"));
             restButton.onClick.RemoveAllListeners();
             restButton.onClick.AddListener(() => OnCommandClicked(TrainingCommandType.Rest));
             BindCommandHover(restButton, TrainingCommandType.Rest);
@@ -1270,17 +1353,36 @@ namespace Scene.TrainingScene.View
             {
                 TrainingCommandType.Train =>
                     FormatTrainCommandHoverDetail(
-                        "訓練ごとに体力消費が異なる 成功/大成功でステ上昇"),
+                        LocalizedText.GetOrFallback(
+                            GameTextKeys.TrainingHoverTrain,
+                            "訓練ごとに体力消費が異なる 成功/大成功でステ上昇")),
                 TrainingCommandType.SpecialTrain =>
                     FormatTrainCommandHoverDetail(
-                        "特訓ごとに体力消費が異なる 大幅にステ上昇"),
+                        LocalizedText.GetOrFallback(
+                            GameTextKeys.TrainingHoverSpecialTrain,
+                            "特訓ごとに体力消費が異なる 大幅にステ上昇")),
                 TrainingCommandType.Rest =>
-                    $"体力+{TrainingSettings.RestStaminaRecovery}"
-                    + $"(大成功で+{TrainingSettings.RestGreatSuccessRecovery}"
-                    + $" やる気+{TrainingSettings.RestMotivationGain})",
-                TrainingCommandType.Shop => "昼休みにだけ利用できる売店",
-                TrainingCommandType.UseItem => "所持アイテムを使う(時間は消費しない)",
-                TrainingCommandType.Tournament => "対戦に勝利すると賞金と体力回復",
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingHoverRest,
+                        "体力+{base}(大成功で+{great} やる気+{mot})",
+                        new Dictionary<string, object>
+                        {
+                            { "base", TrainingSettings.RestStaminaRecovery },
+                            { "great", TrainingSettings.RestGreatSuccessRecovery },
+                            { "mot", TrainingSettings.RestMotivationGain },
+                        }),
+                TrainingCommandType.Shop =>
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingHoverShop,
+                        "昼休みにだけ利用できる売店"),
+                TrainingCommandType.UseItem =>
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingHoverUseItem,
+                        "所持アイテムを使う(時間は消費しない)"),
+                TrainingCommandType.Tournament =>
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingHoverTournament,
+                        "対戦に勝利すると賞金と体力回復"),
                 _ => TrainingCommandCatalog.GetDisplayName(command)
             };
             AddHoverEntry(trigger, EventTriggerType.PointerEnter, () => SetLogMessage(detail));
@@ -1296,7 +1398,12 @@ namespace Scene.TrainingScene.View
                 return baseDetail;
             }
 
-            return $"{baseDetail}\n失敗率 {failurePercent:0.#}%";
+            return baseDetail
+                + LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingHoverFailRateLine,
+                    "\n失敗率 {value}%",
+                    "value",
+                    failurePercent.ToString("0.#"));
         }
 
         private void BindFocusHover(
@@ -1329,11 +1436,20 @@ namespace Scene.TrainingScene.View
                 TrainingActionResolver.ComputeFailurePercent(locationChoiceStamina);
             string detail =
                 $"{TrainingFocusCatalog.GetDisplayName(focus)}\n"
-                + $"体力-{staminaCost}\n"
+                + LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingHoverStaminaCost,
+                    "体力-{value}",
+                    "value",
+                    staminaCost)
+                + "\n"
                 + FormatFocusGainPreview(scaled);
             if (failurePercent > 0f)
             {
-                detail += $"\n失敗率 {failurePercent:0.#}%";
+                detail += LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingHoverFailRateLine,
+                    "\n失敗率 {value}%",
+                    "value",
+                    failurePercent.ToString("0.#"));
             }
 
             AddHoverEntry(trigger, EventTriggerType.PointerEnter, () => SetLogMessage(detail));
@@ -1350,25 +1466,47 @@ namespace Scene.TrainingScene.View
 
             if (gain.Attack != 0)
             {
-                parts.Add($"攻撃+{gain.Attack}");
+                parts.Add(
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingLogStatAtk,
+                        "攻撃+{value}",
+                        "value",
+                        gain.Attack));
             }
 
             if (gain.Defense != 0)
             {
-                parts.Add($"防御+{gain.Defense}");
+                parts.Add(
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingLogStatDef,
+                        "防御+{value}",
+                        "value",
+                        gain.Defense));
             }
 
             if (gain.Speed != 0)
             {
-                parts.Add($"速度+{gain.Speed}");
+                parts.Add(
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingLogStatSpd,
+                        "速度+{value}",
+                        "value",
+                        gain.Speed));
             }
 
             if (gain.Hit != 0)
             {
-                parts.Add($"命中+{gain.Hit}");
+                parts.Add(
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingLogStatHit,
+                        "命中+{value}",
+                        "value",
+                        gain.Hit));
             }
 
-            return parts.Count > 0 ? string.Join(" ", parts) : "ステ上昇なし";
+            return parts.Count > 0
+                ? string.Join(" ", parts)
+                : LocalizedText.GetOrFallback(GameTextKeys.TrainingLogStatNone, "ステ上昇なし");
         }
 
         private void BindFocusNavHover(LHButton button, string detail)
@@ -1503,13 +1641,19 @@ namespace Scene.TrainingScene.View
             {
                 continueButton.onClick.RemoveListener(OnContinueClicked);
                 continueButton.onClick.AddListener(OnContinueClicked);
-                LhButtonLabelUtility.SetLabel(continueButtonLabel, "続ける");
+                LhButtonLabelUtility.SetLabel(
+                    continueButtonLabel,
+                    LocalizedText.GetOrFallback(GameTextKeys.TrainingHudContinue, "続ける"));
             }
 
             if (backToTitleButton != null)
             {
                 backToTitleButton.EnsureUiSoundFeedback();
-                LhButtonLabelUtility.SetLabel(backToTitleButtonLabel, "タイトルへ戻る");
+                LhButtonLabelUtility.SetLabel(
+                    backToTitleButtonLabel,
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingHudBackToTitle,
+                        "タイトルへ戻る"));
 
                 backToTitleButton.gameObject.SetActive(false);
             }

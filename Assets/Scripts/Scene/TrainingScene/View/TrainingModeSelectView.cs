@@ -10,6 +10,8 @@ using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
 
+using Localization;
+
 namespace Scene.TrainingScene.View
 {
     /// <summary>
@@ -45,7 +47,7 @@ namespace Scene.TrainingScene.View
 
             if (titleText != null)
             {
-                titleText.text = "育成方法を選んでください";
+                titleText.text = LocalizedText.Get(GameTextKeys.TrainingModeSelectTitle);
             }
 
             if (modelNameText != null)

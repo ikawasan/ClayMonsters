@@ -9,6 +9,8 @@ using UI.ClayEditor.View;
 using UnityEngine;
 using UnityEngine.UI;
 
+using Localization;
+
 namespace Scene.TrainingScene.View
 {
     /// <summary>
@@ -41,7 +43,7 @@ namespace Scene.TrainingScene.View
             if (learnedHeaderText != null)
             {
                 learnedHeaderText.gameObject.SetActive(true);
-                learnedHeaderText.text = "▼習得する技";
+                learnedHeaderText.text = LocalizedText.Get(GameTextKeys.TrainingLearnedHeader);
             }
 
             if (learnedAttackSlot != null)
@@ -52,7 +54,7 @@ namespace Scene.TrainingScene.View
             if (choicesHeaderText != null)
             {
                 choicesHeaderText.gameObject.SetActive(true);
-                choicesHeaderText.text = "▼入れ替えるスロット";
+                choicesHeaderText.text = LocalizedText.Get(GameTextKeys.TrainingSwapHeader);
             }
 
             int slotCount = currentAttacks != null

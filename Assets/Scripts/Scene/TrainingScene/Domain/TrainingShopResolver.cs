@@ -1,3 +1,6 @@
+using Localization;
+using System.Collections.Generic;
+
 namespace Scene.TrainingScene.Domain
 {
     /// <summary>
@@ -84,19 +87,32 @@ namespace Scene.TrainingScene.Domain
         {
             if (session == null)
             {
-                return new TrainingShopPurchaseResult(false, "セッションがありません", item);
+                return new TrainingShopPurchaseResult(
+                    false,
+                    LocalizedText.GetOrFallback(GameTextKeys.TrainingShopNoSession, "セッションがありません"),
+                    item);
             }
 
             if (string.IsNullOrEmpty(item.Id))
             {
-                return new TrainingShopPurchaseResult(false, "商品がありません", item);
+                return new TrainingShopPurchaseResult(
+                    false,
+                    LocalizedText.GetOrFallback(GameTextKeys.TrainingShopNoItem, "商品がありません"),
+                    item);
             }
 
             if (session.Money < item.Price)
             {
                 return new TrainingShopPurchaseResult(
                     false,
-                    $"所持金が足りない({session.Money}G/{item.Price}G)",
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingShopNotEnoughMoney,
+                        "所持金が足りない({have}G/{price}G)",
+                        new Dictionary<string, object>
+                        {
+                            { "have", session.Money },
+                            { "price", item.Price },
+                        }),
                     item);
             }
 
@@ -104,7 +120,14 @@ namespace Scene.TrainingScene.Domain
             {
                 return new TrainingShopPurchaseResult(
                     false,
-                    $"所持金が足りない({session.Money}G/{item.Price}G)",
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingShopNotEnoughMoney,
+                        "所持金が足りない({have}G/{price}G)",
+                        new Dictionary<string, object>
+                        {
+                            { "have", session.Money },
+                            { "price", item.Price },
+                        }),
                     item);
             }
 
@@ -113,7 +136,14 @@ namespace Scene.TrainingScene.Domain
             session.TryRemoveShopOfferItem(item.Id);
             return new TrainingShopPurchaseResult(
                 true,
-                $"{item.DisplayName}を購入した\n所持へ追加\n残り{session.Money}G",
+                LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingShopPurchased,
+                    "{name}を購入した\n所持へ追加\n残り{money}G",
+                    new Dictionary<string, object>
+                    {
+                        { "name", TrainingShopCatalog.GetLocalizedName(item) },
+                        { "money", session.Money },
+                    }),
                 item);
         }
 
@@ -128,26 +158,50 @@ namespace Scene.TrainingScene.Domain
         {
             if (session == null)
             {
-                return new TrainingItemUseResult(false, "セッションがありません", default);
+                return new TrainingItemUseResult(
+                    false,
+                    LocalizedText.GetOrFallback(GameTextKeys.TrainingShopNoSession, "セッションがありません"),
+                    default);
             }
 
             if (!TrainingShopCatalog.TryGetById(itemId, out TrainingShopItem item))
             {
-                return new TrainingItemUseResult(false, "アイテムが見つからない", default);
+                return new TrainingItemUseResult(
+                    false,
+                    LocalizedText.GetOrFallback(GameTextKeys.TrainingShopItemNotFound, "アイテムが見つからない"),
+                    default);
             }
 
             if (!session.TryConsumeInventoryItem(item.Id))
             {
                 return new TrainingItemUseResult(
                     false,
-                    $"{item.DisplayName}を持っていない",
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingShopNotOwned,
+                        "{name}を持っていない",
+                        new Dictionary<string, object>
+                        {
+                            { "name", TrainingShopCatalog.GetLocalizedName(item) },
+                        }),
                     item);
             }
 
             ApplyItemEffect(session, item);
             string message = item.ItemType == TrainingShopItemType.MotivationBoost
-                ? $"{item.DisplayName}を使った\nやる気が上昇した"
-                : $"{item.DisplayName}を使った";
+                ? LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingShopUsedMotivated,
+                    "{name}を使った\nやる気が上昇した",
+                    new Dictionary<string, object>
+                    {
+                        { "name", TrainingShopCatalog.GetLocalizedName(item) },
+                    })
+                : LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingShopUsed,
+                    "{name}を使った",
+                    new Dictionary<string, object>
+                    {
+                        { "name", TrainingShopCatalog.GetLocalizedName(item) },
+                    });
             return new TrainingItemUseResult(
                 true,
                 message,

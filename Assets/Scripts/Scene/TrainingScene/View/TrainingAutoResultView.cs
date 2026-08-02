@@ -12,6 +12,8 @@ using UnityEngine.Events;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
 
+using Localization;
+
 namespace Scene.TrainingScene.View
 {
     /// <summary>
@@ -57,7 +59,7 @@ namespace Scene.TrainingScene.View
             if (titleText != null)
             {
                 titleText.text = string.IsNullOrEmpty(presentation.TitleText)
-                    ? "育成完了"
+                    ? LocalizedText.Get(GameTextKeys.TrainingComplete)
                     : presentation.TitleText;
             }
 

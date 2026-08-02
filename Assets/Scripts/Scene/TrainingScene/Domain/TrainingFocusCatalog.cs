@@ -1,3 +1,4 @@
+using Localization;
 using System;
 using UnityEngine;
 
@@ -63,11 +64,16 @@ namespace Scene.TrainingScene.Domain
         {
             return focus switch
             {
-                TrainingFocus.Hp => "HP訓練",
-                TrainingFocus.Attack => "攻撃訓練",
-                TrainingFocus.Defense => "防御訓練",
-                TrainingFocus.Speed => "速さ訓練",
-                TrainingFocus.Hit => "命中訓練",
+                TrainingFocus.Hp => LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingFocusHp, "HP訓練"),
+                TrainingFocus.Attack => LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingFocusAttack, "攻撃訓練"),
+                TrainingFocus.Defense => LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingFocusDefense, "防御訓練"),
+                TrainingFocus.Speed => LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingFocusSpeed, "速さ訓練"),
+                TrainingFocus.Hit => LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingFocusHit, "命中訓練"),
                 _ => focus.ToString()
             };
         }

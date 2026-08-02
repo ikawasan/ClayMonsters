@@ -9,6 +9,8 @@ using UI.ClayEditor.View;
 using UnityEngine;
 using UnityEngine.UI;
 
+using Localization;
+
 namespace Scene.TrainingScene.View
 {
     /// <summary>
@@ -113,13 +115,13 @@ namespace Scene.TrainingScene.View
 
             if (choiceTitleText != null)
             {
-                choiceTitleText.text = "強敵急襲";
+                choiceTitleText.text = LocalizedText.Get(GameTextKeys.TrainingAmbushTitle);
             }
 
             if (choiceMessageText != null)
             {
-                string name = string.IsNullOrEmpty(enemyName) ? "強敵" : enemyName;
-                choiceMessageText.text = $"{name}が襲いかかってきた\n戦うか逃げるか選んでください";
+                string name = string.IsNullOrEmpty(enemyName) ? LocalizedText.Get(GameTextKeys.TrainingAmbushEnemyDefault) : enemyName;
+                choiceMessageText.text = LocalizedText.Get(GameTextKeys.TrainingAmbushMessage, "name", name);
             }
 
             if (fightButton != null)
@@ -198,7 +200,7 @@ namespace Scene.TrainingScene.View
 
             if (alertTitleText != null)
             {
-                alertTitleText.text = "強敵急襲！";
+                alertTitleText.text = LocalizedText.Get(GameTextKeys.TrainingAmbushTitleBang);
             }
         }
 
