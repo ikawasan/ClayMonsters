@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
-using ClayEditor.Rigging;
-using R3;
 using Battle;
+using ClayEditor.Rigging;
+using Extensions;
+using R3;
 using UI.Battle.Interface;
 using UnityEngine;
 
@@ -200,12 +201,12 @@ namespace Battle.Presenter
 
             if (system.Player.LostPartCount > 0)
             {
-                return "右クリック長押しで部位復旧";
+                return InputGuideTexts.BattleHintPartRepair;
             }
 
             if (system.IsKnockbackAvailable)
             {
-                return "ふきとばし可能 Space";
+                return InputGuideTexts.BattleHintKnockbackReady;
             }
 
             if (system.PlayerChainCount > 1)

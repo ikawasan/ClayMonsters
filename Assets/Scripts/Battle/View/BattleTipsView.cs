@@ -1,6 +1,7 @@
 using Battle.Interface;
 using Extensions;
 using System;
+using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -9,7 +10,7 @@ namespace Battle.View
 {
     /// <summary>
     /// 戦闘チュートリアルTipsと右端ヒントの表示
-    /// 文言はPrefab側のTMPに保持する
+    /// 入力説明はアイコン付き文言を適用する
     /// </summary>
     public sealed class BattleTipsView : MonoBehaviour, IBattleTipsView
     {
@@ -17,6 +18,8 @@ namespace Battle.View
         [SerializeField] private Canvas tipsCanvas;
         [SerializeField] private Canvas hintCanvas;
         [SerializeField] private Button closeButton;
+        [SerializeField] private TMP_Text tipsBodyText;
+        [SerializeField] private TMP_Text hintText;
 
         private bool isFeatureAvailable;
         private bool isCombatSessionActive;
@@ -33,7 +36,64 @@ namespace Battle.View
                 closeButton.onClick.AddListener(CloseTips);
             }
 
+            ApplyGuideTexts();
             HideAll();
+        }
+
+        private void ApplyGuideTexts()
+        {
+            ResolveTextsIfNeeded();
+            if (tipsBodyText != null)
+            {
+                InputIconTmpUtility.ApplySpriteAsset(tipsBodyText);
+                tipsBodyText.text = InputGuideTexts.BattleTipsBody;
+            }
+            else
+            {
+                Debug.LogError("[BattleTipsView] tipsBodyTextが未配線です", this);
+            }
+
+            if (hintText != null)
+            {
+                InputIconTmpUtility.ApplySpriteAsset(hintText);
+                hintText.text = InputGuideTexts.BattleTipsEscHint;
+            }
+            else
+            {
+                Debug.LogError("[BattleTipsView] hintTextが未配線です", this);
+            }
+        }
+
+        private void ResolveTextsIfNeeded()
+        {
+            if (tipsBodyText == null && tipsCanvas != null)
+            {
+                tipsBodyText = FindChildTmp(tipsCanvas.transform, "Body");
+            }
+
+            if (hintText == null && hintCanvas != null)
+            {
+                hintText = FindChildTmp(hintCanvas.transform, "HintText");
+            }
+        }
+
+        private static TMP_Text FindChildTmp(Transform root, string objectName)
+        {
+            if (root == null || string.IsNullOrEmpty(objectName))
+            {
+                return null;
+            }
+
+            TMP_Text[] texts = root.GetComponentsInChildren<TMP_Text>(true);
+            for (int i = 0; i < texts.Length; i++)
+            {
+                if (texts[i] != null && texts[i].gameObject.name == objectName)
+                {
+                    return texts[i];
+                }
+            }
+
+            return null;
         }
 
         private void OnDestroy()

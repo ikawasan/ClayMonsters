@@ -22,6 +22,8 @@ namespace UI.ClayEditor.View
         [SerializeField] private RectTransform chevronIcon;
         [SerializeField] private GameObject clayGuidePanel;
         [SerializeField] private GameObject paintGuidePanel;
+        [SerializeField] private TMP_Text clayGuideText;
+        [SerializeField] private TMP_Text paintGuideText;
 
         private void Start()
         {
@@ -36,6 +38,8 @@ namespace UI.ClayEditor.View
                 visibilityToggle.graphic = null;
                 visibilityToggle.toggleTransition = Toggle.ToggleTransition.None;
             }
+
+            ApplyGuideTexts();
 
             bool isVisible = viewModel.IsGuideVisible.CurrentValue;
             visibilityToggle.SetIsOnWithoutNotify(isVisible);
@@ -56,6 +60,47 @@ namespace UI.ClayEditor.View
                     (mode, hasModel, visible) => (mode, hasModel, visible))
                 .Subscribe(state => UpdateVisibility(state.mode, state.hasModel, state.visible))
                 .AddTo(this);
+        }
+
+        private void ApplyGuideTexts()
+        {
+            ResolveGuideTextsIfNeeded();
+            if (clayGuideText != null)
+            {
+                InputIconTmpUtility.ApplySpriteAsset(clayGuideText);
+                clayGuideText.text = InputGuideTexts.ClayEditClayGuide;
+            }
+            else
+            {
+                Debug.LogError(
+                    "[ClayEditOperationGuideView] clayGuideTextが未配線です",
+                    this);
+            }
+
+            if (paintGuideText != null)
+            {
+                InputIconTmpUtility.ApplySpriteAsset(paintGuideText);
+                paintGuideText.text = InputGuideTexts.ClayEditPaintGuide;
+            }
+            else
+            {
+                Debug.LogError(
+                    "[ClayEditOperationGuideView] paintGuideTextが未配線です",
+                    this);
+            }
+        }
+
+        private void ResolveGuideTextsIfNeeded()
+        {
+            if (clayGuideText == null && clayGuidePanel != null)
+            {
+                clayGuideText = clayGuidePanel.GetComponentInChildren<TMP_Text>(true);
+            }
+
+            if (paintGuideText == null && paintGuidePanel != null)
+            {
+                paintGuideText = paintGuidePanel.GetComponentInChildren<TMP_Text>(true);
+            }
         }
 
         private void UpdateVisibility(EditModeType mode, bool hasModel, bool visible)

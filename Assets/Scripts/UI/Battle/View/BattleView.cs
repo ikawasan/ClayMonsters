@@ -147,6 +147,11 @@ namespace UI.Battle.View
                 timeNormalColor = timeText.color;
             }
 
+            if (combatHintText != null)
+            {
+                InputIconTmpUtility.ApplySpriteAsset(combatHintText);
+            }
+
             if (moveButtons != null)
             {
                 for (int i = 0; i < moveButtons.Length; i++)
