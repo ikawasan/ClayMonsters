@@ -11,7 +11,7 @@ namespace UI.Battle.View
     /// 1つの攻撃ボタンの表示部品
     /// 攻撃名・必要部位・破壊部位・威力・コスト・射程を表示する
     /// </summary>
-    public class MoveButtonView : MonoBehaviour
+    public class MoveButtonView : MonoBehaviour, ILanguageAwareUi
     {
         private static string RangeLabel =>
             LocalizedText.GetOrFallback(GameTextKeys.BattleRangeLabel, "射程");
@@ -63,6 +63,7 @@ namespace UI.Battle.View
         private Sprite rangeActiveSprite;
         private Sprite rangeInactiveSprite;
         private MoveRangeSegmentBarView rangeSegmentBarView;
+        private LocalizedBakedTextApplier bakedChromeLabelApplier;
 
         private void Awake()
         {
@@ -74,10 +75,13 @@ namespace UI.Battle.View
             DisableRaycastOnDecorations();
             EnsureRangeSegmentBarView();
             EnsurePartLockOverlay();
+            EnsureChromeLabelsResolved();
             if (!HasConfiguredRangeSegments())
             {
                 MoveRangeSegmentBarView.ApplyDefaultSprites(rangeSegments, ref rangeActiveSprite, ref rangeInactiveSprite);
             }
+
+            ApplyChromeLabels();
         }
 
         /// <summary>
@@ -164,6 +168,8 @@ namespace UI.Battle.View
             Color targetPartColor,
             float maxDistance)
         {
+            ApplyChromeLabels();
+
             if (moveNameText != null)
             {
                 moveNameText.text = string.IsNullOrEmpty(move.Name) ? string.Empty : move.Name;
@@ -212,6 +218,36 @@ namespace UI.Battle.View
             }
 
             partLockOverlay.ShowMessageTemporary();
+        }
+
+        private void EnsureChromeLabelsResolved()
+        {
+            if (bakedChromeLabelApplier != null)
+            {
+                return;
+            }
+
+            bakedChromeLabelApplier = new LocalizedBakedTextApplier();
+            bakedChromeLabelApplier.Register(GameTextKeys.TrainingAttackPower, "威力");
+            bakedChromeLabelApplier.Register(GameTextKeys.TrainingAttackCost, "コスト");
+            bakedChromeLabelApplier.Capture(transform);
+        }
+
+
+        /// <inheritdoc/>
+        public void RefreshLocalizedUi()
+        {
+            ApplyChromeLabels();
+            if (rangeLabelText != null)
+            {
+                rangeLabelText.text = RangeLabel;
+            }
+        }
+
+        private void ApplyChromeLabels()
+        {
+            EnsureChromeLabelsResolved();
+            bakedChromeLabelApplier?.Apply();
         }
 
         private void EnsurePartLockOverlay()

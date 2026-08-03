@@ -15,7 +15,7 @@ namespace Battle.View
     /// 戦闘チュートリアルTipsと右端ヒントの表示
     /// 入力説明はアイコン付き文言を適用する
     /// </summary>
-    public sealed class BattleTipsView : MonoBehaviour, IBattleTipsView
+    public sealed class BattleTipsView : MonoBehaviour, IBattleTipsView, ILanguageAwareUi
     {
         [Header("参照")]
         [SerializeField] private Canvas tipsCanvas;
@@ -45,6 +45,13 @@ namespace Battle.View
             HideAll();
         }
 
+
+        /// <inheritdoc/>
+        public void RefreshLocalizedUi()
+        {
+            ApplyGuideTexts();
+        }
+
         private void ApplyGuideTexts()
         {
             ResolveTextsIfNeeded();
@@ -66,6 +73,26 @@ namespace Battle.View
             else
             {
                 Debug.LogError("[BattleTipsView] hintTextが未配線です", this);
+            }
+
+            LhButtonLabelUtility.SetLabel(
+                closeButton,
+                LocalizedText.GetOrFallback(GameTextKeys.CommonClose, "閉じる"));
+
+            if (tipsCanvas != null)
+            {
+                TMP_Text title = FindChildTmp(tipsCanvas.transform, "Title");
+                if (title == null)
+                {
+                    title = FindChildTmp(tipsCanvas.transform, "TitleText");
+                }
+
+                if (title != null)
+                {
+                    LocalizedFont.SetText(
+                        title,
+                        LocalizedText.GetOrFallback(GameTextKeys.BattleTipsTitle, "戦闘チュートリアル"));
+                }
             }
         }
 

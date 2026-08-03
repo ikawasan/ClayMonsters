@@ -79,6 +79,7 @@ namespace Scene.BattlePvpArena
         private bool isRunning;
         private int flowVersion;
         private System.IDisposable titleReturnSubscription;
+        private System.IDisposable languageSubscription;
         private GameObject trackedPlayerModel;
         private GameObject trackedEnemyModel;
         private BattlePvpMatchMode matchMode = BattlePvpMatchMode.Direct;
@@ -125,6 +126,19 @@ namespace Scene.BattlePvpArena
                 () => sceneFade?.ForceRelease());
 
             BindSelectionLeaveButton();
+            languageSubscription?.Dispose();
+            languageSubscription = LanguageAwareUi.Register(ApplySelectionLeaveButtonLabel);
+        }
+
+        private void ApplySelectionLeaveButtonLabel()
+        {
+            LHButton leaveButton = cachedSelectionLeaveButton ?? ResolveSelectionLeaveButton();
+            if (leaveButton == null)
+            {
+                return;
+            }
+
+            ApplyLeaveButtonLabel(leaveButton, LocalizedText.Get(GameTextKeys.BattleLeave));
         }
 
         /// <summary>
@@ -139,6 +153,7 @@ namespace Scene.BattlePvpArena
         private void OnDestroy()
         {
             titleReturnSubscription?.Dispose();
+            languageSubscription?.Dispose();
             disconnectHandler?.Dispose();
             flowCts?.Cancel();
             flowCts?.Dispose();
@@ -893,6 +908,7 @@ namespace Scene.BattlePvpArena
 
             ApplyLeaveButtonLabel(leaveButton, LocalizedText.Get(GameTextKeys.BattleLeave));
             titleReturnSubscription = leaveButton.SubscribeOnClick(OnClickTitleReturn);
+            cachedSelectionLeaveButton = leaveButton;
         }
 
         private void HideSelectionTitleReturnButton()

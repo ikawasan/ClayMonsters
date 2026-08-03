@@ -12,7 +12,7 @@ namespace Scene.BattlePVPScene.View
     /// <summary>
     /// BattlePVPシーンのマッチングUIと戻る操作を表示する
     /// </summary>
-    public sealed class BattlePVPView : MonoBehaviour, IBattlePVPView
+    public sealed class BattlePVPView : MonoBehaviour, IBattlePVPView, ILanguageAwareUi
     {
         [Header("共通")]
         [SerializeField] private LHButton returnButton;
@@ -42,6 +42,104 @@ namespace Scene.BattlePVPScene.View
         [SerializeField] private LHButton cancelMatchButton;
         [SerializeField] private LHButton copyJoinCodeButton;
         [SerializeField] private TMP_Text statusText;
+        [SerializeField] private TMP_Text lobbyTitleText;
+
+        private string cachedJoinCode = string.Empty;
+        private string cachedStatusMessage = string.Empty;
+        private bool hasCachedStatus;
+        private bool statusWasConnecting;
+        private bool statusWasRoomCodeCopied;
+
+        private void Awake()
+        {
+            ApplyLocalizedLabels();
+        }
+
+        private void OnEnable()
+        {
+            ApplyLocalizedLabels();
+        }
+
+        /// <summary>
+        /// ボタンと固定ラベルを現在言語で更新する
+        /// </summary>
+
+        /// <inheritdoc/>
+        public void RefreshLocalizedUi()
+        {
+            ApplyLocalizedLabels();
+            if (!string.IsNullOrEmpty(cachedJoinCode))
+            {
+                SetJoinCodeText(cachedJoinCode);
+            }
+
+            if (statusWasConnecting)
+            {
+                SetStatusText(
+                    LocalizedText.GetOrFallback(GameTextKeys.BattlePvpConnecting, "接続中…"));
+            }
+            else if (statusWasRoomCodeCopied)
+            {
+                SetStatusText(
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.BattlePvpRoomCodeCopied,
+                        "参加コードをコピーしました"));
+            }
+            else if (hasCachedStatus)
+            {
+                SetStatusText(cachedStatusMessage);
+            }
+        }
+
+        public void ApplyLocalizedLabels()
+        {
+            if (lobbyTitleText != null)
+            {
+                LocalizedFont.SetText(
+                    lobbyTitleText,
+                    LocalizedText.GetOrFallback(GameTextKeys.BattlePvpLobbyTitle, "通信対戦"));
+            }
+
+            LhButtonLabelUtility.SetLabel(
+                returnButton,
+                LocalizedText.GetOrFallback(GameTextKeys.TrainingHudBackToTitle, "タイトルへ戻る"));
+            LhButtonLabelUtility.SetLabel(
+                directMatchButton,
+                LocalizedText.GetOrFallback(GameTextKeys.BattlePvpDirectMatch, "特定の相手と対戦"));
+            LhButtonLabelUtility.SetLabel(
+                randomMatchButton,
+                LocalizedText.GetOrFallback(GameTextKeys.BattlePvpRandomMatch, "不特定の相手と対戦"));
+            LhButtonLabelUtility.SetLabel(
+                createRoomButton,
+                LocalizedText.GetOrFallback(GameTextKeys.BattlePvpCreateRoom, "ルームを作成"));
+            LhButtonLabelUtility.SetLabel(
+                joinRoomButton,
+                LocalizedText.GetOrFallback(GameTextKeys.BattlePvpJoinRoom, "ルームに参加"));
+            LhButtonLabelUtility.SetLabel(
+                startRandomMatchButton,
+                LocalizedText.GetOrFallback(GameTextKeys.BattlePvpStartMatch, "マッチング開始"));
+            LhButtonLabelUtility.SetLabel(
+                cancelMatchButton,
+                LocalizedText.GetOrFallback(GameTextKeys.CommonCancel, "キャンセル"));
+            LhButtonLabelUtility.SetLabel(
+                copyJoinCodeButton,
+                LocalizedText.GetOrFallback(GameTextKeys.BattlePvpCopyCode, "コードをコピー"));
+            LhButtonLabelUtility.SetLabel(
+                directBackButton,
+                LocalizedText.GetOrFallback(GameTextKeys.CommonReturn, "戻る"));
+            LhButtonLabelUtility.SetLabel(
+                randomBackButton,
+                LocalizedText.GetOrFallback(GameTextKeys.CommonReturn, "戻る"));
+
+            if (joinCodeInput != null && joinCodeInput.placeholder is TMP_Text placeholder)
+            {
+                LocalizedFont.SetText(
+                    placeholder,
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.BattlePvpJoinCodePlaceholder,
+                        "参加コードを入力"));
+            }
+        }
 
         /// <inheritdoc/>
         IDisposable IBattlePVPView.SubscribeReturnButtonClick(UnityAction action) =>
@@ -112,15 +210,34 @@ namespace Scene.BattlePVPScene.View
         /// <inheritdoc/>
         public void SetStatusText(string message)
         {
+            hasCachedStatus = true;
+            cachedStatusMessage = message ?? string.Empty;
+            statusWasConnecting = string.Equals(
+                cachedStatusMessage,
+                LocalizedText.GetOrFallback(GameTextKeys.BattlePvpConnecting, "接続中…"),
+                StringComparison.Ordinal)
+                || string.Equals(cachedStatusMessage, "接続中…", StringComparison.Ordinal);
+            statusWasRoomCodeCopied = string.Equals(
+                cachedStatusMessage,
+                LocalizedText.GetOrFallback(
+                    GameTextKeys.BattlePvpRoomCodeCopied,
+                    "参加コードをコピーしました"),
+                StringComparison.Ordinal)
+                || string.Equals(
+                    cachedStatusMessage,
+                    "参加コードをコピーしました",
+                    StringComparison.Ordinal);
+
             if (statusText != null)
             {
-                statusText.text = message ?? string.Empty;
+                statusText.text = cachedStatusMessage;
             }
         }
 
         /// <inheritdoc/>
         public void SetJoinCodeText(string joinCode)
         {
+            cachedJoinCode = joinCode ?? string.Empty;
             if (directJoinCodeText != null)
             {
                 directJoinCodeText.text = string.IsNullOrEmpty(joinCode)

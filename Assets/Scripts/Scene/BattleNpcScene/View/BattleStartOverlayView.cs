@@ -18,7 +18,7 @@ namespace Scene.BattleNpcScene.View
     /// 対戦紹介のVS表示とReady/FightカウントダウンUI
     /// とどめ命中時のFinish演出と部位破壊時のBreak演出も担当する
     /// </summary>
-    public sealed class BattleStartOverlayView : MonoBehaviour, IBattleFinishPresentation, IBattlePartBreakPresentation
+    public sealed class BattleStartOverlayView : MonoBehaviour, IBattleFinishPresentation, IBattlePartBreakPresentation, Localization.ILanguageAwareUi
     {
         private const string FinishLabel = "Finish";
         private const string BreakLabel = "Break!";
@@ -70,6 +70,7 @@ namespace Scene.BattleNpcScene.View
         private IBattleCanvasTransition canvasTransition;
         private bool isVsIdleAnimating;
         private bool isVictoryPresentationActive;
+        private string cachedVictoryWinnerName = string.Empty;
         private bool isFinishPresentationActive;
         private CancellationTokenSource partBreakCts;
         private readonly BattleVictoryConfettiEffect victoryConfetti = new BattleVictoryConfettiEffect();
@@ -255,6 +256,70 @@ namespace Scene.BattleNpcScene.View
             }
         }
 
+        /// <inheritdoc/>
+        public void RefreshLocalizedUi()
+        {
+            ApplyStartButtonLabel();
+            if (isVictoryPresentationActive)
+            {
+                ApplyVictoryLabels(cachedVictoryWinnerName);
+            }
+        }
+
+        private void ApplyStartButtonLabel()
+        {
+            if (startButton == null)
+            {
+                return;
+            }
+
+            LighthouseExtends.UIComponent.Button.LHButton lhStart =
+                startButton.GetComponent<LighthouseExtends.UIComponent.Button.LHButton>();
+            if (lhStart != null)
+            {
+                Extensions.LhButtonLabelUtility.SetLabel(
+                    lhStart,
+                    Localization.LocalizedText.GetOrFallback(
+                        Localization.GameTextKeys.BattleStart,
+                        "戦闘開始"));
+            }
+            else
+            {
+                Extensions.LhButtonLabelUtility.SetLabel(
+                    startButton,
+                    Localization.LocalizedText.GetOrFallback(
+                        Localization.GameTextKeys.BattleStart,
+                        "戦闘開始"));
+            }
+        }
+
+        private void ApplyVictoryLabels(string winnerName)
+        {
+            bool isDraw = string.IsNullOrWhiteSpace(winnerName)
+                || winnerName == Localization.LocalizedText.GetOrFallback(
+                    Localization.GameTextKeys.BattleDraw,
+                    "引き分け");
+            string title = isDraw
+                ? Localization.LocalizedText.GetOrFallback(
+                    Localization.GameTextKeys.BattleDraw,
+                    "引き分け")
+                : Localization.LocalizedText.GetOrFallback(
+                    Localization.GameTextKeys.BattleVictoryShort,
+                    "勝利！");
+            EnsureVictoryLabelVisible(victoryTitleText, title, victoryTitleText != null ? victoryTitleText.alpha : 1f);
+            if (!isDraw)
+            {
+                EnsureVictoryLabelVisible(
+                    victoryNameText,
+                    winnerName,
+                    victoryNameText != null ? victoryNameText.alpha : 1f);
+            }
+            else
+            {
+                EnsureVictoryLabelVisible(victoryNameText, string.Empty, 0f);
+            }
+        }
+
         private void EnsureStartButtonReceivesInput()
         {
             if (startButton == null)
@@ -265,6 +330,7 @@ namespace Scene.BattleNpcScene.View
             canvasTransition?.ReleasePresentationInput();
             startButton.transform.SetAsLastSibling();
             startButton.interactable = true;
+            ApplyStartButtonLabel();
             CanvasVisibilityUtility.SetUiVisible(startButton.gameObject, true);
 
             Graphic[] graphics = startButton.GetComponentsInChildren<Graphic>(true);
@@ -479,12 +545,19 @@ namespace Scene.BattleNpcScene.View
             TitleClayUiVisualUtility.EnsureTextFontOnly(victoryNameText);
             // オーバーレイ配下に親付けしシーン退場で紙吹雪も破棄する
             victoryConfetti.Play(transform);
+            cachedVictoryWinnerName = winnerName ?? string.Empty;
 
             bool isDraw = string.IsNullOrWhiteSpace(winnerName)
                 || winnerName == Localization.LocalizedText.GetOrFallback(
                     Localization.GameTextKeys.BattleDraw,
                     "引き分け");
-            string title = isDraw ? "Draw" : "Winner";
+            string title = isDraw
+                ? Localization.LocalizedText.GetOrFallback(
+                    Localization.GameTextKeys.BattleDraw,
+                    "引き分け")
+                : Localization.LocalizedText.GetOrFallback(
+                    Localization.GameTextKeys.BattleVictoryShort,
+                    "勝利！");
             EnsureVictoryLabelVisible(victoryTitleText, title, 0f);
             if (!isDraw)
             {

@@ -1,6 +1,7 @@
 using System;
 using Battle;
 using Extensions;
+using Localization;
 using TMPro;
 using UI.ClayEditor.View;
 using UnityEngine;
@@ -11,7 +12,7 @@ namespace Scene.BattleNpcScene.View
     /// <summary>
     /// 対戦紹介中に両者のステータス数値と五角形レーダーを表示する
     /// </summary>
-    public sealed class BattleMatchupStatusPanelView : MonoBehaviour
+    public sealed class BattleMatchupStatusPanelView : MonoBehaviour, ILanguageAwareUi
     {
         // HP攻撃防御速さ命中の表示上限(BattleStatusBalanceと揃える)
         private static readonly float[] DisplayMaxValues = { 999f, 999f, 999f, 999f, 999f };
@@ -35,6 +36,8 @@ namespace Scene.BattleNpcScene.View
         private bool isButtonExpectedVisible;
         private bool isDetailVisible;
         private Action<bool> detailVisibilityListener;
+        private BattleUnit boundPlayer;
+        private BattleUnit boundEnemy;
 
         private void Awake()
         {
@@ -42,6 +45,7 @@ namespace Scene.BattleNpcScene.View
             EnsureCanvasLayout();
             openButton?.EnsureUiSoundFeedback();
             closeButton?.EnsureUiSoundFeedback();
+            ApplyLocalizedChrome();
             if (openButton != null)
             {
                 openButton.onClick.AddListener(ShowDetail);
@@ -78,6 +82,9 @@ namespace Scene.BattleNpcScene.View
         {
             ValidateRefs();
             EnsureCanvasLayout();
+            boundPlayer = player;
+            boundEnemy = enemy;
+            ApplyLocalizedChrome();
             ApplySide(
                 player,
                 playerNameText,
@@ -89,6 +96,38 @@ namespace Scene.BattleNpcScene.View
                 enemyRadar,
                 new Color(1f, 0.45f, 0.35f, 0.5f));
             isBound = true;
+        }
+
+
+        /// <inheritdoc/>
+        public void RefreshLocalizedUi()
+        {
+            ApplyLocalizedChrome();
+            if (!isBound)
+            {
+                return;
+            }
+
+            ApplySide(
+                boundPlayer,
+                playerNameText,
+                playerRadar,
+                new Color(0.35f, 0.78f, 1f, 0.5f));
+            ApplySide(
+                boundEnemy,
+                enemyNameText,
+                enemyRadar,
+                new Color(1f, 0.45f, 0.35f, 0.5f));
+        }
+
+        private void ApplyLocalizedChrome()
+        {
+            LhButtonLabelUtility.SetLabel(
+                openButton,
+                LocalizedText.GetOrFallback(GameTextKeys.BattleMatchupStatus, "ステータス"));
+            LhButtonLabelUtility.SetLabel(
+                closeButton,
+                LocalizedText.GetOrFallback(GameTextKeys.CommonClose, "閉じる"));
         }
 
         /// <summary>

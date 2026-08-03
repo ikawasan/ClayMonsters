@@ -3,6 +3,7 @@ using Battle.Interface;
 using Cysharp.Threading.Tasks;
 using Extensions;
 using LighthouseExtends.UIComponent.Button;
+using Localization;
 using Scene.BattleNpcScene.Interface;
 using System;
 using System.Threading;
@@ -15,7 +16,7 @@ namespace Scene.BattleNpcScene.View
     /// BattleNpcシーンの勝利後戻り/再戦UI
     /// 位置と文言はBattleVictoryReturnDualプレハブ側で設定する
     /// </summary>
-    public class BattleNpcView : MonoBehaviour, IBattleNpcView, IBattleDualVictoryReturnView
+    public class BattleNpcView : MonoBehaviour, IBattleNpcView, IBattleDualVictoryReturnView, ILanguageAwareUi
     {
         private const int VisibleSortingOrder = 1100;
 
@@ -36,6 +37,7 @@ namespace Scene.BattleNpcScene.View
             returnButton?.EnsureUiSoundFeedback();
             rematchButton?.EnsureUiSoundFeedback();
             CacheSortingOrderIfNeeded();
+            ApplyLocalizedLabels();
             SetDualButtonsVisible(false);
         }
 
@@ -51,6 +53,11 @@ namespace Scene.BattleNpcScene.View
         /// <inheritdoc/>
         public void SetDualButtonsVisible(bool visible)
         {
+            if (visible)
+            {
+                ApplyLocalizedLabels();
+            }
+
             if (rootCanvas != null)
             {
                 CacheSortingOrderIfNeeded();
@@ -68,6 +75,23 @@ namespace Scene.BattleNpcScene.View
             CanvasVisibilityUtility.SetCanvasEnabled(rootCanvas, visible);
             EnsureButtonReady(returnButton, visible);
             EnsureButtonReady(rematchButton, visible);
+        }
+
+
+        /// <inheritdoc/>
+        public void RefreshLocalizedUi()
+        {
+            ApplyLocalizedLabels();
+        }
+
+        private void ApplyLocalizedLabels()
+        {
+            LhButtonLabelUtility.SetLabel(
+                returnButton,
+                LocalizedText.GetOrFallback(GameTextKeys.TrainingHudBackToTitle, "タイトルへ戻る"));
+            LhButtonLabelUtility.SetLabel(
+                rematchButton,
+                LocalizedText.GetOrFallback(GameTextKeys.BattleRematch, "再戦"));
         }
 
         /// <inheritdoc/>

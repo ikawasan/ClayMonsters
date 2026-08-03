@@ -67,6 +67,7 @@ namespace Scene.BattleNpcScene
         private CancellationTokenSource flowCts;
         private bool isRunning;
         private System.IDisposable titleReturnSubscription;
+        private System.IDisposable languageSubscription;
         private GameObject trackedPlayerModel;
         private GameObject trackedEnemyModel;
 
@@ -133,25 +134,38 @@ namespace Scene.BattleNpcScene
             this.selectionSession = selectionSession;
 
             titleReturnSubscription?.Dispose();
+            languageSubscription?.Dispose();
             if (titleReturnButton != null)
             {
-                TMP_Text label = titleReturnButton.GetComponentInChildren<TMP_Text>(true);
-                if (label != null)
-                {
-                    label.text = LocalizedText.Get(GameTextKeys.BattleLeave);
-                }
-
+                ApplyTitleReturnLabel();
                 titleReturnSubscription = titleReturnButton.SubscribeOnClick(OnClickTitleReturn);
+                languageSubscription = LanguageAwareUi.Register(ApplyTitleReturnLabel);
             }
             else
             {
                 titleReturnSubscription = null;
+                languageSubscription = null;
+            }
+        }
+
+        private void ApplyTitleReturnLabel()
+        {
+            if (titleReturnButton == null)
+            {
+                return;
+            }
+
+            TMP_Text label = titleReturnButton.GetComponentInChildren<TMP_Text>(true);
+            if (label != null)
+            {
+                label.text = LocalizedText.Get(GameTextKeys.BattleLeave);
             }
         }
 
         private void OnDestroy()
         {
             titleReturnSubscription?.Dispose();
+            languageSubscription?.Dispose();
             flowCts?.Cancel();
             flowCts?.Dispose();
         }

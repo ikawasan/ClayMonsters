@@ -14,7 +14,7 @@ namespace Scene.BattlePVPScene.View
     /// <summary>
     /// 通信切断時のメッセージウィンドウと閉じるボタン
     /// </summary>
-    public sealed class BattlePvpDisconnectView : MonoBehaviour, IBattlePvpDisconnectView
+    public sealed class BattlePvpDisconnectView : MonoBehaviour, IBattlePvpDisconnectView, ILanguageAwareUi
     {
         private static string DisconnectMessage =>
             LocalizedText.Get(GameTextKeys.BattlePvpDisconnectMessage);
@@ -108,6 +108,13 @@ namespace Scene.BattlePVPScene.View
             {
                 titleReturnButton.onClick.RemoveListener(OnClick);
             }
+        }
+
+
+        /// <inheritdoc/>
+        public void RefreshLocalizedUi()
+        {
+            ApplyDisconnectCopy();
         }
 
         private void ApplyDisconnectCopy()

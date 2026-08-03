@@ -1,4 +1,5 @@
 using Extensions;
+using Localization;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -89,6 +90,7 @@ namespace UI.Battle.View
 
         /// <summary>
         /// 間合い帯名からゲージ色を返す
+        /// 現在言語の表示名と一致させて日本語以外でも正しく色付けする
         /// </summary>
         public static Color ResolveDistanceFillColor(string bandName, Color close, Color mid, Color far, Color fallback)
         {
@@ -97,17 +99,36 @@ namespace UI.Battle.View
                 return fallback;
             }
 
-            if (bandName.Contains("近"))
+            string closeName = LocalizedText.GetOrFallback(GameTextKeys.BattleBandClose, "近距離");
+            string midName = LocalizedText.GetOrFallback(GameTextKeys.BattleBandMid, "中距離");
+            string farName = LocalizedText.GetOrFallback(GameTextKeys.BattleBandFar, "遠距離");
+            if (bandName == closeName)
             {
                 return close;
             }
 
-            if (bandName.Contains("中"))
+            if (bandName == midName)
             {
                 return mid;
             }
 
-            if (bandName.Contains("遠"))
+            if (bandName == farName)
+            {
+                return far;
+            }
+
+            // 古い邦名断片と英語断片の後方互換
+            if (bandName.Contains("近") || bandName.IndexOf("Close", System.StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return close;
+            }
+
+            if (bandName.Contains("中") || bandName.IndexOf("Mid", System.StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return mid;
+            }
+
+            if (bandName.Contains("遠") || bandName.IndexOf("Far", System.StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 return far;
             }

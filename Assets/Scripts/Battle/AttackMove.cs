@@ -14,7 +14,6 @@ namespace Battle
             RequiredPart = MotionPartRequirement.GetRequiredPart(motion);
             TargetDestroyPart = MotionPartRequirement.GetTargetDestroyPart(motion);
             Power = MotionPartRequirement.GetPower(motion);
-            DisplayName = MotionPartRequirement.GetDisplayName(motion);
 
             Vector2 range = MotionPartRequirement.GetRange(motion);
             RangeMin = range.x;
@@ -83,9 +82,9 @@ namespace Battle
         public float CounterWindUp { get; }
 
         /// <summary>
-        /// UI表示名。
+        /// UI表示名(現在の言語で都度解決する)
         /// </summary>
-        public string DisplayName { get; }
+        public string DisplayName => MotionPartRequirement.GetDisplayName(Motion);
 
         /// <summary>
         /// 指定の間合いがこの技の射程内かを返す。

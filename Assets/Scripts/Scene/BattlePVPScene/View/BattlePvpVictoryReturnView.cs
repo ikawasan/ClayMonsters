@@ -3,6 +3,7 @@ using Battle.Interface;
 using Cysharp.Threading.Tasks;
 using Extensions;
 using LighthouseExtends.UIComponent.Button;
+using Localization;
 using System.Threading;
 using UnityEngine;
 
@@ -11,7 +12,7 @@ namespace Scene.BattlePVPScene.View
     /// <summary>
     /// 通信対戦勝利後のタイトル戻りと再戦ボタンUI
     /// </summary>
-    public sealed class BattlePvpVictoryReturnView : MonoBehaviour, IBattleDualVictoryReturnView
+    public sealed class BattlePvpVictoryReturnView : MonoBehaviour, IBattleDualVictoryReturnView, ILanguageAwareUi
     {
         private const int VisibleSortingOrder = 1100;
 
@@ -31,6 +32,7 @@ namespace Scene.BattlePVPScene.View
             rematchButton?.EnsureUiSoundFeedback();
             titleReturnButton?.EnsureUiSoundFeedback();
             CacheSortingOrderIfNeeded();
+            ApplyLocalizedLabels();
 
             // GOを落とさずCanvasのみオフ(初回表示でAwake再入して消えるのを防ぐ)
             CanvasVisibilityUtility.SetCanvasEnabled(rootCanvas, false);
@@ -39,6 +41,11 @@ namespace Scene.BattlePVPScene.View
         /// <inheritdoc/>
         public void SetDualButtonsVisible(bool visible)
         {
+            if (visible)
+            {
+                ApplyLocalizedLabels();
+            }
+
             if (rootCanvas != null)
             {
                 CacheSortingOrderIfNeeded();
@@ -56,6 +63,23 @@ namespace Scene.BattlePVPScene.View
             CanvasVisibilityUtility.SetCanvasEnabled(rootCanvas, visible);
             EnsureButtonReady(titleReturnButton, visible);
             EnsureButtonReady(rematchButton, visible);
+        }
+
+
+        /// <inheritdoc/>
+        public void RefreshLocalizedUi()
+        {
+            ApplyLocalizedLabels();
+        }
+
+        private void ApplyLocalizedLabels()
+        {
+            LhButtonLabelUtility.SetLabel(
+                titleReturnButton,
+                LocalizedText.GetOrFallback(GameTextKeys.TrainingHudBackToTitle, "タイトルへ戻る"));
+            LhButtonLabelUtility.SetLabel(
+                rematchButton,
+                LocalizedText.GetOrFallback(GameTextKeys.BattleRematch, "再戦"));
         }
 
         private void CacheSortingOrderIfNeeded()

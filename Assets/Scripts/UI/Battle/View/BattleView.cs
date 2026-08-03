@@ -13,7 +13,7 @@ namespace UI.Battle.View
     /// <summary>
     /// リアルタイム戦闘UIの実装自他のHP・ガッツ・間合い・残り時間・技スロットと最後に触れた技名・決着を表示する
     /// </summary>
-    public class BattleView : MonoBehaviour, IBattleView
+    public class BattleView : MonoBehaviour, IBattleView, Localization.ILanguageAwareUi
     {
         [Header("技コマンド")]
         [Tooltip("攻撃ボタン(最大4。威力/属性/ガッツ/距離バーを持つ)")]
@@ -105,6 +105,8 @@ namespace UI.Battle.View
         private float targetDistanceFill;
         private string currentDistanceBandName = string.Empty;
         private float lastTimeRemaining = float.MaxValue;
+        private bool hasResult;
+        private string cachedResultWinnerName = string.Empty;
 
         // HP/コスト/間合いバーがSliderで作られている場合Sliderが長さを制御する
         private Slider playerHpSlider;
@@ -190,6 +192,7 @@ namespace UI.Battle.View
             if (resultText != null)
             {
                 resultText.enabled = false;
+                hasResult = false;
             }
 
             playerHpSlider = ResolveFillSlider(playerHpFill);
@@ -458,6 +461,7 @@ namespace UI.Battle.View
             if (resultText != null)
             {
                 resultText.enabled = false;
+                hasResult = false;
             }
 
             Navigation navigation = new Navigation { mode = Navigation.Mode.None };
@@ -693,13 +697,34 @@ namespace UI.Battle.View
                 return;
             }
 
-            resultText.text = string.IsNullOrEmpty(winnerName)
+            cachedResultWinnerName = winnerName;
+            hasResult = true;
+            ApplyResultText();
+            resultText.enabled = true;
+        }
+
+        /// <inheritdoc/>
+        public void RefreshLocalizedUi()
+        {
+            if (hasResult)
+            {
+                ApplyResultText();
+            }
+        }
+
+        private void ApplyResultText()
+        {
+            if (resultText == null)
+            {
+                return;
+            }
+
+            resultText.text = string.IsNullOrEmpty(cachedResultWinnerName)
                 ? Localization.LocalizedText.Get(Localization.GameTextKeys.BattleDraw)
                 : Localization.LocalizedText.Get(
                     Localization.GameTextKeys.BattleVictory,
                     "winnerName",
-                    winnerName);
-            resultText.enabled = true;
+                    cachedResultWinnerName);
         }
 
         /// <inheritdoc />

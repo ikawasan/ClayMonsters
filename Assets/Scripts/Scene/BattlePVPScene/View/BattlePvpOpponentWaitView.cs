@@ -2,13 +2,14 @@ using Scene.BattlePVPScene.Interface;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Localization;
 
 namespace Scene.BattlePVPScene.View
 {
     /// <summary>
     /// 相手入力待ち時に画面下部へメッセージを表示する
     /// </summary>
-    public sealed class BattlePvpOpponentWaitView : MonoBehaviour, IBattlePvpOpponentWaitView
+    public sealed class BattlePvpOpponentWaitView : MonoBehaviour, IBattlePvpOpponentWaitView, ILanguageAwareUi
     {
         [Tooltip("ONのときフォールバックUIを実行時生成しない")]
         [SerializeField] private bool useSceneCanvasLayout = true;
@@ -20,12 +21,18 @@ namespace Scene.BattlePVPScene.View
         private void Awake()
         {
             ValidateSceneLayout();
+            ApplyLocalizedLabels();
             SetVisible(false);
         }
 
         /// <inheritdoc/>
         public void SetVisible(bool visible)
         {
+            if (visible)
+            {
+                ApplyLocalizedLabels();
+            }
+
             if (rootCanvas != null)
             {
                 if (visible)
@@ -37,6 +44,27 @@ namespace Scene.BattlePVPScene.View
 
                 rootCanvas.enabled = visible;
             }
+        }
+
+
+        /// <inheritdoc/>
+        public void RefreshLocalizedUi()
+        {
+            ApplyLocalizedLabels();
+        }
+
+        private void ApplyLocalizedLabels()
+        {
+            if (messageText == null)
+            {
+                return;
+            }
+
+            Localization.LocalizedFont.SetText(
+                messageText,
+                Localization.LocalizedText.GetOrFallback(
+                    Localization.GameTextKeys.BattlePvpOpponentWaiting,
+                    "相手の応答を待っています"));
         }
 
         private void ValidateSceneLayout()

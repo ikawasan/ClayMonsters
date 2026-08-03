@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Battle;
 using ClayEditor.Rigging;
 using Extensions;
+using Localization;
 using R3;
 using UI.Battle.Interface;
 using UnityEngine;
@@ -87,6 +88,18 @@ namespace Battle.Presenter
             system.OnPartBreakMoveRejected
                 .Subscribe(index => view.ShowPartBreakLockMessage(index))
                 .AddTo(disposables);
+
+            disposables.Add(LanguageAwareUi.Register(OnLanguageChanged));
+        }
+
+        private void OnLanguageChanged()
+        {
+            // 技名・ヒント・距離帯を次のRefreshで再構築する
+            lastMoveRefreshDistance = float.NaN;
+            if (system != null && !isBattleEnded)
+            {
+                RefreshContinuous();
+            }
         }
 
         private void OnAttackWindUpStarted(AttackWindUpStarted started)
