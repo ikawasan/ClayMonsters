@@ -115,6 +115,11 @@ namespace Localization
         public const string BattleStart = "Battle.Start";
         public const string BattleVictoryShort = "Battle.VictoryShort";
         public const string BattleTipsTitle = "Battle.TipsTitle";
+        public const string BattleVs = "Battle.Vs";
+        public const string BattleReady = "Battle.Ready";
+        public const string BattleFight = "Battle.Fight";
+        public const string BattleFinish = "Battle.Finish";
+        public const string BattleBreak = "Battle.Break";
 
         public const string ModelGalleryPoints = "ModelGallery.Points";
         public const string ModelGalleryPostConfirm = "ModelGallery.PostConfirm";

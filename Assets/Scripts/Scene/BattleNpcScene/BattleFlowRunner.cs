@@ -15,7 +15,6 @@ using Scene.BattleNpcScene.Interface;
 using Scene.Core;
 using Scene.Core.Interface;
 using System.Threading;
-using TMPro;
 using UI.Battle.View;
 using UnityEngine;
 using VContainer;
@@ -155,11 +154,9 @@ namespace Scene.BattleNpcScene
                 return;
             }
 
-            TMP_Text label = titleReturnButton.GetComponentInChildren<TMP_Text>(true);
-            if (label != null)
-            {
-                label.text = LocalizedText.Get(GameTextKeys.BattleLeave);
-            }
+            Extensions.LhButtonLabelUtility.SetLabel(
+                titleReturnButton,
+                LocalizedText.GetOrFallback(GameTextKeys.BattleLeave, "戻る"));
         }
 
         private void OnDestroy()

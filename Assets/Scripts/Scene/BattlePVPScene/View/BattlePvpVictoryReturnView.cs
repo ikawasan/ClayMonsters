@@ -76,7 +76,7 @@ namespace Scene.BattlePVPScene.View
         {
             LhButtonLabelUtility.SetLabel(
                 titleReturnButton,
-                LocalizedText.GetOrFallback(GameTextKeys.TrainingHudBackToTitle, "タイトルへ戻る"));
+                LocalizedText.GetOrFallback(GameTextKeys.TrainingHudBackToTitle, "タイトル"));
             LhButtonLabelUtility.SetLabel(
                 rematchButton,
                 LocalizedText.GetOrFallback(GameTextKeys.BattleRematch, "再戦"));

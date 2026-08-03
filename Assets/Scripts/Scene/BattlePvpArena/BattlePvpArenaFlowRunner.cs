@@ -1027,16 +1027,7 @@ namespace Scene.BattlePvpArena
 
         private static void ApplyLeaveButtonLabel(LHButton button, string label)
         {
-            if (button == null)
-            {
-                return;
-            }
-
-            TMP_Text text = button.GetComponentInChildren<TMP_Text>(true);
-            if (text != null)
-            {
-                text.text = label;
-            }
+            Extensions.LhButtonLabelUtility.SetLabel(button, label);
         }
 
         private async UniTask ReturnToTitleAsync(CancellationToken cancellationToken)

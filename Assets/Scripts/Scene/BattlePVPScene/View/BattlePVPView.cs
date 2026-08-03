@@ -102,28 +102,28 @@ namespace Scene.BattlePVPScene.View
 
             LhButtonLabelUtility.SetLabel(
                 returnButton,
-                LocalizedText.GetOrFallback(GameTextKeys.TrainingHudBackToTitle, "タイトルへ戻る"));
+                LocalizedText.GetOrFallback(GameTextKeys.TrainingHudBackToTitle, "タイトル"));
             LhButtonLabelUtility.SetLabel(
                 directMatchButton,
-                LocalizedText.GetOrFallback(GameTextKeys.BattlePvpDirectMatch, "特定の相手と対戦"));
+                LocalizedText.GetOrFallback(GameTextKeys.BattlePvpDirectMatch, "特定"));
             LhButtonLabelUtility.SetLabel(
                 randomMatchButton,
-                LocalizedText.GetOrFallback(GameTextKeys.BattlePvpRandomMatch, "不特定の相手と対戦"));
+                LocalizedText.GetOrFallback(GameTextKeys.BattlePvpRandomMatch, "ランダム"));
             LhButtonLabelUtility.SetLabel(
                 createRoomButton,
-                LocalizedText.GetOrFallback(GameTextKeys.BattlePvpCreateRoom, "ルームを作成"));
+                LocalizedText.GetOrFallback(GameTextKeys.BattlePvpCreateRoom, "作成"));
             LhButtonLabelUtility.SetLabel(
                 joinRoomButton,
-                LocalizedText.GetOrFallback(GameTextKeys.BattlePvpJoinRoom, "ルームに参加"));
+                LocalizedText.GetOrFallback(GameTextKeys.BattlePvpJoinRoom, "参加"));
             LhButtonLabelUtility.SetLabel(
                 startRandomMatchButton,
-                LocalizedText.GetOrFallback(GameTextKeys.BattlePvpStartMatch, "マッチング開始"));
+                LocalizedText.GetOrFallback(GameTextKeys.BattlePvpStartMatch, "マッチ"));
             LhButtonLabelUtility.SetLabel(
                 cancelMatchButton,
                 LocalizedText.GetOrFallback(GameTextKeys.CommonCancel, "キャンセル"));
             LhButtonLabelUtility.SetLabel(
                 copyJoinCodeButton,
-                LocalizedText.GetOrFallback(GameTextKeys.BattlePvpCopyCode, "コードをコピー"));
+                LocalizedText.GetOrFallback(GameTextKeys.BattlePvpCopyCode, "コピー"));
             LhButtonLabelUtility.SetLabel(
                 directBackButton,
                 LocalizedText.GetOrFallback(GameTextKeys.CommonReturn, "戻る"));

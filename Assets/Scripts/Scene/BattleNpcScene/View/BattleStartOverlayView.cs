@@ -20,9 +20,6 @@ namespace Scene.BattleNpcScene.View
     /// </summary>
     public sealed class BattleStartOverlayView : MonoBehaviour, IBattleFinishPresentation, IBattlePartBreakPresentation, Localization.ILanguageAwareUi
     {
-        private const string FinishLabel = "Finish";
-        private const string BreakLabel = "Break!";
-
         [Header("参照")]
         [SerializeField] private Canvas overlayCanvas;
         [SerializeField] private TMP_Text vsText;
@@ -72,6 +69,7 @@ namespace Scene.BattleNpcScene.View
         private bool isVictoryPresentationActive;
         private string cachedVictoryWinnerName = string.Empty;
         private bool isFinishPresentationActive;
+        private bool isPartBreakPresentationActive;
         private CancellationTokenSource partBreakCts;
         private readonly BattleVictoryConfettiEffect victoryConfetti = new BattleVictoryConfettiEffect();
 
@@ -260,10 +258,56 @@ namespace Scene.BattleNpcScene.View
         public void RefreshLocalizedUi()
         {
             ApplyStartButtonLabel();
+            ApplyPhaseLabels();
             if (isVictoryPresentationActive)
             {
                 ApplyVictoryLabels(cachedVictoryWinnerName);
             }
+        }
+
+        private void ApplyPhaseLabels()
+        {
+            if (vsText != null)
+            {
+                vsText.text = Localization.LocalizedText.GetOrFallback(
+                    Localization.GameTextKeys.BattleVs,
+                    "VS");
+            }
+
+            if (readyText != null)
+            {
+                readyText.text = Localization.LocalizedText.GetOrFallback(
+                    Localization.GameTextKeys.BattleReady,
+                    "Ready");
+            }
+
+            if (fightText != null)
+            {
+                fightText.text = Localization.LocalizedText.GetOrFallback(
+                    Localization.GameTextKeys.BattleFight,
+                    "Fight");
+            }
+
+            if (finishText != null)
+            {
+                finishText.text = isPartBreakPresentationActive
+                    ? ResolveBreakLabel()
+                    : ResolveFinishLabel();
+            }
+        }
+
+        private static string ResolveFinishLabel()
+        {
+            return Localization.LocalizedText.GetOrFallback(
+                Localization.GameTextKeys.BattleFinish,
+                "Finish");
+        }
+
+        private static string ResolveBreakLabel()
+        {
+            return Localization.LocalizedText.GetOrFallback(
+                Localization.GameTextKeys.BattleBreak,
+                "Break!");
         }
 
         private void ApplyStartButtonLabel()
@@ -790,6 +834,7 @@ namespace Scene.BattleNpcScene.View
                     return;
                 }
 
+                isPartBreakPresentationActive = true;
                 ValidateSceneUi();
                 HideVsUi();
                 HidePhaseTexts();
@@ -804,7 +849,7 @@ namespace Scene.BattleNpcScene.View
 
                 if (finishText != null)
                 {
-                    finishText.text = BreakLabel;
+                    finishText.text = ResolveBreakLabel();
                     finishText.rectTransform.localScale = Vector3.one * 2.2f;
                     finishText.color = new Color(1f, 0.35f, 0.12f, 0f);
                 }
@@ -918,6 +963,7 @@ namespace Scene.BattleNpcScene.View
             }
             catch (OperationCanceledException)
             {
+                isPartBreakPresentationActive = false;
                 if (!isFinishPresentationActive)
                 {
                     RestoreFinishLabel();
@@ -963,6 +1009,7 @@ namespace Scene.BattleNpcScene.View
         /// <inheritdoc/>
         public void HidePartBreakImmediate()
         {
+            isPartBreakPresentationActive = false;
             RestoreFinishLabel();
             SetElementAlpha(finishText, 0f);
 
@@ -1000,7 +1047,7 @@ namespace Scene.BattleNpcScene.View
         {
             if (finishText != null)
             {
-                finishText.text = FinishLabel;
+                finishText.text = ResolveFinishLabel();
             }
         }
 
@@ -1077,6 +1124,8 @@ namespace Scene.BattleNpcScene.View
             TitleClayUiVisualUtility.ApplyMatchupNameLabel(enemyNameText, false);
             TitleClayUiVisualUtility.EnsureTextFontOnly(victoryTitleText);
             TitleClayUiVisualUtility.EnsureTextFontOnly(victoryNameText);
+            ApplyPhaseLabels();
+            ApplyStartButtonLabel();
         }
 
         private async UniTask WaitForMatchupStartAsync(CancellationToken cancellationToken)

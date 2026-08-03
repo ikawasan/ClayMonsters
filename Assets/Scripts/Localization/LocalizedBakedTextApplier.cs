@@ -84,6 +84,7 @@ namespace Localization
                 LocalizedFont.SetText(
                     entry.Target,
                     LocalizedText.GetOrFallback(entry.Key, entry.JapaneseFallback));
+                LocalizedFixedChromeLabel.RefreshHorizontalLayoutWidth(entry.Target);
             }
         }
 

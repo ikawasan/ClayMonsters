@@ -100,6 +100,8 @@ namespace Localization
             currentLanguageCode = languageCode;
             LocalizedFont.ApplyToAllLoaded();
             LanguageAwareUi.RefreshAllLoaded();
+            // 文言再適用やLHTextMeshProのfont差替直後に輪郭Faceが消えた分を戻す
+            LocalizedFont.ApplyToAllLoaded();
         }
     }
 }
