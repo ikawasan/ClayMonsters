@@ -24,7 +24,7 @@ namespace UI.ClayEditor.View
     /// 育成済みプールでは5×10の名前とサムネイルボタン一覧を表示し選択後に確認Canvasでステータスを表示する。
     /// 「ロードする」でglbを読み込み、「戻る」で確認Canvasを閉じる。
     /// </summary>
-    public class LoadSlotView : MonoBehaviour, IMonsterSelection
+    public class LoadSlotView : MonoBehaviour, IMonsterSelection, ILanguageAwareUi
     {
         private const int SelectionCanvasSortingOrder = 500;
         private const int ConfirmCanvasSortingOrder = SelectionCanvasSortingOrder + 1;
@@ -260,6 +260,7 @@ namespace UI.ClayEditor.View
             }
 
             ApplySelectionInstructionText();
+            ApplyLoadConfirmButtonLabels();
 
             if (UsesTrainedSlotGrid())
             {
@@ -669,6 +670,7 @@ namespace UI.ClayEditor.View
             ModelSaveSlotScrollListView.EnsureSelectionBackground(
                 confirmPanelRoot != null ? confirmPanelRoot.transform : null);
             RefreshLoadConfirm(slotIndex);
+            ApplyLoadConfirmButtonLabels();
             if (confirmPanelRoot != null)
             {
                 confirmPanelRoot.transform.SetAsLastSibling();
@@ -1116,6 +1118,27 @@ namespace UI.ClayEditor.View
             {
                 selectionCanvas = GetComponent<Canvas>();
             }
+        }
+
+        /// <inheritdoc/>
+        public void RefreshLocalizedUi()
+        {
+            ApplyLoadConfirmButtonLabels();
+            ApplySelectionInstructionText();
+            if (selectionCanvas != null && selectionCanvas.enabled)
+            {
+                RefreshSlots();
+            }
+        }
+
+        private void ApplyLoadConfirmButtonLabels()
+        {
+            LhButtonLabelUtility.SetLabel(
+                loadButton,
+                LocalizedText.GetOrFallback(GameTextKeys.LoadSlotLoad, "ロードする"));
+            LhButtonLabelUtility.SetLabel(
+                backButton,
+                LocalizedText.GetOrFallback(GameTextKeys.CommonReturn, "戻る"));
         }
 
         private void ApplySelectionInstructionText()

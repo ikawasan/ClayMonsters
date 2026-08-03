@@ -448,12 +448,27 @@ namespace UI.ClayEditor.View
         /// <summary>
         /// 欠落時のみフォントとマテリアルを補完する
         /// color/alignment/fontSize/margin等は変更しない
+        /// 実行時は現在言語フォントを優先する
         /// </summary>
         public static void EnsureTextFontOnly(TMP_Text text)
         {
             if (text == null)
             {
                 return;
+            }
+
+            if (Application.isPlaying)
+            {
+                LocalizedFont.Apply(text);
+                if (text.font != null)
+                {
+                    if (text.fontSharedMaterial == null)
+                    {
+                        text.fontSharedMaterial = text.font.material;
+                    }
+
+                    return;
+                }
             }
 
             if (text.font != null)

@@ -1,5 +1,6 @@
 using Extensions;
 using LighthouseExtends.UIComponent.Button;
+using Localization;
 using R3;
 using System;
 using TMPro;
@@ -11,7 +12,7 @@ namespace UI.ClayEditor.View
     /// セーブ完了専用ウィンドウ
     /// メッセージと閉じるボタンのみを表示する
     /// </summary>
-    public sealed class ModelSaveCompleteView : MonoBehaviour
+    public sealed class ModelSaveCompleteView : MonoBehaviour, ILanguageAwareUi
     {
         private const int CanvasSortingOrder = 110;
 
@@ -21,6 +22,9 @@ namespace UI.ClayEditor.View
 
         private readonly Subject<Unit> closedSubject = new Subject<Unit>();
         private bool isBound;
+        private bool isShowing;
+        private string messageKey = GameTextKeys.SaveComplete;
+        private string messageFallback = "セーブが完了しました";
 
         /// <summary>
         /// 閉じるボタンが押されたときに発火する
@@ -39,12 +43,21 @@ namespace UI.ClayEditor.View
         /// <param name="message">表示メッセージ</param>
         public void Show(string message)
         {
-            BindCloseButton();
-            if (messageText != null)
-            {
-                messageText.text = message ?? string.Empty;
-            }
+            ShowLocalized(GameTextKeys.SaveComplete, message);
+        }
 
+        /// <summary>
+        /// 完了ウィンドウをキーで表示する
+        /// </summary>
+        /// <param name="key">文言キー</param>
+        /// <param name="fallback">フォールバック</param>
+        public void ShowLocalized(string key, string fallback)
+        {
+            BindCloseButton();
+            isShowing = true;
+            messageKey = key ?? GameTextKeys.SaveComplete;
+            messageFallback = fallback ?? "セーブが完了しました";
+            ApplyMessage();
             CanvasVisibilityUtility.SetCanvasEnabled(canvas, true, CanvasSortingOrder);
         }
 
@@ -53,7 +66,29 @@ namespace UI.ClayEditor.View
         /// </summary>
         public void Hide()
         {
+            isShowing = false;
             CanvasVisibilityUtility.SetCanvasEnabled(canvas, false, CanvasSortingOrder);
+        }
+
+        /// <inheritdoc/>
+        public void RefreshLocalizedUi()
+        {
+            if (!isShowing)
+            {
+                return;
+            }
+
+            ApplyMessage();
+        }
+
+        private void ApplyMessage()
+        {
+            if (messageText == null)
+            {
+                return;
+            }
+
+            messageText.text = LocalizedText.GetOrFallback(messageKey, messageFallback);
         }
 
         private void BindCloseButton()

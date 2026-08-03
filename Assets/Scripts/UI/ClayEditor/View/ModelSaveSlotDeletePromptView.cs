@@ -10,7 +10,7 @@ namespace UI.ClayEditor.View
     /// <summary>
     /// セーブスロット削除の最終確認ダイアログ
     /// </summary>
-    public sealed class ModelSaveSlotDeletePromptView : MonoBehaviour
+    public sealed class ModelSaveSlotDeletePromptView : MonoBehaviour, ILanguageAwareUi
     {
         [SerializeField] private Canvas canvas;
         [SerializeField] private TMP_Text messageText;
@@ -18,6 +18,9 @@ namespace UI.ClayEditor.View
         [SerializeField] private LHButton cancelButton;
 
         private Action pendingConfirmAction;
+        private string cachedModelName = string.Empty;
+        private int cachedSlotIndex;
+        private bool isShowing;
 
         private void Awake()
         {
@@ -43,18 +46,50 @@ namespace UI.ClayEditor.View
         public void Show(string modelName, int slotIndex, Action onConfirmed)
         {
             pendingConfirmAction = onConfirmed;
-            if (messageText != null)
-            {
-                string safeName = string.IsNullOrEmpty(modelName)
-                    ? LocalizedText.GetOrFallback(GameTextKeys.SaveUnnamedModel, "名称未設定")
-                    : modelName;
-                messageText.text = LocalizedText.Get(GameTextKeys.TrainingDeleteConfirm, new System.Collections.Generic.Dictionary<string, object> { { "slot", slotIndex + 1 }, { "name", safeName } });
-            }
+            cachedModelName = modelName ?? string.Empty;
+            cachedSlotIndex = slotIndex;
+            isShowing = true;
+            ApplyCopy();
 
             if (canvas != null)
             {
                 canvas.enabled = true;
             }
+        }
+
+        /// <inheritdoc/>
+        public void RefreshLocalizedUi()
+        {
+            if (!isShowing)
+            {
+                return;
+            }
+
+            ApplyCopy();
+        }
+
+        private void ApplyCopy()
+        {
+            if (messageText != null)
+            {
+                string safeName = string.IsNullOrEmpty(cachedModelName)
+                    ? LocalizedText.GetOrFallback(GameTextKeys.SaveUnnamedModel, "名称未設定")
+                    : cachedModelName;
+                messageText.text = LocalizedText.Get(
+                    GameTextKeys.TrainingDeleteConfirm,
+                    new System.Collections.Generic.Dictionary<string, object>
+                    {
+                        { "slot", cachedSlotIndex + 1 },
+                        { "name", safeName },
+                    });
+            }
+
+            LhButtonLabelUtility.SetLabel(
+                confirmButton,
+                LocalizedText.GetOrFallback(GameTextKeys.ClayEditDeleteConfirm, "削除する"));
+            LhButtonLabelUtility.SetLabel(
+                cancelButton,
+                LocalizedText.GetOrFallback(GameTextKeys.CommonCancel, "キャンセル"));
         }
 
         /// <summary>
@@ -63,6 +98,7 @@ namespace UI.ClayEditor.View
         public void Hide()
         {
             pendingConfirmAction = null;
+            isShowing = false;
             if (canvas != null)
             {
                 canvas.enabled = false;

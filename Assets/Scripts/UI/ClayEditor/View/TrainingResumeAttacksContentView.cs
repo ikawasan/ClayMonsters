@@ -1,10 +1,9 @@
-using ClayEditor.Rigging;
-using SaveData;
 using System.Collections.Generic;
+using ClayEditor.Rigging;
+using Localization;
+using SaveData;
 using TMPro;
 using UnityEngine;
-
-using Localization;
 
 namespace UI.ClayEditor.View
 {
@@ -12,13 +11,26 @@ namespace UI.ClayEditor.View
     /// 育成確認画面とセーブスロット向け技構成表示
     /// 4枠固定のシーン配置UIへ攻撃情報を反映する
     /// </summary>
-    public sealed class TrainingResumeAttacksContentView : MonoBehaviour
+    public sealed class TrainingResumeAttacksContentView : MonoBehaviour, ILanguageAwareUi
     {
         public const int AttackSlotCount = ModelAttackMotionUtility.SlotCount;
+
+        private enum DisplayMode
+        {
+            None,
+            Default,
+            ResumeWindow,
+            SaveSlot,
+            ConfirmPrefab,
+            Empty
+        }
 
         [SerializeField] private TMP_Text headerText;
         [SerializeField] private TMP_Text emptyText;
         [SerializeField] private TrainingAttackSlotView[] attackSlots = new TrainingAttackSlotView[AttackSlotCount];
+
+        private DisplayMode displayMode = DisplayMode.None;
+        private IReadOnlyList<MotionType> cachedAttacks;
 
         /// <summary>
         /// 技構成を表示する
@@ -26,6 +38,37 @@ namespace UI.ClayEditor.View
         /// <param name="attacks">技一覧</param>
         public void Show(IReadOnlyList<MotionType> attacks)
         {
+            displayMode = DisplayMode.Default;
+            cachedAttacks = attacks;
+            ApplyShowDefault();
+        }
+
+        /// <inheritdoc/>
+        public void RefreshLocalizedUi()
+        {
+            switch (displayMode)
+            {
+                case DisplayMode.Default:
+                    ApplyShowDefault();
+                    break;
+                case DisplayMode.ResumeWindow:
+                    ApplyShowForResumeWindow();
+                    break;
+                case DisplayMode.SaveSlot:
+                    ApplyShowForSaveSlot();
+                    break;
+                case DisplayMode.ConfirmPrefab:
+                    ApplyShowForConfirmPrefab();
+                    break;
+                case DisplayMode.Empty:
+                    ShowEmpty();
+                    break;
+            }
+        }
+
+        private void ApplyShowDefault()
+        {
+            IReadOnlyList<MotionType> attacks = cachedAttacks;
             if (attacks == null || attacks.Count == 0)
             {
                 ShowEmpty();
@@ -71,7 +114,15 @@ namespace UI.ClayEditor.View
         /// <param name="attacks">技一覧</param>
         public void ShowForResumeWindow(IReadOnlyList<MotionType> attacks)
         {
+            displayMode = DisplayMode.ResumeWindow;
+            cachedAttacks = attacks;
+            ApplyShowForResumeWindow();
+        }
+
+        private void ApplyShowForResumeWindow()
+        {
             const bool preserveLayoutSpace = true;
+            IReadOnlyList<MotionType> attacks = cachedAttacks;
 
             if (headerText != null)
             {
@@ -119,8 +170,17 @@ namespace UI.ClayEditor.View
         /// <param name="attacks">技一覧</param>
         public void ShowForSaveSlot(IReadOnlyList<MotionType> attacks)
         {
+            displayMode = DisplayMode.SaveSlot;
+            cachedAttacks = attacks;
+            ApplyShowForSaveSlot();
+        }
+
+        private void ApplyShowForSaveSlot()
+        {
+            IReadOnlyList<MotionType> attacks = cachedAttacks;
             if (attacks == null || attacks.Count == 0)
             {
+                displayMode = DisplayMode.None;
                 Clear();
                 return;
             }
@@ -163,6 +223,14 @@ namespace UI.ClayEditor.View
         /// <param name="attacks">技一覧</param>
         public void ShowForConfirmPrefab(IReadOnlyList<MotionType> attacks)
         {
+            displayMode = DisplayMode.ConfirmPrefab;
+            cachedAttacks = attacks;
+            ApplyShowForConfirmPrefab();
+        }
+
+        private void ApplyShowForConfirmPrefab()
+        {
+            IReadOnlyList<MotionType> attacks = cachedAttacks;
             if (headerText != null)
             {
                 headerText.enabled = false;
@@ -175,7 +243,17 @@ namespace UI.ClayEditor.View
 
             if (attacks == null || attacks.Count == 0)
             {
-                ClearForConfirmPrefab();
+                displayMode = DisplayMode.ConfirmPrefab;
+                if (attackSlots == null)
+                {
+                    return;
+                }
+
+                for (int i = 0; i < attackSlots.Length; i++)
+                {
+                    attackSlots[i]?.ClearForConfirmPrefab();
+                }
+
                 return;
             }
 
@@ -208,6 +286,8 @@ namespace UI.ClayEditor.View
         /// </summary>
         public void ClearForConfirmPrefab()
         {
+            displayMode = DisplayMode.None;
+            cachedAttacks = null;
             if (attackSlots == null)
             {
                 return;
@@ -225,6 +305,8 @@ namespace UI.ClayEditor.View
         /// <param name="preserveLayoutSpace">trueのときLayoutGroup向けに枠を残す</param>
         public void Clear(bool preserveLayoutSpace = false)
         {
+            displayMode = DisplayMode.None;
+            cachedAttacks = null;
             if (headerText != null)
             {
                 if (preserveLayoutSpace)
@@ -254,6 +336,7 @@ namespace UI.ClayEditor.View
 
         private void ShowEmpty()
         {
+            displayMode = DisplayMode.Empty;
             ClearSlots(preserveLayoutSpace: false);
 
             if (headerText != null)

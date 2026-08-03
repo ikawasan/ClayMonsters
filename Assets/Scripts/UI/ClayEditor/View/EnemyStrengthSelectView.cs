@@ -1,16 +1,17 @@
-﻿using System;
+using System;
 using Extensions;
 using SaveData;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Localization;
 
 namespace UI.ClayEditor.View
 {
     /// <summary>
     /// 敵の強さ段階を選ぶUI
     /// </summary>
-    public class EnemyStrengthSelectView : MonoBehaviour
+    public class EnemyStrengthSelectView : MonoBehaviour, ILanguageAwareUi
     {
         private static readonly Color SelectedColor = new Color(1f, 0.86f, 0.42f, 1f);
         private static readonly Color NormalColor = new Color(1f, 1f, 1f, 1f);
@@ -345,6 +346,13 @@ namespace UI.ClayEditor.View
             {
                 button.targetGraphic.color = selected ? SelectedColor : NormalColor;
             }
+        }
+
+
+        /// <inheritdoc/>
+        public void RefreshLocalizedUi()
+        {
+            ApplyLabels();
         }
 
         private void ApplyLabels()

@@ -19,7 +19,7 @@ namespace UI.ClayEditor.View
     /// ClayEdit作り直し用のプレイヤースロット選択View
     /// スロット選択後にGLBを読み込みボクセル化して編集開始へ進む
     /// </summary>
-    public sealed class ClayEditRemakeLoadSlotView : MonoBehaviour
+    public sealed class ClayEditRemakeLoadSlotView : MonoBehaviour, ILanguageAwareUi
     {
         private const int SelectionCanvasSortingOrder = 115;
         private const int ConfirmCanvasSortingOrder = 116;
@@ -106,9 +106,37 @@ namespace UI.ClayEditor.View
                 listBackButton.SubscribeOnClick(OnListBack);
             }
 
+            ApplyLocalizedLabels();
             SetConfirmVisible(false);
             ValidateSceneLayout();
             isInitialized = true;
+        }
+
+
+        /// <inheritdoc/>
+        public void RefreshLocalizedUi()
+        {
+            ApplyLocalizedLabels();
+            if (isSelectionVisible)
+            {
+                RefreshSlots();
+            }
+        }
+
+        private void ApplyLocalizedLabels()
+        {
+            LhButtonLabelUtility.SetLabel(
+                selectButton,
+                LocalizedText.GetOrFallback(GameTextKeys.CommonDecide, "決定"));
+            LhButtonLabelUtility.SetLabel(
+                deleteButton,
+                LocalizedText.GetOrFallback(GameTextKeys.ClayEditDelete, "削除"));
+            LhButtonLabelUtility.SetLabel(
+                backButton,
+                LocalizedText.GetOrFallback(GameTextKeys.CommonReturn, "戻る"));
+            LhButtonLabelUtility.SetLabel(
+                listBackButton,
+                LocalizedText.GetOrFallback(GameTextKeys.CommonReturn, "戻る"));
         }
 
         private void OnEnable()

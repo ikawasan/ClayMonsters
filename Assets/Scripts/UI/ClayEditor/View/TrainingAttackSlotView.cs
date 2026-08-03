@@ -1,6 +1,7 @@
 using Battle;
 using ClayEditor.Rigging;
 using Extensions;
+using Localization;
 using TMPro;
 using UI.Battle.View;
 using UnityEngine;
@@ -12,7 +13,7 @@ namespace UI.ClayEditor.View
     /// 育成確認画面とセーブスロット向け技スロット表示
     /// シーン配置済みUIへ攻撃名・部位アイコン・ダメージ・コスト・範囲を反映する
     /// </summary>
-    public sealed class TrainingAttackSlotView : MonoBehaviour
+    public sealed class TrainingAttackSlotView : MonoBehaviour, ILanguageAwareUi
     {
         [Header("Texts")]
         [Tooltip("攻撃名を表示するテキスト")]
@@ -34,6 +35,12 @@ namespace UI.ClayEditor.View
         [Tooltip("範囲ゲージ(範囲:の右隣に置く)")]
         [SerializeField] private MoveRangeSegmentBarView rangeBar;
 
+        private LocalizedBakedTextApplier partLabelApplier;
+        private bool hasContent;
+        private int cachedSlotNumber;
+        private MotionType cachedAttack;
+        private bool cachedPreserveLayoutSpace;
+
         /// <summary>
         /// 技スロット表示を更新する
         /// </summary>
@@ -41,6 +48,11 @@ namespace UI.ClayEditor.View
         /// <param name="attack">攻撃</param>
         public void Apply(int slotNumber, MotionType attack, bool preserveLayoutSpace = false)
         {
+            hasContent = true;
+            cachedSlotNumber = slotNumber;
+            cachedAttack = attack;
+            cachedPreserveLayoutSpace = preserveLayoutSpace;
+
             if (preserveLayoutSpace)
             {
                 ApplyForConfirmPrefab(slotNumber, attack);
@@ -49,6 +61,7 @@ namespace UI.ClayEditor.View
 
             _ = slotNumber;
             SetSlotRootVisible(true, preserveLayoutSpace);
+            ApplyPartChromeLabels();
 
             if (attackNameText != null)
             {
@@ -89,11 +102,14 @@ namespace UI.ClayEditor.View
         /// </summary>
         public void Clear(bool preserveLayoutSpace = false)
         {
+            hasContent = false;
             if (preserveLayoutSpace)
             {
                 ClearForConfirmPrefab();
                 return;
             }
+
+            ApplyPartChromeLabels();
 
             if (attackNameText != null)
             {
@@ -145,7 +161,12 @@ namespace UI.ClayEditor.View
         /// <param name="attack">攻撃</param>
         public void ApplyForConfirmPrefab(int slotNumber, MotionType attack)
         {
+            hasContent = true;
+            cachedSlotNumber = slotNumber;
+            cachedAttack = attack;
+            cachedPreserveLayoutSpace = true;
             _ = slotNumber;
+            ApplyPartChromeLabels();
 
             if (attackNameText != null)
             {
@@ -186,6 +207,9 @@ namespace UI.ClayEditor.View
         /// </summary>
         public void ClearForConfirmPrefab()
         {
+            hasContent = false;
+            ApplyPartChromeLabels();
+
             if (attackNameText != null)
             {
                 attackNameText.text = string.Empty;
@@ -225,6 +249,32 @@ namespace UI.ClayEditor.View
                     usable: false,
                     preserveSegmentHierarchy: true);
             }
+        }
+
+
+        /// <inheritdoc/>
+        public void RefreshLocalizedUi()
+        {
+            if (hasContent)
+            {
+                Apply(cachedSlotNumber, cachedAttack, cachedPreserveLayoutSpace);
+                return;
+            }
+
+            ApplyPartChromeLabels();
+        }
+
+        private void ApplyPartChromeLabels()
+        {
+            if (partLabelApplier == null)
+            {
+                partLabelApplier = new LocalizedBakedTextApplier();
+                partLabelApplier.Register(GameTextKeys.BattleUsePartLabel, "使用部位:");
+                partLabelApplier.Register(GameTextKeys.BattleBreakPartLabel, "破壊部位:");
+                partLabelApplier.Capture(transform);
+            }
+
+            partLabelApplier.Apply();
         }
 
         private void ClearPartIcon(Image iconImage)

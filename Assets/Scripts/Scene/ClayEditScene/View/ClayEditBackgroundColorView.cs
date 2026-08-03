@@ -1,4 +1,5 @@
 using ClayEditor.Input.Interface;
+using Localization;
 using R3;
 using Scene.ClayEditScene.Interface;
 using UI.ClayEditor.View;
@@ -15,7 +16,7 @@ namespace Scene.ClayEditScene.View
     /// 0が黒1が灰色のグレースケールとして反映する
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class ClayEditBackgroundColorView : MonoBehaviour
+    public sealed class ClayEditBackgroundColorView : MonoBehaviour, ILanguageAwareUi
     {
         private const float MaxGray = 0.5f;
 
@@ -25,6 +26,7 @@ namespace Scene.ClayEditScene.View
 
         private IClayEditPostProcess clayEditPostProcess;
         private IClayInputProvider clayInputProvider;
+        private LocalizedBakedTextApplier bakedLabelApplier;
         private bool isCapturingPointer;
         private Texture2D gaugeTexture;
         private Sprite gaugeSprite;
@@ -64,6 +66,8 @@ namespace Scene.ClayEditScene.View
                 return;
             }
 
+            ApplyLocalizedLabels();
+
             backgroundColorSlider.minValue = 0f;
             backgroundColorSlider.maxValue = 1f;
             float initialValue = ColorToSliderValue(clayEditPostProcess.BackgroundColor);
@@ -78,6 +82,28 @@ namespace Scene.ClayEditScene.View
                 .AddTo(this);
 
             ApplySliderValue(initialValue);
+        }
+
+
+        /// <inheritdoc/>
+        public void RefreshLocalizedUi()
+        {
+            ApplyLocalizedLabels();
+        }
+
+        private void ApplyLocalizedLabels()
+        {
+            if (bakedLabelApplier == null)
+            {
+                bakedLabelApplier = new LocalizedBakedTextApplier();
+                bakedLabelApplier.Register(
+                    GameTextKeys.ClayEditBackgroundColor,
+                    "背景色");
+                Transform root = rootCanvas != null ? rootCanvas.transform : transform;
+                bakedLabelApplier.Capture(root);
+            }
+
+            bakedLabelApplier.Apply();
         }
 
         private void OnDisable()

@@ -1,305 +1,188 @@
 using ClayEditor;
 using ClayEditor.Rigging;
-
+using Extensions;
 using GameData;
-
 using LighthouseExtends.UIComponent.Button;
-
+using Localization;
 using R3;
-
 using R3.Triggers;
-
 using UI.ClayEditor.ViewModel;
-
 using UnityEngine;
-
 using VContainer;
 
-
-
 namespace UI.ClayEditor.View
-
 {
-
     /// <summary>
-
-    /// ClayEditÇ≈ë“ã@ÅEëñçsÅEîƒópçUåÇÇÉvÉåÉrÉÖÅ[Ç∑ÇÈView
-
+    /// ClayEdit„ÅßÂæÖÊ©ü„ÉªËµ∞Ë°å„ÉªÊ±éÁî®ÊîªÊíÉ„Çí„Éó„É¨„Éì„É•„Éº„Åô„ÇãView
     /// </summary>
-
-    public class ClayModelAnimationView : MonoBehaviour
-
+    public class ClayModelAnimationView : MonoBehaviour, ILanguageAwareUi
     {
-
         [Inject] private ClayAutoRigController autoRigController;
-
         [Inject] private ClayEditModeViewModel viewModel;
-
         [Inject] private SkeletonPartAnalyzer partAnalyzer;
 
-
-
         [SerializeField] private Canvas canvas;
-
         [SerializeField] private ProceduralMotionCharacter motionCharacter;
-
         [SerializeField] private LHButton runButton;
-
         [SerializeField] private LHButton attackButton;
 
-
+        private LocalizedBakedTextApplier bakedLabelApplier;
 
         private void Start()
-
         {
+            ApplyLocalizedLabels();
 
             canvas.OnEnableAsObservable()
-
                 .Subscribe(_ => TryPlayIdle())
-
                 .AddTo(this);
-
-
 
             canvas.OnDisableAsObservable()
-
                 .Subscribe(_ => StopMotion())
-
                 .AddTo(this);
-
-
 
             autoRigController.OnSkeletonRebuilt
-
                 .Subscribe(_ =>
-
                 {
-
                     RefreshButtonStates();
-
                     TryPlayIdle();
-
                 })
-
                 .AddTo(this);
-
-
 
             viewModel.CurrentMode
-
                 .Subscribe(mode =>
-
                 {
-
                     if (mode != EditModeType.Animation)
-
                     {
-
                         StopMotion();
-
                     }
-
                     else
-
                     {
-
                         TryPlayIdle();
-
                     }
-
                 })
-
                 .AddTo(this);
 
-
-
             if (runButton != null)
-
             {
-
                 runButton.onClick.AsObservable()
-
                     .Subscribe(_ => ToggleRun())
-
                     .AddTo(this);
-
             }
-
-
 
             if (attackButton != null)
-
             {
-
                 attackButton.onClick.AsObservable()
-
                     .Subscribe(_ => PlayGenericAttack())
-
                     .AddTo(this);
-
             }
-
-
 
             RefreshButtonStates();
-
         }
 
 
+        /// <inheritdoc/>
+        public void RefreshLocalizedUi()
+        {
+            ApplyLocalizedLabels();
+        }
+
+        private void ApplyLocalizedLabels()
+        {
+            LhButtonLabelUtility.SetLabel(
+                runButton,
+                LocalizedText.GetOrFallback(GameTextKeys.ClayEditRun, "Ëµ∞„Çã"));
+            LhButtonLabelUtility.SetLabel(
+                attackButton,
+                LocalizedText.GetOrFallback(GameTextKeys.ClayEditAttack, "ÊîªÊíÉ"));
+
+            if (bakedLabelApplier == null)
+            {
+                bakedLabelApplier = new LocalizedBakedTextApplier();
+                bakedLabelApplier.Register(GameTextKeys.ClayEditIdle, "ÂæÖÊ©ü");
+                bakedLabelApplier.Register(GameTextKeys.ClayEditRun, "Ëµ∞„Çã");
+                bakedLabelApplier.Register(GameTextKeys.ClayEditAttack, "ÊîªÊíÉ");
+                Transform root = canvas != null ? canvas.transform : transform;
+                bakedLabelApplier.Capture(root);
+            }
+
+            bakedLabelApplier.Apply();
+        }
 
         private bool CanDriveMotion()
-
         {
-
             return viewModel.CurrentMode.CurrentValue == EditModeType.Animation
-
                 && canvas.enabled
-
                 && canvas.gameObject.activeInHierarchy;
-
         }
-
-
 
         private void TryPlayIdle()
-
         {
-
             if (!CanDriveMotion() || !motionCharacter.IsReady)
-
             {
-
                 return;
-
             }
-
-
 
             motionCharacter.Play(MotionType.Idle);
-
         }
-
-
 
         private void StopMotion()
-
         {
-
             if (motionCharacter == null || !motionCharacter.IsReady)
-
             {
-
                 return;
-
             }
-
-
 
             motionCharacter.Play(MotionType.None);
-
         }
-
-
 
         private void ToggleRun()
-
         {
-
             if (!CanDriveMotion() || !motionCharacter.IsReady)
-
             {
-
                 return;
-
             }
-
-
 
             MotionType runMotion = ClayEditMotionPreview.ResolveRunMotion(motionCharacter);
-
             if (motionCharacter.CurrentMotion == runMotion)
-
             {
-
                 TryPlayIdle();
-
                 return;
-
             }
-
-
 
             motionCharacter.Play(runMotion);
-
         }
-
-
 
         private void PlayGenericAttack()
-
         {
-
             if (!CanDriveMotion() || !motionCharacter.IsReady)
-
             {
-
                 return;
-
             }
-
-
 
             MotionType? attack = ClayEditMotionPreview.ResolveGenericAttack(partAnalyzer, autoRigController.Bones);
-
             if (!attack.HasValue)
-
             {
-
                 return;
-
             }
-
-
 
             motionCharacter.Play(attack.Value);
-
         }
-
-
 
         private void RefreshButtonStates()
-
         {
-
             bool isReady = motionCharacter != null && motionCharacter.IsReady;
 
-
-
             if (runButton != null)
-
             {
-
                 runButton.interactable = isReady;
-
             }
-
-
 
             if (attackButton != null)
-
             {
-
                 bool canAttack = isReady
-
                     && ClayEditMotionPreview.ResolveGenericAttack(partAnalyzer, autoRigController.Bones).HasValue;
-
                 attackButton.interactable = canAttack;
-
             }
-
         }
-
     }
-
 }
-

@@ -1,5 +1,6 @@
 using Extensions;
 using LighthouseExtends.UIComponent.Button;
+using Localization;
 using R3;
 using Scene.ClayEditScene.Interface;
 using UnityEngine;
@@ -9,7 +10,7 @@ namespace Scene.ClayEditScene.View
     /// <summary>
     /// ClayEdit入場時に新規作成と作り直しを選ばせるView
     /// </summary>
-    public sealed class ClayEditEntryView : MonoBehaviour, IClayEditEntryView
+    public sealed class ClayEditEntryView : MonoBehaviour, IClayEditEntryView, ILanguageAwareUi
     {
         [Tooltip("ONのときフォールバックUIを実行時生成しない")]
         [SerializeField] private bool useSceneCanvasLayout = true;
@@ -44,12 +45,14 @@ namespace Scene.ClayEditScene.View
                 remakeButton.SubscribeOnClick(() => remakeSubject.OnNext(Unit.Default));
             }
 
+            ApplyLocalizedLabels();
             ValidateSceneLayout();
         }
 
         /// <inheritdoc />
         public void Show()
         {
+            ApplyLocalizedLabels();
             if (entryCanvas != null)
             {
                 entryCanvas.enabled = true;
@@ -65,6 +68,35 @@ namespace Scene.ClayEditScene.View
             {
                 entryCanvas.enabled = false;
             }
+        }
+
+        private LocalizedBakedTextApplier bakedLabelApplier;
+
+
+        /// <inheritdoc/>
+        public void RefreshLocalizedUi()
+        {
+            ApplyLocalizedLabels();
+        }
+
+        private void ApplyLocalizedLabels()
+        {
+            if (bakedLabelApplier == null)
+            {
+                bakedLabelApplier = new LocalizedBakedTextApplier();
+                bakedLabelApplier.Register(GameTextKeys.TitleClayEdit, "モンスターエディット");
+                bakedLabelApplier.Register(GameTextKeys.ClayEditRemake, "作り直す");
+                Transform root = entryCanvas != null ? entryCanvas.transform : transform;
+                bakedLabelApplier.Capture(root);
+            }
+
+            bakedLabelApplier.Apply();
+            LhButtonLabelUtility.SetLabel(
+                newCreateButton,
+                LocalizedText.GetOrFallback(GameTextKeys.ClayEditNewCreate, "新規作成"));
+            LhButtonLabelUtility.SetLabel(
+                remakeButton,
+                LocalizedText.GetOrFallback(GameTextKeys.ClayEditRemakeLong, "モンスターを作り直す"));
         }
 
         private void ValidateSceneLayout()

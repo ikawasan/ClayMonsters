@@ -26,7 +26,7 @@ namespace UI.ClayEditor.View
     /// シーン遷移や入力/カメラのロックはScene側(ClayEditPresenter)がOnSaved/IsSaveUiOpenを購読して行う
     /// (asmdefの循環参照を避けるため、このViewからは他レイヤーを直接触らない)
     /// </summary>
-    public class SaveSlotView : MonoBehaviour
+    public class SaveSlotView : MonoBehaviour, ILanguageAwareUi
     {
         [Inject] private readonly IClayModelSaveService saveService;
         [Inject] private readonly ClayAutoRigController autoRigController;
@@ -250,7 +250,73 @@ namespace UI.ClayEditor.View
                 slotActionBackButton.SubscribeOnClick(OnSlotActionBack);
             }
 
+            ApplyLocalizedLabels();
             SetConfirmCanvasButtonsVisible(previewVisible: false);
+        }
+
+
+        /// <inheritdoc/>
+        public void RefreshLocalizedUi()
+        {
+            ApplyLocalizedLabels();
+            if (slotCanvas != null && slotCanvas.enabled)
+            {
+                RefreshSlots();
+            }
+        }
+
+        private void ApplyLocalizedLabels()
+        {
+            LhButtonLabelUtility.SetLabel(
+                openSaveButton,
+                LocalizedText.GetOrFallback(GameTextKeys.ClayEditSave, "保存"));
+            LhButtonLabelUtility.SetLabel(
+                openEnemySaveButton,
+                LocalizedText.GetOrFallback(GameTextKeys.ClayEditSaveAsEnemy, "敵として保存"));
+            LhButtonLabelUtility.SetLabel(
+                backButton,
+                LocalizedText.GetOrFallback(GameTextKeys.CommonReturn, "戻る"));
+            LhButtonLabelUtility.SetLabel(
+                slotActionOverwriteButton,
+                LocalizedText.GetOrFallback(GameTextKeys.ClayEditOverwriteSave, "上書き保存"));
+            LhButtonLabelUtility.SetLabel(
+                slotActionDeleteButton,
+                LocalizedText.GetOrFallback(GameTextKeys.ClayEditDelete, "削除"));
+            LhButtonLabelUtility.SetLabel(
+                slotActionBackButton,
+                LocalizedText.GetOrFallback(GameTextKeys.CommonReturn, "戻る"));
+            LhButtonLabelUtility.SetLabel(
+                confirmNameButton,
+                LocalizedText.GetOrFallback(GameTextKeys.CommonDecide, "決定"));
+            LhButtonLabelUtility.SetLabel(
+                nameInputBackButton,
+                LocalizedText.GetOrFallback(GameTextKeys.CommonReturn, "戻る"));
+            LhButtonLabelUtility.SetLabel(
+                confirmSaveButton,
+                LocalizedText.GetOrFallback(GameTextKeys.CommonSave, "保存する"));
+            LhButtonLabelUtility.SetLabel(
+                confirmBackButton,
+                LocalizedText.GetOrFallback(GameTextKeys.CommonReturn, "戻る"));
+
+            EnsureBakedChromeLabels();
+            bakedChromeLabelApplier?.Apply();
+        }
+
+        private LocalizedBakedTextApplier bakedChromeLabelApplier;
+
+        private void EnsureBakedChromeLabels()
+        {
+            if (bakedChromeLabelApplier != null)
+            {
+                return;
+            }
+
+            bakedChromeLabelApplier = new LocalizedBakedTextApplier();
+            bakedChromeLabelApplier.Register(GameTextKeys.ClayEditNamePrompt, "名前を付けてください");
+            bakedChromeLabelApplier.Register(GameTextKeys.ClayEditSaveConfirm, "保存しますか？");
+            bakedChromeLabelApplier.Register(GameTextKeys.SaveComplete, "セーブが完了しました");
+            bakedChromeLabelApplier.Register(GameTextKeys.ClayEditDeleteConfirm, "削除する");
+            bakedChromeLabelApplier.Capture(transform);
         }
 
         /// <summary>
