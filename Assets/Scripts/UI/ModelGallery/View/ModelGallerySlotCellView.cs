@@ -11,7 +11,7 @@ namespace UI.ModelGallery.View
     /// <summary>
     /// 展示室投稿タブの育成前セーブスロット風セル
     /// </summary>
-    public sealed class ModelGallerySlotCellView : MonoBehaviour
+    public sealed class ModelGallerySlotCellView : MonoBehaviour, Localization.ILanguageAwareUi
     {
         [SerializeField] private Canvas cellCanvas;
         [SerializeField] private LHButton selectButton;
@@ -23,6 +23,13 @@ namespace UI.ModelGallery.View
 
         private Texture2D ownedThumbnail;
         private Sprite ownedSprite;
+
+        private int cachedSlotIndex;
+        private string cachedModelName;
+        private string cachedStatusParams;
+        private bool cachedIsUsed;
+        private bool cachedIsSelected;
+        private bool hasCachedContent;
 
         /// <summary>
         /// セル選択を購読する
@@ -49,24 +56,14 @@ namespace UI.ModelGallery.View
             bool isUsed,
             bool isSelected)
         {
-            if (indexText != null)
-            {
-                indexText.text = $"{slotIndex + 1}";
-            }
+            hasCachedContent = true;
+            cachedSlotIndex = slotIndex;
+            cachedModelName = modelName;
+            cachedStatusParams = statusParams;
+            cachedIsUsed = isUsed;
+            cachedIsSelected = isSelected;
 
-            if (nameText != null)
-            {
-                nameText.text = isUsed
-                    ? (modelName ?? string.Empty)
-                    : Localization.LocalizedText.GetOrFallback(
-                        Localization.GameTextKeys.ModelGalleryEmptySlot,
-                        "空きスロット");
-            }
-
-            if (paramsText != null)
-            {
-                paramsText.text = isUsed ? (statusParams ?? string.Empty) : string.Empty;
-            }
+            ApplyCachedText();
 
             ReplaceThumbnail(thumbnail);
             if (thumbnailImage != null)
@@ -79,6 +76,39 @@ namespace UI.ModelGallery.View
             if (selectedHighlightImage != null)
             {
                 selectedHighlightImage.enabled = isSelected;
+            }
+        }
+
+        /// <inheritdoc/>
+        public void RefreshLocalizedUi()
+        {
+            if (!hasCachedContent)
+            {
+                return;
+            }
+
+            ApplyCachedText();
+        }
+
+        private void ApplyCachedText()
+        {
+            if (indexText != null)
+            {
+                indexText.text = $"{cachedSlotIndex + 1}";
+            }
+
+            if (nameText != null)
+            {
+                nameText.text = cachedIsUsed
+                    ? (cachedModelName ?? string.Empty)
+                    : Localization.LocalizedText.GetOrFallback(
+                        Localization.GameTextKeys.ModelGalleryEmptySlot,
+                        "空きスロット");
+            }
+
+            if (paramsText != null)
+            {
+                paramsText.text = cachedIsUsed ? (cachedStatusParams ?? string.Empty) : string.Empty;
             }
         }
 

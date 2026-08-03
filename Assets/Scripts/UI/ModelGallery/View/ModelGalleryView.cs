@@ -21,7 +21,7 @@ namespace UI.ModelGallery.View
     /// 展示室本体UI
     /// Canvas.enabledで表示切替する
     /// </summary>
-    public sealed class ModelGalleryView : MonoBehaviour, IModelGalleryView
+    public sealed class ModelGalleryView : MonoBehaviour, IModelGalleryView, ILanguageAwareUi
     {
         [SerializeField] private Canvas canvas;
         [SerializeField] private Canvas postTabCanvas;
@@ -89,6 +89,13 @@ namespace UI.ModelGallery.View
         private Texture2D ownedDownloadConfirmThumbnail;
         private Sprite ownedDownloadConfirmSprite;
         private CancellationTokenSource browseClipCts;
+        private LocalizedBakedTextApplier bakedLabelApplier;
+        private int cachedPoints;
+        private bool postConfirmVisible;
+        private string cachedPostConfirmName = string.Empty;
+        private bool downloadConfirmVisible;
+        private string cachedDownloadConfirmName = string.Empty;
+        private bool downloadConfirmIsOverwrite;
 
         private void Awake()
         {
@@ -97,7 +104,132 @@ namespace UI.ModelGallery.View
             ConfigureTabAndSortTogglesNoSelected();
             BindCellClicks();
             BindBrowseScroll();
+            EnsureBakedLabels();
             Hide();
+        }
+
+        /// <inheritdoc/>
+        public void RefreshLocalizedUi()
+        {
+            ApplyChromeLabels();
+            SetPoints(cachedPoints);
+            if (postConfirmVisible)
+            {
+                if (postConfirmNameText != null)
+                {
+                    postConfirmNameText.text = cachedPostConfirmName;
+                }
+
+                if (postConfirmMessageText != null)
+                {
+                    postConfirmMessageText.text = Localization.LocalizedText.Get(
+                        Localization.GameTextKeys.ModelGalleryPostConfirm);
+                }
+            }
+
+            if (downloadConfirmVisible)
+            {
+                if (downloadConfirmNameText != null)
+                {
+                    downloadConfirmNameText.text = cachedDownloadConfirmName;
+                }
+
+                if (downloadConfirmMessageText != null)
+                {
+                    downloadConfirmMessageText.text = downloadConfirmIsOverwrite
+                        ? Localization.LocalizedText.GetOrFallback(
+                            Localization.GameTextKeys.ModelGalleryOverwriteConfirm,
+                            "既存のセーブデータに上書き保存しますか？")
+                        : Localization.LocalizedText.GetOrFallback(
+                            Localization.GameTextKeys.ModelGallerySaveToSlotConfirm,
+                            "このスロットに保存しますか？");
+                }
+            }
+        }
+
+        private void EnsureBakedLabels()
+        {
+            if (bakedLabelApplier != null)
+            {
+                return;
+            }
+
+            bakedLabelApplier = new LocalizedBakedTextApplier();
+            bakedLabelApplier.Register(GameTextKeys.TitleModelGallery, "展示室");
+            bakedLabelApplier.Register(GameTextKeys.ModelGalleryTabPost, "投稿");
+            bakedLabelApplier.Register(GameTextKeys.ModelGalleryTabBrowse, "閲覧");
+            bakedLabelApplier.Register(GameTextKeys.ModelGallerySortRandom, "ランダム");
+            bakedLabelApplier.Register(GameTextKeys.ModelGallerySortMonthly, "月間ランキング");
+            bakedLabelApplier.Register(GameTextKeys.ModelGallerySortOverall, "総合ランキング");
+            bakedLabelApplier.Register(GameTextKeys.ModelGalleryPrev, "前へ");
+            bakedLabelApplier.Register(GameTextKeys.ModelGalleryNext, "次へ");
+            bakedLabelApplier.Register(GameTextKeys.ModelGalleryRefresh, "更新");
+            bakedLabelApplier.Register(GameTextKeys.ModelGalleryPublish, "投稿する");
+            bakedLabelApplier.Register(GameTextKeys.CommonSave, "保存する");
+            bakedLabelApplier.Register(GameTextKeys.CommonClose, "閉じる");
+            bakedLabelApplier.Register(GameTextKeys.ModelGalleryDownload, "ダウンロード");
+            bakedLabelApplier.Register(GameTextKeys.ModelGalleryModelName, "モデル名");
+            bakedLabelApplier.Register(GameTextKeys.ModelGalleryPointsInsufficient, "ポイントが不足しています");
+            bakedLabelApplier.Register(GameTextKeys.ModelGallerySaveDestEmpty, "保存先: 空きスロット");
+            bakedLabelApplier.Register(GameTextKeys.ModelGallerySelectSaveSlot, "保存先スロットを選択");
+            bakedLabelApplier.Register(GameTextKeys.ModelGalleryPostConfirm, "投稿しますか？");
+            bakedLabelApplier.Register(
+                GameTextKeys.ModelGallerySaveToSlotConfirm,
+                "このスロットに保存しますか？");
+            bakedLabelApplier.Capture(transform);
+        }
+
+        private void ApplyChromeLabels()
+        {
+            EnsureBakedLabels();
+            bakedLabelApplier?.Apply();
+
+            if (titleText != null)
+            {
+                LocalizedFont.SetText(
+                    titleText,
+                    LocalizedText.GetOrFallback(GameTextKeys.TitleModelGallery, "展示室"));
+            }
+
+            LhButtonLabelUtility.SetLabel(
+                closeButton,
+                LocalizedText.GetOrFallback(GameTextKeys.CommonClose, "閉じる"));
+            LhButtonLabelUtility.SetLabel(
+                postConfirmPublishButton,
+                LocalizedText.GetOrFallback(GameTextKeys.ModelGalleryPublish, "投稿する"));
+            LhButtonLabelUtility.SetLabel(
+                postConfirmCloseButton,
+                LocalizedText.GetOrFallback(GameTextKeys.CommonClose, "閉じる"));
+            LhButtonLabelUtility.SetLabel(
+                browseRefreshButton,
+                LocalizedText.GetOrFallback(GameTextKeys.ModelGalleryRefresh, "更新"));
+            LhButtonLabelUtility.SetLabel(
+                pointsInsufficientCloseButton,
+                LocalizedText.GetOrFallback(GameTextKeys.CommonClose, "閉じる"));
+            LhButtonLabelUtility.SetLabel(
+                downloadSlotSelectCloseButton,
+                LocalizedText.GetOrFallback(GameTextKeys.CommonClose, "閉じる"));
+            LhButtonLabelUtility.SetLabel(
+                downloadConfirmSaveButton,
+                LocalizedText.GetOrFallback(GameTextKeys.CommonSave, "保存する"));
+            LhButtonLabelUtility.SetLabel(
+                downloadConfirmCloseButton,
+                LocalizedText.GetOrFallback(GameTextKeys.CommonClose, "閉じる"));
+            LhButtonLabelUtility.SetLabel(
+                postTabToggle,
+                LocalizedText.GetOrFallback(GameTextKeys.ModelGalleryTabPost, "投稿"));
+            LhButtonLabelUtility.SetLabel(
+                browseTabToggle,
+                LocalizedText.GetOrFallback(GameTextKeys.ModelGalleryTabBrowse, "閲覧"));
+            LhButtonLabelUtility.SetLabel(
+                randomSortToggle,
+                LocalizedText.GetOrFallback(GameTextKeys.ModelGallerySortRandom, "ランダム"));
+            LhButtonLabelUtility.SetLabel(
+                monthlyRankingToggle,
+                LocalizedText.GetOrFallback(GameTextKeys.ModelGallerySortMonthly, "月間ランキング"));
+            LhButtonLabelUtility.SetLabel(
+                overallRankingToggle,
+                LocalizedText.GetOrFallback(GameTextKeys.ModelGallerySortOverall, "総合ランキング"));
         }
 
         /// <inheritdoc />
@@ -111,6 +243,7 @@ namespace UI.ModelGallery.View
                 return;
             }
 
+            ApplyChromeLabels();
             canvas.enabled = true;
         }
 
@@ -172,10 +305,11 @@ namespace UI.ModelGallery.View
         {
             if (pointsText != null)
             {
+                cachedPoints = Mathf.Max(0, points);
                 pointsText.text = Localization.LocalizedText.Get(
                     Localization.GameTextKeys.ModelGalleryPoints,
                     "points",
-                    Mathf.Max(0, points));
+                    cachedPoints);
             }
         }
 
@@ -329,10 +463,12 @@ namespace UI.ModelGallery.View
             }
 
             HideDownloadConfirm();
+            postConfirmVisible = true;
+            cachedPostConfirmName = modelName ?? string.Empty;
 
             if (postConfirmNameText != null)
             {
-                postConfirmNameText.text = modelName ?? string.Empty;
+                postConfirmNameText.text = cachedPostConfirmName;
             }
 
             if (postConfirmMessageText != null)
@@ -354,6 +490,7 @@ namespace UI.ModelGallery.View
         /// <inheritdoc />
         public void HidePostConfirm()
         {
+            postConfirmVisible = false;
             if (postConfirmCanvas != null)
             {
                 postConfirmCanvas.enabled = false;
@@ -372,15 +509,24 @@ namespace UI.ModelGallery.View
             }
 
             HidePostConfirm();
+            downloadConfirmVisible = true;
+            cachedDownloadConfirmName = modelName ?? string.Empty;
+            downloadConfirmIsOverwrite = IsDownloadOverwriteMessage(message);
 
             if (downloadConfirmNameText != null)
             {
-                downloadConfirmNameText.text = modelName ?? string.Empty;
+                downloadConfirmNameText.text = cachedDownloadConfirmName;
             }
 
             if (downloadConfirmMessageText != null)
             {
-                downloadConfirmMessageText.text = message ?? string.Empty;
+                downloadConfirmMessageText.text = downloadConfirmIsOverwrite
+                    ? Localization.LocalizedText.GetOrFallback(
+                        Localization.GameTextKeys.ModelGalleryOverwriteConfirm,
+                        "既存のセーブデータに上書き保存しますか？")
+                    : Localization.LocalizedText.GetOrFallback(
+                        Localization.GameTextKeys.ModelGallerySaveToSlotConfirm,
+                        "このスロットに保存しますか？");
             }
 
             ReplaceDownloadConfirmThumbnail(thumbnail);
@@ -393,9 +539,29 @@ namespace UI.ModelGallery.View
             downloadConfirmCanvas.enabled = true;
         }
 
+        private static bool IsDownloadOverwriteMessage(string message)
+        {
+            if (string.IsNullOrEmpty(message))
+            {
+                return false;
+            }
+
+            string overwrite = Localization.LocalizedText.GetOrFallback(
+                Localization.GameTextKeys.ModelGalleryOverwriteConfirm,
+                "既存のセーブデータに上書き保存しますか？");
+            if (string.Equals(message, overwrite, StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            return message.IndexOf("上書き", StringComparison.Ordinal) >= 0
+                || message.IndexOf("overwrite", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
         /// <inheritdoc />
         public void HideDownloadConfirm()
         {
+            downloadConfirmVisible = false;
             if (downloadConfirmCanvas != null)
             {
                 downloadConfirmCanvas.enabled = false;
