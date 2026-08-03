@@ -16,7 +16,7 @@ namespace Scene.TitleScene.View
     /// タイトル画面のメニューとロゴを表示する
     /// UIはTitleシーンのCanvas上に配置する
     /// </summary>
-    public class TitleView : MonoBehaviour, ITitleView
+    public class TitleView : MonoBehaviour, ITitleView, ILanguageAwareUi
     {
         [SerializeField] private LHButton clayEditButton;
         [SerializeField] private LHButton battleNpcButton;
@@ -30,6 +30,7 @@ namespace Scene.TitleScene.View
         [SerializeField] private TMP_Text pointsText;
 
         private IDisposable languageSubscription;
+        private int cachedPoints;
 
         private void Awake()
         {
@@ -42,6 +43,13 @@ namespace Scene.TitleScene.View
         {
             languageSubscription?.Dispose();
             languageSubscription = null;
+        }
+
+        /// <inheritdoc/>
+        public void RefreshLocalizedUi()
+        {
+            ApplyMenuLabels();
+            SetPoints(cachedPoints);
         }
 
         private void SubscribeLanguageChange()
@@ -185,12 +193,13 @@ namespace Scene.TitleScene.View
                 return;
             }
 
+            cachedPoints = Mathf.Max(0, points);
             LocalizedFont.SetText(
                 pointsText,
                 LocalizedText.Get(
                     GameTextKeys.TitlePoints,
                     "points",
-                    Mathf.Max(0, points)));
+                    cachedPoints));
         }
 
         private sealed class EmptyDisposable : IDisposable

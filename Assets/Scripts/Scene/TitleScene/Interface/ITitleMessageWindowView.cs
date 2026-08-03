@@ -15,6 +15,13 @@ namespace Scene.TitleScene.Interface
         void Show(string message);
 
         /// <summary>
+        /// キーでメッセージを表示する
+        /// </summary>
+        /// <param name="key">文言キー</param>
+        /// <param name="fallback">フォールバック</param>
+        void ShowLocalized(string key, string fallback);
+
+        /// <summary>
         /// メッセージウィンドウを閉じる
         /// </summary>
         void Hide();

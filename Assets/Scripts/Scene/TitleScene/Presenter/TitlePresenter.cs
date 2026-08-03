@@ -1,4 +1,5 @@
 using Cysharp.Threading.Tasks;
+using Localization;
 using R3;
 using SaveData;
 using SaveData.Interface;
@@ -14,9 +15,6 @@ namespace Scene.TitleScene.Presenter
 {
     public class TitlePresenter : ITitlePresenter
     {
-        private const string NoUntrainedModelMessage = "モンスターを作成してください";
-        private const string NoTrainedModelMessage = "育成済みのモンスターがありません";
-
         private readonly IClayMonsterSceneManager sceneManager;
         private readonly IClayModelSaveService saveService;
         private readonly IPointsService pointsService;
@@ -127,7 +125,9 @@ namespace Scene.TitleScene.Presenter
                 return;
             }
 
-            messageWindowView.Show(NoTrainedModelMessage);
+            messageWindowView.ShowLocalized(
+                GameTextKeys.TitleNoTrainedModel,
+                "育成済みのモンスターがありません");
         }
 
         private void OnClickTrainingButton()
@@ -143,7 +143,9 @@ namespace Scene.TitleScene.Presenter
                 return;
             }
 
-            messageWindowView.Show(NoUntrainedModelMessage);
+            messageWindowView.ShowLocalized(
+                GameTextKeys.TitleNoUntrainedModel,
+                "モンスターを作成してください");
         }
 
         private void OnClickSkillTreeButton()

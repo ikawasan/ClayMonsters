@@ -16,7 +16,7 @@ namespace UI.SkillTree.View
     /// スキルツリー本体UI
     /// Canvas.enabledで表示切替する
     /// </summary>
-    public sealed class SkillTreeView : MonoBehaviour, ISkillTreeView
+    public sealed class SkillTreeView : MonoBehaviour, ISkillTreeView, ILanguageAwareUi
     {
         private static readonly Color LockedConnectionColor = new(0.45f, 0.42f, 0.38f, 0.55f);
         private static readonly Color UnlockedConnectionColor = new(0.95f, 0.92f, 0.85f, 0.95f);
@@ -39,6 +39,8 @@ namespace UI.SkillTree.View
 
         private UnityAction<SkillTreeNodeId> nodeSelectedAction;
         private Dictionary<SkillTreeNodeId, SkillTreeNodeView> nodeMap;
+        private LocalizedBakedTextApplier bakedLabelApplier;
+        private int cachedPoints;
 
         private void Awake()
         {
@@ -46,7 +48,49 @@ namespace UI.SkillTree.View
             RebuildNodeMap();
             ApplyGridLayout();
             InitializeBonusSummaryToggle();
+            EnsureBakedLabels();
             Hide();
+        }
+
+        /// <inheritdoc/>
+        public void RefreshLocalizedUi()
+        {
+            ApplyChromeLabels();
+            SetPoints(cachedPoints);
+        }
+
+        private void EnsureBakedLabels()
+        {
+            if (bakedLabelApplier != null)
+            {
+                return;
+            }
+
+            bakedLabelApplier = new LocalizedBakedTextApplier();
+            bakedLabelApplier.Register(GameTextKeys.SkillTreeTitle, "スキルツリー");
+            bakedLabelApplier.Register(GameTextKeys.SkillTreeSkill, "スキル");
+            bakedLabelApplier.Register(GameTextKeys.SkillTreeBonusEffects, "獲得効果");
+            bakedLabelApplier.Register(GameTextKeys.SkillTreeBonusEffectsHeader, "【獲得効果】");
+            bakedLabelApplier.Register(GameTextKeys.SkillTreeSelectNode, "ノードを選択してください");
+            bakedLabelApplier.Register(GameTextKeys.SkillTreeUnlock, "解放");
+            bakedLabelApplier.Register(GameTextKeys.CommonClose, "閉じる");
+            bakedLabelApplier.Capture(transform);
+        }
+
+        private void ApplyChromeLabels()
+        {
+            EnsureBakedLabels();
+            bakedLabelApplier.Apply();
+            LhButtonLabelUtility.SetLabel(
+                closeButton,
+                LocalizedText.GetOrFallback(GameTextKeys.CommonClose, "閉じる"));
+            if (unlockButtonLabel != null
+                && string.IsNullOrEmpty(unlockButtonLabel.text))
+            {
+                LhButtonLabelUtility.SetLabel(
+                    unlockButtonLabel,
+                    LocalizedText.GetOrFallback(GameTextKeys.SkillTreeUnlock, "解放"));
+            }
         }
 
         /// <inheritdoc />
@@ -57,6 +101,7 @@ namespace UI.SkillTree.View
                 return;
             }
 
+            ApplyChromeLabels();
             ApplyGridLayout();
             if (panZoom != null)
             {
@@ -93,11 +138,12 @@ namespace UI.SkillTree.View
                 return;
             }
 
+            cachedPoints = Mathf.Max(0, points);
             pointsText.text = LocalizedText.GetOrFallback(
                 GameTextKeys.SkillTreePoints,
-                "{points} ポイント",
+                "{points} pt",
                 "points",
-                Mathf.Max(0, points));
+                cachedPoints);
         }
 
         /// <inheritdoc />

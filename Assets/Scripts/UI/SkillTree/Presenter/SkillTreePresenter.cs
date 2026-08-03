@@ -23,6 +23,7 @@ namespace UI.SkillTree.Presenter
         private bool isVisible;
         private System.IDisposable pointsSubscription;
         private System.IDisposable bonusesSubscription;
+        private System.IDisposable languageSubscription;
 
         /// <summary>
         /// 依存を注入する
@@ -59,7 +60,19 @@ namespace UI.SkillTree.Presenter
                         RefreshAll();
                     }
                 });
+            languageSubscription = LanguageAwareUi.Register(OnLanguageChanged);
             isSetup = true;
+        }
+
+        private void OnLanguageChanged()
+        {
+            if (!isVisible)
+            {
+                return;
+            }
+
+            view.SetPoints(pointsService.Points);
+            RefreshAll();
         }
 
         /// <inheritdoc />
