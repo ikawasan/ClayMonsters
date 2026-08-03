@@ -649,11 +649,12 @@ namespace Scene.TrainingScene
                 return;
             }
 
-            (bool saved, string saveResultMessage) = await SaveTrainedResultAsync(
-                session,
-                trainedSlotIndex,
-                modelName,
-                cancellationToken);
+            (bool saved, string saveResultKey, string saveResultFallback) =
+                await SaveTrainedResultAsync(
+                    session,
+                    trainedSlotIndex,
+                    modelName,
+                    cancellationToken);
             if (saved)
             {
                 saveService.ClearTrainingProgress(ModelSavePool.Player, session.PlayerSlotIndex);
@@ -667,8 +668,10 @@ namespace Scene.TrainingScene
                 modelName,
                 session.CurrentStatus,
                 session.AttackMotions,
-                saveResultMessage,
-                LocalizedText.GetOrFallback(GameTextKeys.TrainingLogReturnToTitle, "タイトルへ戻る"),
+                saveResultKey,
+                saveResultFallback,
+                GameTextKeys.TrainingLogReturnToTitle,
+                "タイトルへ戻る",
                 thumbnailPng));
             await autoResultView.WaitBackToTitleAsync(cancellationToken);
 
@@ -699,7 +702,7 @@ namespace Scene.TrainingScene
                 return;
             }
 
-            (bool saved, _) = await SaveTrainedResultAsync(
+            (bool saved, _, _) = await SaveTrainedResultAsync(
                 session,
                 trainedSlotIndex,
                 modelName,
@@ -1300,15 +1303,19 @@ namespace Scene.TrainingScene
             await RunTrainingCompletionFlowAsync(session, modelName, cancellationToken);
         }
 
-        private async UniTask<(bool saved, string message)> SaveTrainedResultAsync(
-            TrainingSession session,
-            int trainedSlotIndex,
-            string modelName,
-            CancellationToken cancellationToken)
+        private async UniTask<(bool saved, string messageKey, string messageFallback)>
+            SaveTrainedResultAsync(
+                TrainingSession session,
+                int trainedSlotIndex,
+                string modelName,
+                CancellationToken cancellationToken)
         {
             if (!IsValidTrainedSlotIndex(trainedSlotIndex))
             {
-                return (false, LocalizedText.Get(GameTextKeys.TrainingSaveDestNotSelected));
+                return (
+                    false,
+                    GameTextKeys.TrainingSaveDestNotSelected,
+                    "育成済みデータの保存先が選ばれませんでした");
             }
 
             SkinnedMeshRenderer renderer = null;
@@ -1330,12 +1337,15 @@ namespace Scene.TrainingScene
 
             if (saved)
             {
-                return (true, string.Empty);
+                return (true, null, string.Empty);
             }
 
             Debug.LogError(
                 $"[TrainingFlowRunner] 育成済みデータの保存に失敗しました trainedSlot={trainedSlotIndex} playerSlot={session.PlayerSlotIndex}");
-            return (false, LocalizedText.Get(GameTextKeys.TrainingSaveFailed));
+            return (
+                false,
+                GameTextKeys.TrainingSaveFailed,
+                "育成済みデータの保存に失敗しました\n未育成データは保持されています");
         }
 
         private static bool IsValidTrainedSlotIndex(int slotIndex)

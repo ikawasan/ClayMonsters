@@ -1,5 +1,5 @@
-using Localization;
 using ClayEditor.Rigging;
+using Localization;
 using SaveData;
 using SaveData.Interface;
 using System.Collections.Generic;
@@ -159,41 +159,29 @@ namespace Scene.TrainingScene.Domain
             {
                 return new TrainingResumeProgressPresentation(
                     slot != null ? slot.modelName : string.Empty,
-                    string.Empty,
-                    string.Empty,
-                    string.Empty,
-                    string.Empty,
+                    TrainingDayOfWeek.Monday,
+                    0,
+                    0,
+                    0,
+                    TrainingMotivation.Normal,
+                    null,
                     System.Array.Empty<MotionType>(),
                     null);
             }
 
-            string periodLabel = ResolvePeriodDisplayName(progress.turnIndexInDay);
             TrainingMotivation motivation = TrainingMotivationCatalog.Clamp(progress.motivation);
-            string scheduleMoneyLabel =
-                $"{TrainingDayCatalog.GetDisplayName((TrainingDayOfWeek)progress.day)}"
-                + (string.IsNullOrEmpty(periodLabel) ? string.Empty : $" {periodLabel}")
-                + $", 所持金 {progress.money}G";
-            const string motivationLabel = "やる気　";
-            string staminaLabel = $", 体力 {progress.stamina} / {TrainingSettings.MaxStamina}";
-            ModelStatus status = progress.status ?? new ModelStatus();
-            string statsText =
-                $"HP {status.hp}\n"
-                + $"攻撃 {status.attack}\n"
-                + $"防御 {status.defense}\n"
-                + $"速度 {status.speed}\n"
-                + $"命中 {status.hit}";
-
             return new TrainingResumeProgressPresentation(
                 slot != null ? slot.modelName : string.Empty,
-                scheduleMoneyLabel,
-                motivationLabel,
-                staminaLabel,
-                statsText,
+                (TrainingDayOfWeek)progress.day,
+                progress.turnIndexInDay,
+                progress.money,
+                progress.stamina,
+                motivation,
+                progress.status ?? new ModelStatus(),
                 ModelAttackMotionUtility.Normalize(
                     progress.attackMotions,
                     TrainingSettings.AttackSlotCount),
-                ModelSaveStorage.ReadThumbnailPng(slot),
-                motivation);
+                ModelSaveStorage.ReadThumbnailPng(slot));
         }
 
         /// <summary>
@@ -223,14 +211,29 @@ namespace Scene.TrainingScene.Domain
 
             ModelStatus status = progress.status ?? new ModelStatus();
             string periodLabel = ResolvePeriodDisplayName(progress.turnIndexInDay);
-            return $"{TrainingDayCatalog.GetDisplayName((TrainingDayOfWeek)progress.day)}"
-                + (string.IsNullOrEmpty(periodLabel) ? string.Empty : $" {periodLabel}")
-                + $", 所持金 {progress.money}G"
-                + $"\nやる気{TrainingMotivationCatalog.GetIconGlyph(TrainingMotivationCatalog.Clamp(progress.motivation))}"
-                + $" 体力{progress.stamina}/{TrainingSettings.MaxStamina}"
-                + $"\nHP {status.hp} 攻撃 {status.attack}"
-                + $" 防御 {status.defense} 速度 {status.speed}"
-                + $" 命中 {status.hit}";
+            string schedule =
+                $"{TrainingDayCatalog.GetDisplayName((TrainingDayOfWeek)progress.day)}"
+                + (string.IsNullOrEmpty(periodLabel) ? string.Empty : $" {periodLabel}");
+            return LocalizedText.GetOrFallback(
+                GameTextKeys.TrainingResumeSummaryBody,
+                "{schedule}, 所持金 {money}G\nやる気{glyph} 体力{stamina}/{max}\nHP {hp} 攻撃 {atk} 防御 {def} 速度 {spd} 命中 {hit}",
+                new Dictionary<string, object>
+                {
+                    { "schedule", schedule },
+                    { "money", progress.money },
+                    {
+                        "glyph",
+                        TrainingMotivationCatalog.GetIconGlyph(
+                            TrainingMotivationCatalog.Clamp(progress.motivation))
+                    },
+                    { "stamina", progress.stamina },
+                    { "max", TrainingSettings.MaxStamina },
+                    { "hp", status.hp },
+                    { "atk", status.attack },
+                    { "def", status.defense },
+                    { "spd", status.speed },
+                    { "hit", status.hit },
+                });
         }
 
         /// <summary>
@@ -254,23 +257,38 @@ namespace Scene.TrainingScene.Domain
             string modelName,
             ModelStatus status,
             IReadOnlyList<MotionType> attacks,
-            string saveResultMessage = "",
-            string continueButtonLabel = "保存先を選ぶ",
+            string saveResultKey = null,
+            string saveResultFallback = null,
+            string continueButtonKey = null,
+            string continueButtonFallback = null,
             byte[] thumbnailPng = null,
-            string titleText = null)
+            string titleKey = null,
+            string titleFallback = null)
         {
-            ModelStatus resolvedStatus = status ?? new ModelStatus();
-            string statsText =
-                ModelSaveSummaryFormatter.FormatTrainingFinalStatusParameters(resolvedStatus);
+            string resolvedContinueKey = string.IsNullOrEmpty(continueButtonKey)
+                ? GameTextKeys.TrainingChooseSave
+                : continueButtonKey;
+            string resolvedContinueFallback = string.IsNullOrEmpty(continueButtonFallback)
+                ? "保存先を選ぶ"
+                : continueButtonFallback;
+            string resolvedTitleKey = string.IsNullOrEmpty(titleKey)
+                ? GameTextKeys.TrainingComplete
+                : titleKey;
+            string resolvedTitleFallback = string.IsNullOrEmpty(titleFallback)
+                ? "育成完了"
+                : titleFallback;
 
             return new TrainingAutoResultPresentation(
                 modelName ?? string.Empty,
-                statsText,
+                status ?? new ModelStatus(),
                 attacks,
-                saveResultMessage ?? string.Empty,
-                continueButtonLabel ?? "保存先を選ぶ",
+                saveResultKey,
+                saveResultFallback,
+                resolvedContinueKey,
+                resolvedContinueFallback,
                 thumbnailPng,
-                titleText ?? LocalizedText.Get(GameTextKeys.TrainingComplete));
+                resolvedTitleKey,
+                resolvedTitleFallback);
         }
     }
 }

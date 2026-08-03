@@ -1,8 +1,8 @@
-using Localization;
 using ClayEditor.Rigging;
 using Cysharp.Threading.Tasks;
 using Extensions;
 using LighthouseExtends.UIComponent.Button;
+using Localization;
 using SaveData;
 using SaveData.Interface;
 using Scene.TrainingScene.Domain;
@@ -23,7 +23,8 @@ namespace Scene.TrainingScene.View
     public sealed class TrainingTrainedSaveView :
         MonoBehaviour,
         ITrainingTrainedSaveView,
-        ITrainingInheritanceSelectView
+        ITrainingInheritanceSelectView,
+        ILanguageAwareUi
     {
         private enum UiMode
         {
@@ -130,7 +131,10 @@ namespace Scene.TrainingScene.View
             pendingAttacks = null;
             pendingThumbnailPng = null;
 
-            SetInheritanceHeaderPrompt("継承する育成済みモンスターを2体選んでください(1体目)");
+            SetInheritanceHeaderPrompt(
+                LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingInheritancePickHeader1,
+                    "継承する育成済みモンスターを2体選んでください(1体目)"));
             ApplyInheritanceModeButtonLabels();
             RefreshSlotList(allowEmptySlotSelection: false);
             BindInheritanceHoverHandlers();
@@ -221,7 +225,10 @@ namespace Scene.TrainingScene.View
                 selectedSlotIndex = -1;
                 confirmView?.Clear();
                 CanvasVisibilityUtility.SetPanelActive(confirmPanelRoot, false);
-                SetInheritanceHeaderPrompt("継承する育成済みモンスターを2体選んでください(2体目)");
+                SetInheritanceHeaderPrompt(
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingInheritancePickHeader2,
+                        "継承する育成済みモンスターを2体選んでください(2体目)"));
                 SetSelectionContentVisible(true);
                 return;
             }
@@ -259,8 +266,12 @@ namespace Scene.TrainingScene.View
                 CanvasVisibilityUtility.SetPanelActive(confirmPanelRoot, false);
                 SetInheritanceHeaderPrompt(
                     inheritanceParentA < 0
-                        ? "継承する育成済みモンスターを2体選んでください(1体目)"
-                        : "継承する育成済みモンスターを2体選んでください(2体目)");
+                        ? LocalizedText.GetOrFallback(
+                            GameTextKeys.TrainingInheritancePickHeader1,
+                            "継承する育成済みモンスターを2体選んでください(1体目)")
+                        : LocalizedText.GetOrFallback(
+                            GameTextKeys.TrainingInheritancePickHeader2,
+                            "継承する育成済みモンスターを2体選んでください(2体目)"));
                 SetSelectionContentVisible(true);
                 return;
             }
@@ -270,7 +281,10 @@ namespace Scene.TrainingScene.View
                 inheritanceParentA = -1;
                 inheritanceParentB = -1;
                 selectedSlotIndex = -1;
-                SetInheritanceHeaderPrompt("継承する育成済みモンスターを2体選んでください(1体目)");
+                SetInheritanceHeaderPrompt(
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingInheritancePickHeader1,
+                        "継承する育成済みモンスターを2体選んでください(1体目)"));
                 return;
             }
 
@@ -335,8 +349,11 @@ namespace Scene.TrainingScene.View
             int pickNumber = inheritanceParentA < 0 ? 1 : 2;
             if (confirmMessageText != null)
             {
-                confirmMessageText.text =
-                    $"継承元{pickNumber}体目\nステータスを確認して決定してください";
+                confirmMessageText.text = LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingInheritanceConfirmPick,
+                    "継承元{pickNumber}体目\nステータスを確認して決定してください",
+                    "pickNumber",
+                    pickNumber);
             }
 
             SetSelectionContentVisible(false);
@@ -353,16 +370,64 @@ namespace Scene.TrainingScene.View
 
         private void ApplySaveModeButtonLabels()
         {
-            LhButtonLabelUtility.SetLabel(saveButtonLabel, "保存する");
-            LhButtonLabelUtility.SetLabel(backButtonLabel, "戻る");
-            LhButtonLabelUtility.SetLabel(backToTitleButtonLabel, "タイトルへ戻る");
+            LhButtonLabelUtility.SetLabel(
+                saveButtonLabel,
+                LocalizedText.GetOrFallback(GameTextKeys.CommonSave, "保存する"));
+            LhButtonLabelUtility.SetLabel(
+                backButtonLabel,
+                LocalizedText.GetOrFallback(GameTextKeys.CommonReturn, "戻る"));
+            LhButtonLabelUtility.SetLabel(
+                backToTitleButtonLabel,
+                LocalizedText.GetOrFallback(GameTextKeys.TrainingHudBackToTitle, "タイトルへ戻る"));
+        }
+
+        /// <inheritdoc/>
+        public void RefreshLocalizedUi()
+        {
+            if (uiMode == UiMode.Save)
+            {
+                ApplySaveModeButtonLabels();
+                RefreshSlotList(allowEmptySlotSelection: true);
+                if (confirmPanelRoot != null && confirmPanelRoot.activeSelf)
+                {
+                    OpenSaveConfirm();
+                }
+
+                return;
+            }
+
+            if (uiMode == UiMode.Inheritance)
+            {
+                ApplyInheritanceModeButtonLabels();
+                SetInheritanceHeaderPrompt(
+                    inheritanceParentA < 0
+                        ? LocalizedText.GetOrFallback(
+                            GameTextKeys.TrainingInheritancePickHeader1,
+                            "継承する育成済みモンスターを2体選んでください(1体目)")
+                        : LocalizedText.GetOrFallback(
+                            GameTextKeys.TrainingInheritancePickHeader2,
+                            "継承する育成済みモンスターを2体選んでください(2体目)"));
+                RefreshSlotList(allowEmptySlotSelection: false);
+                if (confirmPanelRoot != null
+                    && confirmPanelRoot.activeSelf
+                    && selectedSlotIndex >= 0)
+                {
+                    OpenInheritanceParentStatusConfirm(selectedSlotIndex);
+                }
+            }
         }
 
         private void ApplyInheritanceModeButtonLabels()
         {
-            LhButtonLabelUtility.SetLabel(saveButtonLabel, "決定");
-            LhButtonLabelUtility.SetLabel(backButtonLabel, "戻る");
-            LhButtonLabelUtility.SetLabel(backToTitleButtonLabel, "戻る");
+            LhButtonLabelUtility.SetLabel(
+                saveButtonLabel,
+                LocalizedText.GetOrFallback(GameTextKeys.CommonDecide, "決定"));
+            LhButtonLabelUtility.SetLabel(
+                backButtonLabel,
+                LocalizedText.GetOrFallback(GameTextKeys.CommonReturn, "戻る"));
+            LhButtonLabelUtility.SetLabel(
+                backToTitleButtonLabel,
+                LocalizedText.GetOrFallback(GameTextKeys.CommonReturn, "戻る"));
         }
 
         private void RefreshSlotList(bool allowEmptySlotSelection)

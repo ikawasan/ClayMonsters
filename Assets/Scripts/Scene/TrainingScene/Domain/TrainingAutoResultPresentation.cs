@@ -1,63 +1,96 @@
-using Localization;
 using ClayEditor.Rigging;
+using Localization;
+using SaveData;
 using System.Collections.Generic;
+using UI.ClayEditor.View;
 
 namespace Scene.TrainingScene.Domain
 {
     /// <summary>
     /// 育成完了リザルト画面向けの表示データ
-    /// じっくり育成と自動育成で共通利用する
+    /// 表示文字列はプロパティ参照時に現在言語で組み立てる
     /// </summary>
     public readonly struct TrainingAutoResultPresentation
     {
+        private readonly string titleKey;
+        private readonly string titleFallback;
+        private readonly string continueKey;
+        private readonly string continueFallback;
+        private readonly string saveResultKey;
+        private readonly string saveResultFallback;
+
         /// <summary>
         /// 表示データを生成する
         /// </summary>
         /// <param name="modelName">モデル名</param>
-        /// <param name="statsText">最終ステータス</param>
+        /// <param name="status">最終ステータス</param>
         /// <param name="attacks">技構成</param>
-        /// <param name="saveResultMessage">保存結果</param>
-        /// <param name="continueButtonLabel">続行ボタンラベル</param>
+        /// <param name="saveResultKey">保存結果キー</param>
+        /// <param name="saveResultFallback">保存結果フォールバック</param>
+        /// <param name="continueKey">続行ボタンキー</param>
+        /// <param name="continueFallback">続行ボタンフォールバック</param>
         /// <param name="thumbnailPng">モデルサムネイルPNG</param>
-        /// <param name="titleText">ウィンドウタイトル</param>
+        /// <param name="titleKey">タイトルキー</param>
+        /// <param name="titleFallback">タイトルフォールバック</param>
         public TrainingAutoResultPresentation(
             string modelName,
-            string statsText,
+            ModelStatus status,
             IReadOnlyList<MotionType> attacks,
-            string saveResultMessage,
-            string continueButtonLabel,
+            string saveResultKey,
+            string saveResultFallback,
+            string continueKey,
+            string continueFallback,
             byte[] thumbnailPng,
-            string titleText)
+            string titleKey,
+            string titleFallback)
         {
             ModelName = modelName ?? string.Empty;
-            StatsText = statsText ?? string.Empty;
+            Status = status;
             Attacks = attacks ?? System.Array.Empty<MotionType>();
-            SaveResultMessage = saveResultMessage ?? string.Empty;
-            ContinueButtonLabel = continueButtonLabel ?? string.Empty;
             ThumbnailPng = thumbnailPng;
-            TitleText = string.IsNullOrEmpty(titleText) ? LocalizedText.Get(GameTextKeys.TrainingComplete) : titleText;
+            this.saveResultKey = saveResultKey ?? string.Empty;
+            this.saveResultFallback = saveResultFallback ?? string.Empty;
+            this.continueKey = continueKey ?? string.Empty;
+            this.continueFallback = continueFallback ?? string.Empty;
+            this.titleKey = titleKey ?? string.Empty;
+            this.titleFallback = titleFallback ?? string.Empty;
         }
 
         /// <summary>
         /// 表示データを生成する
         /// </summary>
         /// <param name="modelName">モデル名</param>
-        /// <param name="statsText">最終ステータス</param>
+        /// <param name="status">最終ステータス</param>
         /// <param name="attacks">技構成</param>
-        /// <param name="saveResultMessage">保存結果</param>
+        /// <param name="saveResultKey">保存結果キー</param>
+        /// <param name="saveResultFallback">保存結果フォールバック</param>
         public TrainingAutoResultPresentation(
             string modelName,
-            string statsText,
+            ModelStatus status,
             IReadOnlyList<MotionType> attacks,
-            string saveResultMessage)
-            : this(modelName, statsText, attacks, saveResultMessage, LocalizedText.Get(GameTextKeys.TrainingChooseSave), null, LocalizedText.Get(GameTextKeys.TrainingComplete))
+            string saveResultKey = null,
+            string saveResultFallback = null)
+            : this(
+                modelName,
+                status,
+                attacks,
+                saveResultKey,
+                saveResultFallback,
+                GameTextKeys.TrainingChooseSave,
+                "保存先を選ぶ",
+                null,
+                GameTextKeys.TrainingComplete,
+                "育成完了")
         {
         }
 
         /// <summary>
         /// ウィンドウタイトル
         /// </summary>
-        public string TitleText { get; }
+        public string TitleText =>
+            string.IsNullOrEmpty(titleKey)
+                ? titleFallback
+                : LocalizedText.GetOrFallback(titleKey, titleFallback);
 
         /// <summary>
         /// モデル名
@@ -67,7 +100,13 @@ namespace Scene.TrainingScene.Domain
         /// <summary>
         /// 最終ステータス
         /// </summary>
-        public string StatsText { get; }
+        public ModelStatus Status { get; }
+
+        /// <summary>
+        /// 最終ステータス表示
+        /// </summary>
+        public string StatsText =>
+            ModelSaveSummaryFormatter.FormatTrainingFinalStatusParameters(Status);
 
         /// <summary>
         /// 技構成
@@ -77,12 +116,18 @@ namespace Scene.TrainingScene.Domain
         /// <summary>
         /// 保存結果
         /// </summary>
-        public string SaveResultMessage { get; }
+        public string SaveResultMessage =>
+            string.IsNullOrEmpty(saveResultKey)
+                ? saveResultFallback
+                : LocalizedText.GetOrFallback(saveResultKey, saveResultFallback);
 
         /// <summary>
         /// 続行ボタンラベル
         /// </summary>
-        public string ContinueButtonLabel { get; }
+        public string ContinueButtonLabel =>
+            string.IsNullOrEmpty(continueKey)
+                ? continueFallback
+                : LocalizedText.GetOrFallback(continueKey, continueFallback);
 
         /// <summary>
         /// モデルサムネイルPNG

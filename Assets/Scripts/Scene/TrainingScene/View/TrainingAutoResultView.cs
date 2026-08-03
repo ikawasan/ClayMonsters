@@ -1,6 +1,7 @@
 using Cysharp.Threading.Tasks;
 using Extensions;
 using LighthouseExtends.UIComponent.Button;
+using Localization;
 using Scene.TrainingScene.Domain;
 using Scene.TrainingScene.Interface;
 using System;
@@ -12,15 +13,13 @@ using UnityEngine.Events;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
 
-using Localization;
-
 namespace Scene.TrainingScene.View
 {
     /// <summary>
     /// 育成完了リザルト画面
     /// 最終ステータスと技構成を表示する
     /// </summary>
-    public sealed class TrainingAutoResultView : MonoBehaviour, ITrainingAutoResultView
+    public sealed class TrainingAutoResultView : MonoBehaviour, ITrainingAutoResultView, ILanguageAwareUi
     {
         [Header("Root")]
         [FormerlySerializedAs("windowCanvas")]
@@ -47,15 +46,38 @@ namespace Scene.TrainingScene.View
         private bool uiBound;
         private Texture2D runtimeThumbnailTexture;
         private Sprite runtimeThumbnailSprite;
+        private bool isShowing;
+        private TrainingAutoResultPresentation cachedPresentation;
 
         /// <inheritdoc/>
         public void Show(TrainingAutoResultPresentation presentation)
         {
             EnsureUiBound();
+            isShowing = true;
+            cachedPresentation = presentation;
 
             // 初回表示で子のAwake(EnsureSprites)が走る前に範囲色を書くと上書きされる
             SetWindowVisible(true);
+            ApplyPresentationCopy(presentation);
+            ApplyThumbnail(presentation.ThumbnailPng);
+        }
 
+        /// <inheritdoc/>
+        public void RefreshLocalizedUi()
+        {
+            if (!isShowing)
+            {
+                LhButtonLabelUtility.SetLabel(
+                    backToTitleButtonLabel,
+                    LocalizedText.GetOrFallback(GameTextKeys.TrainingChooseSave, "保存先を選ぶ"));
+                return;
+            }
+
+            ApplyPresentationCopy(cachedPresentation);
+        }
+
+        private void ApplyPresentationCopy(TrainingAutoResultPresentation presentation)
+        {
             if (titleText != null)
             {
                 titleText.text = string.IsNullOrEmpty(presentation.TitleText)
@@ -87,13 +109,11 @@ namespace Scene.TrainingScene.View
                 saveResultText.enabled = hasMessage;
             }
 
-            ApplyThumbnail(presentation.ThumbnailPng);
-
             if (backToTitleButton != null)
             {
                 backToTitleButton.interactable = true;
                 string buttonLabel = string.IsNullOrEmpty(presentation.ContinueButtonLabel)
-                    ? "保存先を選ぶ"
+                    ? LocalizedText.GetOrFallback(GameTextKeys.TrainingChooseSave, "保存先を選ぶ")
                     : presentation.ContinueButtonLabel;
                 LhButtonLabelUtility.SetLabel(backToTitleButtonLabel, buttonLabel);
             }
@@ -102,6 +122,7 @@ namespace Scene.TrainingScene.View
         /// <inheritdoc/>
         public void Hide()
         {
+            isShowing = false;
             attacksPanel?.ClearForConfirmPrefab();
             ClearThumbnail();
             SetWindowVisible(false);
@@ -179,7 +200,9 @@ namespace Scene.TrainingScene.View
             if (backToTitleButton != null)
             {
                 backToTitleButton.EnsureUiSoundFeedback();
-                LhButtonLabelUtility.SetLabel(backToTitleButtonLabel, "保存先を選ぶ");
+                LhButtonLabelUtility.SetLabel(
+                    backToTitleButtonLabel,
+                    LocalizedText.GetOrFallback(GameTextKeys.TrainingChooseSave, "保存先を選ぶ"));
             }
         }
 

@@ -23,7 +23,8 @@ namespace Scene.TrainingScene.View
     /// </summary>
     public sealed class TrainingInheritancePresentationView :
         MonoBehaviour,
-        ITrainingInheritancePresentation
+        ITrainingInheritancePresentation,
+        ILanguageAwareUi
     {
         private static readonly Quaternion FacingRotation = Quaternion.Euler(0f, 180f, 0f);
 
@@ -1225,6 +1226,20 @@ namespace Scene.TrainingScene.View
             }
 
             CanvasVisibilityUtility.SetCanvasEnabled(inheritanceTitleCanvas, visible);
+        }
+
+        /// <inheritdoc/>
+        public void RefreshLocalizedUi()
+        {
+            if (inheritanceTitleText == null)
+            {
+                return;
+            }
+
+            if (inheritanceTitleText.alpha > 0.01f)
+            {
+                inheritanceTitleText.text = LocalizedText.Get(GameTextKeys.TrainingInheritance);
+            }
         }
 
         private void PlayTimedSe(SeTrackId trackId, float durationSeconds)

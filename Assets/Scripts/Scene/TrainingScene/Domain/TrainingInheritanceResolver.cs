@@ -1,4 +1,5 @@
 using ClayEditor.Rigging;
+using Localization;
 using SaveData;
 using SaveData.Interface;
 using System.Collections.Generic;
@@ -106,29 +107,62 @@ namespace Scene.TrainingScene.Domain
         {
             if (result == null || !result.Applied)
             {
-                return "ボーナスなしで育成を開始します";
+                return LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingInheritanceNoBonus,
+                    "ボーナスなしで育成を開始します");
             }
 
             TrainingStatGain gain = result.StatGain;
-            string message =
-                $"ボーナス HP+{gain.Hp} 攻撃+{gain.Attack} 防御+{gain.Defense} 速度+{gain.Speed} 命中+{gain.Hit}";
+            string message = LocalizedText.GetOrFallback(
+                GameTextKeys.TrainingInheritanceBonusStats,
+                "ボーナス HP+{hp} 攻撃+{atk} 防御+{def} 速度+{spd} 命中+{hit}",
+                new Dictionary<string, object>
+                {
+                    { "hp", gain.Hp },
+                    { "atk", gain.Attack },
+                    { "def", gain.Defense },
+                    { "spd", gain.Speed },
+                    { "hit", gain.Hit },
+                });
 
             if (result.InheritedAttackFromParentA.HasValue)
             {
-                message += "\n技候補1: "
-                    + TrainingAttackTeacher.FormatAttackName(result.InheritedAttackFromParentA.Value);
+                message += "\n" + LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingInheritanceAttackCandidate,
+                    "技候補{n}: {name}",
+                    new Dictionary<string, object>
+                    {
+                        { "n", 1 },
+                        {
+                            "name",
+                            TrainingAttackTeacher.FormatAttackName(
+                                result.InheritedAttackFromParentA.Value)
+                        },
+                    });
             }
 
             if (result.InheritedAttackFromParentB.HasValue)
             {
-                message += "\n技候補2: "
-                    + TrainingAttackTeacher.FormatAttackName(result.InheritedAttackFromParentB.Value);
+                message += "\n" + LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingInheritanceAttackCandidate,
+                    "技候補{n}: {name}",
+                    new Dictionary<string, object>
+                    {
+                        { "n", 2 },
+                        {
+                            "name",
+                            TrainingAttackTeacher.FormatAttackName(
+                                result.InheritedAttackFromParentB.Value)
+                        },
+                    });
             }
 
             if (result.InheritedAttackFromParentA.HasValue
                 || result.InheritedAttackFromParentB.HasValue)
             {
-                message += "\n続けて技の入れ替えスロットを選んでください";
+                message += "\n" + LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingInheritanceContinueSwap,
+                    "続けて技の入れ替えスロットを選んでください");
             }
 
             return message;
@@ -166,9 +200,22 @@ namespace Scene.TrainingScene.Domain
 
             TrainingStatGain gain = BuildStatGainFromParent(parent.status);
             string modelName = string.IsNullOrEmpty(parent.modelName)
-                ? "継承元"
+                ? LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingInheritanceParentDefault,
+                    "継承元")
                 : parent.modelName;
-            return $"{modelName}\n継承上昇 HP+{gain.Hp} 攻撃+{gain.Attack} 防御+{gain.Defense} 速度+{gain.Speed} 命中+{gain.Hit}";
+            return LocalizedText.GetOrFallback(
+                GameTextKeys.TrainingInheritanceParentPreview,
+                "{name}\n継承上昇 HP+{hp} 攻撃+{atk} 防御+{def} 速度+{spd} 命中+{hit}",
+                new Dictionary<string, object>
+                {
+                    { "name", modelName },
+                    { "hp", gain.Hp },
+                    { "atk", gain.Attack },
+                    { "def", gain.Defense },
+                    { "spd", gain.Speed },
+                    { "hit", gain.Hit },
+                });
         }
 
         private static TrainingStatGain BuildStatGain(

@@ -17,7 +17,7 @@ namespace Scene.TrainingScene.View
     /// 攻撃入れ替えUI
     /// 習得技と入れ替え候補をシーン配置済みスロットへ反映する
     /// </summary>
-    public sealed class TrainingAttackSwapChoicesView : MonoBehaviour
+    public sealed class TrainingAttackSwapChoicesView : MonoBehaviour, ILanguageAwareUi
     {
         public const int SwapSlotCount = 4;
 
@@ -26,6 +26,11 @@ namespace Scene.TrainingScene.View
         [SerializeField] private TMP_Text choicesHeaderText;
         [SerializeField] private TrainingAttackSwapSlotView[] swapSlots = new TrainingAttackSwapSlotView[SwapSlotCount];
         [SerializeField] private LHButton skipButton;
+
+        private bool isShowing;
+        private MotionType cachedLearnedAttack;
+        private List<MotionType> cachedCurrentAttacks;
+        private Action<int> cachedOnSelected;
 
         /// <summary>
         /// 入れ替え候補を表示する
@@ -38,7 +43,32 @@ namespace Scene.TrainingScene.View
             IReadOnlyList<MotionType> currentAttacks,
             Action<int> onSelected)
         {
+            isShowing = true;
+            cachedLearnedAttack = learnedAttack;
+            cachedCurrentAttacks = currentAttacks != null
+                ? new List<MotionType>(currentAttacks)
+                : new List<MotionType>();
+            cachedOnSelected = onSelected;
+            ApplyShowContent();
+        }
+
+        /// <inheritdoc/>
+        public void RefreshLocalizedUi()
+        {
+            if (!isShowing)
+            {
+                return;
+            }
+
+            ApplyShowContent();
+        }
+
+        private void ApplyShowContent()
+        {
             EnsureSwapSlotsResolved();
+            MotionType learnedAttack = cachedLearnedAttack;
+            IReadOnlyList<MotionType> currentAttacks = cachedCurrentAttacks;
+            Action<int> onSelected = cachedOnSelected;
 
             if (learnedHeaderText != null)
             {
@@ -87,6 +117,9 @@ namespace Scene.TrainingScene.View
                 skipButton.gameObject.SetActive(true);
                 skipButton.EnsureUiSoundFeedback();
                 DisableChildRaycasts(skipButton);
+                LhButtonLabelUtility.SetLabel(
+                    skipButton,
+                    LocalizedText.GetOrFallback(GameTextKeys.TrainingSwapSkip, "入れ替えない"));
                 skipButton.onClick.RemoveAllListeners();
                 skipButton.onClick.AddListener(() => onSelected?.Invoke(-1));
             }
@@ -97,6 +130,8 @@ namespace Scene.TrainingScene.View
         /// </summary>
         public void Clear()
         {
+            isShowing = false;
+            cachedOnSelected = null;
             EnsureSwapSlotsResolved();
 
             if (learnedHeaderText != null)

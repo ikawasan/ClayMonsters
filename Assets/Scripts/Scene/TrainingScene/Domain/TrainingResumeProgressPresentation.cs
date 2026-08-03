@@ -1,10 +1,13 @@
 using ClayEditor.Rigging;
+using Localization;
+using SaveData;
 using System.Collections.Generic;
 
 namespace Scene.TrainingScene.Domain
 {
     /// <summary>
     /// 育成再開確認ウィンドウ向けの表示データ
+    /// 表示文字列はプロパティ参照時に現在言語で組み立てる
     /// </summary>
     public readonly struct TrainingResumeProgressPresentation
     {
@@ -12,31 +15,34 @@ namespace Scene.TrainingScene.Domain
         /// 表示データを生成する
         /// </summary>
         /// <param name="modelName">モデル名</param>
-        /// <param name="scheduleMoneyLabel">曜日・時間割・所持金</param>
-        /// <param name="motivationLabel">やる気ラベル</param>
-        /// <param name="staminaLabel">体力ラベル</param>
-        /// <param name="statsText">ステータス表示</param>
+        /// <param name="day">曜日</param>
+        /// <param name="turnIndexInDay">日内ターン位置</param>
+        /// <param name="money">所持金</param>
+        /// <param name="stamina">体力</param>
+        /// <param name="motivation">やる気</param>
+        /// <param name="status">ステータス</param>
         /// <param name="attacks">技構成</param>
         /// <param name="thumbnailPng">モデルサムネイルPNG</param>
-        /// <param name="motivation">やる気</param>
         public TrainingResumeProgressPresentation(
             string modelName,
-            string scheduleMoneyLabel,
-            string motivationLabel,
-            string staminaLabel,
-            string statsText,
+            TrainingDayOfWeek day,
+            int turnIndexInDay,
+            int money,
+            int stamina,
+            TrainingMotivation motivation,
+            ModelStatus status,
             IReadOnlyList<MotionType> attacks,
-            byte[] thumbnailPng,
-            TrainingMotivation motivation = TrainingMotivation.Normal)
+            byte[] thumbnailPng)
         {
             ModelName = modelName ?? string.Empty;
-            ScheduleMoneyLabel = scheduleMoneyLabel ?? string.Empty;
-            MotivationLabel = motivationLabel ?? string.Empty;
-            StaminaLabel = staminaLabel ?? string.Empty;
-            StatsText = statsText ?? string.Empty;
+            Day = day;
+            TurnIndexInDay = turnIndexInDay;
+            Money = money;
+            Stamina = stamina;
+            Motivation = TrainingMotivationCatalog.Clamp((int)motivation);
+            Status = status;
             Attacks = attacks ?? System.Array.Empty<MotionType>();
             ThumbnailPng = thumbnailPng;
-            Motivation = TrainingMotivationCatalog.Clamp((int)motivation);
         }
 
         /// <summary>
@@ -45,24 +51,29 @@ namespace Scene.TrainingScene.Domain
         public string ModelName { get; }
 
         /// <summary>
-        /// 曜日・時間割・所持金
+        /// 曜日
         /// </summary>
-        public string ScheduleMoneyLabel { get; }
+        public TrainingDayOfWeek Day { get; }
 
         /// <summary>
-        /// やる気ラベル
+        /// 日内ターン位置
         /// </summary>
-        public string MotivationLabel { get; }
+        public int TurnIndexInDay { get; }
 
         /// <summary>
-        /// 体力ラベル
+        /// 所持金
         /// </summary>
-        public string StaminaLabel { get; }
+        public int Money { get; }
 
         /// <summary>
-        /// ステータス表示
+        /// 体力
         /// </summary>
-        public string StatsText { get; }
+        public int Stamina { get; }
+
+        /// <summary>
+        /// ステータス
+        /// </summary>
+        public ModelStatus Status { get; }
 
         /// <summary>
         /// 技構成
@@ -78,5 +89,81 @@ namespace Scene.TrainingScene.Domain
         /// やる気
         /// </summary>
         public TrainingMotivation Motivation { get; }
+
+        /// <summary>
+        /// 曜日・時間割・所持金
+        /// </summary>
+        public string ScheduleMoneyLabel
+        {
+            get
+            {
+                string periodLabel = ResolvePeriodDisplayName(TurnIndexInDay);
+                string schedule =
+                    $"{TrainingDayCatalog.GetDisplayName(Day)}"
+                    + (string.IsNullOrEmpty(periodLabel) ? string.Empty : $" {periodLabel}");
+                return LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingResumeScheduleWithMoney,
+                    "{schedule}, 所持金 {money}G",
+                    new Dictionary<string, object>
+                    {
+                        { "schedule", schedule },
+                        { "money", Money },
+                    });
+            }
+        }
+
+        /// <summary>
+        /// やる気ラベル
+        /// </summary>
+        public string MotivationLabel =>
+            LocalizedText.GetOrFallback(
+                GameTextKeys.TrainingResumeMotivationLabel,
+                "やる気　");
+
+        /// <summary>
+        /// 体力ラベル
+        /// </summary>
+        public string StaminaLabel =>
+            LocalizedText.GetOrFallback(
+                GameTextKeys.TrainingResumeStaminaLabel,
+                ", 体力 {stamina} / {max}",
+                new Dictionary<string, object>
+                {
+                    { "stamina", Stamina },
+                    { "max", TrainingSettings.MaxStamina },
+                });
+
+        /// <summary>
+        /// ステータス表示
+        /// </summary>
+        public string StatsText
+        {
+            get
+            {
+                ModelStatus status = Status ?? new ModelStatus();
+                return LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingResumeStats,
+                    "HP {hp}\n攻撃 {atk}\n防御 {def}\n速度 {spd}\n命中 {hit}",
+                    new Dictionary<string, object>
+                    {
+                        { "hp", status.hp },
+                        { "atk", status.attack },
+                        { "def", status.defense },
+                        { "spd", status.speed },
+                        { "hit", status.hit },
+                    });
+            }
+        }
+
+        private static string ResolvePeriodDisplayName(int turnIndexInDay)
+        {
+            TrainingPeriod[] periods = TrainingDailySchedule.AllPeriods;
+            if (turnIndexInDay < 0 || turnIndexInDay >= periods.Length)
+            {
+                return string.Empty;
+            }
+
+            return TrainingPeriodCatalog.GetDisplayName(periods[turnIndexInDay]);
+        }
     }
 }

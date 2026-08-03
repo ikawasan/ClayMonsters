@@ -22,7 +22,7 @@ namespace Scene.TrainingScene.View
     /// <summary>
     /// 育成の日程・体力・ステータス・行き先選択UI
     /// </summary>
-    public sealed class TrainingHudView : MonoBehaviour, ITrainingHudView
+    public sealed class TrainingHudView : MonoBehaviour, ITrainingHudView, ILanguageAwareUi
     {
         [Header("Root")]
         [Tooltip("HUD全体のCanvas")]
@@ -113,6 +113,7 @@ namespace Scene.TrainingScene.View
         [SerializeField] private Image staminaFill;
 
         private TrainingHudLayoutMode layoutMode = TrainingHudLayoutMode.Hidden;
+        private TrainingSession boundSession;
 
         private int locationChoiceStamina;
         private TrainingTurnChoice pendingTurnChoice;
@@ -157,6 +158,20 @@ namespace Scene.TrainingScene.View
             Inventory,
             Location
         }
+
+        private IReadOnlyList<TrainingCommandType> cachedCommandChoices;
+        private int cachedCommandStamina;
+        private IReadOnlyList<TrainingShopItem> cachedShopItems;
+        private bool cachedShopHasNextPage;
+        private int cachedShopMoney;
+        private bool cachedShopShowInventory;
+        private IReadOnlyList<TrainingInventoryEntryView> cachedInventoryEntries;
+        private bool cachedInventoryHasNextPage;
+        private IReadOnlyList<TrainingFocus> cachedFocuses;
+        private TrainingCommandType cachedFocusCommand;
+        private TrainingLocation[] cachedLocations;
+        private int cachedLocationStamina;
+        private TrainingPeriod? boundPeriod;
 
         private enum TrainingHudLayoutMode
         {
@@ -334,6 +349,8 @@ namespace Scene.TrainingScene.View
                 return;
             }
 
+            boundSession = session;
+
             if (dayText != null)
             {
                 dayText.text = TrainingDayCatalog.GetDisplayName(session.CurrentDay);
@@ -389,6 +406,7 @@ namespace Scene.TrainingScene.View
                 return;
             }
 
+            boundPeriod = period;
             if (periodText != null)
             {
                 periodText.text = TrainingPeriodCatalog.GetDisplayName(period);
@@ -407,6 +425,8 @@ namespace Scene.TrainingScene.View
             locationChoiceStamina = currentStamina;
             choiceMode = ChoiceMode.Command;
             hasChoice = false;
+            cachedCommandChoices = commands;
+            cachedCommandStamina = currentStamina;
             SetLogMessage(CommandChoicePrompt);
             if (locationButtons == null || commands == null)
             {
@@ -459,6 +479,10 @@ namespace Scene.TrainingScene.View
             HideResumeChoices();
             choiceMode = ChoiceMode.Shop;
             hasChoice = false;
+            cachedShopItems = items;
+            cachedShopHasNextPage = hasNextPage;
+            cachedShopMoney = currentMoney;
+            cachedShopShowInventory = showOpenInventory;
             SetLogMessage(
                 $"{ShopChoicePrompt}\n"
                 + LocalizedText.GetOrFallback(
@@ -635,6 +659,8 @@ namespace Scene.TrainingScene.View
             HideResumeChoices();
             choiceMode = ChoiceMode.Inventory;
             hasChoice = false;
+            cachedInventoryEntries = entries;
+            cachedInventoryHasNextPage = hasNextPage;
             SetLogMessage(InventoryChoicePrompt);
 
             bool windowHandlesNext = inventoryWindowView != null
@@ -765,6 +791,8 @@ namespace Scene.TrainingScene.View
             hasChoice = false;
             focusChoiceCancelled = false;
             pendingFocusCommand = command;
+            cachedFocusCommand = command;
+            cachedFocuses = focuses;
             SetLogMessage(FocusChoicePrompt);
             BindFocusChoices(focuses);
         }
@@ -858,6 +886,8 @@ namespace Scene.TrainingScene.View
             locationChoiceStamina = currentStamina;
             choiceMode = ChoiceMode.Location;
             hasChoice = false;
+            cachedLocations = choices;
+            cachedLocationStamina = currentStamina;
             SetLogMessage(LocationChoicePrompt);
             if (locationButtons == null || choices == null)
             {
@@ -1641,20 +1671,13 @@ namespace Scene.TrainingScene.View
             {
                 continueButton.onClick.RemoveListener(OnContinueClicked);
                 continueButton.onClick.AddListener(OnContinueClicked);
-                LhButtonLabelUtility.SetLabel(
-                    continueButtonLabel,
-                    LocalizedText.GetOrFallback(GameTextKeys.TrainingHudContinue, "続ける"));
             }
+
+            ApplyChromeLabels();
 
             if (backToTitleButton != null)
             {
                 backToTitleButton.EnsureUiSoundFeedback();
-                LhButtonLabelUtility.SetLabel(
-                    backToTitleButtonLabel,
-                    LocalizedText.GetOrFallback(
-                        GameTextKeys.TrainingHudBackToTitle,
-                        "タイトルへ戻る"));
-
                 backToTitleButton.gameObject.SetActive(false);
             }
 
@@ -1686,6 +1709,96 @@ namespace Scene.TrainingScene.View
 
             attackSwapChoicesView?.Clear();
             SetPanelVisible(attackSwapPanel, false);
+        }
+
+        /// <inheritdoc/>
+        public void RefreshLocalizedUi()
+        {
+            ApplyChromeLabels();
+            if (boundSession != null)
+            {
+                if (boundPeriod.HasValue)
+                {
+                    BindSession(boundSession, boundPeriod.Value, 0);
+                }
+                else
+                {
+                    BindSession(boundSession);
+                }
+            }
+
+            // 表示中の選択肢を現言語で描き直しhasChoiceはShow内でfalseになる
+            // 言語切替は操作途中での再入力を前提にする
+            switch (choiceMode)
+            {
+                case ChoiceMode.Command:
+                    if (cachedCommandChoices != null)
+                    {
+                        ShowCommandChoices(cachedCommandChoices, cachedCommandStamina);
+                    }
+
+                    break;
+                case ChoiceMode.Focus:
+                    if (cachedFocuses != null)
+                    {
+                        ShowFocusChoices(cachedFocusCommand, cachedFocuses);
+                    }
+
+                    break;
+                case ChoiceMode.Shop:
+                    if (cachedShopItems != null)
+                    {
+                        ShowShopChoices(
+                            cachedShopItems,
+                            cachedShopHasNextPage,
+                            cachedShopMoney,
+                            cachedShopShowInventory);
+                    }
+
+                    break;
+                case ChoiceMode.Inventory:
+                    if (cachedInventoryEntries != null)
+                    {
+                        ShowInventoryChoices(cachedInventoryEntries, cachedInventoryHasNextPage);
+                    }
+
+                    break;
+                case ChoiceMode.Location:
+                    if (cachedLocations != null)
+                    {
+                        ShowLocationChoices(cachedLocations, cachedLocationStamina);
+                    }
+
+                    break;
+            }
+        }
+
+        private void ApplyChromeLabels()
+        {
+            if (continueButton != null)
+            {
+                LhButtonLabelUtility.SetLabel(
+                    continueButtonLabel,
+                    LocalizedText.GetOrFallback(GameTextKeys.TrainingHudContinue, "続ける"));
+            }
+
+            if (backToTitleButton != null)
+            {
+                LhButtonLabelUtility.SetLabel(
+                    backToTitleButtonLabel,
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingHudBackToTitle,
+                        "タイトルへ戻る"));
+            }
+
+            if (interruptButton != null)
+            {
+                LhButtonLabelUtility.SetLabel(
+                    interruptButton,
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingHudInterrupt,
+                        "中断して保存"));
+            }
         }
 
         private void ApplyTrainingLayout()

@@ -16,7 +16,7 @@ namespace Scene.TrainingScene.View
     /// <summary>
     /// 売店と所持アイテムの一覧ウィンドウ
     /// </summary>
-    public sealed class TrainingItemListWindowView : MonoBehaviour
+    public sealed class TrainingItemListWindowView : MonoBehaviour, ILanguageAwareUi
     {
         public const int SlotCount = 3;
 
@@ -46,6 +46,19 @@ namespace Scene.TrainingScene.View
         private bool hasChoice;
         private int pendingChoice;
         private bool uiBound;
+        private enum ListMode
+        {
+            None,
+            Shop,
+            Inventory
+        }
+
+        private ListMode listMode = ListMode.None;
+        private IReadOnlyList<TrainingShopItem> cachedShopItems;
+        private IReadOnlyList<TrainingInventoryEntryView> cachedInventoryEntries;
+        private int cachedMoney;
+        private bool cachedHasNextPage;
+        private bool cachedShowOpenInventory;
 
         /// <summary>
         /// 閉じるボタンがあるか
@@ -77,6 +90,11 @@ namespace Scene.TrainingScene.View
             bool showOpenInventory)
         {
             EnsureUiBound();
+            listMode = ListMode.Shop;
+            cachedShopItems = items;
+            cachedMoney = currentMoney;
+            cachedHasNextPage = hasNextPage;
+            cachedShowOpenInventory = showOpenInventory;
             BindActionButtons();
             SetTitle(LocalizedText.GetOrFallback(GameTextKeys.TrainingShopTitle, "売店"));
             SetMoney(currentMoney);
@@ -96,6 +114,9 @@ namespace Scene.TrainingScene.View
             bool hasNextPage)
         {
             EnsureUiBound();
+            listMode = ListMode.Inventory;
+            cachedInventoryEntries = entries;
+            cachedHasNextPage = hasNextPage;
             BindActionButtons();
             SetTitle(LocalizedText.GetOrFallback(GameTextKeys.TrainingInventoryTitle, "所持アイテム"));
             if (moneyText != null)
@@ -112,12 +133,30 @@ namespace Scene.TrainingScene.View
             SetWindowVisible(true);
         }
 
+        /// <inheritdoc/>
+        public void RefreshLocalizedUi()
+        {
+            if (listMode == ListMode.Shop)
+            {
+                ShowShop(
+                    cachedShopItems,
+                    cachedMoney,
+                    cachedHasNextPage,
+                    cachedShowOpenInventory);
+            }
+            else if (listMode == ListMode.Inventory)
+            {
+                ShowInventory(cachedInventoryEntries, cachedHasNextPage);
+            }
+        }
+
         /// <summary>
         /// ウィンドウを隠す
         /// </summary>
         public void Hide()
         {
             hasChoice = false;
+            listMode = ListMode.None;
             ClearSlots();
             SetWindowVisible(false);
         }

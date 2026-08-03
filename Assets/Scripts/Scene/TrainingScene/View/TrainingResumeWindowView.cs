@@ -18,7 +18,7 @@ namespace Scene.TrainingScene.View
     /// 育成再開確認用の大型ウィンドウ
     /// 途中データのステータスと技構成を一覧表示する
     /// </summary>
-    public sealed class TrainingResumeWindowView : MonoBehaviour, ITrainingResumeWindowView
+    public sealed class TrainingResumeWindowView : MonoBehaviour, ITrainingResumeWindowView, ILanguageAwareUi
     {
         [Header("Root")]
         [Tooltip("ウィンドウ全体のルート")]
@@ -68,6 +68,8 @@ namespace Scene.TrainingScene.View
         private int motivationFrameIndex;
         private float motivationFrameTimer;
         private const float MotivationFrameSeconds = 0.12f;
+        private bool isShowing;
+        private TrainingResumeProgressPresentation cachedPresentation;
 
         private void Awake()
         {
@@ -83,7 +85,50 @@ namespace Scene.TrainingScene.View
         public void Show(TrainingResumeProgressPresentation presentation)
         {
             EnsureUiBound();
+            isShowing = true;
+            cachedPresentation = presentation;
+            ApplyPresentationCopy(presentation);
 
+            // 初回表示で子のAwake(EnsureSprites)が走る前に範囲色を書くと上書きされる
+            SetWindowVisible(true);
+
+            if (attacksPanel != null)
+            {
+                attacksPanel.ShowForResumeWindow(presentation.Attacks);
+            }
+
+            ApplyMotivationIcon(presentation.Motivation);
+            ApplyThumbnail(presentation.ThumbnailPng);
+
+            if (continueButton != null)
+            {
+                continueButton.interactable = true;
+            }
+
+            if (restartButton != null)
+            {
+                restartButton.interactable = true;
+            }
+        }
+
+        /// <inheritdoc/>
+        public void RefreshLocalizedUi()
+        {
+            if (!isShowing)
+            {
+                ApplyButtonLabels();
+                return;
+            }
+
+            ApplyPresentationCopy(cachedPresentation);
+            if (attacksPanel != null)
+            {
+                attacksPanel.ShowForResumeWindow(cachedPresentation.Attacks);
+            }
+        }
+
+        private void ApplyPresentationCopy(TrainingResumeProgressPresentation presentation)
+        {
             if (titleText != null)
             {
                 titleText.text = LocalizedText.Get(GameTextKeys.TrainingResumeTitle);
@@ -119,26 +164,17 @@ namespace Scene.TrainingScene.View
                 statsText.text = presentation.StatsText;
             }
 
-            // 初回表示で子のAwake(EnsureSprites)が走る前に範囲色を書くと上書きされる
-            SetWindowVisible(true);
+            ApplyButtonLabels();
+        }
 
-            if (attacksPanel != null)
-            {
-                attacksPanel.ShowForResumeWindow(presentation.Attacks);
-            }
-
-            ApplyMotivationIcon(presentation.Motivation);
-            ApplyThumbnail(presentation.ThumbnailPng);
-
-            if (continueButton != null)
-            {
-                continueButton.interactable = true;
-            }
-
-            if (restartButton != null)
-            {
-                restartButton.interactable = true;
-            }
+        private void ApplyButtonLabels()
+        {
+            LhButtonLabelUtility.SetLabel(
+                restartButton,
+                LocalizedText.GetOrFallback(GameTextKeys.TrainingResumeRestart, "最初から育成"));
+            LhButtonLabelUtility.SetLabel(
+                continueButton,
+                LocalizedText.GetOrFallback(GameTextKeys.TrainingResumeContinue, "続きから育成"));
         }
 
         /// <inheritdoc/>
@@ -146,6 +182,7 @@ namespace Scene.TrainingScene.View
         {
             hasChoice = false;
             continueSelected = false;
+            isShowing = false;
             attacksPanel?.Clear(preserveLayoutSpace: true);
             ClearThumbnail();
             ClearMotivationIcon();

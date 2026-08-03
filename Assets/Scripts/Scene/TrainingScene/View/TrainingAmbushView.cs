@@ -1,6 +1,7 @@
 using Cysharp.Threading.Tasks;
 using Extensions;
 using LighthouseExtends.UIComponent.Button;
+using Localization;
 using Scene.TrainingScene.Domain;
 using Scene.TrainingScene.Interface;
 using System.Threading;
@@ -9,14 +10,12 @@ using UI.ClayEditor.View;
 using UnityEngine;
 using UnityEngine.UI;
 
-using Localization;
-
 namespace Scene.TrainingScene.View
 {
     /// <summary>
     /// 強敵急襲のアラート演出と戦う逃げる選択ウィンドウ
     /// </summary>
-    public sealed class TrainingAmbushView : MonoBehaviour, ITrainingAmbushView
+    public sealed class TrainingAmbushView : MonoBehaviour, ITrainingAmbushView, ILanguageAwareUi
     {
         private const int AlertSortingOrder = 920;
         private const int ChoiceSortingOrder = 930;
@@ -42,6 +41,8 @@ namespace Scene.TrainingScene.View
         private bool hasChoice;
         private TrainingAmbushChoice selectedChoice = TrainingAmbushChoice.Flee;
         private bool uiBound;
+        private string cachedEnemyName = string.Empty;
+        private bool choiceVisible;
 
         private void Awake()
         {
@@ -112,17 +113,9 @@ namespace Scene.TrainingScene.View
             EnsureUiBound();
             hasChoice = false;
             selectedChoice = TrainingAmbushChoice.Flee;
-
-            if (choiceTitleText != null)
-            {
-                choiceTitleText.text = LocalizedText.Get(GameTextKeys.TrainingAmbushTitle);
-            }
-
-            if (choiceMessageText != null)
-            {
-                string name = string.IsNullOrEmpty(enemyName) ? LocalizedText.Get(GameTextKeys.TrainingAmbushEnemyDefault) : enemyName;
-                choiceMessageText.text = LocalizedText.Get(GameTextKeys.TrainingAmbushMessage, "name", name);
-            }
+            cachedEnemyName = enemyName ?? string.Empty;
+            choiceVisible = true;
+            ApplyChoiceCopy();
 
             if (fightButton != null)
             {
@@ -139,6 +132,43 @@ namespace Scene.TrainingScene.View
         }
 
         /// <inheritdoc/>
+        public void RefreshLocalizedUi()
+        {
+            if (alertTitleText != null)
+            {
+                alertTitleText.text = LocalizedText.Get(GameTextKeys.TrainingAmbushTitleBang);
+            }
+
+            if (choiceVisible)
+            {
+                ApplyChoiceCopy();
+            }
+        }
+
+        private void ApplyChoiceCopy()
+        {
+            if (choiceTitleText != null)
+            {
+                choiceTitleText.text = LocalizedText.Get(GameTextKeys.TrainingAmbushTitle);
+            }
+
+            if (choiceMessageText != null)
+            {
+                string name = string.IsNullOrEmpty(cachedEnemyName)
+                    ? LocalizedText.Get(GameTextKeys.TrainingAmbushEnemyDefault)
+                    : cachedEnemyName;
+                choiceMessageText.text = LocalizedText.Get(GameTextKeys.TrainingAmbushMessage, "name", name);
+            }
+
+            LhButtonLabelUtility.SetLabel(
+                fightButton,
+                LocalizedText.GetOrFallback(GameTextKeys.TrainingAmbushFight, "戦う"));
+            LhButtonLabelUtility.SetLabel(
+                fleeButton,
+                LocalizedText.GetOrFallback(GameTextKeys.TrainingAmbushFlee, "逃げる"));
+        }
+
+        /// <inheritdoc/>
         public async UniTask<TrainingAmbushChoice> WaitChoiceAsync(CancellationToken cancellationToken)
         {
             hasChoice = false;
@@ -150,6 +180,7 @@ namespace Scene.TrainingScene.View
         public void Hide()
         {
             hasChoice = false;
+            choiceVisible = false;
             SetAlertVisible(false);
             SetChoiceVisible(false);
         }

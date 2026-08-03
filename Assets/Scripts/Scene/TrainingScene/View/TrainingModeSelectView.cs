@@ -1,6 +1,7 @@
 using Cysharp.Threading.Tasks;
 using Extensions;
 using LighthouseExtends.UIComponent.Button;
+using Localization;
 using Scene.TrainingScene.Domain;
 using Scene.TrainingScene.Interface;
 using System.Threading;
@@ -10,15 +11,13 @@ using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
 
-using Localization;
-
 namespace Scene.TrainingScene.View
 {
     /// <summary>
     /// 育成方式選択ウィンドウ
     /// じっくり育成か自動育成かを選ばせる
     /// </summary>
-    public sealed class TrainingModeSelectView : MonoBehaviour, ITrainingModeSelectView
+    public sealed class TrainingModeSelectView : MonoBehaviour, ITrainingModeSelectView, ILanguageAwareUi
     {
         [Header("Root")]
         [FormerlySerializedAs("windowCanvas")]
@@ -44,22 +43,12 @@ namespace Scene.TrainingScene.View
         {
             EnsureUiBound();
             CanvasVisibilityUtility.SetPanelActive(GetWindowRoot(), true);
-
-            if (titleText != null)
-            {
-                titleText.text = LocalizedText.Get(GameTextKeys.TrainingModeSelectTitle);
-            }
+            ApplyLocalizedLabels();
 
             if (modelNameText != null)
             {
                 modelNameText.text = string.Empty;
                 modelNameText.enabled = false;
-            }
-
-            if (descriptionText != null)
-            {
-                descriptionText.text =
-                    $"じっくり育成は1〜6時間目の行動を自分で選びます\n昼休みは売店放課後は戦闘です\n自動育成は{TrainingSettings.TotalDays}日間を自動で進行します";
             }
 
             if (manualButton != null)
@@ -73,6 +62,36 @@ namespace Scene.TrainingScene.View
             }
 
             SetWindowVisible(true);
+        }
+
+        /// <inheritdoc/>
+        public void RefreshLocalizedUi()
+        {
+            ApplyLocalizedLabels();
+        }
+
+        private void ApplyLocalizedLabels()
+        {
+            if (titleText != null)
+            {
+                titleText.text = LocalizedText.Get(GameTextKeys.TrainingModeSelectTitle);
+            }
+
+            if (descriptionText != null)
+            {
+                descriptionText.text = LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingModeSelectBody,
+                    "じっくり育成は1〜6時間目の行動を自分で選びます\n昼休みは売店放課後は戦闘です\n自動育成は{days}日間を自動で進行します",
+                    "days",
+                    TrainingSettings.TotalDays);
+            }
+
+            LhButtonLabelUtility.SetLabel(
+                manualButton,
+                LocalizedText.GetOrFallback(GameTextKeys.TrainingModeManual, "じっくり育成"));
+            LhButtonLabelUtility.SetLabel(
+                autoButton,
+                LocalizedText.GetOrFallback(GameTextKeys.TrainingModeAuto, "自動育成"));
         }
 
         /// <inheritdoc/>
