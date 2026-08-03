@@ -80,7 +80,10 @@ namespace UI.ClayEditor.View
 
             if (rangeLabelText != null)
             {
-                rangeLabelText.text = ModelSaveSummaryFormatter.TrainingAttackRangeLabel;
+                LocalizedFixedChromeLabel.ApplyFixedRectLabel(
+                    rangeLabelText,
+                    GameTextKeys.SaveSummaryRangeLabel,
+                    "範囲:");
             }
 
             if (requiredPartIcon != null)
@@ -128,7 +131,10 @@ namespace UI.ClayEditor.View
 
             if (rangeLabelText != null)
             {
-                rangeLabelText.text = ModelSaveSummaryFormatter.TrainingAttackRangeLabel;
+                LocalizedFixedChromeLabel.ApplyFixedRectLabel(
+                    rangeLabelText,
+                    GameTextKeys.SaveSummaryRangeLabel,
+                    "範囲:");
             }
 
             if (requiredPartIcon != null)
@@ -185,7 +191,10 @@ namespace UI.ClayEditor.View
 
             if (rangeLabelText != null)
             {
-                rangeLabelText.text = ModelSaveSummaryFormatter.TrainingAttackRangeLabel;
+                LocalizedFixedChromeLabel.ApplyFixedRectLabel(
+                    rangeLabelText,
+                    GameTextKeys.SaveSummaryRangeLabel,
+                    "範囲:");
             }
 
             if (requiredPartIcon != null)
@@ -227,7 +236,10 @@ namespace UI.ClayEditor.View
 
             if (rangeLabelText != null)
             {
-                rangeLabelText.text = ModelSaveSummaryFormatter.TrainingAttackRangeLabel;
+                LocalizedFixedChromeLabel.ApplyFixedRectLabel(
+                    rangeLabelText,
+                    GameTextKeys.SaveSummaryRangeLabel,
+                    "範囲:");
             }
 
             if (requiredPartIcon != null)

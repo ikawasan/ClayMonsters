@@ -119,7 +119,7 @@ namespace Scene.TrainingScene.View
                 DisableChildRaycasts(skipButton);
                 LhButtonLabelUtility.SetLabel(
                     skipButton,
-                    LocalizedText.GetOrFallback(GameTextKeys.TrainingSwapSkip, "入れ替えない"));
+                    LocalizedText.GetOrFallback(GameTextKeys.TrainingSwapSkip, "スキップ"));
                 skipButton.onClick.RemoveAllListeners();
                 skipButton.onClick.AddListener(() => onSelected?.Invoke(-1));
             }

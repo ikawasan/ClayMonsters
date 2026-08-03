@@ -1135,7 +1135,7 @@ namespace UI.ClayEditor.View
         {
             LhButtonLabelUtility.SetLabel(
                 loadButton,
-                LocalizedText.GetOrFallback(GameTextKeys.LoadSlotLoad, "ロードする"));
+                LocalizedText.GetOrFallback(GameTextKeys.LoadSlotLoad, "ロード"));
             LhButtonLabelUtility.SetLabel(
                 backButton,
                 LocalizedText.GetOrFallback(GameTextKeys.CommonReturn, "戻る"));
@@ -1158,14 +1158,15 @@ namespace UI.ClayEditor.View
                 return;
             }
 
-            selectionInstructionText.text = savePool == ModelSavePool.Enemy
-                ? LocalizedText.GetOrFallback(
-                    GameTextKeys.LoadSlotEnemyInstruction,
-                    EnemySelectionInstructionFallback)
-                : LocalizedText.GetOrFallback(
-                    GameTextKeys.LoadSlotPlayerInstruction,
-                    PlayerSelectionInstructionFallback);
-            TitleClayUiVisualUtility.EnsureTextFontOnly(selectionInstructionText);
+            LocalizedFont.SetText(
+                selectionInstructionText,
+                savePool == ModelSavePool.Enemy
+                    ? LocalizedText.GetOrFallback(
+                        GameTextKeys.LoadSlotEnemyInstruction,
+                        EnemySelectionInstructionFallback)
+                    : LocalizedText.GetOrFallback(
+                        GameTextKeys.LoadSlotPlayerInstruction,
+                        PlayerSelectionInstructionFallback));
             if (!selectionInstructionText.gameObject.activeSelf)
             {
                 selectionInstructionText.gameObject.SetActive(true);

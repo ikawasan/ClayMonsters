@@ -24,7 +24,7 @@ namespace Scene.TrainingScene
     /// <summary>
     /// 育成シーンの5日間ループと行動ターン進行を実行する
     /// </summary>
-    public sealed class TrainingFlowRunner : MonoBehaviour
+    public sealed class TrainingFlowRunner : MonoBehaviour, ILanguageAwareUi
     {
         private static TrainingFlowRunner activeRunner;
 
@@ -87,6 +87,13 @@ namespace Scene.TrainingScene
             this.canvasTransition = canvasTransition;
             this.skillTreeService = skillTreeService;
             this.battleRunner = battleRunner;
+            ApplySelectionBackToTitleLabel();
+        }
+
+        /// <inheritdoc/>
+        public void RefreshLocalizedUi()
+        {
+            ApplySelectionBackToTitleLabel();
         }
 
         /// <summary>
@@ -670,8 +677,7 @@ namespace Scene.TrainingScene
                 session.AttackMotions,
                 saveResultKey,
                 saveResultFallback,
-                GameTextKeys.TrainingLogReturnToTitle,
-                "タイトルへ戻る",
+                GameTextKeys.TrainingLogReturnToTitle, "タイトル",
                 thumbnailPng));
             await autoResultView.WaitBackToTitleAsync(cancellationToken);
 
@@ -1211,10 +1217,29 @@ namespace Scene.TrainingScene
 
         private void SetSelectionBackToTitleButtonVisible(bool visible)
         {
-            if (selectionBackToTitleButton != null)
+            if (selectionBackToTitleButton == null)
             {
-                selectionBackToTitleButton.gameObject.SetActive(visible);
+                return;
             }
+
+            if (visible)
+            {
+                ApplySelectionBackToTitleLabel();
+            }
+
+            selectionBackToTitleButton.gameObject.SetActive(visible);
+        }
+
+        private void ApplySelectionBackToTitleLabel()
+        {
+            if (selectionBackToTitleButton == null)
+            {
+                return;
+            }
+
+            LhButtonLabelUtility.SetLabel(
+                selectionBackToTitleButton,
+                LocalizedText.GetOrFallback(GameTextKeys.TrainingHudBackToTitle, "タイトル"));
         }
 
         private void SetSelectionUiVisible(bool visible)

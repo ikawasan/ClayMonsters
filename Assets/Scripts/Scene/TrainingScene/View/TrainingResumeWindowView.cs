@@ -171,10 +171,10 @@ namespace Scene.TrainingScene.View
         {
             LhButtonLabelUtility.SetLabel(
                 restartButton,
-                LocalizedText.GetOrFallback(GameTextKeys.TrainingResumeRestart, "最初から育成"));
+                LocalizedText.GetOrFallback(GameTextKeys.TrainingResumeRestart, "最初から"));
             LhButtonLabelUtility.SetLabel(
                 continueButton,
-                LocalizedText.GetOrFallback(GameTextKeys.TrainingResumeContinue, "続きから育成"));
+                LocalizedText.GetOrFallback(GameTextKeys.TrainingResumeContinue, "続きから"));
         }
 
         /// <inheritdoc/>

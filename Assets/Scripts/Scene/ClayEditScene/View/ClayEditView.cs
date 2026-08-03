@@ -113,7 +113,7 @@ namespace Scene.ClayEditScene.View
 
                 toModeSelectSceneButton,
 
-                LocalizedText.GetOrFallback(GameTextKeys.ClayEditLeaveWithoutSaveButton, "保存せず戻る"));
+                LocalizedText.GetOrFallback(GameTextKeys.ClayEditLeaveWithoutSaveButton, "保存せず"));
 
             LhButtonLabelUtility.SetLabel(
 

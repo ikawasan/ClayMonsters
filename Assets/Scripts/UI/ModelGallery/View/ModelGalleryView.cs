@@ -89,6 +89,7 @@ namespace UI.ModelGallery.View
         private Texture2D ownedDownloadConfirmThumbnail;
         private Sprite ownedDownloadConfirmSprite;
         private CancellationTokenSource browseClipCts;
+        private IClayModelSaveService cachedSaveService;
         private LocalizedBakedTextApplier bakedLabelApplier;
         private int cachedPoints;
         private bool postConfirmVisible;
@@ -117,13 +118,14 @@ namespace UI.ModelGallery.View
             {
                 if (postConfirmNameText != null)
                 {
-                    postConfirmNameText.text = cachedPostConfirmName;
+                    LocalizedFont.SetText(postConfirmNameText, cachedPostConfirmName);
                 }
 
                 if (postConfirmMessageText != null)
                 {
-                    postConfirmMessageText.text = Localization.LocalizedText.Get(
-                        Localization.GameTextKeys.ModelGalleryPostConfirm);
+                    LocalizedFont.SetText(
+                        postConfirmMessageText,
+                        LocalizedText.Get(GameTextKeys.ModelGalleryPostConfirm));
                 }
             }
 
@@ -131,19 +133,27 @@ namespace UI.ModelGallery.View
             {
                 if (downloadConfirmNameText != null)
                 {
-                    downloadConfirmNameText.text = cachedDownloadConfirmName;
+                    LocalizedFont.SetText(downloadConfirmNameText, cachedDownloadConfirmName);
                 }
 
                 if (downloadConfirmMessageText != null)
                 {
-                    downloadConfirmMessageText.text = downloadConfirmIsOverwrite
-                        ? Localization.LocalizedText.GetOrFallback(
-                            Localization.GameTextKeys.ModelGalleryOverwriteConfirm,
-                            "既存のセーブデータに上書き保存しますか？")
-                        : Localization.LocalizedText.GetOrFallback(
-                            Localization.GameTextKeys.ModelGallerySaveToSlotConfirm,
-                            "このスロットに保存しますか？");
+                    LocalizedFont.SetText(
+                        downloadConfirmMessageText,
+                        downloadConfirmIsOverwrite
+                            ? LocalizedText.GetOrFallback(
+                                GameTextKeys.ModelGalleryOverwriteConfirm,
+                                "既存のセーブデータに上書き保存しますか？")
+                            : LocalizedText.GetOrFallback(
+                                GameTextKeys.ModelGallerySaveToSlotConfirm,
+                                "このスロットに保存しますか？"));
                 }
+            }
+
+            // 投稿/取得スロットのステータスラベルを現在言語で再組み立て
+            if (cachedSaveService != null && canvas != null && canvas.enabled)
+            {
+                RefreshSharedSlotList(cachedSaveService, slotListMode);
             }
         }
 
@@ -159,15 +169,15 @@ namespace UI.ModelGallery.View
             bakedLabelApplier.Register(GameTextKeys.ModelGalleryTabPost, "投稿");
             bakedLabelApplier.Register(GameTextKeys.ModelGalleryTabBrowse, "閲覧");
             bakedLabelApplier.Register(GameTextKeys.ModelGallerySortRandom, "ランダム");
-            bakedLabelApplier.Register(GameTextKeys.ModelGallerySortMonthly, "月間ランキング");
-            bakedLabelApplier.Register(GameTextKeys.ModelGallerySortOverall, "総合ランキング");
+            bakedLabelApplier.Register(GameTextKeys.ModelGallerySortMonthly, "月間");
+            bakedLabelApplier.Register(GameTextKeys.ModelGallerySortOverall, "総合");
             bakedLabelApplier.Register(GameTextKeys.ModelGalleryPrev, "前へ");
             bakedLabelApplier.Register(GameTextKeys.ModelGalleryNext, "次へ");
             bakedLabelApplier.Register(GameTextKeys.ModelGalleryRefresh, "更新");
-            bakedLabelApplier.Register(GameTextKeys.ModelGalleryPublish, "投稿する");
-            bakedLabelApplier.Register(GameTextKeys.CommonSave, "保存する");
+            bakedLabelApplier.Register(GameTextKeys.ModelGalleryPublish, "投稿");
+            bakedLabelApplier.Register(GameTextKeys.CommonSave, "保存");
             bakedLabelApplier.Register(GameTextKeys.CommonClose, "閉じる");
-            bakedLabelApplier.Register(GameTextKeys.ModelGalleryDownload, "ダウンロード");
+            bakedLabelApplier.Register(GameTextKeys.ModelGalleryDownload, "取得");
             bakedLabelApplier.Register(GameTextKeys.ModelGalleryModelName, "モデル名");
             bakedLabelApplier.Register(GameTextKeys.ModelGalleryPointsInsufficient, "ポイントが不足しています");
             bakedLabelApplier.Register(GameTextKeys.ModelGallerySaveDestEmpty, "保存先: 空きスロット");
@@ -196,7 +206,7 @@ namespace UI.ModelGallery.View
                 LocalizedText.GetOrFallback(GameTextKeys.CommonClose, "閉じる"));
             LhButtonLabelUtility.SetLabel(
                 postConfirmPublishButton,
-                LocalizedText.GetOrFallback(GameTextKeys.ModelGalleryPublish, "投稿する"));
+                LocalizedText.GetOrFallback(GameTextKeys.ModelGalleryPublish, "投稿"));
             LhButtonLabelUtility.SetLabel(
                 postConfirmCloseButton,
                 LocalizedText.GetOrFallback(GameTextKeys.CommonClose, "閉じる"));
@@ -211,7 +221,7 @@ namespace UI.ModelGallery.View
                 LocalizedText.GetOrFallback(GameTextKeys.CommonClose, "閉じる"));
             LhButtonLabelUtility.SetLabel(
                 downloadConfirmSaveButton,
-                LocalizedText.GetOrFallback(GameTextKeys.CommonSave, "保存する"));
+                LocalizedText.GetOrFallback(GameTextKeys.CommonSave, "保存"));
             LhButtonLabelUtility.SetLabel(
                 downloadConfirmCloseButton,
                 LocalizedText.GetOrFallback(GameTextKeys.CommonClose, "閉じる"));
@@ -226,10 +236,10 @@ namespace UI.ModelGallery.View
                 LocalizedText.GetOrFallback(GameTextKeys.ModelGallerySortRandom, "ランダム"));
             LhButtonLabelUtility.SetLabel(
                 monthlyRankingToggle,
-                LocalizedText.GetOrFallback(GameTextKeys.ModelGallerySortMonthly, "月間ランキング"));
+                LocalizedText.GetOrFallback(GameTextKeys.ModelGallerySortMonthly, "月間"));
             LhButtonLabelUtility.SetLabel(
                 overallRankingToggle,
-                LocalizedText.GetOrFallback(GameTextKeys.ModelGallerySortOverall, "総合ランキング"));
+                LocalizedText.GetOrFallback(GameTextKeys.ModelGallerySortOverall, "総合"));
         }
 
         /// <inheritdoc />
@@ -500,7 +510,7 @@ namespace UI.ModelGallery.View
         }
 
         /// <inheritdoc />
-        public void ShowDownloadConfirm(string modelName, string message, Texture2D thumbnail)
+        public void ShowDownloadConfirm(string modelName, bool isOverwrite, Texture2D thumbnail)
         {
             if (downloadConfirmCanvas == null)
             {
@@ -511,7 +521,7 @@ namespace UI.ModelGallery.View
             HidePostConfirm();
             downloadConfirmVisible = true;
             cachedDownloadConfirmName = modelName ?? string.Empty;
-            downloadConfirmIsOverwrite = IsDownloadOverwriteMessage(message);
+            downloadConfirmIsOverwrite = isOverwrite;
 
             if (downloadConfirmNameText != null)
             {
@@ -537,25 +547,6 @@ namespace UI.ModelGallery.View
             }
 
             downloadConfirmCanvas.enabled = true;
-        }
-
-        private static bool IsDownloadOverwriteMessage(string message)
-        {
-            if (string.IsNullOrEmpty(message))
-            {
-                return false;
-            }
-
-            string overwrite = Localization.LocalizedText.GetOrFallback(
-                Localization.GameTextKeys.ModelGalleryOverwriteConfirm,
-                "既存のセーブデータに上書き保存しますか？");
-            if (string.Equals(message, overwrite, StringComparison.Ordinal))
-            {
-                return true;
-            }
-
-            return message.IndexOf("上書き", StringComparison.Ordinal) >= 0
-                || message.IndexOf("overwrite", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         /// <inheritdoc />
@@ -667,6 +658,7 @@ namespace UI.ModelGallery.View
             }
 
             slotListMode = mode;
+            cachedSaveService = saveService;
             EnsurePostSlotScrollInitialized();
             ClearPostSlotRuntimeThumbnails();
             postSlotScrollList.RefreshSlots(

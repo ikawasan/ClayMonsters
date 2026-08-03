@@ -73,6 +73,7 @@ namespace UI.ClayEditor.View
         /// <inheritdoc/>
         public void RefreshLocalizedUi()
         {
+            ApplyCloseLabel();
             if (!isShowing)
             {
                 return;
@@ -91,8 +92,16 @@ namespace UI.ClayEditor.View
             messageText.text = LocalizedText.GetOrFallback(messageKey, messageFallback);
         }
 
+        private void ApplyCloseLabel()
+        {
+            LhButtonLabelUtility.SetLabel(
+                closeButton,
+                LocalizedText.GetOrFallback(GameTextKeys.CommonClose, "閉じる"));
+        }
+
         private void BindCloseButton()
         {
+            ApplyCloseLabel();
             if (isBound || closeButton == null)
             {
                 return;

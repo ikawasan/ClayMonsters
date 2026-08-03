@@ -86,7 +86,7 @@ namespace UI.ClayEditor.View
 
             LhButtonLabelUtility.SetLabel(
                 confirmButton,
-                LocalizedText.GetOrFallback(GameTextKeys.ClayEditDeleteConfirm, "削除する"));
+                LocalizedText.GetOrFallback(GameTextKeys.ClayEditDeleteConfirm, "削除"));
             LhButtonLabelUtility.SetLabel(
                 cancelButton,
                 LocalizedText.GetOrFallback(GameTextKeys.CommonCancel, "キャンセル"));

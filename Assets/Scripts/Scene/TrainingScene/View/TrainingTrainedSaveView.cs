@@ -372,13 +372,13 @@ namespace Scene.TrainingScene.View
         {
             LhButtonLabelUtility.SetLabel(
                 saveButtonLabel,
-                LocalizedText.GetOrFallback(GameTextKeys.CommonSave, "保存する"));
+                LocalizedText.GetOrFallback(GameTextKeys.CommonSave, "保存"));
             LhButtonLabelUtility.SetLabel(
                 backButtonLabel,
                 LocalizedText.GetOrFallback(GameTextKeys.CommonReturn, "戻る"));
             LhButtonLabelUtility.SetLabel(
                 backToTitleButtonLabel,
-                LocalizedText.GetOrFallback(GameTextKeys.TrainingHudBackToTitle, "タイトルへ戻る"));
+                LocalizedText.GetOrFallback(GameTextKeys.TrainingHudBackToTitle, "タイトル"));
         }
 
         /// <inheritdoc/>

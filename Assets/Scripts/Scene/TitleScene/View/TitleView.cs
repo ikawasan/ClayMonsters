@@ -72,7 +72,7 @@ namespace Scene.TitleScene.View
             // Titleシーン配置の日本語原文をフォールバックにする
             SetButtonLabel(
                 clayEditButton,
-                LocalizedText.GetOrFallback(GameTextKeys.TitleClayEdit, "モンスターエディット"));
+                LocalizedText.GetOrFallback(GameTextKeys.TitleClayEdit, "エディット"));
             SetButtonLabel(
                 battleNpcButton,
                 LocalizedText.GetOrFallback(GameTextKeys.TitleBattleNpc, "CPU戦"));
@@ -84,16 +84,16 @@ namespace Scene.TitleScene.View
                 LocalizedText.GetOrFallback(GameTextKeys.TitleTraining, "育成"));
             SetButtonLabel(
                 skillTreeButton,
-                LocalizedText.GetOrFallback(GameTextKeys.TitleSkillTree, "スキルツリー"));
+                LocalizedText.GetOrFallback(GameTextKeys.TitleSkillTree, "スキル"));
             SetButtonLabel(
                 modelGalleryButton,
                 LocalizedText.GetOrFallback(GameTextKeys.TitleModelGallery, "展示室"));
             SetButtonLabel(
                 optionButton,
-                LocalizedText.GetOrFallback(GameTextKeys.TitleOption, "オプション"));
+                LocalizedText.GetOrFallback(GameTextKeys.TitleOption, "設定"));
             SetButtonLabel(
                 quitGameButton,
-                LocalizedText.GetOrFallback(GameTextKeys.TitleQuit, "ゲームをやめる"));
+                LocalizedText.GetOrFallback(GameTextKeys.TitleQuit, "やめる"));
         }
 
         private static void SetButtonLabel(LHButton button, string label)

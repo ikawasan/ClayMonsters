@@ -706,6 +706,12 @@ namespace UI.Battle.View
         /// <inheritdoc/>
         public void RefreshLocalizedUi()
         {
+            // 言語切替後もHP/ガッツの輪郭を再付与する
+            BattleHudVisualUtility.ApplyValueOutline(playerHpText);
+            BattleHudVisualUtility.ApplyValueOutline(enemyHpText);
+            BattleHudVisualUtility.ApplyValueOutline(playerGutsText);
+            BattleHudVisualUtility.ApplyValueOutline(enemyGutsText);
+
             if (hasResult)
             {
                 ApplyResultText();
@@ -719,12 +725,13 @@ namespace UI.Battle.View
                 return;
             }
 
-            resultText.text = string.IsNullOrEmpty(cachedResultWinnerName)
+            string resultLabel = string.IsNullOrEmpty(cachedResultWinnerName)
                 ? Localization.LocalizedText.Get(Localization.GameTextKeys.BattleDraw)
                 : Localization.LocalizedText.Get(
                     Localization.GameTextKeys.BattleVictory,
                     "winnerName",
                     cachedResultWinnerName);
+            Localization.LocalizedFont.SetText(resultText, resultLabel);
         }
 
         /// <inheritdoc />

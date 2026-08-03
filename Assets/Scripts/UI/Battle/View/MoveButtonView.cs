@@ -172,22 +172,28 @@ namespace UI.Battle.View
 
             if (moveNameText != null)
             {
-                moveNameText.text = string.IsNullOrEmpty(move.Name) ? string.Empty : move.Name;
+                LocalizedFont.SetText(
+                    moveNameText,
+                    string.IsNullOrEmpty(move.Name) ? string.Empty : move.Name);
             }
 
             if (powerText != null)
             {
-                powerText.text = Mathf.RoundToInt(move.Power * 100f).ToString();
+                LocalizedFont.SetText(
+                    powerText,
+                    Mathf.RoundToInt(move.Power * 100f).ToString());
             }
 
             if (gutsText != null)
             {
-                gutsText.text = Mathf.RoundToInt(move.GutsCost).ToString();
+                LocalizedFont.SetText(
+                    gutsText,
+                    Mathf.RoundToInt(move.GutsCost).ToString());
             }
 
             if (rangeLabelText != null)
             {
-                rangeLabelText.text = RangeLabel;
+                LocalizedFont.SetText(rangeLabelText, RangeLabel);
             }
 
             ApplyRequiredPartIcon(move.RequiredPartId);
@@ -240,7 +246,7 @@ namespace UI.Battle.View
             ApplyChromeLabels();
             if (rangeLabelText != null)
             {
-                rangeLabelText.text = RangeLabel;
+                LocalizedFont.SetText(rangeLabelText, RangeLabel);
             }
         }
 
@@ -339,7 +345,9 @@ namespace UI.Battle.View
             SetPartLabelVisible(requiredPartLabelText, true);
             if (requiredPartLabelText != null)
             {
-                requiredPartLabelText.text = MoveTargetPartLabelUtility.FormatRequiredRowLabel(requiredPartId);
+                LocalizedFont.SetText(
+                    requiredPartLabelText,
+                    MoveTargetPartLabelUtility.FormatRequiredRowLabel(requiredPartId));
             }
             icon.sprite = sprite;
             icon.color = Color.white;
@@ -368,7 +376,9 @@ namespace UI.Battle.View
             SetPartLabelVisible(targetPartLabelText, true);
             if (targetPartLabelText != null)
             {
-                targetPartLabelText.text = MoveTargetPartLabelUtility.FormatTargetRowLabel(targetPartId);
+                LocalizedFont.SetText(
+                    targetPartLabelText,
+                    MoveTargetPartLabelUtility.FormatTargetRowLabel(targetPartId));
             }
             icon.sprite = resolvedSprite;
             icon.color = color;

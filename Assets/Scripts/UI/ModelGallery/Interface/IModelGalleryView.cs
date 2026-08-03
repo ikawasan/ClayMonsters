@@ -116,9 +116,9 @@ namespace UI.ModelGallery.Interface
         /// ダウンロード保存確認ウィンドウを表示する
         /// </summary>
         /// <param name="modelName">保存するモデル名</param>
-        /// <param name="message">確認メッセージ</param>
+        /// <param name="isOverwrite">上書き確認か</param>
         /// <param name="thumbnail">サムネイル</param>
-        void ShowDownloadConfirm(string modelName, string message, Texture2D thumbnail);
+        void ShowDownloadConfirm(string modelName, bool isOverwrite, Texture2D thumbnail);
 
         /// <summary>
         /// ダウンロード保存確認ウィンドウを閉じる

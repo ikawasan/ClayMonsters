@@ -269,7 +269,7 @@ namespace Scene.TrainingScene.Domain
                 ? GameTextKeys.TrainingChooseSave
                 : continueButtonKey;
             string resolvedContinueFallback = string.IsNullOrEmpty(continueButtonFallback)
-                ? "保存先を選ぶ"
+                ? "保存先"
                 : continueButtonFallback;
             string resolvedTitleKey = string.IsNullOrEmpty(titleKey)
                 ? GameTextKeys.TrainingComplete

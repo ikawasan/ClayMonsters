@@ -573,7 +573,7 @@ namespace Scene.TrainingScene.View
                     button.gameObject.SetActive(true);
                     SetLocationButtonLabel(
                         i,
-                        LocalizedText.GetOrFallback(GameTextKeys.TrainingShopNextPage, "次のページ"));
+                        LocalizedText.GetOrFallback(GameTextKeys.TrainingShopNextPage, "次へ"));
                     button.onClick.RemoveAllListeners();
                     button.onClick.AddListener(
                         () => OnShopClicked(TrainingShopChoiceCodes.NextPage));
@@ -591,8 +591,7 @@ namespace Scene.TrainingScene.View
                     SetLocationButtonLabel(
                         i,
                         LocalizedText.GetOrFallback(
-                            GameTextKeys.TrainingShopOpenInventory,
-                            "所持アイテム"));
+                            GameTextKeys.TrainingShopOpenInventory, "所持"));
                     button.onClick.RemoveAllListeners();
                     button.onClick.AddListener(
                         () => OnShopClicked(TrainingShopChoiceCodes.OpenInventory));
@@ -727,7 +726,7 @@ namespace Scene.TrainingScene.View
                     button.gameObject.SetActive(true);
                     SetLocationButtonLabel(
                         i,
-                        LocalizedText.GetOrFallback(GameTextKeys.TrainingShopNextPage, "次のページ"));
+                        LocalizedText.GetOrFallback(GameTextKeys.TrainingShopNextPage, "次へ"));
                     button.onClick.RemoveAllListeners();
                     button.onClick.AddListener(
                         () => OnInventoryClicked(TrainingInventoryChoiceCodes.NextPage));
@@ -747,13 +746,14 @@ namespace Scene.TrainingScene.View
                 }
 
                 TrainingInventoryEntryView entry = entries[i];
-                SetLocationButtonLabel(i, $"{entry.DisplayName}\nx{entry.Count}");
+                ResolveInventoryDisplay(entry, out string displayName, out string description);
+                SetLocationButtonLabel(i, $"{displayName}\nx{entry.Count}");
                 int captured = i;
                 button.onClick.RemoveAllListeners();
                 button.onClick.AddListener(() => OnInventoryClicked(captured));
                 BindInventoryHover(
                     button,
-                    $"{entry.DisplayName} x{entry.Count}\n{entry.Description}");
+                    $"{displayName} x{entry.Count}\n{description}");
             }
 
             if (restButton != null)
@@ -1787,8 +1787,7 @@ namespace Scene.TrainingScene.View
                 LhButtonLabelUtility.SetLabel(
                     backToTitleButtonLabel,
                     LocalizedText.GetOrFallback(
-                        GameTextKeys.TrainingHudBackToTitle,
-                        "タイトルへ戻る"));
+                        GameTextKeys.TrainingHudBackToTitle, "タイトル"));
             }
 
             if (interruptButton != null)
@@ -1796,8 +1795,7 @@ namespace Scene.TrainingScene.View
                 LhButtonLabelUtility.SetLabel(
                     interruptButton,
                     LocalizedText.GetOrFallback(
-                        GameTextKeys.TrainingHudInterrupt,
-                        "中断して保存"));
+                        GameTextKeys.TrainingHudInterrupt, "中断"));
             }
         }
 
@@ -1979,6 +1977,22 @@ namespace Scene.TrainingScene.View
             }
 
             return ModelSaveSummaryFormatter.FormatTrainingStatusParameters(status);
+        }
+
+        private static void ResolveInventoryDisplay(
+            TrainingInventoryEntryView entry,
+            out string displayName,
+            out string description)
+        {
+            if (TrainingShopCatalog.TryGetById(entry.ItemId, out TrainingShopItem item))
+            {
+                displayName = TrainingShopCatalog.GetLocalizedName(item);
+                description = TrainingShopCatalog.GetLocalizedDescription(item);
+                return;
+            }
+
+            displayName = entry.DisplayName;
+            description = entry.Description;
         }
     }
 }

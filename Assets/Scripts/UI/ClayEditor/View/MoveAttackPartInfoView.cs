@@ -94,6 +94,7 @@ namespace UI.ClayEditor.View
             LayoutElement labelLayout = labelText.GetComponent<LayoutElement>();
             labelLayout.flexibleWidth = 0f;
             labelLayout.flexibleHeight = 0f;
+            LocalizedFixedChromeLabel.RefreshHorizontalLayoutWidth(labelText);
 
             if (required)
             {

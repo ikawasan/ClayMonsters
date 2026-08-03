@@ -273,15 +273,32 @@ namespace Scene.TrainingScene.View
                 }
 
                 TrainingInventoryEntryView entry = entries[i];
+                ResolveInventoryDisplay(entry, out string displayName, out string description);
                 string name = entry.Count > 1
-                    ? $"{entry.DisplayName} x{entry.Count}"
-                    : entry.DisplayName;
+                    ? $"{displayName} x{entry.Count}"
+                    : displayName;
                 slot.ShowInventory(
                     name,
                     TrainingShopThumbnailCatalog.Resolve(entry.ItemId),
-                    entry.Description);
+                    description);
                 BindSlotSelect(slot, i);
             }
+        }
+
+        private static void ResolveInventoryDisplay(
+            TrainingInventoryEntryView entry,
+            out string displayName,
+            out string description)
+        {
+            if (TrainingShopCatalog.TryGetById(entry.ItemId, out TrainingShopItem item))
+            {
+                displayName = TrainingShopCatalog.GetLocalizedName(item);
+                description = TrainingShopCatalog.GetLocalizedDescription(item);
+                return;
+            }
+
+            displayName = entry.DisplayName;
+            description = entry.Description;
         }
 
         private void BindSlotSelect(TrainingItemSlotView slot, int index)
@@ -339,7 +356,7 @@ namespace Scene.TrainingScene.View
             {
                 LhButtonLabelUtility.SetLabel(
                     nextPageButtonLabel,
-                    LocalizedText.GetOrFallback(GameTextKeys.TrainingShopNextPage, "次のページ"));
+                    LocalizedText.GetOrFallback(GameTextKeys.TrainingShopNextPage, "次へ"));
             }
         }
 
@@ -356,7 +373,7 @@ namespace Scene.TrainingScene.View
             {
                 LhButtonLabelUtility.SetLabel(
                     openInventoryButtonLabel,
-                    LocalizedText.GetOrFallback(GameTextKeys.TrainingShopOpenInventory, "所持アイテム"));
+                    LocalizedText.GetOrFallback(GameTextKeys.TrainingShopOpenInventory, "所持"));
             }
         }
 

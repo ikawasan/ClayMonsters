@@ -88,10 +88,10 @@ namespace Scene.TrainingScene.View
 
             LhButtonLabelUtility.SetLabel(
                 manualButton,
-                LocalizedText.GetOrFallback(GameTextKeys.TrainingModeManual, "じっくり育成"));
+                LocalizedText.GetOrFallback(GameTextKeys.TrainingModeManual, "手動"));
             LhButtonLabelUtility.SetLabel(
                 autoButton,
-                LocalizedText.GetOrFallback(GameTextKeys.TrainingModeAuto, "自動育成"));
+                LocalizedText.GetOrFallback(GameTextKeys.TrainingModeAuto, "自動"));
         }
 
         /// <inheritdoc/>

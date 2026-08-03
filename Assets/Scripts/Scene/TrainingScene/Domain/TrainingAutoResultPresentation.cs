@@ -76,8 +76,7 @@ namespace Scene.TrainingScene.Domain
                 attacks,
                 saveResultKey,
                 saveResultFallback,
-                GameTextKeys.TrainingChooseSave,
-                "保存先を選ぶ",
+                GameTextKeys.TrainingChooseSave, "保存先",
                 null,
                 GameTextKeys.TrainingComplete,
                 "育成完了")

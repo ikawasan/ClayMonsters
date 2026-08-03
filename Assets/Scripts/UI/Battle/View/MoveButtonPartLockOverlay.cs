@@ -1,4 +1,5 @@
 using Extensions;
+using Localization;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -9,7 +10,7 @@ namespace UI.Battle.View
     /// 部位欠損で封じられた攻撃ボタンへ鎖と錠の画像オーバーレイを表示する
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class MoveButtonPartLockOverlay : MonoBehaviour
+    public sealed class MoveButtonPartLockOverlay : MonoBehaviour, ILanguageAwareUi
     {
         private const float AppearDuration = 0.28f;
         private const float UnlockFadeDuration = 0.16f;
@@ -19,8 +20,8 @@ namespace UI.Battle.View
         private const float MessageYOffsetFromTop = 6f;
         private const float MessageMinWidth = 280f;
         private static string LockedMessage =>
-            Localization.LocalizedText.GetOrFallback(
-                Localization.GameTextKeys.BattlePartLocked,
+            LocalizedText.GetOrFallback(
+                GameTextKeys.BattlePartLocked,
                 "部位が破壊されています");
 
         [SerializeField] private Image veilImage;
@@ -50,6 +51,16 @@ namespace UI.Battle.View
             reveal01 = 0f;
             targetReveal01 = 0f;
             ApplyVisuals(0f);
+        }
+
+        /// <inheritdoc/>
+        public void RefreshLocalizedUi()
+        {
+            ApplyLockedMessageText();
+            if (lockedMessageText != null && lockedMessageText.enabled)
+            {
+                ConfigureMessageRect(lockedMessageText);
+            }
         }
 
         /// <summary>
@@ -194,6 +205,7 @@ namespace UI.Battle.View
             ConfigureImage(chainImage, preserveAspect: false);
             ConfigureImage(padlockImage, preserveAspect: true);
             ConfigureMessageText(lockedMessageText);
+            ApplyLockedMessageText();
 
             if (veilImage != null)
             {
@@ -398,7 +410,7 @@ namespace UI.Battle.View
 
             text.raycastTarget = false;
             text.maskable = false;
-            text.text = LockedMessage;
+            LocalizedFont.SetText(text, LockedMessage);
             text.alignment = TextAlignmentOptions.Center;
             text.enableWordWrapping = false;
             text.overflowMode = TextOverflowModes.Overflow;
@@ -408,6 +420,17 @@ namespace UI.Battle.View
             text.lineSpacing = 0f;
             AppTmpFontUtility.ApplyDefaultFont(text);
             BattleHudVisualUtility.ApplyLabelOutline(text, 0.08f);
+        }
+
+        private void ApplyLockedMessageText()
+        {
+            if (lockedMessageText == null)
+            {
+                return;
+            }
+
+            LocalizedFont.SetText(lockedMessageText, LockedMessage);
+            lockedMessageText.color = messageColor;
         }
 
         private static void StretchRect(RectTransform rectTransform)
@@ -526,7 +549,7 @@ namespace UI.Battle.View
 
             if (lockedMessageText != null)
             {
-                lockedMessageText.text = LockedMessage;
+                ApplyLockedMessageText();
             }
 
             resourcesBound = true;

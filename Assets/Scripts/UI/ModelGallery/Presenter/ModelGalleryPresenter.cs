@@ -268,13 +268,7 @@ namespace UI.ModelGallery.Presenter
 
             ModelGalleryItemSummary item = browseItems[pendingDownloadItemIndex];
             ModelSaveSlot existing = saveService.GetSlot(ModelSavePool.Player, destinationSlotIndex);
-            string message = existing != null
-                ? Localization.LocalizedText.GetOrFallback(
-                    Localization.GameTextKeys.ModelGalleryOverwriteConfirm,
-                    "既存のセーブデータに上書き保存しますか？")
-                : Localization.LocalizedText.GetOrFallback(
-                    Localization.GameTextKeys.ModelGallerySaveToSlotConfirm,
-                    "このスロットに保存しますか？");
+            bool isOverwrite = existing != null;
 
             Texture2D preview = null;
             try
@@ -292,7 +286,7 @@ namespace UI.ModelGallery.Presenter
 
             pendingDownloadDestinationSlotIndex = destinationSlotIndex;
             view.HidePostConfirm();
-            view.ShowDownloadConfirm(item.title, message, preview);
+            view.ShowDownloadConfirm(item.title, isOverwrite, preview);
         }
 
         private void RefreshPostSlots()

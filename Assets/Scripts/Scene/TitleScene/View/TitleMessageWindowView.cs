@@ -28,6 +28,7 @@ namespace Scene.TitleScene.View
         private void Awake()
         {
             ValidateSceneUi();
+            ApplyChromeLabels();
             Hide();
         }
 
@@ -39,6 +40,7 @@ namespace Scene.TitleScene.View
             messageFallback = string.Empty;
             rawMessage = message ?? string.Empty;
             ApplyMessage();
+            ApplyChromeLabels();
 
             if (canvas != null)
             {
@@ -54,6 +56,7 @@ namespace Scene.TitleScene.View
             messageFallback = fallback ?? string.Empty;
             rawMessage = null;
             ApplyMessage();
+            ApplyChromeLabels();
 
             if (canvas != null)
             {
@@ -77,12 +80,20 @@ namespace Scene.TitleScene.View
         /// <inheritdoc/>
         public void RefreshLocalizedUi()
         {
+            ApplyChromeLabels();
             if (!isShowing)
             {
                 return;
             }
 
             ApplyMessage();
+        }
+
+        private void ApplyChromeLabels()
+        {
+            LhButtonLabelUtility.SetLabel(
+                okButton,
+                LocalizedText.GetOrFallback(GameTextKeys.CommonOk, "OK"));
         }
 
         private void ApplyMessage()

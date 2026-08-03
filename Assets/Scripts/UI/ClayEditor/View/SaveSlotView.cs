@@ -272,13 +272,13 @@ namespace UI.ClayEditor.View
                 LocalizedText.GetOrFallback(GameTextKeys.ClayEditSave, "保存"));
             LhButtonLabelUtility.SetLabel(
                 openEnemySaveButton,
-                LocalizedText.GetOrFallback(GameTextKeys.ClayEditSaveAsEnemy, "敵として保存"));
+                LocalizedText.GetOrFallback(GameTextKeys.ClayEditSaveAsEnemy, "敵保存"));
             LhButtonLabelUtility.SetLabel(
                 backButton,
                 LocalizedText.GetOrFallback(GameTextKeys.CommonReturn, "戻る"));
             LhButtonLabelUtility.SetLabel(
                 slotActionOverwriteButton,
-                LocalizedText.GetOrFallback(GameTextKeys.ClayEditOverwriteSave, "上書き保存"));
+                LocalizedText.GetOrFallback(GameTextKeys.ClayEditOverwriteSave, "上書き"));
             LhButtonLabelUtility.SetLabel(
                 slotActionDeleteButton,
                 LocalizedText.GetOrFallback(GameTextKeys.ClayEditDelete, "削除"));
@@ -293,7 +293,7 @@ namespace UI.ClayEditor.View
                 LocalizedText.GetOrFallback(GameTextKeys.CommonReturn, "戻る"));
             LhButtonLabelUtility.SetLabel(
                 confirmSaveButton,
-                LocalizedText.GetOrFallback(GameTextKeys.CommonSave, "保存する"));
+                LocalizedText.GetOrFallback(GameTextKeys.CommonSave, "保存"));
             LhButtonLabelUtility.SetLabel(
                 confirmBackButton,
                 LocalizedText.GetOrFallback(GameTextKeys.CommonReturn, "戻る"));
@@ -315,7 +315,7 @@ namespace UI.ClayEditor.View
             bakedChromeLabelApplier.Register(GameTextKeys.ClayEditNamePrompt, "名前を付けてください");
             bakedChromeLabelApplier.Register(GameTextKeys.ClayEditSaveConfirm, "保存しますか？");
             bakedChromeLabelApplier.Register(GameTextKeys.SaveComplete, "セーブが完了しました");
-            bakedChromeLabelApplier.Register(GameTextKeys.ClayEditDeleteConfirm, "削除する");
+            bakedChromeLabelApplier.Register(GameTextKeys.ClayEditDeleteConfirm, "削除");
             bakedChromeLabelApplier.Capture(transform);
         }
 

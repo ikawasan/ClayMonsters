@@ -69,7 +69,7 @@ namespace Scene.TrainingScene.View
             {
                 LhButtonLabelUtility.SetLabel(
                     backToTitleButtonLabel,
-                    LocalizedText.GetOrFallback(GameTextKeys.TrainingChooseSave, "保存先を選ぶ"));
+                    LocalizedText.GetOrFallback(GameTextKeys.TrainingChooseSave, "保存先"));
                 return;
             }
 
@@ -113,7 +113,7 @@ namespace Scene.TrainingScene.View
             {
                 backToTitleButton.interactable = true;
                 string buttonLabel = string.IsNullOrEmpty(presentation.ContinueButtonLabel)
-                    ? LocalizedText.GetOrFallback(GameTextKeys.TrainingChooseSave, "保存先を選ぶ")
+                    ? LocalizedText.GetOrFallback(GameTextKeys.TrainingChooseSave, "保存先")
                     : presentation.ContinueButtonLabel;
                 LhButtonLabelUtility.SetLabel(backToTitleButtonLabel, buttonLabel);
             }
@@ -202,7 +202,7 @@ namespace Scene.TrainingScene.View
                 backToTitleButton.EnsureUiSoundFeedback();
                 LhButtonLabelUtility.SetLabel(
                     backToTitleButtonLabel,
-                    LocalizedText.GetOrFallback(GameTextKeys.TrainingChooseSave, "保存先を選ぶ"));
+                    LocalizedText.GetOrFallback(GameTextKeys.TrainingChooseSave, "保存先"));
             }
         }
 

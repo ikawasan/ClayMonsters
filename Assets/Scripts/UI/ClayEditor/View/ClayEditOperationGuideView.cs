@@ -97,7 +97,7 @@ namespace UI.ClayEditor.View
 
             LhButtonLabelUtility.SetLabel(
                 label,
-                LocalizedText.GetOrFallback(GameTextKeys.ClayEditShowGuide, "操作説明"));
+                LocalizedText.GetOrFallback(GameTextKeys.ClayEditShowGuide, "操作"));
         }
 
         private TMP_Text ResolveVisibilityToggleLabel()
@@ -135,7 +135,8 @@ namespace UI.ClayEditor.View
                 }
 
                 string current = text.text.Trim();
-                if (string.Equals(current, "操作説明", StringComparison.Ordinal)
+                if (string.Equals(current, "操作", StringComparison.Ordinal)
+                    || string.Equals(current, "操作説明", StringComparison.Ordinal)
                     || string.Equals(current, "操作説明を表示", StringComparison.Ordinal))
                 {
                     visibilityToggleLabel = text;
