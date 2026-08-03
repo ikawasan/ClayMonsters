@@ -1,3 +1,4 @@
+using Localization;
 using TMPro;
 using UnityEngine;
 #if UNITY_EDITOR
@@ -8,7 +9,7 @@ namespace Extensions
 {
     /// <summary>
     /// プロジェクト標準のTMPフォントを提供する
-    /// LightNovelPOPv2 SDFを適用する
+    /// 実行時は現在言語のFontServiceを優先し無いときLightNovelPOPv2 SDFを使う
     /// アウトラインはApplyOutlineを明示したときだけ付ける
     /// </summary>
     public static class AppTmpFontUtility
@@ -33,6 +34,15 @@ namespace Extensions
         {
             get
             {
+                if (Application.isPlaying)
+                {
+                    TMP_FontAsset localized = LocalizedFont.CurrentOrNull;
+                    if (localized != null)
+                    {
+                        return localized;
+                    }
+                }
+
                 if (cachedDefaultFont != null)
                 {
                     return cachedDefaultFont;
@@ -62,21 +72,22 @@ namespace Extensions
                 return;
             }
 
+            if (Application.isPlaying)
+            {
+                LocalizedFont.Apply(text);
+                if (text.font != null)
+                {
+                    return;
+                }
+            }
+
             TMP_FontAsset font = DefaultFont;
             if (font == null)
             {
                 return;
             }
 
-            if (text.font != font)
-            {
-                text.font = font;
-            }
-
-            if (text.fontSharedMaterial == null)
-            {
-                text.fontSharedMaterial = font.material;
-            }
+            LocalizedFont.ApplyFont(text, font);
         }
 
         /// <summary>
@@ -126,11 +137,7 @@ namespace Extensions
                 return;
             }
 
-            TMP_FontAsset font = DefaultFont;
-            if (font != null)
-            {
-                text.font = font;
-            }
+            ApplyDefaultFont(text);
         }
     }
 }

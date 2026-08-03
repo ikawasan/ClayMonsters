@@ -24,6 +24,8 @@ namespace Localization
         public const string TitleModelGallery = "Title.ModelGallery";
         public const string TitleOption = "Title.Option";
         public const string TitleQuit = "Title.Quit";
+        public const string TitleNoTrainedModel = "Title.NoTrainedModel";
+        public const string TitleNoUntrainedModel = "Title.NoUntrainedModel";
 
         public const string CommonReturn = "Common.Return";
         public const string CommonOk = "Common.Ok";
@@ -32,6 +34,8 @@ namespace Localization
         public const string CommonNo = "Common.No";
         public const string CommonClose = "Common.Close";
         public const string CommonSlot = "Common.Slot";
+        public const string CommonSave = "Common.Save";
+        public const string CommonDecide = "Common.Decide";
 
         public const string BattleDraw = "Battle.Draw";
         public const string BattleVictory = "Battle.Victory";
@@ -63,6 +67,7 @@ namespace Localization
         public const string BattleRoleTarget = "Battle.RoleTarget";
         public const string BattleUsePartLabel = "Battle.UsePartLabel";
         public const string BattleBreakPartLabel = "Battle.BreakPartLabel";
+        public const string BattleMatchupStatus = "Battle.MatchupStatus";
         public const string BattleRadarAttack = "Battle.RadarAttack";
         public const string BattleRadarDefense = "Battle.RadarDefense";
         public const string BattleRadarSpeed = "Battle.RadarSpeed";
@@ -95,6 +100,21 @@ namespace Localization
         public const string BattlePvpModelTimeout = "BattlePvp.ModelTimeout";
         public const string BattlePvpSlotTimeout = "BattlePvp.SlotTimeout";
         public const string BattlePvpMatchupTimeout = "BattlePvp.MatchupTimeout";
+        public const string BattlePvpLobbyTitle = "BattlePvp.LobbyTitle";
+        public const string BattlePvpDirectMatch = "BattlePvp.DirectMatch";
+        public const string BattlePvpRandomMatch = "BattlePvp.RandomMatch";
+        public const string BattlePvpCreateRoom = "BattlePvp.CreateRoom";
+        public const string BattlePvpJoinRoom = "BattlePvp.JoinRoom";
+        public const string BattlePvpStartMatch = "BattlePvp.StartMatch";
+        public const string BattlePvpMatching = "BattlePvp.Matching";
+        public const string BattlePvpCopyCode = "BattlePvp.CopyCode";
+        public const string BattlePvpJoinCodePlaceholder = "BattlePvp.JoinCodePlaceholder";
+        public const string BattlePvpOpponentWaiting = "BattlePvp.OpponentWaiting";
+
+        public const string BattleRematch = "Battle.Rematch";
+        public const string BattleStart = "Battle.Start";
+        public const string BattleVictoryShort = "Battle.VictoryShort";
+        public const string BattleTipsTitle = "Battle.TipsTitle";
 
         public const string ModelGalleryPoints = "ModelGallery.Points";
         public const string ModelGalleryPostConfirm = "ModelGallery.PostConfirm";
@@ -102,8 +122,26 @@ namespace Localization
         public const string ModelGalleryEmptySlot = "ModelGallery.EmptySlot";
         public const string ModelGalleryOverwriteConfirm = "ModelGallery.OverwriteConfirm";
         public const string ModelGallerySaveToSlotConfirm = "ModelGallery.SaveToSlotConfirm";
+        public const string ModelGalleryTabPost = "ModelGallery.TabPost";
+        public const string ModelGalleryTabBrowse = "ModelGallery.TabBrowse";
+        public const string ModelGallerySortRandom = "ModelGallery.SortRandom";
+        public const string ModelGallerySortMonthly = "ModelGallery.SortMonthly";
+        public const string ModelGallerySortOverall = "ModelGallery.SortOverall";
+        public const string ModelGalleryRefresh = "ModelGallery.Refresh";
+        public const string ModelGalleryPublish = "ModelGallery.Publish";
+        public const string ModelGalleryDownload = "ModelGallery.Download";
+        public const string ModelGalleryPrev = "ModelGallery.Prev";
+        public const string ModelGalleryNext = "ModelGallery.Next";
+        public const string ModelGalleryModelName = "ModelGallery.ModelName";
+        public const string ModelGalleryPointsInsufficient = "ModelGallery.PointsInsufficient";
+        public const string ModelGalleryHeldPoints = "ModelGallery.HeldPoints";
+        public const string ModelGalleryCostPoints = "ModelGallery.CostPoints";
+        public const string ModelGallerySaveDestEmpty = "ModelGallery.SaveDestEmpty";
+        public const string ModelGallerySelectSaveSlot = "ModelGallery.SelectSaveSlot";
         public const string LoadSlotPlayerInstruction = "LoadSlot.PlayerInstruction";
         public const string LoadSlotEnemyInstruction = "LoadSlot.EnemyInstruction";
+        public const string LoadSlotLoad = "LoadSlot.Load";
+        public const string LoadSlotConfirmLoad = "LoadSlot.ConfirmLoad";
 
         public const string EnemyWeak = "Enemy.Weak";
         public const string EnemyNormal = "Enemy.Normal";
@@ -111,15 +149,37 @@ namespace Localization
         public const string EnemyVeryStrong = "Enemy.VeryStrong";
 
         public const string TrainingModeSelectTitle = "Training.ModeSelectTitle";
+        public const string TrainingModeSelectBody = "Training.ModeSelectBody";
+        public const string TrainingModeManual = "Training.ModeManual";
+        public const string TrainingModeAuto = "Training.ModeAuto";
         public const string TrainingResumeTitle = "Training.ResumeTitle";
+        public const string TrainingResumeRestart = "Training.ResumeRestart";
+        public const string TrainingResumeContinue = "Training.ResumeContinue";
+        public const string TrainingResumeScheduleWithMoney = "Training.Resume.ScheduleWithMoney";
+        public const string TrainingResumeMotivationLabel = "Training.Resume.MotivationLabel";
+        public const string TrainingResumeStaminaLabel = "Training.Resume.StaminaLabel";
+        public const string TrainingResumeStats = "Training.Resume.Stats";
+        public const string TrainingResumeSummaryBody = "Training.Resume.SummaryBody";
+        public const string TrainingInheritanceNoBonus = "Training.Inheritance.NoBonus";
+        public const string TrainingInheritanceBonusStats = "Training.Inheritance.BonusStats";
+        public const string TrainingInheritanceAttackCandidate = "Training.Inheritance.AttackCandidate";
+        public const string TrainingInheritanceContinueSwap = "Training.Inheritance.ContinueSwap";
+        public const string TrainingInheritanceParentDefault = "Training.Inheritance.ParentDefault";
+        public const string TrainingInheritanceParentPreview = "Training.Inheritance.ParentPreview";
+        public const string TrainingInheritancePickHeader1 = "Training.Inheritance.PickHeader1";
+        public const string TrainingInheritancePickHeader2 = "Training.Inheritance.PickHeader2";
+        public const string TrainingInheritanceConfirmPick = "Training.Inheritance.ConfirmPick";
         public const string TrainingAmbushTitle = "Training.AmbushTitle";
         public const string TrainingAmbushTitleBang = "Training.AmbushTitleBang";
         public const string TrainingAmbushEnemyDefault = "Training.AmbushEnemyDefault";
         public const string TrainingAmbushMessage = "Training.AmbushMessage";
+        public const string TrainingAmbushFight = "Training.AmbushFight";
+        public const string TrainingAmbushFlee = "Training.AmbushFlee";
         public const string TrainingComplete = "Training.Complete";
         public const string TrainingMotivation = "Training.Motivation";
         public const string TrainingLearnedHeader = "Training.LearnedHeader";
         public const string TrainingSwapHeader = "Training.SwapHeader";
+        public const string TrainingSwapSkip = "Training.SwapSkip";
         public const string TrainingAttackComposition = "Training.AttackComposition";
         public const string TrainingAttackCompositionNone = "Training.AttackCompositionNone";
         public const string TrainingInheritance = "Training.Inheritance";
@@ -148,6 +208,10 @@ namespace Localization
         public const string SkillTreePointsShort = "SkillTree.PointsShort";
         public const string SkillTreePoints = "SkillTree.Points";
         public const string SkillTreeBonusHeader = "SkillTree.BonusHeader";
+        public const string SkillTreeTitle = "SkillTree.Title";
+        public const string SkillTreeSkill = "SkillTree.Skill";
+        public const string SkillTreeBonusEffects = "SkillTree.BonusEffects";
+        public const string SkillTreeBonusEffectsHeader = "SkillTree.BonusEffectsHeader";
         public const string SkillTreeStatStartHp = "SkillTree.StatStartHp";
         public const string SkillTreeStatStartAtk = "SkillTree.StatStartAtk";
         public const string SkillTreeStatStartDef = "SkillTree.StatStartDef";
@@ -163,6 +227,26 @@ namespace Localization
 
         public const string ClayEditClayGuide = "ClayEdit.ClayGuide";
         public const string ClayEditPaintGuide = "ClayEdit.PaintGuide";
+        public const string ClayEditNewCreate = "ClayEdit.NewCreate";
+        public const string ClayEditRemake = "ClayEdit.Remake";
+        public const string ClayEditRemakeLong = "ClayEdit.RemakeLong";
+        public const string ClayEditSave = "ClayEdit.Save";
+        public const string ClayEditSaveAsEnemy = "ClayEdit.SaveAsEnemy";
+        public const string ClayEditOverwriteSave = "ClayEdit.OverwriteSave";
+        public const string ClayEditDelete = "ClayEdit.Delete";
+        public const string ClayEditDeleteConfirm = "ClayEdit.DeleteConfirm";
+        public const string ClayEditSaveConfirm = "ClayEdit.SaveConfirm";
+        public const string ClayEditLeaveWithoutSave = "ClayEdit.LeaveWithoutSave";
+        public const string ClayEditLeaveWithoutSaveButton = "ClayEdit.LeaveWithoutSaveButton";
+        public const string ClayEditNamePrompt = "ClayEdit.NamePrompt";
+        public const string ClayEditSculptMode = "ClayEdit.SculptMode";
+        public const string ClayEditPaintMode = "ClayEdit.PaintMode";
+        public const string ClayEditAnimationMode = "ClayEdit.AnimationMode";
+        public const string ClayEditShowGuide = "ClayEdit.ShowGuide";
+        public const string ClayEditBackgroundColor = "ClayEdit.BackgroundColor";
+        public const string ClayEditIdle = "ClayEdit.Idle";
+        public const string ClayEditRun = "ClayEdit.Run";
+        public const string ClayEditAttack = "ClayEdit.Attack";
 
         public const string TrainingLocationScienceLab = "Training.Location.ScienceLab";
         public const string TrainingLocationHomeEcRoom = "Training.Location.HomeEcRoom";
@@ -325,6 +409,7 @@ namespace Localization
         public const string TrainingHoverFailRateLine = "Training.Hover.FailRateLine";
         public const string TrainingHudContinue = "Training.Hud.Continue";
         public const string TrainingHudBackToTitle = "Training.Hud.BackToTitle";
+        public const string TrainingHudInterrupt = "Training.Hud.Interrupt";
 
         public const string SaveTrainedPool = "Save.TrainedPool";
         public const string SaveUntrainedPool = "Save.UntrainedPool";

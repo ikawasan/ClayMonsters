@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: afa7c562de8558447a131a55082a876e, type: 3}
+  m_Name: LanguageFontSettings
+  m_EditorClassIdentifier: LighthouseExtends.Font.Runtime::LighthouseExtends.Font.LanguageFontSettings
+  entries:
+  - languageCode: ja
+    fontAsset: {fileID: 11400000, guid: da27886aa0ea0fc419a09b08647ae508, type: 2}
+  - languageCode: en
+    fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  - languageCode: zh-Hans
+    fontAsset: {fileID: 11400000, guid: 40c9ccc35b9ab1144ab34862182d5206, type: 2}
+  - languageCode: zh-Hant
+    fontAsset: {fileID: 11400000, guid: 40c9ccc35b9ab1144ab34862182d5206, type: 2}
+  - languageCode: ko
+    fontAsset: {fileID: 11400000, guid: c9b4b685cc33f4b4bbf419c4b836f351, type: 2}
+  - languageCode: de
+    fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  - languageCode: fr
+    fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  - languageCode: es
+    fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  - languageCode: pt-BR
+    fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  defaultFont: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}

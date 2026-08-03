@@ -11,7 +11,7 @@ namespace Localization
 {
     /// <summary>
     /// 言語切替シーン遷移生成UIすべてに現在言語フォントを適用する
-    /// プレハブ固定のLightNovel等をLanguageFontSettingsで上書きする
+    /// シーン直置きのTextMeshProUGUIもLanguageFontSettingsで上書きする
     /// </summary>
     public sealed class LocalizedFontDriver : IStartable, ITickable, IDisposable
     {
@@ -51,7 +51,7 @@ namespace Localization
             }
 
             nextScanTime = Time.unscaledTime + ScanIntervalSeconds;
-            ApplyToAllLoadedTexts(currentFont);
+            LocalizedFont.ApplyToAllLoaded();
         }
 
         /// <inheritdoc/>
@@ -73,7 +73,7 @@ namespace Localization
             }
 
             TMP_Settings.defaultFontAsset = fontAsset;
-            ApplyToAllLoadedTexts(fontAsset);
+            LocalizedFont.ApplyToAllLoaded();
             nextScanTime = Time.unscaledTime + ScanIntervalSeconds;
         }
 
@@ -101,45 +101,8 @@ namespace Localization
             }
 
             TMP_Settings.defaultFontAsset = currentFont;
-            ApplyToAllLoadedTexts(currentFont);
+            LocalizedFont.ApplyToAllLoaded();
             nextScanTime = Time.unscaledTime + ScanIntervalSeconds;
-        }
-
-        private static void ApplyToAllLoadedTexts(TMP_FontAsset fontAsset)
-        {
-            if (fontAsset == null)
-            {
-                return;
-            }
-
-            TMP_Text[] texts = UnityEngine.Object.FindObjectsByType<TMP_Text>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None);
-
-            for (int i = 0; i < texts.Length; i++)
-            {
-                ApplySingle(texts[i], fontAsset);
-            }
-        }
-
-        private static void ApplySingle(TMP_Text text, TMP_FontAsset fontAsset)
-        {
-            if (text == null || fontAsset == null || text.font == fontAsset)
-            {
-                return;
-            }
-
-            // エディタ生成のみのアセットインスタンスには触れない
-            if (text.gameObject.scene.IsValid() == false)
-            {
-                return;
-            }
-
-            text.font = fontAsset;
-            if (text.isActiveAndEnabled)
-            {
-                text.ForceMeshUpdate(true);
-            }
         }
     }
 }

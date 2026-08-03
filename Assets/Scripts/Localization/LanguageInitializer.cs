@@ -98,6 +98,8 @@ namespace Localization
         {
             await languageService.SetLanguage(languageCode, cancellationToken);
             currentLanguageCode = languageCode;
+            LocalizedFont.ApplyToAllLoaded();
+            LanguageAwareUi.RefreshAllLoaded();
         }
     }
 }
