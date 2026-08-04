@@ -14,7 +14,7 @@ namespace UI.Option.View
     /// ゲーム全体で常駐するオプション画面のView
     /// 粘土風パネル・スライダー・トグル・閉じるボタンを表示する
     /// </summary>
-    public sealed class OptionView : MonoBehaviour, IOptionView
+    public sealed class OptionView : MonoBehaviour, IOptionView, ILanguageAwareUi
     {
         [SerializeField] private Canvas canvas;
         [SerializeField] private LHButton closeButton;
@@ -104,6 +104,24 @@ namespace UI.Option.View
             SetText(musicLabelText, music);
             SetText(soundEffectLabelText, soundEffect);
             SetText(closeButtonLabelText, close);
+        }
+
+        /// <inheritdoc/>
+        public void RefreshLocalizedUi()
+        {
+            // LanguageAwareUi経路でもラベルを再適用する
+            // PresenterのCurrentLanguage購読と二重でも問題ない
+            ApplyLocalizedLabels(
+                title: LocalizedText.GetOrFallback(GameTextKeys.OptionTitle, "設定"),
+                videoTitle: LocalizedText.GetOrFallback(GameTextKeys.OptionVideo, "【ビデオ】"),
+                audioTitle: LocalizedText.GetOrFallback(GameTextKeys.OptionAudio, "【オーディオ】"),
+                languageTitle: LocalizedText.GetOrFallback(GameTextKeys.OptionLanguage, "【言語】"),
+                fullScreen: LocalizedText.GetOrFallback(GameTextKeys.OptionFullScreen, "全画面"),
+                vSync: LocalizedText.GetOrFallback(GameTextKeys.OptionVSync, "垂直同期"),
+                music: LocalizedText.GetOrFallback(GameTextKeys.OptionMusic, "音楽"),
+                soundEffect: LocalizedText.GetOrFallback(GameTextKeys.OptionSoundEffect, "効果音"),
+                close: LocalizedText.GetOrFallback(GameTextKeys.OptionClose, "閉じる"));
+            InitLanguageSetting(LanguageDisplayNames.Get(LocalizedText.CurrentLanguageCode));
         }
 
         /// <inheritdoc/>

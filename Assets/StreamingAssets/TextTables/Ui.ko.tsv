@@ -1,0 +1,620 @@
+Common.Return	뒤로
+Common.Ok	확인
+Common.Cancel	취소
+Common.Yes	예
+Common.No	아니오
+Common.Close	닫기
+Common.Slot	슬롯{index}
+Option.Title	설정
+Option.Close	닫기
+Option.Video	【비디오】
+Option.Audio	【오디오】
+Option.Language	【언어】
+Option.FullScreen	전체화면
+Option.VSync	수직 동기화
+Option.Music	음악
+Option.SoundEffect	효과음
+Title.Points	{points} pt
+Title.ClayEdit	편집
+Title.BattleNpc	CPU
+Title.BattlePvp	대전
+Title.Training	육성
+Title.SkillTree	스킬
+Title.ModelGallery	전시
+Title.Option	설정
+Title.Quit	종료
+Battle.Draw	무승부
+Battle.Victory	{winnerName} 승리!
+Battle.RangeLabel	사거리
+Battle.Distance	거리 {distance}
+Battle.TipsBody	【조작】\n후퇴/접근으로 이동\n기술 버튼으로 공격\n카운터와 부위 파괴 활용
+Battle.TipsEscHint	Esc로 튜토리얼 표시
+Battle.HintPartRepair	우클릭 길게 눌러 부위 복구
+Battle.HintKnockbackReady	날리기 가능
+Battle.HintCounter	카운터! {part} 기술로 요격
+Battle.HintAttackLockout	공격 쿨타임 중
+Battle.HintChain	체인 x{count}
+Battle.Miss	미스
+Battle.BandClose	근거리
+Battle.BandMid	중거리
+Battle.BandFar	원거리
+Battle.HitHigh	높음
+Battle.HitMid	중간
+Battle.HitLow	낮음
+Battle.HitVeryLow	매우 낮음
+Battle.PartArm	팔
+Battle.PartLeg	다리
+Battle.PartFront	앞
+Battle.PartBack	뒤
+Battle.PartBody	없음
+Battle.Leave	뒤로
+Motion.LowSweep	다리 걸기
+Motion.Kick	킥
+Motion.ShoulderRam	숄더
+Motion.HipCheck	힙체크
+Motion.Stomp	스톰프
+Motion.Punch	펀치
+Motion.Elbow	엘보
+Motion.BellyFlop	깔아뭉개기
+Motion.Headbutt	박치기
+Motion.Fireball	파이어볼
+Motion.Bite	물기
+Motion.TailWhip	꼬리 공격
+Motion.ThunderShock	선더 쇼크
+Motion.DiamondDust	다이아몬드 더스트
+Motion.SpinTackle	회전 태클
+Motion.Uppercut	어퍼컷
+Motion.WindSlasher	윈드 슬래셔
+Motion.BodySlam	바디슬램
+Motion.Knee	무릎차기
+Motion.GroundPound	그라운드 파운드
+Motion.Slap	후려치기
+Motion.Tackle	태클
+BattlePvp.DisconnectMessage	연결이 끊어졌습니다
+BattlePvp.DisconnectClose	닫기
+ModelGallery.Points	{points} pt
+ModelGallery.PostConfirm	이 모델을 게시할까요?
+ModelGallery.Slot	슬롯
+Enemy.Weak	약함
+Enemy.Normal	보통
+Enemy.Strong	강함
+Enemy.VeryStrong	매우 강함
+Training.ModeSelectTitle	육성 방법을 선택하세요
+Training.ResumeTitle	진행 중인 육성 데이터가 있습니다
+Training.AmbushTitle	강적 습격
+Training.AmbushTitleBang	강적 습격!
+Training.AmbushEnemyDefault	강적
+Training.AmbushMessage	{name}이(가) 습격했습니다\n싸울지 도망칠지 선택하세요
+Training.Complete	육성 완료
+Training.Motivation	의욕 
+Training.LearnedHeader	▼ 습득 기술
+Training.SwapHeader	▼ 교체할 슬롯
+Training.AttackComposition	▼ 기술 구성
+Training.AttackCompositionNone	▼ 기술 구성\n없음
+Training.Inheritance	계승
+Training.SaveOverwrite	육성 완료 슬롯 {slot} 데이터를 덮어씁니다
+Training.SaveTo	육성 완료 슬롯 {slot}에 저장합니다
+Training.SaveDestNotSelected	저장 슬롯이 선택되지 않았습니다
+Training.SaveFailed	육성 데이터 저장 실패\n미육성 데이터는 유지됩니다
+Training.AmbushStartFailed	강적 습격 전투를 시작할 수 없습니다
+Training.SwapSlotResult	슬롯 {slot} 교체
+Training.ChooseSave	저장처
+Training.DeleteConfirm	슬롯 {slot} 「{name}」을(를) 삭제할까요?
+Training.ModelNamePlaceholder	모델 이름 입력
+Training.TrainedSlot	육성 완료 슬롯 {index}
+SkillTree.SelectNode	노드를 선택하세요
+SkillTree.Unlock	해금
+SkillTree.Unlocked	해방됨
+SkillTree.PointsShort	포인트가 부족합니다
+SkillTree.BonusHeader	【획득 효과】
+SkillTree.StatStartHp	시작 HP
+SkillTree.StatStartAtk	시작 공격
+SkillTree.StatStartDef	시작 방어
+SkillTree.StatStartSpd	시작 속도
+SkillTree.StatStartHit	시작 명중
+SkillTree.StatStartAll	시작 전스탯
+SkillTree.StatGreatSuccess	대성공률
+SkillTree.StatStartMoney	시작 소지금
+SkillTree.StatTrainMoney	육성 획득금
+SkillTree.StatPoints	대전 포인트
+SkillTree.StatInherit	계승 상승
+SkillTree.StatNone	─
+SkillTree.Node.Center.Name	기초 체력 I
+SkillTree.Node.Center.Desc	육성 시작 시 HP +{0}
+SkillTree.Node.StartingHp.Name	기초 체력 II
+SkillTree.Node.StartingHp.Desc	육성 시작 시 HP +{0}
+SkillTree.Node.StartingHp2.Name	기초 체력 III
+SkillTree.Node.StartingHp2.Desc	육성 시작 시 HP +{0}
+SkillTree.Node.StartingHp3.Name	기초 체력 IV
+SkillTree.Node.StartingHp3.Desc	육성 시작 시 HP +{0}
+SkillTree.Node.StartingAttack.Name	기초 공격 I
+SkillTree.Node.StartingAttack.Desc	육성 시작 시 공격 +{0}
+SkillTree.Node.StartingAttack2.Name	기초 공격 II
+SkillTree.Node.StartingAttack2.Desc	육성 시작 시 공격 +{0}
+SkillTree.Node.StartingAttack3.Name	기초 공격 III
+SkillTree.Node.StartingAttack3.Desc	육성 시작 시 공격 +{0}
+SkillTree.Node.StartingDefense.Name	기초 방어 I
+SkillTree.Node.StartingDefense.Desc	육성 시작 시 방어 +{0}
+SkillTree.Node.StartingDefense2.Name	기초 방어 II
+SkillTree.Node.StartingDefense2.Desc	육성 시작 시 방어 +{0}
+SkillTree.Node.StartingDefense3.Name	기초 방어 III
+SkillTree.Node.StartingDefense3.Desc	육성 시작 시 방어 +{0}
+SkillTree.Node.StartingSpeed.Name	기초 속도 I
+SkillTree.Node.StartingSpeed.Desc	육성 시작 시 속도 +{0}
+SkillTree.Node.StartingSpeed2.Name	기초 속도 II
+SkillTree.Node.StartingSpeed2.Desc	육성 시작 시 속도 +{0}
+SkillTree.Node.StartingSpeed3.Name	기초 속도 III
+SkillTree.Node.StartingSpeed3.Desc	육성 시작 시 속도 +{0}
+SkillTree.Node.StartingHit.Name	기초 명중 I
+SkillTree.Node.StartingHit.Desc	육성 시작 시 명중 +{0}
+SkillTree.Node.StartingHit2.Name	기초 명중 II
+SkillTree.Node.StartingHit2.Desc	육성 시작 시 명중 +{0}
+SkillTree.Node.StartingHit3.Name	기초 명중 III
+SkillTree.Node.StartingHit3.Desc	육성 시작 시 명중 +{0}
+SkillTree.Node.StartingAll.Name	종합 강화 I
+SkillTree.Node.StartingAll.Desc	육성 시작 시 전 스탯 +{0}
+SkillTree.Node.StartingAll2.Name	종합 강화 II
+SkillTree.Node.StartingAll2.Desc	육성 시작 시 전 스탯 +{0}
+SkillTree.Node.StartingAll3.Name	종합 강화 III
+SkillTree.Node.StartingAll3.Desc	육성 시작 시 전 스탯 +{0}
+SkillTree.Node.GreatSuccess1.Name	집중력 I
+SkillTree.Node.GreatSuccess1.Desc	훈련 대성공 확률 +{0}%
+SkillTree.Node.GreatSuccess2.Name	집중력 II
+SkillTree.Node.GreatSuccess2.Desc	훈련 대성공 확률 +{0}%
+SkillTree.Node.GreatSuccess3.Name	숙련 I
+SkillTree.Node.GreatSuccess3.Desc	훈련 대성공 확률 +{0}%
+SkillTree.Node.GreatSuccess4.Name	숙련 II
+SkillTree.Node.GreatSuccess4.Desc	훈련 대성공 확률 +{0}%
+SkillTree.Node.GreatSuccess5.Name	달인의 경지
+SkillTree.Node.GreatSuccess5.Desc	훈련 대성공 확률 +{0}%
+SkillTree.Node.StartingMoney1.Name	용돈 I
+SkillTree.Node.StartingMoney1.Desc	육성 시작 시 소지금 +{0}G
+SkillTree.Node.StartingMoney2.Name	용돈 II
+SkillTree.Node.StartingMoney2.Desc	육성 시작 시 소지금 +{0}G
+SkillTree.Node.StartingMoney3.Name	저축 고수 I
+SkillTree.Node.StartingMoney3.Desc	육성 시작 시 소지금 +{0}G
+SkillTree.Node.StartingMoney4.Name	저축 고수 II
+SkillTree.Node.StartingMoney4.Desc	육성 시작 시 소지금 +{0}G
+SkillTree.Node.TrainingMoney1.Name	상금 사냥꾼 I
+SkillTree.Node.TrainingMoney1.Desc	육성 중 획득 금 +{0}%
+SkillTree.Node.TrainingMoney2.Name	상금 사냥꾼 II
+SkillTree.Node.TrainingMoney2.Desc	육성 중 획득 금 +{0}%
+SkillTree.Node.TrainingMoney3.Name	대형 거래 I
+SkillTree.Node.TrainingMoney3.Desc	육성 중 획득 금 +{0}%
+SkillTree.Node.TrainingMoney4.Name	대형 거래 II
+SkillTree.Node.TrainingMoney4.Desc	육성 중 획득 금 +{0}%
+SkillTree.Node.TrainingMoney5.Name	장사의 극치
+SkillTree.Node.TrainingMoney5.Desc	육성 중 획득 금 +{0}%
+SkillTree.Node.PointsGain1.Name	전과 지혜 I
+SkillTree.Node.PointsGain1.Desc	대전으로 얻는 포인트 +{0}%
+SkillTree.Node.PointsGain2.Name	전과 지혜 II
+SkillTree.Node.PointsGain2.Desc	대전으로 얻는 포인트 +{0}%
+SkillTree.Node.PointsGain3.Name	전과 극치 I
+SkillTree.Node.PointsGain3.Desc	대전으로 얻는 포인트 +{0}%
+SkillTree.Node.PointsGain4.Name	전과 극치 II
+SkillTree.Node.PointsGain4.Desc	대전으로 얻는 포인트 +{0}%
+SkillTree.Node.PointsGain5.Name	전과 패자
+SkillTree.Node.PointsGain5.Desc	대전으로 얻는 포인트 +{0}%
+SkillTree.Node.Inheritance1.Name	혈맥의 힘 I
+SkillTree.Node.Inheritance1.Desc	상속 스탯 상승률 +{0}%
+SkillTree.Node.Inheritance2.Name	혈맥의 힘 II
+SkillTree.Node.Inheritance2.Desc	상속 스탯 상승률 +{0}%
+SkillTree.Node.Inheritance3.Name	혈맥 각성 I
+SkillTree.Node.Inheritance3.Desc	상속 스탯 상승률 +{0}%
+SkillTree.Node.Inheritance4.Name	혈맥 각성 II
+SkillTree.Node.Inheritance4.Desc	상속 스탯 상승률 +{0}%
+SkillTree.Node.Inheritance5.Name	혈맥의 극치
+SkillTree.Node.Inheritance5.Desc	상속 스탯 상승률 +{0}%
+SkillTree.Node.StartingHp4.Name	기초 체력 V
+SkillTree.Node.StartingHp4.Desc	육성 시작 시 HP +{0}
+SkillTree.Node.StartingHp5.Name	기초 체력 VI
+SkillTree.Node.StartingHp5.Desc	육성 시작 시 HP +{0}
+SkillTree.Node.StartingHp6.Name	기초 체력 VII
+SkillTree.Node.StartingHp6.Desc	육성 시작 시 HP +{0}
+SkillTree.Node.StartingHp7.Name	기초 체력 VIII
+SkillTree.Node.StartingHp7.Desc	육성 시작 시 HP +{0}
+SkillTree.Node.StartingAttack4.Name	기초 공격 IV
+SkillTree.Node.StartingAttack4.Desc	육성 시작 시 공격 +{0}
+SkillTree.Node.StartingAttack5.Name	기초 공격 V
+SkillTree.Node.StartingAttack5.Desc	육성 시작 시 공격 +{0}
+SkillTree.Node.StartingAttack6.Name	기초 공격 VI
+SkillTree.Node.StartingAttack6.Desc	육성 시작 시 공격 +{0}
+SkillTree.Node.StartingDefense4.Name	기초 방어 IV
+SkillTree.Node.StartingDefense4.Desc	육성 시작 시 방어 +{0}
+SkillTree.Node.StartingDefense5.Name	기초 방어 V
+SkillTree.Node.StartingDefense5.Desc	육성 시작 시 방어 +{0}
+SkillTree.Node.StartingDefense6.Name	기초 방어 VI
+SkillTree.Node.StartingDefense6.Desc	육성 시작 시 방어 +{0}
+SkillTree.Node.StartingSpeed4.Name	기초 속도 IV
+SkillTree.Node.StartingSpeed4.Desc	육성 시작 시 속도 +{0}
+SkillTree.Node.StartingSpeed5.Name	기초 속도 V
+SkillTree.Node.StartingSpeed5.Desc	육성 시작 시 속도 +{0}
+SkillTree.Node.StartingSpeed6.Name	기초 속도 VI
+SkillTree.Node.StartingSpeed6.Desc	육성 시작 시 속도 +{0}
+SkillTree.Node.StartingHit4.Name	기초 명중 IV
+SkillTree.Node.StartingHit4.Desc	육성 시작 시 명중 +{0}
+SkillTree.Node.StartingHit5.Name	기초 명중 V
+SkillTree.Node.StartingHit5.Desc	육성 시작 시 명중 +{0}
+SkillTree.Node.StartingHit6.Name	기초 명중 VI
+SkillTree.Node.StartingHit6.Desc	육성 시작 시 명중 +{0}
+SkillTree.Node.StartingAll4.Name	종합 강화 IV
+SkillTree.Node.StartingAll4.Desc	육성 시작 시 전 스탯 +{0}
+SkillTree.Node.StartingAll5.Name	종합 강화 V
+SkillTree.Node.StartingAll5.Desc	육성 시작 시 전 스탯 +{0}
+SkillTree.Node.GreatSuccess6.Name	숙련 III
+SkillTree.Node.GreatSuccess6.Desc	훈련 대성공 확률 +{0}%
+SkillTree.Node.GreatSuccess7.Name	달인 I
+SkillTree.Node.GreatSuccess7.Desc	훈련 대성공 확률 +{0}%
+SkillTree.Node.GreatSuccess8.Name	달인 II
+SkillTree.Node.GreatSuccess8.Desc	훈련 대성공 확률 +{0}%
+SkillTree.Node.GreatSuccess9.Name	극의 I
+SkillTree.Node.GreatSuccess9.Desc	훈련 대성공 확률 +{0}%
+SkillTree.Node.GreatSuccess10.Name	극의 II
+SkillTree.Node.GreatSuccess10.Desc	훈련 대성공 확률 +{0}%
+SkillTree.Node.StartingMoney5.Name	저축 고수 III
+SkillTree.Node.StartingMoney5.Desc	육성 시작 시 소지금 +{0}G
+SkillTree.Node.StartingMoney6.Name	재력 I
+SkillTree.Node.StartingMoney6.Desc	육성 시작 시 소지금 +{0}G
+SkillTree.Node.StartingMoney7.Name	재력 II
+SkillTree.Node.StartingMoney7.Desc	육성 시작 시 소지금 +{0}G
+SkillTree.Node.StartingMoney8.Name	재력 III
+SkillTree.Node.StartingMoney8.Desc	육성 시작 시 소지금 +{0}G
+SkillTree.Node.TrainingMoney6.Name	대형 거래 III
+SkillTree.Node.TrainingMoney6.Desc	육성 중 획득 금 +{0}%
+SkillTree.Node.TrainingMoney7.Name	장사 능수 I
+SkillTree.Node.TrainingMoney7.Desc	육성 중 획득 금 +{0}%
+SkillTree.Node.TrainingMoney8.Name	장사 능수 II
+SkillTree.Node.TrainingMoney8.Desc	육성 중 획득 금 +{0}%
+SkillTree.Node.TrainingMoney9.Name	장사 능수 III
+SkillTree.Node.TrainingMoney9.Desc	육성 중 획득 금 +{0}%
+SkillTree.Node.TrainingMoney10.Name	장사의 정수
+SkillTree.Node.TrainingMoney10.Desc	육성 중 획득 금 +{0}%
+SkillTree.Node.PointsGain6.Name	전과 패자 II
+SkillTree.Node.PointsGain6.Desc	대전으로 얻는 포인트 +{0}%
+SkillTree.Node.PointsGain7.Name	전과 패자 III
+SkillTree.Node.PointsGain7.Desc	대전으로 얻는 포인트 +{0}%
+SkillTree.Node.PointsGain8.Name	전과 전설 I
+SkillTree.Node.PointsGain8.Desc	대전으로 얻는 포인트 +{0}%
+SkillTree.Node.PointsGain9.Name	전과 전설 II
+SkillTree.Node.PointsGain9.Desc	대전으로 얻는 포인트 +{0}%
+SkillTree.Node.PointsGain10.Name	전과 전설 III
+SkillTree.Node.PointsGain10.Desc	대전으로 얻는 포인트 +{0}%
+SkillTree.Node.Inheritance6.Name	혈맥의 극치 II
+SkillTree.Node.Inheritance6.Desc	상속 스탯 상승률 +{0}%
+SkillTree.Node.Inheritance7.Name	혈맥의 극치 III
+SkillTree.Node.Inheritance7.Desc	상속 스탯 상승률 +{0}%
+SkillTree.Node.Inheritance8.Name	혈맥 전설 I
+SkillTree.Node.Inheritance8.Desc	상속 스탯 상승률 +{0}%
+SkillTree.Node.Inheritance9.Name	혈맥 전설 II
+SkillTree.Node.Inheritance9.Desc	상속 스탯 상승률 +{0}%
+SkillTree.Node.Inheritance10.Name	혈맥 전설 III
+SkillTree.Node.Inheritance10.Desc	상속 스탯 상승률 +{0}%
+ClayEdit.ClayGuide	【성형】\n왼쪽 드래그: 쌓기\nCtrl+좌/우: 깎기\n휠: 브러시 크기\nShift+드래그: 깊이 고정\nAlt+드래그: 카메라\nCtrl+Z/Y: 실행취소/다시\nDel: 전체 삭제
+ClayEdit.PaintGuide	【페인트】\n왼쪽 드래그: 칠하기\n휠: 브러시 크기\nShift+드래그: 깊이 고정\nAlt+드래그: 카메라\nCtrl+Z/Y: 실행취소/다시\n색 선택: 컬러 피커
+Training.LearnedMove	기술을 배웠습니다\n슬롯 {slot}: {name}
+Training.ChooseLearnSlot	{name}을 배울 슬롯을 선택하세요
+Training.InvalidSwapSlot	교체 슬롯이 유효하지 않습니다
+Training.SwappedMove	기술을 교체했습니다\n슬롯 {slot}: {name}
+Training.FleeAmbush	【강적 습격】\n{name}에게서 도망쳤다
+Training.WinAmbush	【강적 습격】\n{name}에게 승리
+Training.LoseAmbush	【강적 습격】\n{name}에게 패배\n의욕 하락
+Training.LoseAfterSchool	방과 후 전투에서 패배했다\n의욕이 떨어졌다
+Training.Location.ScienceLab	이과 교실
+Training.Location.HomeEcRoom	가정실
+Training.Location.CraftRoom	도공실
+Training.Location.Library	도서실
+Training.Location.MusicRoom	음악실
+Training.Location.Gymnasium	체육관
+Training.Location.PrincipalOffice	교장실
+Training.Period.FirstHour	1교시
+Training.Period.SecondHour	2교시
+Training.Period.MorningBreak	중간 휴식
+Training.Period.ThirdHour	3교시
+Training.Period.FourthHour	4교시
+Training.Period.LunchBreak	점심시간
+Training.Period.FifthHour	5교시
+Training.Period.SixthHour	6교시
+Training.Period.AfterSchool	방과 후
+Training.Day.Monday	월요일
+Training.Day.Tuesday	화요일
+Training.Day.Wednesday	수요일
+Training.Day.Thursday	목요일
+Training.Day.Friday	금요일
+Training.Command.Train	훈련
+Training.Command.SpecialTrain	특훈
+Training.Command.Rest	휴식
+Training.Command.Shop	상점
+Training.Command.UseItem	아이템
+Training.Command.Tournament	대회
+Training.Focus.Hp	HP 훈련
+Training.Focus.Attack	공격 훈련
+Training.Focus.Defense	방어 훈련
+Training.Focus.Speed	속도 훈련
+Training.Focus.Hit	명중 훈련
+Training.Prompt.Command	이 시간의 행동을 선택하세요
+Training.Prompt.Focus	올릴 능력을 선택하세요
+Training.Prompt.Shop	살 상품을 선택하세요
+Training.Prompt.Inventory	사용할 아이템을 선택하세요
+Training.Prompt.Location	행선지를 선택하세요
+Training.Hud.Stamina	체력 {current} / {max}
+Training.Hud.MoneyShop	소지금 {money}G
+Training.Hud.MoneyLabel	소지금
+Training.Hud.Price	가격 {price}G
+Training.Hud.DayStarted	{day}이 시작되었습니다
+Training.Log.ModelLoadFailed	모델 로드에 실패했습니다
+Training.Log.LunchStart	점심시간입니다\n매점에서 쇼핑할 수 있습니다
+Training.Log.LunchEnd	점심시간이 끝났다
+Training.Log.ShopOnlyLunch	매점은 점심시간에만 이용 가능
+Training.Log.BallThrowHint	볼을 길게 누르고 떼면 던집니다
+Training.Log.AutoTraining	자동 육성 중...
+Training.Log.ReturnToTitle	타이틀
+Training.Log.AfterSchoolNoOpponent	방과 후 상대를 찾지 못했습니다
+Training.Log.AfterSchoolStart	방과 후 전투\n{name}과 대전 시작
+Training.Log.AfterSchoolStartFailed	방과 후 전투를 시작할 수 없습니다
+Training.Log.AfterSchoolWin	방과 후 전투 승리\n체력+{stamina}
+Training.Log.RewardMoney	 상금+{reward}G
+Training.Log.NoNewMove	만남이 있었지만 新技术 기술은 없었다
+Training.Log.MeetTitle	만남
+Training.Log.MeetLearnChance	"{name}"를 배울 기회입니다
+Training.Log.AmbushWinTail	\n상금+{reward}G\nHP+{hp} 공격+{atk} 방어+{def} 속도+{spd} 명중+{hit}
+Training.Log.EnemyDefault	적
+Training.Log.ActionFailLowStamina	{name}이(가) 체력 부족으로 실패
+Training.Log.ActionFail	{name} 실패
+Training.Log.MotivationDown	의욕이 떨어졌다
+Training.Log.MotivationUp	의욕이 올랐다
+Training.Log.RestGreat	휴식 대성공
+Training.Log.RestOk	휴식
+Training.Log.RestRecover	{title}: 체력 {before}→{after}
+Training.Log.GreatSuccess	대성공
+Training.Log.Success	성공
+Training.Log.FoundItem	운 좋게 {name}을(를) 주웠다
+Training.Log.StatNone	능력치 상승 없음
+Training.Log.StatHp	HP+{value}
+Training.Log.StatAtk	공격+{value}
+Training.Log.StatDef	방어+{value}
+Training.Log.StatSpd	속도+{value}
+Training.Log.StatHit	명중+{value}
+Training.Shop.NoSession	세션이 없습니다
+Training.Shop.NoItem	상품이 없습니다
+Training.Shop.NotEnoughMoney	소지금이 부족합니다 ({have}G/{price}G)
+Training.Shop.Purchased	{name} 구매\n소지에 추가\n잔액 {money}G
+Training.Shop.ItemNotFound	아이템을 찾을 수 없습니다
+Training.Shop.NotOwned	{name}을(를) 가지고 있지 않습니다
+Training.Shop.UsedMotivated	{name} 사용\n의욕 상승
+Training.Shop.Used	{name} 사용
+Training.Shop.stamina_drink.Name	에너지 드링크
+Training.Shop.stamina_full.Name	완전 회복약
+Training.Shop.stat_hp.Name	HP 강화제
+Training.Shop.stat_attack.Name	공격 강화제
+Training.Shop.stat_defense.Name	방어 강화제
+Training.Shop.stat_speed.Name	속도 강화제
+Training.Shop.stat_hit.Name	명중 강화제
+Training.Shop.train_boost.Name	확률업
+Training.Shop.train_boost_strong.Name	확률업+
+Training.Shop.motivation_tennis.Name	테니스공
+Training.Shop.motivation_boost.Name	축구공
+Training.Attack.Power	위력
+Training.Attack.Cost	비용
+Training.Attack.Hit	명중
+Training.Attack.Recovery	경직
+Training.Attack.WindUp	준비
+Training.Attack.Seconds	초
+Training.Attack.Destroy	파괴
+Training.Attack.Current	현재
+Training.Attack.Learn	습득
+Training.Attack.NameLabel	기술명
+Training.Attack.ReqPart	필요 부위
+Training.Attack.DestroyPart	파괴 부위
+Training.Attack.Damage	데미지
+Training.Attack.Range	거리
+Training.Attack.PartMagic	범용
+Training.Attack.PartArm	팔
+Training.Attack.PartLeg	다리
+Training.Attack.PartFront	앞
+Training.Attack.PartBack	뒤
+Training.Attack.PartBody	몸
+Training.Preview.Expected	기대치
+Training.Preview.Stamina	체력 {value}
+Training.Preview.FailRate	실패율 {value}%
+Training.Preview.None	없음
+Training.Preview.Rest	휴식\n체력+{base}(대성공:+{great} 의욕+{mot})
+Training.Preview.StatAtk	공격
+Training.Preview.StatDef	방어
+Training.Preview.StatSpd	속도
+Training.Preview.StatHit	명중
+Common.Empty	비어 있음
+ClayEdit.ClayGuideIcons	【조형】\n{I:MouseLeft} 드래그 : 쌓기\n{W:KeyCtrl}+{I:MouseLeft} 드래그 : 깎기\n{I:MouseRight} 드래그 : 깎기\n{I:MouseWheel} : 브러시 크기\n{W:KeyShift}+드래그 : 깊이 고정\n{W:KeyAlt}+드래그 : 카메라\n{W:KeyCtrl}+{I:KeyZ} : 실행 취소\n{W:KeyCtrl}+{I:KeyY} : 다시 실행\n{W:KeyDel} : 전체 삭제
+Training.Shop.stat_speed.Desc	속도+6
+Training.Shop.stat_hit.Desc	명중+6
+Training.Shop.train_boost.Desc	대성공률 상승(수일)
+Training.Shop.stat_defense.Desc	방어+6
+Training.Shop.motivation_boost.Desc	의욕 상승
+Training.Shop.stat_hp.Desc	HP+12
+Training.Shop.stat_attack.Desc	공격+6
+Training.Shop.train_boost_strong.Desc	대성공률 대폭 상승
+Training.Shop.stamina_drink.Desc	체력+25
+Training.Shop.motivation_tennis.Desc	의욕 상승
+Training.Shop.stamina_full.Desc	체력 전체 회복
+Training.Motivation.VeryLow	최저
+Training.Motivation.Low	낮음
+Training.Motivation.Normal	보통
+Training.Motivation.High	최고
+Training.Event.LearnTitle	기술 습득
+Training.Event.LearnMessage	"{name}"를 배울 기회입니다\n교체할 슬롯을 선택
+Training.Event.StatTitle	특훈 이벤트
+Training.Event.StatMessage	HP+{hp} 공격+{atk} 방어+{def} 속도+{spd} 명중+{hit}
+Training.Shop.Title	매점
+Training.Inventory.Title	소지 아이템
+Training.Shop.NextPage	다음
+Training.Shop.OpenInventory	소지
+Battle.PartLocked	부위가 파괴됨
+Battle.RoleRequired	필요
+Battle.RoleTarget	파괴
+Battle.UsePartLabel	사용 부위:
+Battle.BreakPartLabel	파괴 부위:
+Battle.RadarAttack	공격
+Battle.RadarDefense	방어
+Battle.RadarSpeed	속도
+Battle.RadarHit	명중
+Save.TrainedPool	육성 완료
+Save.UntrainedPool	미육성
+Save.EnemyPool	적
+Save.Complete	저장 완료
+Save.UnnamedModel	이름 없음
+Save.Summary.Params	[파라미터]
+Save.Summary.Attacks	[기술]
+Save.Summary.RegisteredAttacks	[등록 기술]
+Save.Summary.None	없음
+Save.Summary.NoAttacks	기술 없음
+Save.Summary.Power	위력
+Save.Summary.Cost	비용
+Save.Summary.Damage	데미지: 
+Save.Summary.CostLabel	비용: 
+Save.Summary.AndMore	 외{count}
+SkillTree.Points	{points} pt
+BattlePvp.RoomCodeCopied	참가 코드: {code}\n복사됨
+BattlePvp.Connecting	연결 중…
+BattlePvp.ModelTimeout	상대 모델 수신 시간 초과 ({seconds}초)
+BattlePvp.SlotTimeout	상대 슬롯 선택 대기 시간 초과 ({seconds}초)
+BattlePvp.MatchupTimeout	대전 시작 준비 대기 시간 초과 ({seconds}초)
+Training.Debug.NoSession	진행 중 세션 없음
+Training.Debug.UnknownItem	알 수 없는 아이템 ID: {id}
+Training.Debug.ItemAdded	{name} {count}개 추가
+Training.Motivation.LabelWithGlyph	의욕　{glyph}
+ClayEdit.PaintGuideIcons	[페인트]\n{I:MouseLeft} 드래그 : 칠하기\n{I:MouseWheel} : 브러시 크기\n{W:KeyShift}+드래그 : 깊이 고정\n{W:KeyAlt}+드래그 : 카메라\n{W:KeyCtrl}+{I:KeyZ} : 실행 취소\n{W:KeyCtrl}+{I:KeyY} : 다시 실행\n색 : 피커
+Battle.TipsBodyIcons	[조작]\n{I:KeyA} / {I:KeyLeft} : 후퇴\n{I:KeyD} / {I:KeyRight} : 접근\n{W:KeyShift}+{I:KeyA}/{I:KeyD} : 스텝\n{I:Key1}-{I:Key4} : 기술\n{I:KeySpace} : 넉백\n{I:MouseRight} 길게 : 부위 복구\n\n[전투 기본]\n코스트를 모아 기술을 쓰세요.\n기술마다 거리와 위력이 다릅니다.\n같은 버튼으로 카운터.\n부위 파괴 시 상대가 약해집니다.
+Battle.TipsEscHintIcons	{E:KeyEsc} 튜토리얼
+Battle.HintPartRepairIcons	{I:MouseRight} 길게: 부위 복구
+Battle.HintKnockbackReadyIcons	넉백 가능 {I:KeySpace}
+BattlePvp.JoinCodeLabel	참가 코드: {code}
+BattlePvp.CreatingRoom	룸 생성 중…
+BattlePvp.ShareJoinCode	참가 코드: {code}\n상대에게 코드를 알려주세요
+BattlePvp.ConnectedOpponent	상대와 연결됨
+BattlePvp.NeedJoinCode	참가 코드를 입력하세요
+BattlePvp.JoiningRoom	룸 접속 중…
+BattlePvp.SearchingOpponent	상대를 찾는 중…
+BattlePvp.WaitingOpponentJoin	상대 참가 대기 중…
+BattlePvp.WaitingHostReady	호스트 준비 대기 중…
+BattlePvp.ServicesSetup	Unity Gaming Services가 설정되지 않았습니다. 프로젝트를 연결하고 Authentication, Lobby, Relay를 활성화하세요.
+BattlePvp.UnknownError	알 수 없는 오류
+BattlePvp.MatchmakingError	매칭 오류: {message}
+BattlePvp.NetworkManagerMissing	NetworkManager를 찾을 수 없음
+BattlePvp.UnityTransportMissing	UnityTransport가 설정되지 않음
+BattlePvp.RelayHostFailed	Relay 호스트 시작 실패
+BattlePvp.RelayClientFailed	Relay 클라이언트 시작 실패
+Save.Summary.RangeLabel	범위:
+Save.Summary.StatsBlock	HP {hp}\n공격 {atk}\n방어 {def}\n속도 {spd}\n명중 {hit}
+Save.Summary.StatsCompact	HP{hp} 공격{atk} 방어{def} 속도{spd} 명중{hit} / {attacks}
+Save.Summary.DetailStatLine	HP {hp} / 공격 {atk} / 방어 {def} / 속도 {spd} / 명중 {hit}
+Save.Summary.AttackMeta	({part}/{range}/위력{power}/비용{cost})
+ModelGallery.EmptySlot	빈 슬롯
+Training.Hover.ShopLeave	매점 나가기
+Training.Hover.ShopNextPage	다음 상품 페이지
+Training.Hover.OpenInventory	소지 아이템 사용
+Training.Hover.CloseInventory	소지 목록 닫기
+Training.Hover.InventoryNextPage	다음 소지 페이지
+Training.Hover.BackToCommand	행동 선택으로
+Training.Hover.Train	훈련마다 체력 소모 다름. 성공 시 스탯 상승
+Training.Hover.SpecialTrain	특훈 체력 소모 다름. 큰 상승
+Training.Hover.Rest	체력+{base}(대성공 +{great} 의욕+{mot})
+Training.Hover.Shop	점심에만 이용 가능
+Training.Hover.UseItem	아이템 사용(시간 소비 없음)
+Training.Hover.Tournament	승리 시 상금과 체력 회복
+Training.Hover.FailRate	실패율 {value}%
+Training.Hover.StaminaCost	체력-{value}
+Training.Hover.FailRateLine	\n실패율 {value}%
+Training.Hud.Continue	계속
+Training.Hud.BackToTitle	타이틀
+ModelGallery.OverwriteConfirm	기존 세이브에 덮어쓸까요?
+ModelGallery.SaveToSlotConfirm	이 슬롯에 저장할까요?
+LoadSlot.PlayerInstruction	몬스터를 선택하세요
+LoadSlot.EnemyInstruction	적 몬스터를 선택하세요
+Title.NoTrainedModel	육성 완료 몬스터가 없습니다
+Title.NoUntrainedModel	몬스터를 먼저 만들어 주세요
+Common.Save	저장
+Common.Decide	결정
+Training.ModeSelectBody	느긋한 육성: 1~6교시 행동을 직접 고릅니다.\n점심에는 상점, 방과 후에는 전투입니다.\n자동 육성은 {days}일을 자동으로 진행합니다.
+Training.Inheritance.NoBonus	보너스 없이 육성을 시작합니다
+Training.Inheritance.BonusStats	보너스 HP+{hp} 공격+{atk} 방어+{def} 속도+{spd} 명중+{hit}
+Training.Inheritance.AttackCandidate	기술 후보 {n}: {name}
+Training.Inheritance.ContinueSwap	이어서 교체할 기술 슬롯을 선택하세요
+Training.Inheritance.ParentDefault	계승원
+Training.Inheritance.ParentPreview	{name}\n계승 상승 HP+{hp} 공격+{atk} 방어+{def} 속도+{spd} 명중+{hit}
+Training.Inheritance.PickHeader1	계승할 육성 완료 몬스터를 2체 선택하세요(1번째)
+Training.Inheritance.PickHeader2	계승할 육성 완료 몬스터를 2체 선택하세요(2번째)
+Training.Inheritance.ConfirmPick	계승원 {pickNumber}번째\n스탯을 확인하고 결정하세요
+Training.Resume.ScheduleWithMoney	{schedule}, 소지금 {money}G
+Training.Resume.MotivationLabel	의욕 
+Training.Resume.StaminaLabel	, 체력 {stamina} / {max}
+Training.Resume.Stats	HP {hp}\n공격 {atk}\n방어 {def}\n속도 {spd}\n명중 {hit}
+Training.Resume.SummaryBody	{schedule}, 소지금 {money}G\n의욕{glyph} 체력{stamina}/{max}\nHP {hp} 공격 {atk} 방어 {def} 속도 {spd} 명중 {hit}
+BattlePvp.LobbyTitle	통신 대전
+BattlePvp.DirectMatch	지정
+BattlePvp.RandomMatch	랜덤
+BattlePvp.CreateRoom	생성
+BattlePvp.JoinRoom	참가
+BattlePvp.StartMatch	매치
+BattlePvp.Matching	매칭 중
+BattlePvp.CopyCode	복사
+BattlePvp.JoinCodePlaceholder	참가 코드 입력
+BattlePvp.OpponentWaiting	상대 응답을 기다리는 중…
+Battle.Rematch	재전
+Battle.Start	시작
+Battle.VictoryShort	승리!
+Battle.Vs	VS
+Battle.Ready	Ready
+Battle.Fight	Fight
+Battle.Finish	Finish
+Battle.Break	Break!
+Battle.TipsTitle	전투 튜토리얼
+Training.ModeManual	수동
+Training.ModeAuto	자동
+Training.ResumeRestart	처음부터
+Training.ResumeContinue	이어서
+Training.AmbushFight	싸운다
+Training.AmbushFlee	도망
+ClayEdit.NewCreate	신규
+ClayEdit.Remake	다시
+ClayEdit.RemakeLong	몬스터 다시 만들기
+ClayEdit.Save	저장
+ClayEdit.SaveAsEnemy	적저장
+ClayEdit.OverwriteSave	덮어쓰기
+ClayEdit.Delete	삭제
+ClayEdit.DeleteConfirm	삭제
+ClayEdit.SaveConfirm	저장할까요?
+ClayEdit.LeaveWithoutSave	저장하지 않고 돌아갈까요?
+ClayEdit.LeaveWithoutSaveButton	저장안함
+ClayEdit.NamePrompt	이름을 입력하세요
+ClayEdit.SculptMode	성형
+ClayEdit.ShowGuide	조작
+ClayEdit.Idle	대기
+ClayEdit.Run	달리기
+ClayEdit.Attack	공격
+LoadSlot.Load	로드
+LoadSlot.ConfirmLoad	이 모델을 불러올까요?
+ModelGallery.TabPost	게시
+ModelGallery.TabBrowse	열람
+ModelGallery.SortRandom	랜덤
+ModelGallery.SortMonthly	월간
+ModelGallery.SortOverall	종합
+ModelGallery.Refresh	갱신
+ModelGallery.Publish	게시
+ModelGallery.Download	받기
+ModelGallery.Prev	이전
+ModelGallery.Next	다음
+ModelGallery.ModelName	모델 이름
+ModelGallery.PointsInsufficient	포인트가 부족합니다
+ModelGallery.HeldPoints	보유: {points} pt
+ModelGallery.CostPoints	소모: {points} pt
+ModelGallery.SaveDestEmpty	저장 위치: 빈 슬롯
+ModelGallery.SelectSaveSlot	저장 슬롯 선택
+SkillTree.Title	스킬 트리
+SkillTree.Skill	스킬
+SkillTree.BonusEffects	획득 효과
+SkillTree.BonusEffectsHeader	【획득 효과】
+ClayEdit.PaintMode	칠하기
+ClayEdit.AnimationMode	동작
+ClayEdit.BackgroundColor	배경색
+Battle.MatchupStatus	능력
+Training.SwapSkip	스킵
+Training.Hud.Interrupt	중단

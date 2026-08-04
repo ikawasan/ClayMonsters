@@ -18,6 +18,7 @@ namespace Scene.TrainingScene.Domain
         private readonly string continueFallback;
         private readonly string saveResultKey;
         private readonly string saveResultFallback;
+        private readonly int saveResultSlot;
 
         /// <summary>
         /// 表示データを生成する
@@ -32,6 +33,7 @@ namespace Scene.TrainingScene.Domain
         /// <param name="thumbnailPng">モデルサムネイルPNG</param>
         /// <param name="titleKey">タイトルキー</param>
         /// <param name="titleFallback">タイトルフォールバック</param>
+        /// <param name="saveResultSlot">保存結果のスロット番号表示用(1始まり)</param>
         public TrainingAutoResultPresentation(
             string modelName,
             ModelStatus status,
@@ -42,7 +44,8 @@ namespace Scene.TrainingScene.Domain
             string continueFallback,
             byte[] thumbnailPng,
             string titleKey,
-            string titleFallback)
+            string titleFallback,
+            int saveResultSlot = 1)
         {
             ModelName = modelName ?? string.Empty;
             Status = status;
@@ -54,6 +57,7 @@ namespace Scene.TrainingScene.Domain
             this.continueFallback = continueFallback ?? string.Empty;
             this.titleKey = titleKey ?? string.Empty;
             this.titleFallback = titleFallback ?? string.Empty;
+            this.saveResultSlot = saveResultSlot > 0 ? saveResultSlot : 1;
         }
 
         /// <summary>
@@ -118,7 +122,11 @@ namespace Scene.TrainingScene.Domain
         public string SaveResultMessage =>
             string.IsNullOrEmpty(saveResultKey)
                 ? saveResultFallback
-                : LocalizedText.GetOrFallback(saveResultKey, saveResultFallback);
+                : LocalizedText.GetOrFallback(
+                    saveResultKey,
+                    saveResultFallback,
+                    "slot",
+                    saveResultSlot);
 
         /// <summary>
         /// 続行ボタンラベル

@@ -21,6 +21,7 @@ namespace UI.ClayEditor.View
         private string cachedModelName = string.Empty;
         private int cachedSlotIndex;
         private bool isShowing;
+        private LocalizedBakedTextApplier bakedLabelApplier;
 
         private void Awake()
         {
@@ -34,6 +35,7 @@ namespace UI.ClayEditor.View
                 cancelButton.SubscribeOnClick(Hide);
             }
 
+            ApplyButtonLabels();
             Hide();
         }
 
@@ -60,36 +62,65 @@ namespace UI.ClayEditor.View
         /// <inheritdoc/>
         public void RefreshLocalizedUi()
         {
-            if (!isShowing)
+            // 非表示中もボタン原文が残らないよう常に文言を差替える
+            ApplyButtonLabels();
+            if (isShowing)
             {
-                return;
+                ApplyMessage();
             }
-
-            ApplyCopy();
         }
 
         private void ApplyCopy()
         {
-            if (messageText != null)
+            ApplyMessage();
+            ApplyButtonLabels();
+        }
+
+        private void ApplyMessage()
+        {
+            if (messageText == null)
             {
-                string safeName = string.IsNullOrEmpty(cachedModelName)
-                    ? LocalizedText.GetOrFallback(GameTextKeys.SaveUnnamedModel, "名称未設定")
-                    : cachedModelName;
-                messageText.text = LocalizedText.Get(
-                    GameTextKeys.TrainingDeleteConfirm,
-                    new System.Collections.Generic.Dictionary<string, object>
-                    {
-                        { "slot", cachedSlotIndex + 1 },
-                        { "name", safeName },
-                    });
+                return;
             }
 
+            string safeName = string.IsNullOrEmpty(cachedModelName)
+                ? LocalizedText.GetOrFallback(GameTextKeys.SaveUnnamedModel, "名称未設定")
+                : cachedModelName;
+            messageText.text = LocalizedText.Get(
+                GameTextKeys.TrainingDeleteConfirm,
+                new System.Collections.Generic.Dictionary<string, object>
+                {
+                    { "slot", cachedSlotIndex + 1 },
+                    { "name", safeName },
+                });
+        }
+
+        private void ApplyButtonLabels()
+        {
+            EnsureBakedLabels();
+            bakedLabelApplier?.Apply();
             LhButtonLabelUtility.SetLabel(
                 confirmButton,
                 LocalizedText.GetOrFallback(GameTextKeys.ClayEditDeleteConfirm, "削除"));
             LhButtonLabelUtility.SetLabel(
                 cancelButton,
                 LocalizedText.GetOrFallback(GameTextKeys.CommonCancel, "キャンセル"));
+        }
+
+        private void EnsureBakedLabels()
+        {
+            if (bakedLabelApplier != null)
+            {
+                return;
+            }
+
+            Transform root = canvas != null ? canvas.transform : transform;
+            bakedLabelApplier = new LocalizedBakedTextApplier();
+            bakedLabelApplier.Register(GameTextKeys.ClayEditDeleteConfirm, "削除");
+            bakedLabelApplier.Register(GameTextKeys.ClayEditDeleteConfirm, "削除する");
+            bakedLabelApplier.Register(GameTextKeys.CommonCancel, "キャンセル");
+            bakedLabelApplier.Register(GameTextKeys.CommonCancel, "取消");
+            bakedLabelApplier.Capture(root);
         }
 
         /// <summary>

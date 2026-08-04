@@ -1229,6 +1229,12 @@ namespace Scene.TrainingScene.View
         }
 
         /// <inheritdoc/>
+        public void ShowTitleForInspection()
+        {
+            SetTitleVisible(true);
+        }
+
+        /// <inheritdoc/>
         public void RefreshLocalizedUi()
         {
             if (inheritanceTitleText == null)

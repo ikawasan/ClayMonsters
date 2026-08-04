@@ -41,6 +41,12 @@ namespace UI.ClayEditor.View
         private MotionType cachedAttack;
         private bool cachedPreserveLayoutSpace;
 
+        private void Awake()
+        {
+            // プレハブ焼き込みの日本語範囲ラベルを現言語へ直す
+            ApplyLocalizedChromeOnly();
+        }
+
         /// <summary>
         /// 技スロット表示を更新する
         /// </summary>
@@ -61,29 +67,27 @@ namespace UI.ClayEditor.View
 
             _ = slotNumber;
             SetSlotRootVisible(true, preserveLayoutSpace);
-            ApplyPartChromeLabels();
+            ApplyLocalizedChromeOnly();
 
             if (attackNameText != null)
             {
-                attackNameText.text = MotionPartRequirement.FormatDisplayNameWithStrengthRank(attack);
+                LocalizedFont.SetText(
+                    attackNameText,
+                    MotionPartRequirement.FormatDisplayNameWithStrengthRank(attack));
             }
 
             if (damageText != null)
             {
-                damageText.text = ModelSaveSummaryFormatter.FormatTrainingAttackDamageText(attack);
+                LocalizedFont.SetText(
+                    damageText,
+                    ModelSaveSummaryFormatter.FormatTrainingAttackDamageText(attack));
             }
 
             if (costText != null)
             {
-                costText.text = ModelSaveSummaryFormatter.FormatTrainingAttackCostText(attack);
-            }
-
-            if (rangeLabelText != null)
-            {
-                LocalizedFixedChromeLabel.ApplyFixedRectLabel(
-                    rangeLabelText,
-                    GameTextKeys.SaveSummaryRangeLabel,
-                    "範囲:");
+                LocalizedFont.SetText(
+                    costText,
+                    ModelSaveSummaryFormatter.FormatTrainingAttackCostText(attack));
             }
 
             if (requiredPartIcon != null)
@@ -112,29 +116,21 @@ namespace UI.ClayEditor.View
                 return;
             }
 
-            ApplyPartChromeLabels();
+            ApplyLocalizedChromeOnly();
 
             if (attackNameText != null)
             {
-                attackNameText.text = string.Empty;
+                LocalizedFont.SetText(attackNameText, string.Empty);
             }
 
             if (damageText != null)
             {
-                damageText.text = string.Empty;
+                LocalizedFont.SetText(damageText, string.Empty);
             }
 
             if (costText != null)
             {
-                costText.text = string.Empty;
-            }
-
-            if (rangeLabelText != null)
-            {
-                LocalizedFixedChromeLabel.ApplyFixedRectLabel(
-                    rangeLabelText,
-                    GameTextKeys.SaveSummaryRangeLabel,
-                    "範囲:");
+                LocalizedFont.SetText(costText, string.Empty);
             }
 
             if (requiredPartIcon != null)
@@ -172,29 +168,27 @@ namespace UI.ClayEditor.View
             cachedAttack = attack;
             cachedPreserveLayoutSpace = true;
             _ = slotNumber;
-            ApplyPartChromeLabels();
+            ApplyLocalizedChromeOnly();
 
             if (attackNameText != null)
             {
-                attackNameText.text = MotionPartRequirement.FormatDisplayNameWithStrengthRank(attack);
+                LocalizedFont.SetText(
+                    attackNameText,
+                    MotionPartRequirement.FormatDisplayNameWithStrengthRank(attack));
             }
 
             if (damageText != null)
             {
-                damageText.text = ModelSaveSummaryFormatter.FormatTrainingAttackDamageText(attack);
+                LocalizedFont.SetText(
+                    damageText,
+                    ModelSaveSummaryFormatter.FormatTrainingAttackDamageText(attack));
             }
 
             if (costText != null)
             {
-                costText.text = ModelSaveSummaryFormatter.FormatTrainingAttackCostText(attack);
-            }
-
-            if (rangeLabelText != null)
-            {
-                LocalizedFixedChromeLabel.ApplyFixedRectLabel(
-                    rangeLabelText,
-                    GameTextKeys.SaveSummaryRangeLabel,
-                    "範囲:");
+                LocalizedFont.SetText(
+                    costText,
+                    ModelSaveSummaryFormatter.FormatTrainingAttackCostText(attack));
             }
 
             if (requiredPartIcon != null)
@@ -217,29 +211,21 @@ namespace UI.ClayEditor.View
         public void ClearForConfirmPrefab()
         {
             hasContent = false;
-            ApplyPartChromeLabels();
+            ApplyLocalizedChromeOnly();
 
             if (attackNameText != null)
             {
-                attackNameText.text = string.Empty;
+                LocalizedFont.SetText(attackNameText, string.Empty);
             }
 
             if (damageText != null)
             {
-                damageText.text = string.Empty;
+                LocalizedFont.SetText(damageText, string.Empty);
             }
 
             if (costText != null)
             {
-                costText.text = string.Empty;
-            }
-
-            if (rangeLabelText != null)
-            {
-                LocalizedFixedChromeLabel.ApplyFixedRectLabel(
-                    rangeLabelText,
-                    GameTextKeys.SaveSummaryRangeLabel,
-                    "範囲:");
+                LocalizedFont.SetText(costText, string.Empty);
             }
 
             if (requiredPartIcon != null)
@@ -273,7 +259,23 @@ namespace UI.ClayEditor.View
                 return;
             }
 
+            ApplyLocalizedChromeOnly();
+            if (attackNameText != null)
+            {
+                LocalizedFont.SetText(attackNameText, string.Empty);
+            }
+        }
+
+        private void ApplyLocalizedChromeOnly()
+        {
             ApplyPartChromeLabels();
+            if (rangeLabelText != null)
+            {
+                LocalizedFixedChromeLabel.ApplyFixedRectLabel(
+                    rangeLabelText,
+                    GameTextKeys.SaveSummaryRangeLabel,
+                    "範囲:");
+            }
         }
 
         private void ApplyPartChromeLabels()

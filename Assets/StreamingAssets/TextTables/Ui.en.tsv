@@ -1,0 +1,620 @@
+Common.Return	Back
+Common.Ok	OK
+Common.Cancel	Cancel
+Common.Yes	Yes
+Common.No	No
+Common.Close	Close
+Common.Slot	Slot {index}
+Option.Title	Settings
+Option.Close	Close
+Option.Video	【Video】
+Option.Audio	【Audio】
+Option.Language	【Language】
+Option.FullScreen	Fullscreen
+Option.VSync	VSync
+Option.Music	Music
+Option.SoundEffect	SFX
+Title.Points	{points} pt
+Title.ClayEdit	Edit
+Title.BattleNpc	CPU
+Title.BattlePvp	PvP
+Title.Training	Train
+Title.SkillTree	Skills
+Title.ModelGallery	Gallery
+Title.Option	Options
+Title.Quit	Quit
+Battle.Draw	Draw
+Battle.Victory	{winnerName} wins!
+Battle.RangeLabel	Range
+Battle.Distance	Distance {distance}
+Battle.TipsBody	【Controls】\nMove back/forward\nAttack with move buttons\nUse counters and part breaks
+Battle.TipsEscHint	Esc to show tips
+Battle.HintPartRepair	Hold RMB to repair parts
+Battle.HintKnockbackReady	Knockback ready
+Battle.HintCounter	Counter! Intercept with {part} move
+Battle.HintAttackLockout	Attack cooldown
+Battle.HintChain	Chain x{count}
+Battle.Miss	Miss
+Battle.BandClose	Close
+Battle.BandMid	Mid
+Battle.BandFar	Far
+Battle.HitHigh	High
+Battle.HitMid	Mid
+Battle.HitLow	Low
+Battle.HitVeryLow	Very Low
+Battle.PartArm	Arm
+Battle.PartLeg	Leg
+Battle.PartFront	Front
+Battle.PartBack	Back
+Battle.PartBody	None
+Battle.Leave	Back
+Motion.LowSweep	Low Sweep
+Motion.Kick	Kick
+Motion.ShoulderRam	Shoulder Ram
+Motion.HipCheck	Hip Check
+Motion.Stomp	Stomp
+Motion.Punch	Punch
+Motion.Elbow	Elbow
+Motion.BellyFlop	Belly Flop
+Motion.Headbutt	Headbutt
+Motion.Fireball	Fireball
+Motion.Bite	Bite
+Motion.TailWhip	Tail Whip
+Motion.ThunderShock	Thunder Shock
+Motion.DiamondDust	Diamond Dust
+Motion.SpinTackle	Spin Tackle
+Motion.Uppercut	Uppercut
+Motion.WindSlasher	Wind Slasher
+Motion.BodySlam	Body Slam
+Motion.Knee	Knee
+Motion.GroundPound	Ground Pound
+Motion.Slap	Slap
+Motion.Tackle	Tackle
+BattlePvp.DisconnectMessage	Connection lost
+BattlePvp.DisconnectClose	Close
+ModelGallery.Points	{points} pt
+ModelGallery.PostConfirm	Post this model?
+ModelGallery.Slot	Slot
+Enemy.Weak	Weak
+Enemy.Normal	Normal
+Enemy.Strong	Strong
+Enemy.VeryStrong	Very Strong
+Training.ModeSelectTitle	Choose a training method
+Training.ResumeTitle	Training in progress found
+Training.AmbushTitle	Ambush!
+Training.AmbushTitleBang	Ambush!
+Training.AmbushEnemyDefault	Foe
+Training.AmbushMessage	{name} attacks!\nFight or flee?
+Training.Complete	Training Complete
+Training.Motivation	Motivation 
+Training.LearnedHeader	▼ New Move
+Training.SwapHeader	▼ Slot to Replace
+Training.AttackComposition	▼ Moves
+Training.AttackCompositionNone	▼ Moves\nNone
+Training.Inheritance	Inheritance
+Training.SaveOverwrite	Overwrite trained slot {slot}?
+Training.SaveTo	Save to trained slot {slot}
+Training.SaveDestNotSelected	No save slot selected
+Training.SaveFailed	Failed to save trained data\nUntrained data kept
+Training.AmbushStartFailed	Could not start ambush battle
+Training.SwapSlotResult	Replaced slot {slot}
+Training.ChooseSave	Slot
+Training.DeleteConfirm	Delete slot {slot} "{name}"?
+Training.ModelNamePlaceholder	Enter model name
+Training.TrainedSlot	Trained Slot {index}
+SkillTree.SelectNode	Select a node
+SkillTree.Unlock	Unlock
+SkillTree.Unlocked	Unlocked
+SkillTree.PointsShort	Not enough points
+SkillTree.BonusHeader	【Bonuses】
+SkillTree.StatStartHp	Start HP
+SkillTree.StatStartAtk	Start Attack
+SkillTree.StatStartDef	Start Defense
+SkillTree.StatStartSpd	Start Speed
+SkillTree.StatStartHit	Start Hit
+SkillTree.StatStartAll	Start All Stats
+SkillTree.StatGreatSuccess	Great Success Rate
+SkillTree.StatStartMoney	Starting Money
+SkillTree.StatTrainMoney	Training Money
+SkillTree.StatPoints	Battle Points
+SkillTree.StatInherit	Inheritance Boost
+SkillTree.StatNone	─
+SkillTree.Node.Center.Name	Base HP I
+SkillTree.Node.Center.Desc	Training starts with +{0} HP
+SkillTree.Node.StartingHp.Name	Base HP II
+SkillTree.Node.StartingHp.Desc	Training starts with +{0} HP
+SkillTree.Node.StartingHp2.Name	Base HP III
+SkillTree.Node.StartingHp2.Desc	Training starts with +{0} HP
+SkillTree.Node.StartingHp3.Name	Base HP IV
+SkillTree.Node.StartingHp3.Desc	Training starts with +{0} HP
+SkillTree.Node.StartingAttack.Name	Base Attack I
+SkillTree.Node.StartingAttack.Desc	Training starts with +{0} Attack
+SkillTree.Node.StartingAttack2.Name	Base Attack II
+SkillTree.Node.StartingAttack2.Desc	Training starts with +{0} Attack
+SkillTree.Node.StartingAttack3.Name	Base Attack III
+SkillTree.Node.StartingAttack3.Desc	Training starts with +{0} Attack
+SkillTree.Node.StartingDefense.Name	Base Defense I
+SkillTree.Node.StartingDefense.Desc	Training starts with +{0} Defense
+SkillTree.Node.StartingDefense2.Name	Base Defense II
+SkillTree.Node.StartingDefense2.Desc	Training starts with +{0} Defense
+SkillTree.Node.StartingDefense3.Name	Base Defense III
+SkillTree.Node.StartingDefense3.Desc	Training starts with +{0} Defense
+SkillTree.Node.StartingSpeed.Name	Base Speed I
+SkillTree.Node.StartingSpeed.Desc	Training starts with +{0} Speed
+SkillTree.Node.StartingSpeed2.Name	Base Speed II
+SkillTree.Node.StartingSpeed2.Desc	Training starts with +{0} Speed
+SkillTree.Node.StartingSpeed3.Name	Base Speed III
+SkillTree.Node.StartingSpeed3.Desc	Training starts with +{0} Speed
+SkillTree.Node.StartingHit.Name	Base Accuracy I
+SkillTree.Node.StartingHit.Desc	Training starts with +{0} Accuracy
+SkillTree.Node.StartingHit2.Name	Base Accuracy II
+SkillTree.Node.StartingHit2.Desc	Training starts with +{0} Accuracy
+SkillTree.Node.StartingHit3.Name	Base Accuracy III
+SkillTree.Node.StartingHit3.Desc	Training starts with +{0} Accuracy
+SkillTree.Node.StartingAll.Name	All-Round I
+SkillTree.Node.StartingAll.Desc	Training starts with +{0} to all stats
+SkillTree.Node.StartingAll2.Name	All-Round II
+SkillTree.Node.StartingAll2.Desc	Training starts with +{0} to all stats
+SkillTree.Node.StartingAll3.Name	All-Round III
+SkillTree.Node.StartingAll3.Desc	Training starts with +{0} to all stats
+SkillTree.Node.GreatSuccess1.Name	Focus I
+SkillTree.Node.GreatSuccess1.Desc	Great success rate +{0}%
+SkillTree.Node.GreatSuccess2.Name	Focus II
+SkillTree.Node.GreatSuccess2.Desc	Great success rate +{0}%
+SkillTree.Node.GreatSuccess3.Name	Mastery I
+SkillTree.Node.GreatSuccess3.Desc	Great success rate +{0}%
+SkillTree.Node.GreatSuccess4.Name	Mastery II
+SkillTree.Node.GreatSuccess4.Desc	Great success rate +{0}%
+SkillTree.Node.GreatSuccess5.Name	True Mastery
+SkillTree.Node.GreatSuccess5.Desc	Great success rate +{0}%
+SkillTree.Node.StartingMoney1.Name	Allowance I
+SkillTree.Node.StartingMoney1.Desc	Training starts with +{0}G
+SkillTree.Node.StartingMoney2.Name	Allowance II
+SkillTree.Node.StartingMoney2.Desc	Training starts with +{0}G
+SkillTree.Node.StartingMoney3.Name	Saver I
+SkillTree.Node.StartingMoney3.Desc	Training starts with +{0}G
+SkillTree.Node.StartingMoney4.Name	Saver II
+SkillTree.Node.StartingMoney4.Desc	Training starts with +{0}G
+SkillTree.Node.TrainingMoney1.Name	Prize Hunter I
+SkillTree.Node.TrainingMoney1.Desc	Training money gain +{0}%
+SkillTree.Node.TrainingMoney2.Name	Prize Hunter II
+SkillTree.Node.TrainingMoney2.Desc	Training money gain +{0}%
+SkillTree.Node.TrainingMoney3.Name	Big Deals I
+SkillTree.Node.TrainingMoney3.Desc	Training money gain +{0}%
+SkillTree.Node.TrainingMoney4.Name	Big Deals II
+SkillTree.Node.TrainingMoney4.Desc	Training money gain +{0}%
+SkillTree.Node.TrainingMoney5.Name	Commerce Peak
+SkillTree.Node.TrainingMoney5.Desc	Training money gain +{0}%
+SkillTree.Node.PointsGain1.Name	Battle Smarts I
+SkillTree.Node.PointsGain1.Desc	Battle points gain +{0}%
+SkillTree.Node.PointsGain2.Name	Battle Smarts II
+SkillTree.Node.PointsGain2.Desc	Battle points gain +{0}%
+SkillTree.Node.PointsGain3.Name	Battle Peak I
+SkillTree.Node.PointsGain3.Desc	Battle points gain +{0}%
+SkillTree.Node.PointsGain4.Name	Battle Peak II
+SkillTree.Node.PointsGain4.Desc	Battle points gain +{0}%
+SkillTree.Node.PointsGain5.Name	Battle Champion
+SkillTree.Node.PointsGain5.Desc	Battle points gain +{0}%
+SkillTree.Node.Inheritance1.Name	Bloodline I
+SkillTree.Node.Inheritance1.Desc	Inheritance stat bonus +{0}%
+SkillTree.Node.Inheritance2.Name	Bloodline II
+SkillTree.Node.Inheritance2.Desc	Inheritance stat bonus +{0}%
+SkillTree.Node.Inheritance3.Name	Bloodline Awaken I
+SkillTree.Node.Inheritance3.Desc	Inheritance stat bonus +{0}%
+SkillTree.Node.Inheritance4.Name	Bloodline Awaken II
+SkillTree.Node.Inheritance4.Desc	Inheritance stat bonus +{0}%
+SkillTree.Node.Inheritance5.Name	Bloodline Peak
+SkillTree.Node.Inheritance5.Desc	Inheritance stat bonus +{0}%
+SkillTree.Node.StartingHp4.Name	Base HP V
+SkillTree.Node.StartingHp4.Desc	Training starts with +{0} HP
+SkillTree.Node.StartingHp5.Name	Base HP VI
+SkillTree.Node.StartingHp5.Desc	Training starts with +{0} HP
+SkillTree.Node.StartingHp6.Name	Base HP VII
+SkillTree.Node.StartingHp6.Desc	Training starts with +{0} HP
+SkillTree.Node.StartingHp7.Name	Base HP VIII
+SkillTree.Node.StartingHp7.Desc	Training starts with +{0} HP
+SkillTree.Node.StartingAttack4.Name	Base Attack IV
+SkillTree.Node.StartingAttack4.Desc	Training starts with +{0} Attack
+SkillTree.Node.StartingAttack5.Name	Base Attack V
+SkillTree.Node.StartingAttack5.Desc	Training starts with +{0} Attack
+SkillTree.Node.StartingAttack6.Name	Base Attack VI
+SkillTree.Node.StartingAttack6.Desc	Training starts with +{0} Attack
+SkillTree.Node.StartingDefense4.Name	Base Defense IV
+SkillTree.Node.StartingDefense4.Desc	Training starts with +{0} Defense
+SkillTree.Node.StartingDefense5.Name	Base Defense V
+SkillTree.Node.StartingDefense5.Desc	Training starts with +{0} Defense
+SkillTree.Node.StartingDefense6.Name	Base Defense VI
+SkillTree.Node.StartingDefense6.Desc	Training starts with +{0} Defense
+SkillTree.Node.StartingSpeed4.Name	Base Speed IV
+SkillTree.Node.StartingSpeed4.Desc	Training starts with +{0} Speed
+SkillTree.Node.StartingSpeed5.Name	Base Speed V
+SkillTree.Node.StartingSpeed5.Desc	Training starts with +{0} Speed
+SkillTree.Node.StartingSpeed6.Name	Base Speed VI
+SkillTree.Node.StartingSpeed6.Desc	Training starts with +{0} Speed
+SkillTree.Node.StartingHit4.Name	Base Accuracy IV
+SkillTree.Node.StartingHit4.Desc	Training starts with +{0} Accuracy
+SkillTree.Node.StartingHit5.Name	Base Accuracy V
+SkillTree.Node.StartingHit5.Desc	Training starts with +{0} Accuracy
+SkillTree.Node.StartingHit6.Name	Base Accuracy VI
+SkillTree.Node.StartingHit6.Desc	Training starts with +{0} Accuracy
+SkillTree.Node.StartingAll4.Name	All-Round IV
+SkillTree.Node.StartingAll4.Desc	Training starts with +{0} to all stats
+SkillTree.Node.StartingAll5.Name	All-Round V
+SkillTree.Node.StartingAll5.Desc	Training starts with +{0} to all stats
+SkillTree.Node.GreatSuccess6.Name	Mastery III
+SkillTree.Node.GreatSuccess6.Desc	Great success rate +{0}%
+SkillTree.Node.GreatSuccess7.Name	Adept I
+SkillTree.Node.GreatSuccess7.Desc	Great success rate +{0}%
+SkillTree.Node.GreatSuccess8.Name	Adept II
+SkillTree.Node.GreatSuccess8.Desc	Great success rate +{0}%
+SkillTree.Node.GreatSuccess9.Name	Secret Arts I
+SkillTree.Node.GreatSuccess9.Desc	Great success rate +{0}%
+SkillTree.Node.GreatSuccess10.Name	Secret Arts II
+SkillTree.Node.GreatSuccess10.Desc	Great success rate +{0}%
+SkillTree.Node.StartingMoney5.Name	Saver III
+SkillTree.Node.StartingMoney5.Desc	Training starts with +{0}G
+SkillTree.Node.StartingMoney6.Name	Fortune I
+SkillTree.Node.StartingMoney6.Desc	Training starts with +{0}G
+SkillTree.Node.StartingMoney7.Name	Fortune II
+SkillTree.Node.StartingMoney7.Desc	Training starts with +{0}G
+SkillTree.Node.StartingMoney8.Name	Fortune III
+SkillTree.Node.StartingMoney8.Desc	Training starts with +{0}G
+SkillTree.Node.TrainingMoney6.Name	Big Deals III
+SkillTree.Node.TrainingMoney6.Desc	Training money gain +{0}%
+SkillTree.Node.TrainingMoney7.Name	Merchant I
+SkillTree.Node.TrainingMoney7.Desc	Training money gain +{0}%
+SkillTree.Node.TrainingMoney8.Name	Merchant II
+SkillTree.Node.TrainingMoney8.Desc	Training money gain +{0}%
+SkillTree.Node.TrainingMoney9.Name	Merchant III
+SkillTree.Node.TrainingMoney9.Desc	Training money gain +{0}%
+SkillTree.Node.TrainingMoney10.Name	Trade Essence
+SkillTree.Node.TrainingMoney10.Desc	Training money gain +{0}%
+SkillTree.Node.PointsGain6.Name	Battle Champion II
+SkillTree.Node.PointsGain6.Desc	Battle points gain +{0}%
+SkillTree.Node.PointsGain7.Name	Battle Champion III
+SkillTree.Node.PointsGain7.Desc	Battle points gain +{0}%
+SkillTree.Node.PointsGain8.Name	Battle Legend I
+SkillTree.Node.PointsGain8.Desc	Battle points gain +{0}%
+SkillTree.Node.PointsGain9.Name	Battle Legend II
+SkillTree.Node.PointsGain9.Desc	Battle points gain +{0}%
+SkillTree.Node.PointsGain10.Name	Battle Legend III
+SkillTree.Node.PointsGain10.Desc	Battle points gain +{0}%
+SkillTree.Node.Inheritance6.Name	Bloodline Peak II
+SkillTree.Node.Inheritance6.Desc	Inheritance stat bonus +{0}%
+SkillTree.Node.Inheritance7.Name	Bloodline Peak III
+SkillTree.Node.Inheritance7.Desc	Inheritance stat bonus +{0}%
+SkillTree.Node.Inheritance8.Name	Bloodline Legend I
+SkillTree.Node.Inheritance8.Desc	Inheritance stat bonus +{0}%
+SkillTree.Node.Inheritance9.Name	Bloodline Legend II
+SkillTree.Node.Inheritance9.Desc	Inheritance stat bonus +{0}%
+SkillTree.Node.Inheritance10.Name	Bloodline Legend III
+SkillTree.Node.Inheritance10.Desc	Inheritance stat bonus +{0}%
+ClayEdit.ClayGuide	【Sculpt】\nLMB drag: Add\nCtrl+LMB/RMB: Carve\nWheel: Brush size\nShift+drag: Lock depth\nAlt+drag: Camera\nCtrl+Z/Y: Undo/Redo\nDel: Clear all
+ClayEdit.PaintGuide	【Paint】\nLMB drag: Paint\nWheel: Brush size\nShift+drag: Lock depth\nAlt+drag: Camera\nCtrl+Z/Y: Undo/Redo\nColor: Color picker
+Training.LearnedMove	Learned a move\nSlot {slot}: {name}
+Training.ChooseLearnSlot	Choose a slot for {name}
+Training.InvalidSwapSlot	Invalid swap slot
+Training.SwappedMove	Move replaced\nSlot {slot}: {name}
+Training.FleeAmbush	[Ambush]\nFled from {name}
+Training.WinAmbush	[Ambush]\nDefeated {name}
+Training.LoseAmbush	[Ambush]\nLost to {name}\nMotivation dropped
+Training.LoseAfterSchool	Lost the after-school battle.\nMotivation decreased.
+Training.Location.ScienceLab	Science Lab
+Training.Location.HomeEcRoom	Home Ec Room
+Training.Location.CraftRoom	Art Room
+Training.Location.Library	Library
+Training.Location.MusicRoom	Music Room
+Training.Location.Gymnasium	Gymnasium
+Training.Location.PrincipalOffice	Principal Office
+Training.Period.FirstHour	Period 1
+Training.Period.SecondHour	Period 2
+Training.Period.MorningBreak	Recess
+Training.Period.ThirdHour	Period 3
+Training.Period.FourthHour	Period 4
+Training.Period.LunchBreak	Lunch Break
+Training.Period.FifthHour	Period 5
+Training.Period.SixthHour	Period 6
+Training.Period.AfterSchool	After School
+Training.Day.Monday	Monday
+Training.Day.Tuesday	Tuesday
+Training.Day.Wednesday	Wednesday
+Training.Day.Thursday	Thursday
+Training.Day.Friday	Friday
+Training.Command.Train	Train
+Training.Command.SpecialTrain	Special
+Training.Command.Rest	Rest
+Training.Command.Shop	Shop
+Training.Command.UseItem	Item
+Training.Command.Tournament	Cup
+Training.Focus.Hp	HP Train
+Training.Focus.Attack	Attack Train
+Training.Focus.Defense	Defense Train
+Training.Focus.Speed	Speed Train
+Training.Focus.Hit	Accuracy Train
+Training.Prompt.Command	Choose an action for this period
+Training.Prompt.Focus	Choose a stat to train
+Training.Prompt.Shop	Choose an item to buy
+Training.Prompt.Inventory	Choose an item to use
+Training.Prompt.Location	Choose a destination
+Training.Hud.Stamina	Stamina {current} / {max}
+Training.Hud.MoneyShop	Funds {money}G
+Training.Hud.MoneyLabel	Money
+Training.Hud.Price	Price {price}G
+Training.Hud.DayStarted	{day} has begun
+Training.Log.ModelLoadFailed	Failed to load the model
+Training.Log.LunchStart	Lunch break\nYou can shop at the store
+Training.Log.LunchEnd	Lunch break is over
+Training.Log.ShopOnlyLunch	The shop is only open at lunch
+Training.Log.BallThrowHint	Hold the ball then release to throw
+Training.Log.AutoTraining	Running auto-training...
+Training.Log.ReturnToTitle	Title
+Training.Log.AfterSchoolNoOpponent	No after-school opponent found
+Training.Log.AfterSchoolStart	After-school battle\nFighting {name}
+Training.Log.AfterSchoolStartFailed	Could not start after-school battle
+Training.Log.AfterSchoolWin	Won the after-school battle\nStamina+{stamina}
+Training.Log.RewardMoney	 Reward+{reward}G
+Training.Log.NoNewMove	Met someone but no new move
+Training.Log.MeetTitle	Encounter
+Training.Log.MeetLearnChance	Chance to learn "{name}"
+Training.Log.AmbushWinTail	\nReward+{reward}G\nHP+{hp} ATK+{atk} DEF+{def} SPD+{spd} HIT+{hit}
+Training.Log.EnemyDefault	Enemy
+Training.Log.ActionFailLowStamina	{name} failed due to low stamina
+Training.Log.ActionFail	{name} failed
+Training.Log.MotivationDown	Motivation decreased
+Training.Log.MotivationUp	Motivation increased
+Training.Log.RestGreat	Great rest
+Training.Log.RestOk	Rest
+Training.Log.RestRecover	{title}: stamina {before}→{after}
+Training.Log.GreatSuccess	Great Success
+Training.Log.Success	Success
+Training.Log.FoundItem	Lucky find: {name}
+Training.Log.StatNone	No stat gains
+Training.Log.StatHp	HP+{value}
+Training.Log.StatAtk	ATK+{value}
+Training.Log.StatDef	DEF+{value}
+Training.Log.StatSpd	SPD+{value}
+Training.Log.StatHit	HIT+{value}
+Training.Shop.NoSession	No session
+Training.Shop.NoItem	No item
+Training.Shop.NotEnoughMoney	Not enough money ({have}G/{price}G)
+Training.Shop.Purchased	Bought {name}\nAdded to inventory\nLeft {money}G
+Training.Shop.ItemNotFound	Item not found
+Training.Shop.NotOwned	You do not have {name}
+Training.Shop.UsedMotivated	Used {name}\nMotivation up
+Training.Shop.Used	Used {name}
+Training.Shop.stamina_drink.Name	Energy Drink
+Training.Shop.stamina_full.Name	Full Restore
+Training.Shop.stat_hp.Name	HP Booster
+Training.Shop.stat_attack.Name	Attack Booster
+Training.Shop.stat_defense.Name	Defense Booster
+Training.Shop.stat_speed.Name	Speed Booster
+Training.Shop.stat_hit.Name	Accuracy Booster
+Training.Shop.train_boost.Name	Luck Boost
+Training.Shop.train_boost_strong.Name	Luck Boost+
+Training.Shop.motivation_tennis.Name	Tennis Ball
+Training.Shop.motivation_boost.Name	Soccer Ball
+Training.Attack.Power	Power
+Training.Attack.Cost	Cost
+Training.Attack.Hit	Hit
+Training.Attack.Recovery	Recovery
+Training.Attack.WindUp	Wind-up
+Training.Attack.Seconds	s
+Training.Attack.Destroy	Destroy
+Training.Attack.Current	Current
+Training.Attack.Learn	Learn
+Training.Attack.NameLabel	Move
+Training.Attack.ReqPart	Required
+Training.Attack.DestroyPart	Breaks
+Training.Attack.Damage	Damage
+Training.Attack.Range	Range
+Training.Attack.PartMagic	Generic
+Training.Attack.PartArm	Arm
+Training.Attack.PartLeg	Leg
+Training.Attack.PartFront	Front
+Training.Attack.PartBack	Back
+Training.Attack.PartBody	Body
+Training.Preview.Expected	Expected
+Training.Preview.Stamina	Stamina {value}
+Training.Preview.FailRate	Fail {value}%
+Training.Preview.None	None
+Training.Preview.Rest	Rest\nStamina+{base}(Great:+{great} Mot+{mot})
+Training.Preview.StatAtk	ATK
+Training.Preview.StatDef	DEF
+Training.Preview.StatSpd	SPD
+Training.Preview.StatHit	HIT
+Common.Empty	Empty
+ClayEdit.ClayGuideIcons	【Sculpt】\n{I:MouseLeft} drag : add\n{W:KeyCtrl}+{I:MouseLeft} drag : carve\n{I:MouseRight} drag : carve\n{I:MouseWheel} : brush size\n{W:KeyShift}+drag : lock depth\n{W:KeyAlt}+drag : camera\n{W:KeyCtrl}+{I:KeyZ} : undo\n{W:KeyCtrl}+{I:KeyY} : redo\n{W:KeyDel} : clear all
+Training.Shop.stat_speed.Desc	SPD+6
+Training.Shop.stat_hit.Desc	HIT+6
+Training.Shop.train_boost.Desc	Great-success rate up (days)
+Training.Shop.stat_defense.Desc	DEF+6
+Training.Shop.motivation_boost.Desc	Raises motivation
+Training.Shop.stat_hp.Desc	HP+12
+Training.Shop.stat_attack.Desc	ATK+6
+Training.Shop.train_boost_strong.Desc	Great-success rate up+ (days)
+Training.Shop.stamina_drink.Desc	Stamina+25
+Training.Shop.motivation_tennis.Desc	Raises motivation
+Training.Shop.stamina_full.Desc	Fully restore stamina
+Training.Motivation.VeryLow	Very Low
+Training.Motivation.Low	Low
+Training.Motivation.Normal	Normal
+Training.Motivation.High	High
+Training.Event.LearnTitle	Move Event
+Training.Event.LearnMessage	Chance to learn "{name}"\nChoose a slot to replace
+Training.Event.StatTitle	Special Training
+Training.Event.StatMessage	HP+{hp} ATK+{atk} DEF+{def} SPD+{spd} HIT+{hit}
+Training.Shop.Title	Shop
+Training.Inventory.Title	Items
+Training.Shop.NextPage	Next
+Training.Shop.OpenInventory	Items
+Battle.PartLocked	Part is broken
+Battle.RoleRequired	Req
+Battle.RoleTarget	Brk
+Battle.UsePartLabel	Uses:
+Battle.BreakPartLabel	Breaks:
+Battle.RadarAttack	ATK
+Battle.RadarDefense	DEF
+Battle.RadarSpeed	SPD
+Battle.RadarHit	HIT
+Save.TrainedPool	Trained
+Save.UntrainedPool	Untrained
+Save.EnemyPool	Enemy
+Save.Complete	Save complete
+Save.UnnamedModel	Unnamed
+Save.Summary.Params	[Params]
+Save.Summary.Attacks	[Moves]
+Save.Summary.RegisteredAttacks	[Moves to register]
+Save.Summary.None	None
+Save.Summary.NoAttacks	No moves
+Save.Summary.Power	Power
+Save.Summary.Cost	Cost
+Save.Summary.Damage	Damage: 
+Save.Summary.CostLabel	Cost: 
+Save.Summary.AndMore	 +{count}
+SkillTree.Points	{points} pt
+BattlePvp.RoomCodeCopied	Join code: {code}\nCopied
+BattlePvp.Connecting	Connecting...
+BattlePvp.ModelTimeout	Opponent model timed out ({seconds}s)
+BattlePvp.SlotTimeout	Opponent slot select timed out ({seconds}s)
+BattlePvp.MatchupTimeout	Match start ready timed out ({seconds}s)
+Training.Debug.NoSession	No active training session
+Training.Debug.UnknownItem	Unknown item id: {id}
+Training.Debug.ItemAdded	Added {count} x {name}
+Training.Motivation.LabelWithGlyph	Motivation  {glyph}
+ClayEdit.PaintGuideIcons	[Paint]\n{I:MouseLeft} drag : paint\n{I:MouseWheel} : brush size\n{W:KeyShift}+drag : lock depth\n{W:KeyAlt}+drag : camera\n{W:KeyCtrl}+{I:KeyZ} : undo\n{W:KeyCtrl}+{I:KeyY} : redo\nColor : picker
+Battle.TipsBodyIcons	[Controls]\n{I:KeyA} / {I:KeyLeft} : retreat\n{I:KeyD} / {I:KeyRight} : advance\n{W:KeyShift}+{I:KeyA}/{I:KeyD} : step\n{I:Key1}-{I:Key4} : attack\n{I:KeySpace} : knockback\n{I:MouseRight} hold : repair part\n\n[Basics]\nBuild cost then use moves.\nRange and power differ per move.\nSame move button counters.\nBreaking parts weakens the foe and disables their moves.
+Battle.TipsEscHintIcons	{E:KeyEsc} for tutorial
+Battle.HintPartRepairIcons	Hold {I:MouseRight} to repair
+Battle.HintKnockbackReadyIcons	Knockback ready {I:KeySpace}
+BattlePvp.JoinCodeLabel	Join code: {code}
+BattlePvp.CreatingRoom	Creating room...
+BattlePvp.ShareJoinCode	Join code: {code}\nShare this code with your opponent
+BattlePvp.ConnectedOpponent	Connected to opponent
+BattlePvp.NeedJoinCode	Enter a join code
+BattlePvp.JoiningRoom	Joining room...
+BattlePvp.SearchingOpponent	Searching for opponent...
+BattlePvp.WaitingOpponentJoin	Waiting for opponent...
+BattlePvp.WaitingHostReady	Waiting for host...
+BattlePvp.ServicesSetup	Unity Gaming Services is not set up. Link the project in Edit > Project Settings > Services and enable Authentication, Lobby, and Relay.
+BattlePvp.UnknownError	An unknown error occurred
+BattlePvp.MatchmakingError	Matchmaking error: {message}
+BattlePvp.NetworkManagerMissing	NetworkManager not found
+BattlePvp.UnityTransportMissing	UnityTransport is not configured
+BattlePvp.RelayHostFailed	Failed to start Relay host
+BattlePvp.RelayClientFailed	Failed to start Relay client
+Save.Summary.RangeLabel	Range:
+Save.Summary.StatsBlock	HP {hp}\nATK {atk}\nDEF {def}\nSPD {spd}\nHIT {hit}
+Save.Summary.StatsCompact	HP{hp} ATK{atk} DEF{def} SPD{spd} HIT{hit} / {attacks}
+Save.Summary.DetailStatLine	HP {hp} / ATK {atk} / DEF {def} / SPD {spd} / HIT {hit}
+Save.Summary.AttackMeta	({part}/{range}/Pwr{power}/Cost{cost})
+ModelGallery.EmptySlot	Empty slot
+Training.Hover.ShopLeave	Leave shop
+Training.Hover.ShopNextPage	Show next items
+Training.Hover.OpenInventory	Use items
+Training.Hover.CloseInventory	Close inventory
+Training.Hover.InventoryNextPage	Next inventory page
+Training.Hover.BackToCommand	Back to commands
+Training.Hover.Train	Stamina cost varies by training. Success/great success raises stats
+Training.Hover.SpecialTrain	Stamina cost varies. Big stat gains
+Training.Hover.Rest	Stamina +{base} (great +{great}, motivation +{mot})
+Training.Hover.Shop	Shop only at lunch
+Training.Hover.UseItem	Use item (no time spent)
+Training.Hover.Tournament	Win for prize and stamina
+Training.Hover.FailRate	Fail rate {value}%
+Training.Hover.StaminaCost	Stamina -{value}
+Training.Hover.FailRateLine	\nFail rate {value}%
+Training.Hud.Continue	Next
+Training.Hud.BackToTitle	Title
+ModelGallery.OverwriteConfirm	Overwrite existing save data?
+ModelGallery.SaveToSlotConfirm	Save to this slot?
+LoadSlot.PlayerInstruction	Select your monster
+LoadSlot.EnemyInstruction	Select an enemy monster
+Title.NoTrainedModel	You have no trained monsters
+Title.NoUntrainedModel	Create a monster first
+Common.Save	Save
+Common.Decide	OK
+Training.ModeSelectBody	Manual training: choose actions for periods 1-6 yourself.\nLunch: shop. After school: battle.\nAuto training runs all {days} days automatically.
+Training.Inheritance.NoBonus	Start training with no inheritance bonus
+Training.Inheritance.BonusStats	Bonus HP+{hp} Atk+{atk} Def+{def} Spd+{spd} Hit+{hit}
+Training.Inheritance.AttackCandidate	Move candidate {n}: {name}
+Training.Inheritance.ContinueSwap	Next choose a move slot to replace
+Training.Inheritance.ParentDefault	Parent
+Training.Inheritance.ParentPreview	{name}\nInheritance HP+{hp} Atk+{atk} Def+{def} Spd+{spd} Hit+{hit}
+Training.Inheritance.PickHeader1	Select 2 trained monsters to inherit from (1st)
+Training.Inheritance.PickHeader2	Select 2 trained monsters to inherit from (2nd)
+Training.Inheritance.ConfirmPick	Parent {pickNumber}\nCheck stats and confirm
+Training.Resume.ScheduleWithMoney	{schedule}, Money {money}G
+Training.Resume.MotivationLabel	Motivation 
+Training.Resume.StaminaLabel	, Stamina {stamina} / {max}
+Training.Resume.Stats	HP {hp}\nAtk {atk}\nDef {def}\nSpd {spd}\nHit {hit}
+Training.Resume.SummaryBody	{schedule}, Money {money}G\nMotivation{glyph} Stamina{stamina}/{max}\nHP {hp} Atk {atk} Def {def} Spd {spd} Hit {hit}
+BattlePvp.LobbyTitle	Online Battle
+BattlePvp.DirectMatch	Direct
+BattlePvp.RandomMatch	Random
+BattlePvp.CreateRoom	Create
+BattlePvp.JoinRoom	Join
+BattlePvp.StartMatch	Match
+BattlePvp.Matching	Matchmaking…
+BattlePvp.CopyCode	Copy
+BattlePvp.JoinCodePlaceholder	Enter join code
+BattlePvp.OpponentWaiting	Waiting for opponent…
+Battle.Rematch	Again
+Battle.Start	Fight
+Battle.VictoryShort	Victory!
+Battle.Vs	VS
+Battle.Ready	Ready
+Battle.Fight	Fight
+Battle.Finish	Finish
+Battle.Break	Break!
+Battle.TipsTitle	Battle Tutorial
+Training.ModeManual	Manual
+Training.ModeAuto	Auto
+Training.ResumeRestart	Restart
+Training.ResumeContinue	Continue
+Training.AmbushFight	Fight
+Training.AmbushFlee	Flee
+ClayEdit.NewCreate	New
+ClayEdit.Remake	Remake
+ClayEdit.RemakeLong	Remake Monster
+ClayEdit.Save	Save
+ClayEdit.SaveAsEnemy	Enemy
+ClayEdit.OverwriteSave	Overwrite
+ClayEdit.Delete	Delete
+ClayEdit.DeleteConfirm	Delete
+ClayEdit.SaveConfirm	Save?
+ClayEdit.LeaveWithoutSave	Leave without saving?
+ClayEdit.LeaveWithoutSaveButton	Discard
+ClayEdit.NamePrompt	Enter a name
+ClayEdit.SculptMode	Sculpt
+ClayEdit.ShowGuide	Help
+ClayEdit.Idle	Idle
+ClayEdit.Run	Run
+ClayEdit.Attack	Attack
+LoadSlot.Load	Load
+LoadSlot.ConfirmLoad	Load this model?
+ModelGallery.TabPost	Post
+ModelGallery.TabBrowse	Browse
+ModelGallery.SortRandom	Random
+ModelGallery.SortMonthly	Monthly
+ModelGallery.SortOverall	Overall
+ModelGallery.Refresh	Refresh
+ModelGallery.Publish	Post
+ModelGallery.Download	Get
+ModelGallery.Prev	Prev
+ModelGallery.Next	Next
+ModelGallery.ModelName	Model name
+ModelGallery.PointsInsufficient	Not enough points
+ModelGallery.HeldPoints	Held: {points} pt
+ModelGallery.CostPoints	Cost: {points} pt
+ModelGallery.SaveDestEmpty	Save to: empty slot
+ModelGallery.SelectSaveSlot	Select save slot
+SkillTree.Title	Skill Tree
+SkillTree.Skill	Skill
+SkillTree.BonusEffects	Acquired Effects
+SkillTree.BonusEffectsHeader	[Acquired Effects]
+ClayEdit.PaintMode	Paint
+ClayEdit.AnimationMode	Move
+ClayEdit.BackgroundColor	Background
+Battle.MatchupStatus	Stats
+Training.SwapSkip	Skip
+Training.Hud.Interrupt	Pause

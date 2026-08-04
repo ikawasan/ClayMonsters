@@ -8,7 +8,7 @@ namespace Localization
     /// <summary>
     /// 現在言語のTMPFontAssetをプレーンTMPへ適用する
     /// LHTextMeshPro以外はFontServiceを購読しないためここで補う
-    /// 輪郭と色など見た目のスタイルはフォント差替時に必ず引き継ぐ
+    /// 輪郭と色とBoldなど見た目のスタイルはフォント差替時に必ず引き継ぐ
     /// LHTextMeshProの素のfont代入で材質が消えた場合も定期適用で復旧する
     /// </summary>
     public static class LocalizedFont
@@ -104,8 +104,9 @@ namespace Localization
             }
 
             int instanceId = text.GetInstanceID();
-            StyleSnapshot sample = CaptureStyle(text);
-            UpgradeDesign(instanceId, sample);
+            // font代入前の現状を保持する(動的なBold切替も尊重する)
+            StyleSnapshot sampleBeforeFont = CaptureStyle(text);
+            UpgradeDesign(instanceId, sampleBeforeFont);
             DesignStyles.TryGetValue(instanceId, out StyleSnapshot design);
 
             bool fontAlreadyCurrent = text.font == fontAsset;
@@ -113,13 +114,17 @@ namespace Localization
             bool styleMatchesDesign = StyleMatches(text, design);
 
             // 定期スキャンでインスタンス材質を壊さないが潰されていれば復旧する
+            // FontStyleは動的切替を尊重し差替前サンプルを優先する
             if (fontAlreadyCurrent && atlasAlreadyCorrect)
             {
                 if (!styleMatchesDesign && design.HasMaterial)
                 {
                     Color vertexColor = text.color;
                     EnsureStyleMaterial(text, fontAsset);
-                    RestoreStyle(text, text.fontSharedMaterial, design);
+                    StyleSnapshot restore = design;
+                    restore.FontStyle = sampleBeforeFont.FontStyle;
+                    restore.FontWeight = sampleBeforeFont.FontWeight;
+                    RestoreStyle(text, text.fontSharedMaterial, restore);
                     text.color = vertexColor;
                     if (text.isActiveAndEnabled)
                     {
@@ -131,6 +136,11 @@ namespace Localization
             }
 
             Color preservedVertexColor = text.color;
+            StyleSnapshot styleToApply = MergeStyleForApply(design, sampleBeforeFont);
+            // font差替で落ちる対策は差替前の現状のみを戻す
+            // 設計Boldを常ORするとタブ非選択時のNormalも潰す
+            styleToApply.FontStyle = sampleBeforeFont.FontStyle;
+            styleToApply.FontWeight = sampleBeforeFont.FontWeight;
 
             if (!fontAlreadyCurrent)
             {
@@ -140,11 +150,12 @@ namespace Localization
             Material fontBase = fontAsset.material;
             if (fontBase == null)
             {
+                // 材質が無くてもBoldなどTMP側スタイルは復元する
+                RestoreFontStyle(text, styleToApply);
                 text.color = preservedVertexColor;
                 return;
             }
 
-            StyleSnapshot styleToApply = design.HasMaterial ? design : sample;
             text.fontSharedMaterial = fontBase;
             Material styleMaterial = text.fontMaterial;
             text.fontSharedMaterial = styleMaterial;
@@ -205,6 +216,24 @@ namespace Localization
         {
             if (!design.HasMaterial && sample.HasMaterial)
             {
+                // 材質はsample優先だが初回FontStyleはdesign側を維持
+                FontStyles designFontStyle = design.FontStyle;
+                FontWeight designFontWeight = design.FontWeight;
+                sample.FontStyle = designFontStyle != FontStyles.Normal
+                    ? designFontStyle
+                    : sample.FontStyle;
+                if (designFontWeight > sample.FontWeight)
+                {
+                    sample.FontWeight = designFontWeight;
+                }
+
+                if (design.OutlineWidth > sample.OutlineWidth + 0.0001f)
+                {
+                    sample.OutlineWidth = design.OutlineWidth;
+                    sample.OutlineColor = design.OutlineColor;
+                    sample.OutlineSoftness = design.OutlineSoftness;
+                }
+
                 return sample;
             }
 
@@ -250,6 +279,9 @@ namespace Localization
                 design.GlowInner = sample.GlowInner;
             }
 
+            // FontStyleは初回キャプチャを正とする
+            // PreferRicherで強くORするとタブ選択など動的Boldを固定してしまう
+
             design.EnabledKeywordsMask |= sample.EnabledKeywordsMask;
             // 輪郭幅があるならOutlineキーワードを立てる(材質にKWが無くても可)
             if (design.OutlineWidth > 0.0001f)
@@ -269,8 +301,30 @@ namespace Localization
             return design;
         }
 
+        private static StyleSnapshot MergeStyleForApply(StyleSnapshot design, StyleSnapshot sample)
+        {
+            if (!design.HasMaterial && !HasFontStyle(design) && design.FontWeight <= FontWeight.Regular)
+            {
+                return sample;
+            }
+
+            if (!sample.HasMaterial && !HasFontStyle(sample) && sample.FontWeight <= FontWeight.Regular)
+            {
+                return design;
+            }
+
+            return PreferRicher(design, sample);
+        }
+
+        private static bool HasFontStyle(StyleSnapshot snapshot)
+        {
+            return snapshot.FontStyle != FontStyles.Normal;
+        }
+
         private static bool StyleMatches(TMP_Text text, StyleSnapshot design)
         {
+            // FontStyleは動的切替のため定期比較しない(差替時のsample保持で担保)
+
             if (!design.HasMaterial)
             {
                 return true;
@@ -345,6 +399,8 @@ namespace Localization
                 FaceColor = faceColor,
                 OutlineWidth = outlineWidth,
                 OutlineColor = outlineColor,
+                FontStyle = text.fontStyle,
+                FontWeight = text.fontWeight,
                 HasMaterial = material != null,
             };
 
@@ -390,6 +446,7 @@ namespace Localization
                 text.faceColor = snapshot.FaceColor;
                 text.outlineWidth = snapshot.OutlineWidth;
                 text.outlineColor = snapshot.OutlineColor;
+                RestoreFontStyle(text, snapshot);
                 return;
             }
 
@@ -431,6 +488,28 @@ namespace Localization
             text.faceColor = snapshot.FaceColor;
             text.outlineWidth = snapshot.OutlineWidth;
             text.outlineColor = snapshot.OutlineColor;
+            RestoreFontStyle(text, snapshot);
+        }
+
+        private static void RestoreFontStyle(TMP_Text text, StyleSnapshot snapshot)
+        {
+            if (text == null)
+            {
+                return;
+            }
+
+            // font代入や材質差し替えでBoldが消えることがあるので復元する
+            if (text.fontStyle != snapshot.FontStyle)
+            {
+                text.fontStyle = snapshot.FontStyle;
+            }
+
+            // Regular未満は既定値扱いだがSemiBold/Bold等は明示復元する
+            if (snapshot.FontWeight > FontWeight.Regular
+                && text.fontWeight != snapshot.FontWeight)
+            {
+                text.fontWeight = snapshot.FontWeight;
+            }
         }
 
         private static bool UsesFontAtlas(Material material, TMP_FontAsset fontAsset)
@@ -528,6 +607,8 @@ namespace Localization
             public float GlowPower;
             public float GlowOuter;
             public float GlowInner;
+            public FontStyles FontStyle;
+            public FontWeight FontWeight;
             public int EnabledKeywordsMask;
             public bool HasMaterial;
         }

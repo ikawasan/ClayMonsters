@@ -297,6 +297,7 @@ namespace Localization
         public const string TrainingPromptLocation = "Training.Prompt.Location";
         public const string TrainingHudStamina = "Training.Hud.Stamina";
         public const string TrainingHudMoneyShop = "Training.Hud.MoneyShop";
+        public const string TrainingHudMoneyLabel = "Training.Hud.MoneyLabel";
         public const string TrainingHudPrice = "Training.Hud.Price";
         public const string TrainingHudDayStarted = "Training.Hud.DayStarted";
 

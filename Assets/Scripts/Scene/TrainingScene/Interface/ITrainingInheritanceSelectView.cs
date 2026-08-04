@@ -9,6 +9,12 @@ namespace Scene.TrainingScene.Interface
     public interface ITrainingInheritanceSelectView
     {
         /// <summary>
+        /// 継承元選択UIを表示する
+        /// 入力待ちは別APIで行う
+        /// </summary>
+        void ShowParentSelection();
+
+        /// <summary>
         /// 継承元2体の選択が完了するまで待機する
         /// </summary>
         /// <param name="cancellationToken">キャンセルトークン</param>

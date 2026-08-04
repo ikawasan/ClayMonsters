@@ -12,6 +12,26 @@ namespace Scene.TrainingScene.Interface
     public interface ITrainingTrainedSaveView
     {
         /// <summary>
+        /// 保存先選択UIを表示する
+        /// 入力待ちは別APIで行う
+        /// </summary>
+        /// <param name="modelName">モデル名</param>
+        /// <param name="status">育成後ステータス</param>
+        /// <param name="attackMotions">育成後攻撃構成</param>
+        /// <param name="thumbnailPng">プレビュー用サムネイル</param>
+        void ShowSaveSelection(
+            string modelName,
+            ModelStatus status,
+            IReadOnlyList<MotionType> attackMotions,
+            byte[] thumbnailPng);
+
+        /// <summary>
+        /// 保存確認ダイアログを表示する
+        /// </summary>
+        /// <param name="slotIndex">対象スロット</param>
+        void ShowSaveConfirm(int slotIndex);
+
+        /// <summary>
         /// 保存先スロットが確定するまで待機する
         /// </summary>
         /// <param name="modelName">モデル名</param>

@@ -145,6 +145,8 @@ namespace Scene.TrainingScene
             builder.Register<ClayModelSaveService>(Lifetime.Singleton).As<IClayModelSaveService>();
             builder.Register<ClayModelGltfImporter>(Lifetime.Singleton).As<IClayModelImporter>();
             builder.Register<ClayModelGltfExporter>(Lifetime.Singleton).As<IClayModelExporter>();
+            builder.Register<Scene.Qa.AutoPlayQaTrainingUiTour>(Lifetime.Singleton)
+                .AsImplementedInterfaces();
         }
 
         private TrainingScene ConsolidateTrainingSceneRoots()

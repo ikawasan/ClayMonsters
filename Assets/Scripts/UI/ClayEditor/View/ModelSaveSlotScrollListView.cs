@@ -30,7 +30,7 @@ namespace UI.ClayEditor.View
 
     /// </summary>
 
-    public sealed class ModelSaveSlotScrollListView : MonoBehaviour
+    public sealed class ModelSaveSlotScrollListView : MonoBehaviour, Localization.ILanguageAwareUi
 
     {
 
@@ -55,6 +55,14 @@ namespace UI.ClayEditor.View
         private bool isBuilt;
 
         private bool isClickBound;
+
+        private bool hasLastRefresh;
+        private ModelSavePool lastRefreshPool;
+        private IClayModelSaveService lastRefreshSaveService;
+        private string lastRefreshEmptyLabel;
+        private IList<UnityEngine.Object> lastRefreshThumbnails;
+        private bool lastRefreshAllowEmpty;
+        private ModelSaveSlotListContentMode lastRefreshContentMode;
 
 
 
@@ -313,6 +321,13 @@ namespace UI.ClayEditor.View
             bool allowEmptySlotSelection,
             ModelSaveSlotListContentMode contentMode)
         {
+            hasLastRefresh = true;
+            lastRefreshPool = pool;
+            lastRefreshSaveService = saveService;
+            lastRefreshEmptyLabel = emptySlotLabel;
+            lastRefreshThumbnails = runtimeThumbnailObjects;
+            lastRefreshAllowEmpty = allowEmptySlotSelection;
+            lastRefreshContentMode = contentMode;
             EnsureBuilt();
             if (!isBuilt || saveService == null)
             {
@@ -348,6 +363,24 @@ namespace UI.ClayEditor.View
                 ApplyThumbnail(rows[i].Elements, used, pool, i, saveService, runtimeThumbnailObjects);
                 rows[i].Button.interactable = used || allowEmptySlotSelection;
             }
+        }
+
+        
+        /// <inheritdoc/>
+        public void RefreshLocalizedUi()
+        {
+            if (!hasLastRefresh || lastRefreshSaveService == null)
+            {
+                return;
+            }
+
+            RefreshSlots(
+                lastRefreshPool,
+                lastRefreshSaveService,
+                lastRefreshEmptyLabel,
+                lastRefreshThumbnails,
+                lastRefreshAllowEmpty,
+                lastRefreshContentMode);
         }
 
         private static bool IsLoadableSlot(ModelSaveSlot slot)

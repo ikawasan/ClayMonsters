@@ -198,6 +198,24 @@ namespace Battle.View
             SetTipsVisible(false);
         }
 
+        /// <summary>
+        /// Tips本文を検査用に開く
+        /// 戦闘セッションなしでも表示する
+        /// </summary>
+        public void ShowOpenTipsForInspection()
+        {
+            isFeatureAvailable = true;
+            isCombatSessionActive = true;
+            ApplyGuideTexts();
+            isOpen = true;
+            SetHintVisible(true);
+            SetTipsVisible(true);
+            if (this is Localization.ILanguageAwareUi)
+            {
+                RefreshLocalizedUi();
+            }
+        }
+
         private void OpenTips()
         {
             if (!isFeatureAvailable || !isCombatSessionActive)

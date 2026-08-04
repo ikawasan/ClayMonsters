@@ -254,6 +254,40 @@ namespace Scene.BattleNpcScene.View
             }
         }
 
+        /// <summary>
+        /// VS/開始ボタン等の対戦紹介文言を検査用に表示する
+        /// 本番待機ループは開始しない
+        /// </summary>
+        /// <param name="playerName">プレイヤー表示名</param>
+        /// <param name="enemyName">敵表示名</param>
+        public void ShowMatchupForInspection(string playerName, string enemyName)
+        {
+            PrepareVsPresentation(
+                string.IsNullOrEmpty(playerName) ? "Player" : playerName,
+                string.IsNullOrEmpty(enemyName) ? "Enemy" : enemyName,
+                showStartButton: true);
+            SetElementAlpha(vsText, 1f);
+            SetNamePlate(playerNameText, playerName, 1f);
+            SetNamePlate(enemyNameText, enemyName, 1f);
+            if (vsText != null)
+            {
+                vsText.rectTransform.localScale = Vector3.one;
+            }
+
+            ApplyStartButtonLabel();
+            ApplyPhaseLabels();
+            SetElementAlpha(readyText, 1f);
+            SetElementAlpha(fightText, 1f);
+            if (enemyStrengthSelect != null)
+            {
+                enemyStrengthSelect.Show(
+                    EnemyStrengthTier.Normal,
+                    _ => { });
+            }
+
+            RefreshLocalizedUi();
+        }
+
         /// <inheritdoc/>
         public void RefreshLocalizedUi()
         {

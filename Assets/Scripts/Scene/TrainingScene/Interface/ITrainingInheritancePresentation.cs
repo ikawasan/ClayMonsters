@@ -40,5 +40,12 @@ namespace Scene.TrainingScene.Interface
         /// シーン退場時に演出を止める
         /// </summary>
         void HideForLeave();
+
+        /// <summary>
+        /// 継承タイトル文言だけを表示する
+        /// QAや文言確認向け本編演出は再生しない
+        /// </summary>
+        void ShowTitleForInspection();
     }
 }
+

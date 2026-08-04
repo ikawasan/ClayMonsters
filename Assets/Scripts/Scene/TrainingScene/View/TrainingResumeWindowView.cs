@@ -69,11 +69,14 @@ namespace Scene.TrainingScene.View
         private float motivationFrameTimer;
         private const float MotivationFrameSeconds = 0.12f;
         private bool isShowing;
+        private bool cachedPresentationHasValue;
         private TrainingResumeProgressPresentation cachedPresentation;
 
         private void Awake()
         {
             EnsureUiBound();
+            // Prefab原文のまま見えるのを防ぐ(セッションHUD表示時も非表示にする)
+            Hide();
         }
 
         private void Update()
@@ -87,6 +90,7 @@ namespace Scene.TrainingScene.View
             EnsureUiBound();
             isShowing = true;
             cachedPresentation = presentation;
+            cachedPresentationHasValue = true;
             ApplyPresentationCopy(presentation);
 
             // 初回表示で子のAwake(EnsureSprites)が走る前に範囲色を書くと上書きされる
@@ -114,7 +118,9 @@ namespace Scene.TrainingScene.View
         /// <inheritdoc/>
         public void RefreshLocalizedUi()
         {
-            if (!isShowing)
+            // 非表示中でもprefab原文の日本語を残さない
+            ApplyStaticLocalizedCopy();
+            if (!isShowing || !cachedPresentationHasValue)
             {
                 ApplyButtonLabels();
                 return;
@@ -129,10 +135,7 @@ namespace Scene.TrainingScene.View
 
         private void ApplyPresentationCopy(TrainingResumeProgressPresentation presentation)
         {
-            if (titleText != null)
-            {
-                titleText.text = LocalizedText.Get(GameTextKeys.TrainingResumeTitle);
-            }
+            ApplyStaticLocalizedCopy();
 
             if (modelNameText != null)
             {
@@ -165,6 +168,27 @@ namespace Scene.TrainingScene.View
             }
 
             ApplyButtonLabels();
+        }
+
+        private void ApplyStaticLocalizedCopy()
+        {
+            if (titleText != null)
+            {
+                LocalizedFont.SetText(
+                    titleText,
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingResumeTitle,
+                        "育成途中のデータがあります"));
+            }
+
+            if (motivationText != null && !isShowing)
+            {
+                LocalizedFont.SetText(
+                    motivationText,
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingResumeMotivationLabel,
+                        "やる気"));
+            }
         }
 
         private void ApplyButtonLabels()

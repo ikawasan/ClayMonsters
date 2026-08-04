@@ -313,10 +313,29 @@ namespace UI.ClayEditor.View
 
             bakedChromeLabelApplier = new LocalizedBakedTextApplier();
             bakedChromeLabelApplier.Register(GameTextKeys.ClayEditNamePrompt, "名前を付けてください");
+            bakedChromeLabelApplier.Register(GameTextKeys.ClayEditNamePrompt, "モデル名を入力");
             bakedChromeLabelApplier.Register(GameTextKeys.ClayEditSaveConfirm, "保存しますか？");
             bakedChromeLabelApplier.Register(GameTextKeys.SaveComplete, "セーブが完了しました");
             bakedChromeLabelApplier.Register(GameTextKeys.ClayEditDeleteConfirm, "削除");
-            bakedChromeLabelApplier.Capture(transform);
+            bakedChromeLabelApplier.Register(GameTextKeys.CommonYes, "はい");
+            bakedChromeLabelApplier.Register(GameTextKeys.CommonNo, "いいえ");
+            // ExitSceneUI配下の兄弟SaveCanvas/InputNameも含めて差し替える
+            bakedChromeLabelApplier.Capture(ResolveChromeCaptureRoot());
+        }
+
+        private Transform ResolveChromeCaptureRoot()
+        {
+            if (openSaveUiRoot != null && openSaveUiRoot.transform.parent != null)
+            {
+                return openSaveUiRoot.transform.parent;
+            }
+
+            if (openSaveUiRoot != null)
+            {
+                return openSaveUiRoot.transform;
+            }
+
+            return transform;
         }
 
         /// <summary>

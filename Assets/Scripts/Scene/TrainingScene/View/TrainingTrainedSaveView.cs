@@ -77,12 +77,11 @@ namespace Scene.TrainingScene.View
         }
 
         /// <inheritdoc />
-        public async UniTask<int> WaitForConfirmedSlotAsync(
+        public void ShowSaveSelection(
             string modelName,
             ModelStatus status,
             IReadOnlyList<MotionType> attackMotions,
-            byte[] thumbnailPng,
-            CancellationToken cancellationToken)
+            byte[] thumbnailPng)
         {
             Initialize();
 
@@ -103,6 +102,34 @@ namespace Scene.TrainingScene.View
             ClearInheritanceHoverHandlers();
             RefreshSlotList(allowEmptySlotSelection: true);
             ShowSelection();
+        }
+
+        /// <inheritdoc />
+        public void ShowSaveConfirm(int slotIndex)
+        {
+            Initialize();
+            if (uiMode != UiMode.Save)
+            {
+                ShowSaveSelection(
+                    pendingModelName ?? string.Empty,
+                    pendingStatus ?? new ModelStatus(),
+                    pendingAttacks,
+                    pendingThumbnailPng);
+            }
+
+            selectedSlotIndex = slotIndex;
+            OpenSaveConfirm();
+        }
+
+        /// <inheritdoc />
+        public async UniTask<int> WaitForConfirmedSlotAsync(
+            string modelName,
+            ModelStatus status,
+            IReadOnlyList<MotionType> attackMotions,
+            byte[] thumbnailPng,
+            CancellationToken cancellationToken)
+        {
+            ShowSaveSelection(modelName, status, attackMotions, thumbnailPng);
 
             await UniTask.WaitUntil(
                 () => isConfirmed || isCancelled,
@@ -114,8 +141,7 @@ namespace Scene.TrainingScene.View
         }
 
         /// <inheritdoc />
-        public async UniTask<(int parentSlotA, int parentSlotB)> WaitForParentsAsync(
-            CancellationToken cancellationToken)
+        public void ShowParentSelection()
         {
             Initialize();
 
@@ -139,6 +165,13 @@ namespace Scene.TrainingScene.View
             RefreshSlotList(allowEmptySlotSelection: false);
             BindInheritanceHoverHandlers();
             ShowSelection();
+        }
+
+        /// <inheritdoc />
+        public async UniTask<(int parentSlotA, int parentSlotB)> WaitForParentsAsync(
+            CancellationToken cancellationToken)
+        {
+            ShowParentSelection();
 
             await UniTask.WaitUntil(
                 () => isConfirmed || isCancelled,

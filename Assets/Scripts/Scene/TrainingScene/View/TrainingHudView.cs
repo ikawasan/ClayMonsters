@@ -252,6 +252,7 @@ namespace Scene.TrainingScene.View
         {
             SetHudRootVisible(true);
             HideAutoResultWindow();
+            HideResumeChoices();
             ApplyTrainingLayout();
         }
 
@@ -356,8 +357,16 @@ namespace Scene.TrainingScene.View
                 dayText.text = TrainingDayCatalog.GetDisplayName(session.CurrentDay);
             }
 
-            // periodTextはBindSession(session,period,turnNumber)側が正
-            // ここであんぶん表示を書くと訓練成功ログ表示時に時間割が壊れる
+            // セッションの日内位置から現在の時限を反映する
+            // 未指定オーバーロードでもprefab原文が残らないようにする
+            if (TryResolvePeriod(session.TurnIndexInDay, out TrainingPeriod resolvedPeriod))
+            {
+                boundPeriod = resolvedPeriod;
+                if (periodText != null)
+                {
+                    periodText.text = TrainingPeriodCatalog.GetDisplayName(resolvedPeriod);
+                }
+            }
 
             if (moneyText != null)
             {
@@ -378,7 +387,9 @@ namespace Scene.TrainingScene.View
 
             if (motivationText != null)
             {
-                motivationText.text = LocalizedText.Get(GameTextKeys.TrainingMotivation);
+                motivationText.text = LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingMotivation,
+                    "やる気");
             }
 
             if (motivationIcon != null)
@@ -406,11 +417,25 @@ namespace Scene.TrainingScene.View
                 return;
             }
 
+            // 明示指定の時限がセッション位置より優先
             boundPeriod = period;
             if (periodText != null)
             {
                 periodText.text = TrainingPeriodCatalog.GetDisplayName(period);
             }
+        }
+
+        private static bool TryResolvePeriod(int turnIndexInDay, out TrainingPeriod period)
+        {
+            TrainingPeriod[] periods = TrainingDailySchedule.AllPeriods;
+            if (turnIndexInDay < 0 || turnIndexInDay >= periods.Length)
+            {
+                period = default;
+                return false;
+            }
+
+            period = periods[turnIndexInDay];
+            return true;
         }
 
         /// <inheritdoc/>
@@ -1797,6 +1822,36 @@ namespace Scene.TrainingScene.View
                     LocalizedText.GetOrFallback(
                         GameTextKeys.TrainingHudInterrupt, "中断"));
             }
+
+            EnsureMoneyLabelApplier();
+            moneyLabelApplier?.Apply();
+        }
+
+        private LocalizedBakedTextApplier moneyLabelApplier;
+
+        private void EnsureMoneyLabelApplier()
+        {
+            if (moneyLabelApplier != null)
+            {
+                return;
+            }
+
+            Transform root = moneyPanel != null ? moneyPanel.transform : null;
+            if (root == null && moneyText != null)
+            {
+                root = moneyText.transform.parent != null
+                    ? moneyText.transform.parent
+                    : moneyText.transform;
+            }
+
+            if (root == null)
+            {
+                return;
+            }
+
+            moneyLabelApplier = new LocalizedBakedTextApplier();
+            moneyLabelApplier.Register(GameTextKeys.TrainingHudMoneyLabel, "所持金");
+            moneyLabelApplier.Capture(root);
         }
 
         private void ApplyTrainingLayout()

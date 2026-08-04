@@ -14,6 +14,7 @@ using SaveData.Service;
 using Scene.Core.View;
 using Scene.PvpLobby;
 using Scene.PvpLobby.Interface;
+using Scene.Qa;
 using UI.Option;
 using UI.Option.Service;
 using UI.Option.View;
@@ -71,6 +72,7 @@ namespace Scene.Core
             // Lighthouse コアシステムの登録
             builder.Register<SceneManager>(Lifetime.Singleton).AsImplementedInterfaces();
             builder.Register<ClayMonstersSceneManager>(Lifetime.Singleton).AsImplementedInterfaces();
+            builder.Register<AutoPlayQaSceneNavigator>(Lifetime.Singleton).AsImplementedInterfaces();
             builder.Register<SceneTransitionController>(Lifetime.Singleton).AsImplementedInterfaces();
             builder.Register<DefaultSceneTransitionContextFactory>(Lifetime.Singleton).AsImplementedInterfaces();
             builder.Register<SceneGroupProvider>(Lifetime.Singleton).AsImplementedInterfaces();

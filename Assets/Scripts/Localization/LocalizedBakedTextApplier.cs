@@ -11,7 +11,7 @@ namespace Localization
     public sealed class LocalizedBakedTextApplier
     {
         private readonly List<Entry> entries = new();
-        private bool captured;
+        private Transform captureRoot;
 
         /// <summary>
         /// 原文一致の差し替え対象を登録する
@@ -25,7 +25,7 @@ namespace Localization
                 return;
             }
 
-            entries.Add(new Entry(key, japaneseFallback, null));
+            entries.Add(new Entry(key, japaneseFallback));
         }
 
         /// <summary>
@@ -34,12 +34,51 @@ namespace Localization
         /// <param name="root">検索ルート</param>
         public void Capture(Transform root)
         {
-            if (root == null || captured)
+            if (root == null)
             {
                 return;
             }
 
-            TMP_Text[] texts = root.GetComponentsInChildren<TMP_Text>(true);
+            captureRoot = root;
+            BindMissingTargets();
+        }
+
+        /// <summary>
+        /// 記憶済みTMPへ現在言語の文言を適用する
+        /// </summary>
+        public void Apply()
+        {
+            if (captureRoot != null)
+            {
+                BindMissingTargets();
+            }
+
+            for (int i = 0; i < entries.Count; i++)
+            {
+                Entry entry = entries[i];
+                string text = LocalizedText.GetOrFallback(entry.Key, entry.JapaneseFallback);
+                for (int t = 0; t < entry.Targets.Count; t++)
+                {
+                    TMP_Text target = entry.Targets[t];
+                    if (target == null)
+                    {
+                        continue;
+                    }
+
+                    LocalizedFont.SetText(target, text);
+                    LocalizedFixedChromeLabel.RefreshHorizontalLayoutWidth(target);
+                }
+            }
+        }
+
+        private void BindMissingTargets()
+        {
+            if (captureRoot == null || entries.Count == 0)
+            {
+                return;
+            }
+
+            TMP_Text[] texts = captureRoot.GetComponentsInChildren<TMP_Text>(true);
             for (int i = 0; i < texts.Length; i++)
             {
                 TMP_Text text = texts[i];
@@ -49,42 +88,27 @@ namespace Localization
                 }
 
                 string current = Normalize(text.text);
-                for (int e = 0; e < entries.Count; e++)
-                {
-                    Entry entry = entries[e];
-                    if (entry.Target != null)
-                    {
-                        continue;
-                    }
-
-                    if (current == Normalize(entry.JapaneseFallback))
-                    {
-                        entries[e] = new Entry(entry.Key, entry.JapaneseFallback, text);
-                        break;
-                    }
-                }
-            }
-
-            captured = true;
-        }
-
-        /// <summary>
-        /// 記憶済みTMPへ現在言語の文言を適用する
-        /// </summary>
-        public void Apply()
-        {
-            for (int i = 0; i < entries.Count; i++)
-            {
-                Entry entry = entries[i];
-                if (entry.Target == null)
+                if (string.IsNullOrEmpty(current))
                 {
                     continue;
                 }
 
-                LocalizedFont.SetText(
-                    entry.Target,
-                    LocalizedText.GetOrFallback(entry.Key, entry.JapaneseFallback));
-                LocalizedFixedChromeLabel.RefreshHorizontalLayoutWidth(entry.Target);
+                for (int e = 0; e < entries.Count; e++)
+                {
+                    Entry entry = entries[e];
+                    if (current != Normalize(entry.JapaneseFallback))
+                    {
+                        continue;
+                    }
+
+                    if (entry.Targets.Contains(text))
+                    {
+                        continue;
+                    }
+
+                    entry.Targets.Add(text);
+                    break;
+                }
             }
         }
 
@@ -98,18 +122,20 @@ namespace Localization
             return value.Replace("\r\n", "\n").Trim();
         }
 
-        private readonly struct Entry
+        private sealed class Entry
         {
-            public Entry(string key, string japaneseFallback, TMP_Text target)
+            public Entry(string key, string japaneseFallback)
             {
                 Key = key;
                 JapaneseFallback = japaneseFallback;
-                Target = target;
+                Targets = new List<TMP_Text>(4);
             }
 
             public string Key { get; }
+
             public string JapaneseFallback { get; }
-            public TMP_Text Target { get; }
+
+            public List<TMP_Text> Targets { get; }
         }
     }
 }

@@ -79,10 +79,16 @@ namespace Localization
             ITextTableService service = TextTableService.Instance;
             if (service == null)
             {
-                return key;
+                return ApplyParameters(key, parameters);
             }
 
-            return service.GetText(new TextData(key, parameters));
+            string text = service.GetText(new TextData(key, parameters));
+            if (string.IsNullOrEmpty(text))
+            {
+                return string.Empty;
+            }
+
+            return ApplyParameters(text, parameters);
         }
 
         /// <summary>
@@ -137,7 +143,8 @@ namespace Localization
                 return ApplyParameters(fallbackTemplate ?? key, parameters);
             }
 
-            return text;
+            // TextTable側がplaceholderを埋めない場合もあるのでローカルで補完する
+            return ApplyParameters(text, parameters);
         }
 
         /// <summary>
@@ -185,11 +192,48 @@ namespace Localization
         }
 
         /// <summary>
+        /// 現在言語コードを外部から通知する
+        /// TextTableのCurrentLanguage反映前でもIsJapanese判定を正しくする
+        /// </summary>
+        /// <param name="languageCode">言語コード</param>
+        public static void NotifyLanguageCode(string languageCode)
+        {
+            notifiedLanguageCode = languageCode ?? string.Empty;
+        }
+
+        /// <summary>
+        /// 現在の言語コードを返す
+        /// </summary>
+        public static string CurrentLanguageCode
+        {
+            get
+            {
+                if (!string.IsNullOrEmpty(notifiedLanguageCode))
+                {
+                    return notifiedLanguageCode;
+                }
+
+                ITextTableService service = TextTableService.Instance;
+                if (service == null)
+                {
+                    return string.Empty;
+                }
+
+                return service.CurrentLanguage.CurrentValue ?? string.Empty;
+            }
+        }
+
+        /// <summary>
         /// 現在言語が日本語かどうかを返す
         /// </summary>
         /// <returns>日本語ならtrue</returns>
         public static bool IsJapanese()
         {
+            if (!string.IsNullOrEmpty(notifiedLanguageCode))
+            {
+                return IsJapaneseCode(notifiedLanguageCode);
+            }
+
             ITextTableService service = TextTableService.Instance;
             if (service == null)
             {
@@ -199,12 +243,20 @@ namespace Localization
             string code = service.CurrentLanguage.CurrentValue;
             if (string.IsNullOrEmpty(code))
             {
-                return true;
+                // 未反映時は原文フォールバックを避けるため非日本語扱い
+                return false;
             }
 
+            return IsJapaneseCode(code);
+        }
+
+        private static bool IsJapaneseCode(string code)
+        {
             return code == GameLanguageCodes.Japanese
                 || code.StartsWith("ja", System.StringComparison.OrdinalIgnoreCase);
         }
+
+        private static string notifiedLanguageCode = string.Empty;
 
         private static string ApplyParameters(
             string template,

@@ -150,10 +150,39 @@ namespace UI.ModelGallery.View
                 }
             }
 
-            // 投稿/取得スロットのステータスラベルを現在言語で再組み立て
-            if (cachedSaveService != null && canvas != null && canvas.enabled)
+            // 投稿/取得スロットと確認文を現在言語で再組み立て
+            if (cachedSaveService != null)
             {
                 RefreshSharedSlotList(cachedSaveService, slotListMode);
+            }
+
+            // 未バインドでもプレハブ焼き込みの範囲/技名を再適用
+            RefreshAttackSlotsUnderThis();
+            // 言語差替後もタブ/ソートの選択Boldを維持する
+            RestyleAllToggles();
+        }
+
+        private void RestyleAllToggles()
+        {
+            ApplyToggleActiveVisual(postTabToggle);
+            ApplyToggleActiveVisual(browseTabToggle);
+            ApplyToggleActiveVisual(randomSortToggle);
+            ApplyToggleActiveVisual(monthlyRankingToggle);
+            ApplyToggleActiveVisual(overallRankingToggle);
+        }
+
+        private void RefreshAttackSlotsUnderThis()
+        {
+            TrainingAttackSlotView[] attackSlots = GetComponentsInChildren<TrainingAttackSlotView>(true);
+            for (int i = 0; i < attackSlots.Length; i++)
+            {
+                TrainingAttackSlotView slot = attackSlots[i];
+                if (slot == null)
+                {
+                    continue;
+                }
+
+                slot.RefreshLocalizedUi();
             }
         }
 
@@ -255,6 +284,7 @@ namespace UI.ModelGallery.View
 
             ApplyChromeLabels();
             canvas.enabled = true;
+            RefreshAttackSlotsUnderThis();
         }
 
         /// <inheritdoc />

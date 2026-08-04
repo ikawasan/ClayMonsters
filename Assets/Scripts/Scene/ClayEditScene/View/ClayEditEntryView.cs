@@ -84,8 +84,13 @@ namespace Scene.ClayEditScene.View
             if (bakedLabelApplier == null)
             {
                 bakedLabelApplier = new LocalizedBakedTextApplier();
+                // EntryPanel直下の未配線複製ボタン文言も同一原文で差し替える
                 bakedLabelApplier.Register(GameTextKeys.TitleClayEdit, "エディット");
+                bakedLabelApplier.Register(GameTextKeys.TitleClayEdit, "モンスターエディット");
                 bakedLabelApplier.Register(GameTextKeys.ClayEditRemake, "作り直し");
+                bakedLabelApplier.Register(GameTextKeys.ClayEditRemakeLong, "モンスターを作り直す");
+                bakedLabelApplier.Register(GameTextKeys.ClayEditNewCreate, "新規");
+                bakedLabelApplier.Register(GameTextKeys.ClayEditNewCreate, "新規作成");
                 Transform root = entryCanvas != null ? entryCanvas.transform : transform;
                 bakedLabelApplier.Capture(root);
             }

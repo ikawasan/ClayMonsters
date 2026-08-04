@@ -139,10 +139,8 @@ namespace Scene.TrainingScene.View
                 alertTitleText.text = LocalizedText.Get(GameTextKeys.TrainingAmbushTitleBang);
             }
 
-            if (choiceVisible)
-            {
-                ApplyChoiceCopy();
-            }
+            // 非表示中でもボタン文言は現言語に揃える
+            ApplyChoiceCopy();
         }
 
         private void ApplyChoiceCopy()
