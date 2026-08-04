@@ -17,6 +17,7 @@ public sealed class ClayEditFbxVertexColorSpawnerEditor : Editor
         EditorGUILayout.HelpBox(
             "Play Mode中にボタンを押すとFBXのメッシュとテクスチャを頂点カラーへ変換しClayEdit造形へ取り込みます。"
             + " Spawn Euler Angles で向きを指定できます(Apply Auto Orientation がOFFのとき指定向きがそのまま使われます)。"
+            + " Import Scale でグリッドフィット後のサイズ倍率を指定できます(1で従来どおり0.5で半分2で約2倍)。"
             + " Color Subdivision Depth / Max Uv Edge Length で色の細かさを調整できます。"
             + " この機能はEditor専用でROMビルドには含まれません。",
             MessageType.Info);

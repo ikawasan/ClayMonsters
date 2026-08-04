@@ -31,6 +31,7 @@ namespace ClayEditor
         /// <param name="boundsSize">造形グリッドのワールドサイズ</param>
         /// <param name="applyAutoOrientation">trueのときY-up自動補正を行う</param>
         /// <param name="fitToGrid">trueならグリッドへ拡大縮小してフィットするfalseなら元サイズを保つ</param>
+        /// <param name="importScale">フィット後の一様スケール倍率1が既定のフィットサイズ</param>
         /// <returns>フィット済み造形ローカルメッシュ</returns>
         internal static PreparedMesh Prepare(
             Vector3[] meshVertices,
@@ -38,7 +39,8 @@ namespace ClayEditor
             Matrix4x4 meshLocalToEngine,
             float boundsSize,
             bool applyAutoOrientation = true,
-            bool fitToGrid = true)
+            bool fitToGrid = true,
+            float importScale = 1f)
         {
             var engineVertices = new Vector3[meshVertices.Length];
             for (int i = 0; i < meshVertices.Length; i++)
@@ -56,7 +58,8 @@ namespace ClayEditor
                 boundsSize,
                 fitToGrid);
 
-            float scale = Mathf.Max(fitParams.UniformScale, 1e-5f);
+            float safeImportScale = Mathf.Max(importScale, 1e-5f);
+            float scale = Mathf.Max(fitParams.UniformScale * safeImportScale, 1e-5f);
             var fittedVertices = new Vector3[engineVertices.Length];
             for (int i = 0; i < engineVertices.Length; i++)
             {

@@ -48,6 +48,11 @@ namespace Scene.ClayEditScene
         [Tooltip("ONのとき境界ボックスからY-upへ自動補正するOFFならSpawn Euler Anglesのみ使う")]
         [SerializeField] private bool applyAutoOrientation;
 
+        [Header("Scale")]
+        [Tooltip("グリッドフィット後の一様スケール倍率1で従来どおりグリッドに収まるサイズ0.5で半分2で約2倍")]
+        [Min(0.01f)]
+        [SerializeField] private float importScale = 1f;
+
         private ClayEditFbxVertexColorImporter importer;
         private ClayEditSessionContext sessionContext;
         private ClayHistoryManager historyManager;
@@ -127,6 +132,7 @@ namespace Scene.ClayEditScene
                     maxUvEdgeLength,
                     spawnEulerAngles,
                     applyAutoOrientation,
+                    importScale,
                     cancellationToken);
                 if (!success)
                 {

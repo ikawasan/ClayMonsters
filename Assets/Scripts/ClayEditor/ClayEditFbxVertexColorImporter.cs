@@ -31,6 +31,7 @@ namespace ClayEditor
         /// <param name="maxUvEdgeLength">分割判定のUV辺長上限</param>
         /// <param name="spawnEulerAngles">親ローカルでのスポーン向き(度)</param>
         /// <param name="applyAutoOrientation">trueのときY-up自動補正を行う</param>
+        /// <param name="importScale">フィット後の一様スケール倍率1が既定のフィットサイズ</param>
         /// <param name="cancellationToken">キャンセルトークン</param>
         /// <returns>成功した場合trueと空文字失敗時はfalseと理由</returns>
         public async UniTask<(bool success, string errorMessage)> TryImportAsync(
@@ -43,6 +44,7 @@ namespace ClayEditor
             float maxUvEdgeLength,
             Vector3 spawnEulerAngles,
             bool applyAutoOrientation,
+            float importScale,
             CancellationToken cancellationToken)
         {
             if (modelAsset == null)
@@ -55,6 +57,7 @@ namespace ClayEditor
                 return (false, "ClayVoxelEngineが未注入です");
             }
 
+            float safeImportScale = Mathf.Max(importScale, 1e-5f);
             Transform parent = spawnParent != null ? spawnParent : engine.ClayModelTransform;
             Quaternion spawnRotation = Quaternion.Euler(spawnEulerAngles);
             GameObject instanceRoot = null;
@@ -110,7 +113,9 @@ namespace ClayEditor
                     previewRoot.transform,
                     bakedColors,
                     cancellationToken,
-                    applyAutoOrientation);
+                    applyAutoOrientation,
+                    fitToGrid: true,
+                    importScale: safeImportScale);
             }
             finally
             {
