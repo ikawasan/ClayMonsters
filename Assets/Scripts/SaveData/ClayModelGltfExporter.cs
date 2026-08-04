@@ -46,21 +46,40 @@ namespace SaveData
             var export = new GameObjectExport(exportSettings, gameObjectExportSettings);
 
             // 組み立てたRootのみをシーンのルートとして追加する
-            var bonesInHierarchy = CloneBonesHierarchy(boneRoot);
-            // ボーン階層に元メッシュが含まれるとglbへ二重に書き出されるため複製側から取り除く
-            StripRenderers(bonesInHierarchy);
-            var meshObject = CreateMeshObject(runtimeRenderer, exportMesh, bonesInHierarchy.transform);
-            export.AddScene(new[] { bonesInHierarchy, meshObject });
+            GameObject bonesInHierarchy = null;
+            GameObject meshObject = null;
+            try
+            {
+                bonesInHierarchy = CloneBonesHierarchy(boneRoot);
+                // ボーン階層に元メッシュが含まれるとglbへ二重に書き出されるため複製側から取り除く
+                StripRenderers(bonesInHierarchy);
+                meshObject = CreateMeshObject(
+                    runtimeRenderer,
+                    exportMesh,
+                    bonesInHierarchy.transform);
+                export.AddScene(new[] { bonesInHierarchy, meshObject });
 
-            bool success = await export
-                .SaveToFileAndDispose(filePath, cancellationToken)
-                .AsUniTask();
+                bool success = await export
+                    .SaveToFileAndDispose(filePath, cancellationToken)
+                    .AsUniTask();
 
-            // テンポラリ階層と複製メッシュを破棄する
-            Object.Destroy(bonesInHierarchy);
-            Object.Destroy(exportMesh);
+                return success;
+            }
+            finally
+            {
+                // meshObjectを残すと育成表示モデルと二重になる
+                if (meshObject != null)
+                {
+                    Object.Destroy(meshObject);
+                }
 
-            return success;
+                if (bonesInHierarchy != null)
+                {
+                    Object.Destroy(bonesInHierarchy);
+                }
+
+                Object.Destroy(exportMesh);
+            }
         }
 
         /// <summary>
