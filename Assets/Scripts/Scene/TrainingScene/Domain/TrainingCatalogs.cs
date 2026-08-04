@@ -97,12 +97,12 @@ namespace Scene.TrainingScene.Domain
             return location switch
             {
                 TrainingLocation.ScienceLab => new TrainingStatGain(0, 4, 1, 0, 1),
-                TrainingLocation.HomeEcRoom => new TrainingStatGain(6, 0, 2, 0, 0),
+                TrainingLocation.HomeEcRoom => new TrainingStatGain(4, 0, 2, 0, 0),
                 TrainingLocation.CraftRoom => new TrainingStatGain(0, 1, 4, 0, 0),
                 TrainingLocation.Library => new TrainingStatGain(0, 0, 2, 1, 4),
                 TrainingLocation.MusicRoom => new TrainingStatGain(0, 0, 0, 4, 2),
-                TrainingLocation.Gymnasium => new TrainingStatGain(4, 3, 0, 2, 1),
-                TrainingLocation.PrincipalOffice => new TrainingStatGain(3, 3, 3, 3, 3),
+                TrainingLocation.Gymnasium => new TrainingStatGain(3, 3, 0, 2, 1),
+                TrainingLocation.PrincipalOffice => new TrainingStatGain(2, 3, 3, 3, 3),
                 _ => default
             };
         }

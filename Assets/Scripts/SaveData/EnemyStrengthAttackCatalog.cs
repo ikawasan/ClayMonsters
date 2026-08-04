@@ -240,6 +240,7 @@ namespace SaveData
                     EnemyStrengthTier.Normal => i < count / 2 ? 1 : 2,
                     EnemyStrengthTier.Strong => i < count / 2 ? 2 : 3,
                     EnemyStrengthTier.VeryStrong => i == count - 1 ? 2 : 3,
+                    EnemyStrengthTier.Strongest => 3,
                     _ => 1
                 };
             }
@@ -254,6 +255,14 @@ namespace SaveData
                 targets[random.Next(0, count)] = 3;
             }
 
+            if (tier == EnemyStrengthTier.Strongest && count > 0)
+            {
+                for (int i = 0; i < count; i++)
+                {
+                    targets[i] = 3;
+                }
+            }
+
             ShuffleInPlace(targets, random);
             return targets;
         }
@@ -266,6 +275,7 @@ namespace SaveData
                 EnemyStrengthTier.Normal => 20,
                 EnemyStrengthTier.Strong => 45,
                 EnemyStrengthTier.VeryStrong => 70,
+                EnemyStrengthTier.Strongest => 90,
                 _ => 0
             };
             return chance > 0 && random.Next(0, 100) < chance;

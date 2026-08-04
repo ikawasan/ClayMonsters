@@ -6,9 +6,9 @@ namespace SaveData
     public static class NpcBattleProgressRules
     {
         /// <summary>
-        /// 強さ段階の種類数
+        /// 強さ段階の種類数(弱い〜最強)
         /// </summary>
-        public const int TierCount = 4;
+        public const int TierCount = 5;
 
         /// <summary>
         /// 初期に開放する敵数
@@ -16,9 +16,10 @@ namespace SaveData
         public const int InitialUnlockedEnemyCount = 1;
 
         /// <summary>
-        /// スロット開放時の初期強さ数(弱いのみ)
+        /// スロット開放時の初期強さ数
+        /// 弱いと普通を開放しNPCは普通から選べる
         /// </summary>
-        public const int InitialSlotStrengthCount = 1;
+        public const int InitialSlotStrengthCount = 2;
 
         /// <summary>
         /// 敵スロット数の上限

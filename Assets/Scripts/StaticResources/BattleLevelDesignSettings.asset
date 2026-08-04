@@ -24,7 +24,7 @@ MonoBehaviour:
   postAttackLockoutDuration: 1
   chainBonusWindow: 2
   counterDamageMultiplier: 1.25
-  damageScale: 2.5
+  damageScale: 0.6
   enemyAttackTelegraphDuration: 0.65
   enemyAttackCooldownMin: 1.8
   enemyAttackCooldownMax: 3.2

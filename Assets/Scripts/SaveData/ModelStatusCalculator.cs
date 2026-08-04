@@ -97,12 +97,12 @@ namespace SaveData
 
             float balanceScore = CalculateBalanceScore(groupCounts, sampled);
             float varietyScore = Mathf.Clamp01(distinctColors.Count / (float)MaxDistinctColorBuckets);
+            // 色の均衡と多様さの平均で作成時Min〜Maxへ線形補間する
+            float colorScore = Mathf.Clamp01((balanceScore + varietyScore) * 0.5f);
             int hp = Mathf.RoundToInt(
-                ModelStatusDefaults.DefaultHp
-                + (balanceScore * 140f)
-                + (varietyScore * 120f));
+                Mathf.Lerp(ModelStatusDefaults.MinHp, ModelStatusDefaults.MaxHp, colorScore));
 
-            return Mathf.Max(ModelStatusDefaults.DefaultHp, hp);
+            return Mathf.Clamp(hp, ModelStatusDefaults.MinHp, ModelStatusDefaults.MaxHp);
         }
 
         private static int CalculateAttack(int armCount, int legCount, int tailCount)

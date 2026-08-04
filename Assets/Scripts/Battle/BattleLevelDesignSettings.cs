@@ -42,8 +42,8 @@ namespace Battle
         [SerializeField] private float chainBonusWindow = 1.2f;
         [Tooltip("カウンター時ダメージ倍率")]
         [SerializeField] private float counterDamageMultiplier = 1.25f;
-        [Tooltip("ダメージ全体倍率")]
-        [SerializeField] private float damageScale = 0.85f;
+        [Tooltip("ダメージ全体倍率(育成後想定で5〜10発決着になる値)")]
+        [SerializeField] private float damageScale = 0.6f;
 
         [Header("Enemy Ai")]
         [Tooltip("敵攻撃予兆時間(秒)")]

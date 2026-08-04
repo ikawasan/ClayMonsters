@@ -1,15 +1,16 @@
 using System;
 using Extensions;
+using Localization;
 using SaveData;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using Localization;
 
 namespace UI.ClayEditor.View
 {
     /// <summary>
     /// 敵の強さ段階を選ぶUI
+    /// 表示は弱い〜超強いのまま中身は普通〜最強
     /// </summary>
     public class EnemyStrengthSelectView : MonoBehaviour, ILanguageAwareUi
     {
@@ -17,6 +18,19 @@ namespace UI.ClayEditor.View
         private static readonly Color NormalColor = new Color(1f, 1f, 1f, 1f);
         private static readonly Color LockedButtonColor = new Color(0.45f, 0.45f, 0.45f, 1f);
         private static readonly Color LockedDimmerColor = new Color(0.45f, 0.45f, 0.45f, 1f);
+
+        // 表示用テキスト(弱い普通強い超強い)
+        private static readonly EnemyStrengthTier[] LabelTiers =
+        {
+            EnemyStrengthTier.Weak,
+            EnemyStrengthTier.Normal,
+            EnemyStrengthTier.Strong,
+            EnemyStrengthTier.VeryStrong,
+        };
+
+        // 選択時の中身(普通強い超強い最強)
+        private static readonly EnemyStrengthTier[] ContentTiers =
+            EnemyStrengthStatusCatalog.NpcSelectableTiers;
 
         [Header("表示制御")]
         [SerializeField] private Canvas rootCanvas;
@@ -47,24 +61,31 @@ namespace UI.ClayEditor.View
         private EnemyStrengthTier currentTier = EnemyStrengthTier.Normal;
         private bool isExpectedVisible;
         private int unlockedTierMask = -1;
+        private Button[] buttons;
+        private TMP_Text[] labels;
+        private Image[] lockDimmers;
+        private Image[] lockIcons;
 
         private void Awake()
         {
+            CacheArrays();
             ValidateRefs();
-            BindButton(weakButton, EnemyStrengthTier.Weak);
-            BindButton(normalButton, EnemyStrengthTier.Normal);
-            BindButton(strongButton, EnemyStrengthTier.Strong);
-            BindButton(veryStrongButton, EnemyStrengthTier.VeryStrong);
+            for (int i = 0; i < ContentTiers.Length; i++)
+            {
+                BindButton(GetButton(i), ContentTiers[i]);
+            }
+
             ApplyLabels();
             SetVisible(false);
         }
 
         private void OnDestroy()
         {
-            UnbindButton(weakButton);
-            UnbindButton(normalButton);
-            UnbindButton(strongButton);
-            UnbindButton(veryStrongButton);
+            for (int i = 0; i < ContentTiers.Length; i++)
+            {
+                UnbindButton(GetButton(i));
+            }
+
             selectedListener = null;
         }
 
@@ -114,13 +135,13 @@ namespace UI.ClayEditor.View
         /// <param name="tier">強さ段階</param>
         public void SetSelected(EnemyStrengthTier tier)
         {
-            currentTier = tier;
+            currentTier = ResolveSelectableTier(tier);
             ApplySelectionVisual();
             ApplyLockVisuals();
         }
 
         /// <summary>
-        /// 現在選択中の強さ段階
+        /// 現在選択中の強さ段階(中身の段階)
         /// </summary>
         public EnemyStrengthTier CurrentTier => currentTier;
 
@@ -141,6 +162,36 @@ namespace UI.ClayEditor.View
         public void SetTemporaryVisible(bool visible)
         {
             ApplyCanvasVisible(isExpectedVisible && visible);
+        }
+
+        private void CacheArrays()
+        {
+            buttons = new[] { weakButton, normalButton, strongButton, veryStrongButton };
+            labels = new[] { weakLabel, normalLabel, strongLabel, veryStrongLabel };
+            lockDimmers = new[]
+            {
+                weakLockDimmer,
+                normalLockDimmer,
+                strongLockDimmer,
+                veryStrongLockDimmer,
+            };
+            lockIcons = new[]
+            {
+                weakLockIcon,
+                normalLockIcon,
+                strongLockIcon,
+                veryStrongLockIcon,
+            };
+        }
+
+        private Button GetButton(int index)
+        {
+            if (buttons == null || index < 0 || index >= buttons.Length)
+            {
+                return null;
+            }
+
+            return buttons[index];
         }
 
         private void BindButton(Button button, EnemyStrengthTier tier)
@@ -186,12 +237,12 @@ namespace UI.ClayEditor.View
             }
 
             int mask = 0;
-            for (int i = 0; i < NpcBattleProgressRules.TierCount; i++)
+            for (int i = 0; i < ContentTiers.Length; i++)
             {
-                var tier = (EnemyStrengthTier)i;
+                EnemyStrengthTier tier = ContentTiers[i];
                 if (isTierUnlocked(tier))
                 {
-                    mask |= 1 << i;
+                    mask |= 1 << (int)tier;
                 }
             }
 
@@ -210,29 +261,49 @@ namespace UI.ClayEditor.View
 
         private EnemyStrengthTier ResolveSelectableTier(EnemyStrengthTier preferred)
         {
-            if (IsTierUnlocked(preferred))
+            if (IsContentTier(preferred) && IsTierUnlocked(preferred))
             {
                 return preferred;
             }
 
-            for (int i = NpcBattleProgressRules.TierCount - 1; i >= 0; i--)
+            // 弱いのみ開放のときは中身の最初(普通)へ寄せる
+            if (preferred == EnemyStrengthTier.Weak
+                && IsTierUnlocked(EnemyStrengthTier.Normal))
             {
-                var tier = (EnemyStrengthTier)i;
+                return EnemyStrengthTier.Normal;
+            }
+
+            for (int i = ContentTiers.Length - 1; i >= 0; i--)
+            {
+                EnemyStrengthTier tier = ContentTiers[i];
                 if (IsTierUnlocked(tier))
                 {
                     return tier;
                 }
             }
 
-            return EnemyStrengthTier.Weak;
+            return ContentTiers[0];
+        }
+
+        private static bool IsContentTier(EnemyStrengthTier tier)
+        {
+            for (int i = 0; i < ContentTiers.Length; i++)
+            {
+                if (ContentTiers[i] == tier)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void ApplyButtonInteractable()
         {
-            SetButtonInteractable(weakButton, IsTierUnlocked(EnemyStrengthTier.Weak));
-            SetButtonInteractable(normalButton, IsTierUnlocked(EnemyStrengthTier.Normal));
-            SetButtonInteractable(strongButton, IsTierUnlocked(EnemyStrengthTier.Strong));
-            SetButtonInteractable(veryStrongButton, IsTierUnlocked(EnemyStrengthTier.VeryStrong));
+            for (int i = 0; i < ContentTiers.Length; i++)
+            {
+                SetButtonInteractable(GetButton(i), IsTierUnlocked(ContentTiers[i]));
+            }
         }
 
         private static void SetButtonInteractable(Button button, bool interactable)
@@ -245,34 +316,22 @@ namespace UI.ClayEditor.View
 
         private void ApplySelectionVisual()
         {
-            ApplyButtonVisual(weakButton, currentTier == EnemyStrengthTier.Weak);
-            ApplyButtonVisual(normalButton, currentTier == EnemyStrengthTier.Normal);
-            ApplyButtonVisual(strongButton, currentTier == EnemyStrengthTier.Strong);
-            ApplyButtonVisual(veryStrongButton, currentTier == EnemyStrengthTier.VeryStrong);
+            for (int i = 0; i < ContentTiers.Length; i++)
+            {
+                ApplyButtonVisual(GetButton(i), currentTier == ContentTiers[i]);
+            }
         }
 
         private void ApplyLockVisuals()
         {
-            ApplyTierLock(
-                weakButton,
-                weakLockDimmer,
-                weakLockIcon,
-                EnemyStrengthTier.Weak);
-            ApplyTierLock(
-                normalButton,
-                normalLockDimmer,
-                normalLockIcon,
-                EnemyStrengthTier.Normal);
-            ApplyTierLock(
-                strongButton,
-                strongLockDimmer,
-                strongLockIcon,
-                EnemyStrengthTier.Strong);
-            ApplyTierLock(
-                veryStrongButton,
-                veryStrongLockDimmer,
-                veryStrongLockIcon,
-                EnemyStrengthTier.VeryStrong);
+            for (int i = 0; i < ContentTiers.Length; i++)
+            {
+                ApplyTierLock(
+                    GetButton(i),
+                    lockDimmers != null && i < lockDimmers.Length ? lockDimmers[i] : null,
+                    lockIcons != null && i < lockIcons.Length ? lockIcons[i] : null,
+                    ContentTiers[i]);
+            }
         }
 
         private void ApplyTierLock(
@@ -348,7 +407,6 @@ namespace UI.ClayEditor.View
             }
         }
 
-
         /// <inheritdoc/>
         public void RefreshLocalizedUi()
         {
@@ -357,17 +415,19 @@ namespace UI.ClayEditor.View
 
         private void ApplyLabels()
         {
-            SetLabel(weakLabel, EnemyStrengthTier.Weak);
-            SetLabel(normalLabel, EnemyStrengthTier.Normal);
-            SetLabel(strongLabel, EnemyStrengthTier.Strong);
-            SetLabel(veryStrongLabel, EnemyStrengthTier.VeryStrong);
+            for (int i = 0; i < LabelTiers.Length; i++)
+            {
+                TMP_Text label = labels != null && i < labels.Length ? labels[i] : null;
+                SetLabel(label, LabelTiers[i]);
+            }
         }
 
-        private static void SetLabel(TMP_Text label, EnemyStrengthTier tier)
+        private static void SetLabel(TMP_Text label, EnemyStrengthTier labelTier)
         {
             if (label != null)
             {
-                label.text = EnemyStrengthStatusCatalog.GetDisplayName(tier);
+                // 表示専用中身の段階名は使わない
+                label.text = EnemyStrengthStatusCatalog.GetDisplayName(labelTier);
             }
         }
 
@@ -384,6 +444,11 @@ namespace UI.ClayEditor.View
 
         private void ValidateRefs()
         {
+            if (buttons == null)
+            {
+                CacheArrays();
+            }
+
             if (rootCanvas == null)
             {
                 Debug.LogError("[EnemyStrengthSelectView] rootCanvasが未配線です", this);

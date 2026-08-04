@@ -104,9 +104,9 @@ namespace Scene.TrainingScene.Domain
         {
             return focus switch
             {
-                TrainingFocus.Hp => new TrainingStatGain(10, 0, 3, 0, 0),
+                TrainingFocus.Hp => new TrainingStatGain(6, 0, 2, 0, 0),
                 TrainingFocus.Attack => new TrainingStatGain(0, 12, 0, 0, 0),
-                TrainingFocus.Defense => new TrainingStatGain(3, 0, 10, 0, 0),
+                TrainingFocus.Defense => new TrainingStatGain(2, 0, 10, 0, 0),
                 TrainingFocus.Speed => new TrainingStatGain(0, 0, 0, 10, 3),
                 TrainingFocus.Hit => new TrainingStatGain(0, 2, 0, 2, 10),
                 _ => default

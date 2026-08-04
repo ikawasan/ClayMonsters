@@ -152,6 +152,7 @@ namespace Localization
         public const string EnemyNormal = "Enemy.Normal";
         public const string EnemyStrong = "Enemy.Strong";
         public const string EnemyVeryStrong = "Enemy.VeryStrong";
+        public const string EnemyStrongest = "Enemy.Strongest";
 
         /// <summary>
         /// 敵個体名キー接頭辞(末尾にスロット番号を付ける)

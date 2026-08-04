@@ -36,10 +36,10 @@ namespace Scene.TrainingScene.Domain
             new TrainingShopItem(
                 "stat_hp",
                 "HP強化剤",
-                "HP+12",
+                "HP+8",
                 TrainingSettings.ShopStatBoostPrice,
                 TrainingShopItemType.StatBoost,
-                new TrainingStatGain(12, 0, 0, 0, 0),
+                new TrainingStatGain(8, 0, 0, 0, 0),
                 0,
                 0f,
                 0),

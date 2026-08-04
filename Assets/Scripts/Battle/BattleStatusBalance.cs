@@ -8,7 +8,10 @@ namespace Battle
     /// </summary>
     public static class BattleStatusBalance
     {
-        public const int MinHp = 400;
+        /// <summary>
+        /// 戦闘時HP下限(作成時MinHpに揃える)
+        /// </summary>
+        public const int MinHp = ModelStatusDefaults.MinHp;
         /// <summary>
         /// 育成後を含む戦闘上限
         /// </summary>

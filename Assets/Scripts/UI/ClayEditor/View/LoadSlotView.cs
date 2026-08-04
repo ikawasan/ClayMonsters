@@ -870,7 +870,7 @@ namespace UI.ClayEditor.View
                 EnsureConfirmStrengthSelect();
                 EnemyStrengthTier preferredTier = npcBattleProgress != null
                     ? npcBattleProgress.GetHighestUnlockedStrength(slotIndex)
-                    : EnemyStrengthTier.Weak;
+                    : EnemyStrengthTier.Normal;
                 if (confirmStrengthSelect != null)
                 {
                     confirmStrengthSelect.Show(

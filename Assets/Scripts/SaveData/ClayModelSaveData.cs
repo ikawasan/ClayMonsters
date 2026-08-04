@@ -115,6 +115,11 @@ namespace SaveData
         public ModelStatus statusVeryStrong = new ModelStatus();
 
         /// <summary>
+        /// 敵の最強ステータス
+        /// </summary>
+        public ModelStatus statusStrongest = new ModelStatus();
+
+        /// <summary>
         /// glbファイルの名前(persistentDataPath内)
         /// </summary>
         public string glbFileName;

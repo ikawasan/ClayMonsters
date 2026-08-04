@@ -7,7 +7,22 @@ namespace SaveData
     /// </summary>
     public static class ModelStatusDefaults
     {
-        public const int DefaultHp = 400;
+        /// <summary>
+        /// 作成時HP下限
+        /// </summary>
+        public const int MinHp = 60;
+
+        /// <summary>
+        /// 作成時HP上限
+        /// 育成でBattleStatusBalance.MaxHpまで伸ばせる
+        /// </summary>
+        public const int MaxHp = 120;
+
+        /// <summary>
+        /// 作成時HP既定値
+        /// </summary>
+        public const int DefaultHp = 85;
+
         public const int MinAttack = 22;
         public const int MaxAttack = 48;
         public const int DefaultAttack = 36;

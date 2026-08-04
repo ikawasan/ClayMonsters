@@ -23,6 +23,11 @@ namespace SaveData
         /// <summary>
         /// 超強い
         /// </summary>
-        VeryStrong = 3
+        VeryStrong = 3,
+
+        /// <summary>
+        /// 最強
+        /// </summary>
+        Strongest = 4
     }
 }

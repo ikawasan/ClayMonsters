@@ -177,14 +177,28 @@ namespace Scene.TrainingScene.Domain
             int inheritancePercentBonus = 0)
         {
             ModelStatus parent = parentStatus ?? new ModelStatus();
-            int percent = TrainingSettings.InheritanceStatPercentPerParent
-                + Mathf.Max(0, inheritancePercentBonus);
+            int percent = ResolveInheritancePercent(inheritancePercentBonus);
             return new TrainingStatGain(
-                CalcInheritedStatFromParent(parent.hp, percent),
-                CalcInheritedStatFromParent(parent.attack, percent),
-                CalcInheritedStatFromParent(parent.defense, percent),
-                CalcInheritedStatFromParent(parent.speed, percent),
-                CalcInheritedStatFromParent(parent.hit, percent));
+                CalcInheritedStatFromParent(
+                    parent.hp,
+                    percent,
+                    TrainingSettings.InheritanceReferenceMaxHp),
+                CalcInheritedStatFromParent(
+                    parent.attack,
+                    percent,
+                    TrainingSettings.InheritanceReferenceMaxAttack),
+                CalcInheritedStatFromParent(
+                    parent.defense,
+                    percent,
+                    TrainingSettings.InheritanceReferenceMaxDefense),
+                CalcInheritedStatFromParent(
+                    parent.speed,
+                    percent,
+                    TrainingSettings.InheritanceReferenceMaxSpeed),
+                CalcInheritedStatFromParent(
+                    parent.hit,
+                    percent,
+                    TrainingSettings.InheritanceReferenceMaxHit));
         }
 
         /// <summary>
@@ -193,12 +207,24 @@ namespace Scene.TrainingScene.Domain
         /// <param name="parent">継承元スロット</param>
         public static string FormatParentStatGainPreview(ModelSaveSlot parent)
         {
+            return FormatParentStatGainPreview(parent, inheritancePercentBonus: 0);
+        }
+
+        /// <summary>
+        /// 継承元ホバー用の上昇値文言を返す
+        /// </summary>
+        /// <param name="parent">継承元スロット</param>
+        /// <param name="inheritancePercentBonus">スキルツリー等の加算百分率</param>
+        public static string FormatParentStatGainPreview(
+            ModelSaveSlot parent,
+            int inheritancePercentBonus)
+        {
             if (parent == null || !parent.isUsed)
             {
                 return string.Empty;
             }
 
-            TrainingStatGain gain = BuildStatGainFromParent(parent.status);
+            TrainingStatGain gain = BuildStatGainFromParent(parent.status, inheritancePercentBonus);
             string modelName = string.IsNullOrEmpty(parent.modelName)
                 ? LocalizedText.GetOrFallback(
                     GameTextKeys.TrainingInheritanceParentDefault,
@@ -227,9 +253,20 @@ namespace Scene.TrainingScene.Domain
                 .Add(BuildStatGainFromParent(parentB, inheritancePercentBonus));
         }
 
-        private static int CalcInheritedStatFromParent(int parentStat, int percent)
+        private static int ResolveInheritancePercent(int inheritancePercentBonus)
         {
-            return Mathf.Max(0, parentStat) * percent / 100;
+            int percent = TrainingSettings.InheritanceStatPercentPerParent
+                + Mathf.Max(0, inheritancePercentBonus);
+            return Mathf.Clamp(
+                percent,
+                0,
+                TrainingSettings.InheritanceStatPercentMaxPerParent);
+        }
+
+        private static int CalcInheritedStatFromParent(int parentStat, int percent, int referenceMax)
+        {
+            int capped = Mathf.Clamp(Mathf.Max(0, parentStat), 0, Mathf.Max(0, referenceMax));
+            return capped * percent / 100;
         }
 
         private static MotionType? TryPickInheritedAttack(

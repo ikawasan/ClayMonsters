@@ -33,6 +33,7 @@ namespace Scene.TrainingScene.Domain
         /// <param name="day">育成曜日</param>
         public static EnemyStrengthTier ResolveAmbushTier(TrainingDayOfWeek day)
         {
+            // 育成では最強は出さない
             int next = (int)ResolveAfterSchoolTier(day) + 1;
             if (next > (int)EnemyStrengthTier.VeryStrong)
             {
