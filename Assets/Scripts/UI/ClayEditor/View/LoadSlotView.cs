@@ -148,6 +148,8 @@ namespace UI.ClayEditor.View
             confirmStrengthSelect?.Hide();
             loadConfirmView?.Clear();
             SetConfirmPanelActive(false);
+            InvalidateSelectionContents();
+            trainedSlotGrid?.HideForLeave();
             HideSelectionUi();
         }
 
@@ -174,6 +176,9 @@ namespace UI.ClayEditor.View
 
         private bool isInitialized;
 
+        private bool selectionContentsPrepared;
+        private ModelSavePool preparedSavePool;
+
         /// <summary>
         /// 表示・ロード対象のセーブプールを切り替える
         /// </summary>
@@ -181,6 +186,11 @@ namespace UI.ClayEditor.View
         /// <param name="emptyLabel">空スロット表示文言(省略時は現状維持)</param>
         public void ConfigureSavePool(ModelSavePool pool, string emptyLabel = null)
         {
+            if (savePool != pool)
+            {
+                InvalidateSelectionContents();
+            }
+
             savePool = pool;
             if (!string.IsNullOrEmpty(emptyLabel))
             {
@@ -188,10 +198,81 @@ namespace UI.ClayEditor.View
             }
 
             ApplySelectionInstructionText();
-            if (isInitialized)
+
+            // 内容構築はPrepareSelectionContentsAsyncに寄せる
+            // 既に準備済みで同一プールなら再構築しない
+            if (isInitialized && !AreSelectionContentsReady())
             {
                 RefreshSlots();
             }
+        }
+
+        /// <summary>
+        /// 一覧の再構築が必要な状態にする
+        /// </summary>
+        public void InvalidateSelectionContents()
+        {
+            selectionContentsPrepared = false;
+        }
+
+        /// <summary>
+        /// 明転前にスロット一覧のサムネイルと字体とメッシュを完了する
+        /// </summary>
+        /// <param name="cancellationToken">中断トークン</param>
+        public async UniTask PrepareSelectionContentsAsync(CancellationToken cancellationToken)
+        {
+            if (saveService == null)
+            {
+                Debug.LogError("[LoadSlotView] saveService未注入のためスロット内容を準備できません");
+                return;
+            }
+
+            ApplySelectionInstructionText();
+            ApplyLoadConfirmButtonLabels();
+            PrepareLayout();
+
+            if (UsesTrainedSlotGrid())
+            {
+                EnsureSelectionInitializedForTrainedGrid();
+                SetScrollListVisible(false);
+                trainedSlotGrid.Show();
+                trainedSlotGrid.Initialize(OnSlotSelected);
+                await trainedSlotGrid.PrepareContentsAsync(
+                    saveService,
+                    savePool,
+                    ResolveEmptySlotLabel(),
+                    allowEmptySlotSelection: false,
+                    isSlotUnlocked: ResolveEnemySlotUnlockPredicate(),
+                    cancellationToken);
+                await ApplyInstructionTextMeshAsync(cancellationToken);
+                MarkSelectionContentsPrepared();
+                return;
+            }
+
+            EnsureSelectionReady();
+            await WarmupScrollListFontsAsync(cancellationToken);
+            MarkSelectionContentsPrepared();
+        }
+
+        private async UniTask ApplyInstructionTextMeshAsync(CancellationToken cancellationToken)
+        {
+            if (selectionInstructionText == null)
+            {
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(selectionInstructionText.text))
+            {
+                LocalizedFont.WarmupCharacters(selectionInstructionText.text);
+            }
+
+            LocalizedFont.Apply(selectionInstructionText);
+            if (selectionInstructionText.isActiveAndEnabled)
+            {
+                selectionInstructionText.ForceMeshUpdate(true);
+            }
+
+            await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate, cancellationToken);
         }
 
         /// <summary>
@@ -423,7 +504,11 @@ namespace UI.ClayEditor.View
             {
                 ApplySelectionInstructionText();
                 EnsureSelectionInputEnabled();
-                RefreshSlots();
+                if (!AreSelectionContentsReady())
+                {
+                    RefreshSlots();
+                }
+
                 return;
             }
 
@@ -433,7 +518,10 @@ namespace UI.ClayEditor.View
             SetSelectionContentVisible(true);
             PrepareLayout();
             EnsureSelectionInputEnabled();
-            RefreshSlots();
+            if (!AreSelectionContentsReady())
+            {
+                RefreshSlots();
+            }
 
             if (isInitialized && slotScrollList != null)
             {
@@ -545,7 +633,6 @@ namespace UI.ClayEditor.View
                 if (EnsureTrainedSlotGrid())
                 {
                     SetScrollListVisible(false);
-                    ClearRuntimeThumbnails();
                     trainedSlotGrid.Show();
                     trainedSlotGrid.Initialize(OnSlotSelected);
                     trainedSlotGrid.Refresh(
@@ -554,6 +641,7 @@ namespace UI.ClayEditor.View
                         ResolveEmptySlotLabel(),
                         allowEmptySlotSelection: false,
                         isSlotUnlocked: ResolveEnemySlotUnlockPredicate());
+                    MarkSelectionContentsPrepared();
                     return;
                 }
 
@@ -585,6 +673,83 @@ namespace UI.ClayEditor.View
                 allowEmptySlotSelection: false,
                 TrainedSaveSlotListPresentation.ResolveContentMode(savePool));
             slotScrollList.RefreshHostLayout();
+            MarkSelectionContentsPrepared();
+        }
+
+        private bool AreSelectionContentsReady()
+        {
+            return selectionContentsPrepared && preparedSavePool == savePool;
+        }
+
+        private void MarkSelectionContentsPrepared()
+        {
+            selectionContentsPrepared = true;
+            preparedSavePool = savePool;
+        }
+
+        private async UniTask WarmupScrollListFontsAsync(CancellationToken cancellationToken)
+        {
+            EnsureSlotScrollList();
+            if (slotScrollList == null)
+            {
+                return;
+            }
+
+            TMP_Text[] texts = slotScrollList.GetComponentsInChildren<TMP_Text>(true);
+            var characters = new System.Text.StringBuilder(512);
+            for (int i = 0; i < texts.Length; i++)
+            {
+                TMP_Text text = texts[i];
+                if (text == null || string.IsNullOrEmpty(text.text))
+                {
+                    continue;
+                }
+
+                characters.Append(text.text);
+            }
+
+            if (selectionInstructionText != null
+                && !string.IsNullOrEmpty(selectionInstructionText.text))
+            {
+                characters.Append(selectionInstructionText.text);
+            }
+
+            LocalizedFont.WarmupCharacters(characters.ToString());
+
+            int updated = 0;
+            for (int i = 0; i < texts.Length; i++)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                TMP_Text text = texts[i];
+                if (text == null)
+                {
+                    continue;
+                }
+
+                LocalizedFont.Apply(text);
+                if (text.isActiveAndEnabled)
+                {
+                    text.ForceMeshUpdate(true);
+                }
+
+                updated++;
+                if (updated % 10 == 0)
+                {
+                    await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
+                }
+            }
+
+            if (selectionInstructionText != null)
+            {
+                LocalizedFont.Apply(selectionInstructionText);
+                if (selectionInstructionText.isActiveAndEnabled)
+                {
+                    selectionInstructionText.ForceMeshUpdate(true);
+                }
+            }
+
+            await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate, cancellationToken);
+            Canvas.ForceUpdateCanvases();
         }
 
         private bool EnsureTrainedSlotGrid()

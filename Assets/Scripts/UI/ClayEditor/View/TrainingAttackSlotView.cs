@@ -271,10 +271,14 @@ namespace UI.ClayEditor.View
             ApplyPartChromeLabels();
             if (rangeLabelText != null)
             {
+                RectTransform rangeCompanion = rangeBar != null
+                    ? rangeBar.transform as RectTransform
+                    : null;
                 LocalizedFixedChromeLabel.ApplyFixedRectLabel(
                     rangeLabelText,
                     GameTextKeys.SaveSummaryRangeLabel,
-                    "範囲:");
+                    "範囲:",
+                    rangeCompanion);
             }
         }
 

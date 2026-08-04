@@ -64,6 +64,21 @@ namespace Localization
         }
 
         /// <summary>
+        /// 表示文字をDynamicアトラスへ先に載せる
+        /// fallbackも含めて欠損字形の初回生成をまとめる
+        /// </summary>
+        /// <param name="text">載せる文字群</param>
+        public static void WarmupCharacters(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+            {
+                return;
+            }
+
+            WarmupCharactersOnFont(CurrentOrNull, text);
+        }
+
+        /// <summary>
         /// ロード済みシーンの全TMPへ現在言語フォントを適用する
         /// </summary>
         public static void ApplyToAllLoaded()
@@ -104,13 +119,23 @@ namespace Localization
             }
 
             int instanceId = text.GetInstanceID();
+            bool fontAlreadyCurrent = text.font == fontAsset;
+            bool atlasAlreadyCorrect = UsesFontAtlas(text.fontSharedMaterial, fontAsset);
+
+            // 既に正しいフォントアトラスかつデザイン一致なら材質読取を省略する
+            if (fontAlreadyCurrent
+                && atlasAlreadyCorrect
+                && DesignStyles.TryGetValue(instanceId, out StyleSnapshot cachedDesign)
+                && StyleMatches(text, cachedDesign))
+            {
+                return;
+            }
+
             // font代入前の現状を保持する(動的なBold切替も尊重する)
             StyleSnapshot sampleBeforeFont = CaptureStyle(text);
             UpgradeDesign(instanceId, sampleBeforeFont);
             DesignStyles.TryGetValue(instanceId, out StyleSnapshot design);
 
-            bool fontAlreadyCurrent = text.font == fontAsset;
-            bool atlasAlreadyCorrect = UsesFontAtlas(text.fontSharedMaterial, fontAsset);
             bool styleMatchesDesign = StyleMatches(text, design);
 
             // 定期スキャンでインスタンス材質を壊さないが潰されていれば復旧する
@@ -182,6 +207,27 @@ namespace Localization
 
             text.text = value ?? string.Empty;
             Apply(text);
+        }
+
+        private static void WarmupCharactersOnFont(TMP_FontAsset fontAsset, string text)
+        {
+            if (fontAsset == null || string.IsNullOrEmpty(text))
+            {
+                return;
+            }
+
+            fontAsset.TryAddCharacters(text, out _);
+
+            List<TMP_FontAsset> fallbacks = fontAsset.fallbackFontAssetTable;
+            if (fallbacks == null || fallbacks.Count == 0)
+            {
+                return;
+            }
+
+            for (int i = 0; i < fallbacks.Count; i++)
+            {
+                WarmupCharactersOnFont(fallbacks[i], text);
+            }
         }
 
         private static void EnsureStyleMaterial(TMP_Text text, TMP_FontAsset fontAsset)

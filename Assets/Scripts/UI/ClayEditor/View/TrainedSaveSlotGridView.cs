@@ -1,14 +1,20 @@
-using Extensions;
-using SaveData;
-using SaveData.Interface;
 using System;
 using System.Collections.Generic;
+using System.Text;
+using System.Threading;
+using Cysharp.Threading.Tasks;
+using Extensions;
+using Localization;
+using SaveData;
+using SaveData.Interface;
+using TMPro;
 using UnityEngine;
 
 namespace UI.ClayEditor.View
 {
     /// <summary>
     /// 育成済みセーブスロットを5列×10行で並べるグリッド一覧
+    /// サムネイルとTMP字形はキャッシュし明転前に完了させる
     /// </summary>
     public sealed class TrainedSaveSlotGridView : MonoBehaviour
     {
@@ -16,16 +22,25 @@ namespace UI.ClayEditor.View
         public const int RowCount = ModelSavePoolSettings.TrainedGridRowCount;
         public const int SlotCount = ModelSavePoolSettings.TrainedSlotCount;
 
+        private const int ThumbnailYieldInterval = 5;
+        private const int MeshYieldInterval = 10;
+
         [SerializeField] private Canvas rootCanvas;
         [SerializeField] private RectTransform gridContent;
         [SerializeField] private TrainedSaveSlotCellView[] cells =
             new TrainedSaveSlotCellView[SlotCount];
 
         private readonly List<UnityEngine.Object> runtimeThumbnailObjects = new List<UnityEngine.Object>();
+        private readonly Dictionary<ThumbnailCacheKey, Sprite> thumbnailCache =
+            new Dictionary<ThumbnailCacheKey, Sprite>();
+        private readonly StringBuilder displayedCharactersBuilder = new StringBuilder(512);
+
         private Action<int> onSlotSelected;
         private Action<int> onSlotPointerEnter;
         private Action onSlotPointerExit;
         private bool isClickBound;
+        private ModelSavePool cachedPool;
+        private bool hasCachedPool;
 
         /// <summary>
         /// クリック購読を初期化する
@@ -122,8 +137,32 @@ namespace UI.ClayEditor.View
             bool allowEmptySlotSelection,
             Func<int, bool> isSlotUnlocked)
         {
+            BindAllSlots(
+                saveService,
+                pool,
+                emptySlotLabel,
+                allowEmptySlotSelection,
+                isSlotUnlocked);
+        }
+
+        /// <summary>
+        /// 明転前にサムネイルとTMP字形とメッシュを完了する
+        /// </summary>
+        /// <param name="saveService">セーブサービス</param>
+        /// <param name="pool">対象プール</param>
+        /// <param name="emptySlotLabel">空スロット文言</param>
+        /// <param name="allowEmptySlotSelection">空スロット選択を許可するか</param>
+        /// <param name="isSlotUnlocked">使用中スロットの選択可否(nullなら常に可)</param>
+        /// <param name="cancellationToken">中断トークン</param>
+        public async UniTask PrepareContentsAsync(
+            IClayModelSaveService saveService,
+            ModelSavePool pool,
+            string emptySlotLabel,
+            bool allowEmptySlotSelection,
+            Func<int, bool> isSlotUnlocked,
+            CancellationToken cancellationToken)
+        {
             EnsureCells();
-            ClearRuntimeThumbnails();
             if (saveService == null)
             {
                 Debug.LogError(
@@ -132,9 +171,24 @@ namespace UI.ClayEditor.View
                 return;
             }
 
+            if (!hasCachedPool || cachedPool != pool)
+            {
+                ClearRuntimeThumbnails();
+                cachedPool = pool;
+                hasCachedPool = true;
+            }
+
+            displayedCharactersBuilder.Clear();
+            if (!string.IsNullOrEmpty(emptySlotLabel))
+            {
+                displayedCharactersBuilder.Append(emptySlotLabel);
+            }
+
             int poolSlotCount = ModelSavePoolSettings.GetSlotCount(pool);
+            int thumbnailLoadCount = 0;
             for (int i = 0; i < SlotCount; i++)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 TrainedSaveSlotCellView cell = i < cells.Length ? cells[i] : null;
                 if (cell == null)
                 {
@@ -163,13 +217,46 @@ namespace UI.ClayEditor.View
                 if (!used)
                 {
                     cell.BindEmpty(i, emptySlotLabel, allowEmptySlotSelection);
+                    AppendCellDisplayText(cell);
                     continue;
                 }
 
-                Sprite thumbnail = LoadThumbnailSprite(saveService, pool, i);
                 bool interactable = isSlotUnlocked == null || isSlotUnlocked(i);
-                cell.BindUsed(i, slot, thumbnail, interactable);
+                Sprite thumbnail = null;
+                if (interactable)
+                {
+                    bool wasCached = thumbnailCache.ContainsKey(
+                        new ThumbnailCacheKey(pool, i));
+                    thumbnail = LoadThumbnailSprite(saveService, pool, i);
+                    if (!wasCached && thumbnail != null)
+                    {
+                        thumbnailLoadCount++;
+                        if (thumbnailLoadCount % ThumbnailYieldInterval == 0)
+                        {
+                            await UniTask.Yield(
+                                PlayerLoopTiming.Update,
+                                cancellationToken);
+                        }
+                    }
+                }
+
+                string displayName = ResolveDisplayName(pool, i, slot);
+                if (!string.IsNullOrEmpty(displayName) && interactable)
+                {
+                    displayedCharactersBuilder.Append(displayName);
+                }
+
+                cell.BindUsed(i, displayName, thumbnail, interactable);
+                AppendCellDisplayText(cell);
             }
+
+            cancellationToken.ThrowIfCancellationRequested();
+            LocalizedFont.WarmupCharacters(displayedCharactersBuilder.ToString());
+
+            await ApplyNameMeshesAsync(cancellationToken);
+            await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate, cancellationToken);
+            Canvas.ForceUpdateCanvases();
+            await ApplyNameMeshesAsync(cancellationToken);
         }
 
         /// <summary>
@@ -219,6 +306,147 @@ namespace UI.ClayEditor.View
         {
             Hide();
             ClearRuntimeThumbnails();
+            hasCachedPool = false;
+        }
+
+        private void BindAllSlots(
+            IClayModelSaveService saveService,
+            ModelSavePool pool,
+            string emptySlotLabel,
+            bool allowEmptySlotSelection,
+            Func<int, bool> isSlotUnlocked)
+        {
+            EnsureCells();
+            if (saveService == null)
+            {
+                Debug.LogError(
+                    "[TrainedSaveSlotGridView] saveServiceがnullです",
+                    this);
+                return;
+            }
+
+            if (!hasCachedPool || cachedPool != pool)
+            {
+                ClearRuntimeThumbnails();
+                cachedPool = pool;
+                hasCachedPool = true;
+            }
+
+            displayedCharactersBuilder.Clear();
+            if (!string.IsNullOrEmpty(emptySlotLabel))
+            {
+                displayedCharactersBuilder.Append(emptySlotLabel);
+            }
+
+            int poolSlotCount = ModelSavePoolSettings.GetSlotCount(pool);
+            for (int i = 0; i < SlotCount; i++)
+            {
+                TrainedSaveSlotCellView cell = i < cells.Length ? cells[i] : null;
+                if (cell == null)
+                {
+                    continue;
+                }
+
+                if (i >= poolSlotCount)
+                {
+                    if (cell.gameObject.activeSelf)
+                    {
+                        cell.gameObject.SetActive(false);
+                    }
+
+                    continue;
+                }
+
+                if (!cell.gameObject.activeSelf)
+                {
+                    cell.gameObject.SetActive(true);
+                }
+
+                ModelSaveSlot slot = saveService.GetSlot(pool, i);
+                bool used = slot != null
+                    && slot.isUsed
+                    && !string.IsNullOrEmpty(slot.glbFileName);
+                if (!used)
+                {
+                    cell.BindEmpty(i, emptySlotLabel, allowEmptySlotSelection);
+                    AppendCellDisplayText(cell);
+                    continue;
+                }
+
+                bool interactable = isSlotUnlocked == null || isSlotUnlocked(i);
+                Sprite thumbnail = interactable
+                    ? LoadThumbnailSprite(saveService, pool, i)
+                    : null;
+
+                string displayName = ResolveDisplayName(pool, i, slot);
+                if (!string.IsNullOrEmpty(displayName) && interactable)
+                {
+                    displayedCharactersBuilder.Append(displayName);
+                }
+
+                cell.BindUsed(i, displayName, thumbnail, interactable);
+                AppendCellDisplayText(cell);
+            }
+
+            LocalizedFont.WarmupCharacters(displayedCharactersBuilder.ToString());
+        }
+
+        private async UniTask ApplyNameMeshesAsync(CancellationToken cancellationToken)
+        {
+            EnsureCells();
+            int updated = 0;
+            for (int i = 0; i < cells.Length; i++)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                TrainedSaveSlotCellView cell = cells[i];
+                if (cell == null || !cell.gameObject.activeInHierarchy)
+                {
+                    continue;
+                }
+
+                TMP_Text nameText = cell.NameText;
+                if (nameText == null || !nameText.enabled)
+                {
+                    continue;
+                }
+
+                LocalizedFont.Apply(nameText);
+                if (nameText.isActiveAndEnabled)
+                {
+                    nameText.ForceMeshUpdate(true);
+                }
+
+                updated++;
+                if (updated % MeshYieldInterval == 0)
+                {
+                    await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
+                }
+            }
+        }
+
+        private void AppendCellDisplayText(TrainedSaveSlotCellView cell)
+        {
+            TMP_Text nameText = cell != null ? cell.NameText : null;
+            if (nameText == null || string.IsNullOrEmpty(nameText.text))
+            {
+                return;
+            }
+
+            displayedCharactersBuilder.Append(nameText.text);
+        }
+
+        private static string ResolveDisplayName(
+            ModelSavePool pool,
+            int slotIndex,
+            ModelSaveSlot slot)
+        {
+            string modelName = slot != null ? slot.modelName : string.Empty;
+            if (pool == ModelSavePool.Enemy)
+            {
+                return EnemyDisplayName.Resolve(slotIndex, modelName);
+            }
+
+            return modelName ?? string.Empty;
         }
 
         private void ApplyHoverHandlers()
@@ -246,6 +474,13 @@ namespace UI.ClayEditor.View
             ModelSavePool pool,
             int slotIndex)
         {
+            var key = new ThumbnailCacheKey(pool, slotIndex);
+            if (thumbnailCache.TryGetValue(key, out Sprite cached)
+                && cached != null)
+            {
+                return cached;
+            }
+
             Texture2D texture = saveService.LoadThumbnail(pool, slotIndex);
             if (texture == null)
             {
@@ -259,6 +494,7 @@ namespace UI.ClayEditor.View
                 new Vector2(0.5f, 0.5f),
                 100f);
             runtimeThumbnailObjects.Add(sprite);
+            thumbnailCache[key] = sprite;
             return sprite;
         }
 
@@ -321,6 +557,7 @@ namespace UI.ClayEditor.View
 
         private void ClearRuntimeThumbnails()
         {
+            thumbnailCache.Clear();
             for (int i = 0; i < runtimeThumbnailObjects.Count; i++)
             {
                 UnityEngine.Object obj = runtimeThumbnailObjects[i];
@@ -336,6 +573,37 @@ namespace UI.ClayEditor.View
         private void OnDestroy()
         {
             ClearRuntimeThumbnails();
+            hasCachedPool = false;
+        }
+
+        private readonly struct ThumbnailCacheKey : IEquatable<ThumbnailCacheKey>
+        {
+            public ThumbnailCacheKey(ModelSavePool pool, int slotIndex)
+            {
+                Pool = pool;
+                SlotIndex = slotIndex;
+            }
+
+            public ModelSavePool Pool { get; }
+            public int SlotIndex { get; }
+
+            /// <inheritdoc/>
+            public bool Equals(ThumbnailCacheKey other)
+            {
+                return Pool == other.Pool && SlotIndex == other.SlotIndex;
+            }
+
+            /// <inheritdoc/>
+            public override bool Equals(object obj)
+            {
+                return obj is ThumbnailCacheKey other && Equals(other);
+            }
+
+            /// <inheritdoc/>
+            public override int GetHashCode()
+            {
+                return ((int)Pool * 397) ^ SlotIndex;
+            }
         }
     }
 }

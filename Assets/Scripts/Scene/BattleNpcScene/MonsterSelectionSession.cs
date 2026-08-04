@@ -73,6 +73,7 @@ namespace Scene.BattleNpcScene
             // 次のWaitForModelAsyncでFadeIn付き再表示が必要なので解除する
             isRevealed = false;
             loadSlotView?.ClearLoadedModelForNewSelection();
+            loadSlotView?.InvalidateSelectionContents();
             loadSlotView?.ConfigureSavePool(pool);
         }
 
@@ -156,6 +157,7 @@ namespace Scene.BattleNpcScene
             }
 
             loadSlotView.RestoreAfterParticipantFailure();
+            loadSlotView.InvalidateSelectionContents();
             isRevealed = false;
             await EnsureRevealedAsync(cancellationToken);
         }
@@ -170,7 +172,6 @@ namespace Scene.BattleNpcScene
             if (isRevealed)
             {
                 loadSlotView.EnsureSelectionInputEnabled();
-                await FinalizeSelectionLayoutAsync(cancellationToken);
                 return;
             }
 
@@ -188,10 +189,8 @@ namespace Scene.BattleNpcScene
             Transform sceneRoot = loadSlotView.transform.root;
             loadSlotView.DetachSelectionUiToSceneRoot(sceneRoot);
             loadSlotView.PrepareLayout();
-            loadSlotView.EnsureSelectionReady();
-            // 明転前に一覧を確定しクリック競合で確認内容が消えるのを防ぐ
-            loadSlotView.PrepareForSelectionWait();
 
+            // 暗転のままCanvasを有効化し一覧の準備を完了させてから明転する
             Canvas selectionCanvas = loadSlotView.SelectionCanvas;
             if (presentationTransition != null)
             {
@@ -200,37 +199,32 @@ namespace Scene.BattleNpcScene
                     true,
                     cancellationToken,
                     fadeOutBeforeChange: false,
-                    fadeInAfterChange: true);
+                    fadeInAfterChange: false);
             }
             else
             {
                 loadSlotView.PrepareForDisplay();
-                if (sceneFade != null)
-                {
-                    await sceneFade.FadeInAsync(cancellationToken);
-                }
             }
 
             loadSlotView.EnsureSelectionInputEnabled();
-            await FinalizeSelectionLayoutAsync(cancellationToken);
-            presentationTransition?.ReleasePresentationInput();
-        }
-
-        private async UniTask FinalizeSelectionLayoutAsync(CancellationToken cancellationToken)
-        {
-            if (loadSlotView == null)
-            {
-                return;
-            }
-
-            await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate, cancellationToken);
-            loadSlotView.DetachSelectionUiToSceneRoot(loadSlotView.transform.root);
-            loadSlotView.PrepareLayout();
-            loadSlotView.EnsureSelectionReady();
-            loadSlotView.RefreshSlotsOnly();
+            await loadSlotView.PrepareSelectionContentsAsync(cancellationToken);
+            // 準備完了後に選択待ちへ入り再構築を避ける
+            loadSlotView.PrepareForSelectionWait();
 
             await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate, cancellationToken);
             Canvas.ForceUpdateCanvases();
+
+            if (presentationTransition != null)
+            {
+                await presentationTransition.FadeInAsync(cancellationToken);
+            }
+            else if (sceneFade != null)
+            {
+                await sceneFade.FadeInAsync(cancellationToken);
+            }
+
+            loadSlotView.EnsureSelectionInputEnabled();
+            presentationTransition?.ReleasePresentationInput();
         }
     }
 }

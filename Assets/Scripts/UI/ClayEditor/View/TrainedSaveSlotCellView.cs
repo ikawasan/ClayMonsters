@@ -1,6 +1,6 @@
-using Localization;
 using Extensions;
 using LighthouseExtends.UIComponent.Button;
+using Localization;
 using SaveData;
 using System;
 using TMPro;
@@ -38,6 +38,11 @@ namespace UI.ClayEditor.View
         /// 選択ボタン
         /// </summary>
         public LHButton SelectButton => selectButton;
+
+        /// <summary>
+        /// 名前表示TMP
+        /// </summary>
+        public TMP_Text NameText => nameText;
 
         /// <summary>
         /// クリック購読を初期化する
@@ -83,12 +88,25 @@ namespace UI.ClayEditor.View
         /// <param name="interactable">選択可能か</param>
         public void BindUsed(int index, ModelSaveSlot slot, Sprite thumbnail, bool interactable)
         {
+            string displayName = slot != null ? slot.modelName : string.Empty;
+            BindUsed(index, displayName, thumbnail, interactable);
+        }
+
+        /// <summary>
+        /// 使用中スロットの表示を反映する
+        /// </summary>
+        /// <param name="index">スロット番号</param>
+        /// <param name="displayName">表示名</param>
+        /// <param name="thumbnail">サムネイル</param>
+        /// <param name="interactable">選択可能か</param>
+        public void BindUsed(int index, string displayName, Sprite thumbnail, bool interactable)
+        {
             slotIndex = index;
             if (nameText != null)
             {
                 if (interactable)
                 {
-                    nameText.text = slot != null ? slot.modelName : string.Empty;
+                    nameText.text = displayName ?? string.Empty;
                     nameText.enabled = true;
                 }
                 else
@@ -116,9 +134,10 @@ namespace UI.ClayEditor.View
             slotIndex = index;
             if (nameText != null)
             {
-                nameText.text = string.IsNullOrEmpty(emptyLabel)
+                string label = string.IsNullOrEmpty(emptyLabel)
                     ? LocalizedText.Get(GameTextKeys.CommonSlot, "index", index + 1)
                     : emptyLabel;
+                nameText.text = label;
                 nameText.enabled = true;
             }
 

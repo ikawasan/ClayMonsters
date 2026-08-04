@@ -396,33 +396,15 @@ namespace Scene.BattlePVPScene
 
             if (loadSlotView != null)
             {
-                loadSlotView.EnsureSelectionReady();
+                loadSlotView.EnsureSelectionInputEnabled();
+                await loadSlotView.PrepareSelectionContentsAsync(cancellationToken);
             }
-            await FinalizeSelectionLayoutAsync(cancellationToken);
-            BattlePvpSceneDiagnostics.LogState("RevealSelectionAsync完了");
+
+            await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate, cancellationToken);
+            Canvas.ForceUpdateCanvases();
+            BattlePvpSceneDiagnostics.LogState("RevealSelectionAsync準備完了");
             DumpSelectionCanvasState();
             DumpSelectionContentState();
-        }
-
-        private async UniTask FinalizeSelectionLayoutAsync(CancellationToken cancellationToken)
-        {
-            await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate, cancellationToken);
-            Canvas.ForceUpdateCanvases();
-            loadSlotView?.PrepareLayout();
-            loadSlotView?.EnsureSelectionReady();
-
-            ModelSaveSlotScrollListView scrollList = loadSlotView != null
-                ? loadSlotView.GetComponentInChildren<ModelSaveSlotScrollListView>(true)
-                : null;
-            scrollList?.ForceSelectionLayout();
-            RectTransform selectionRect = selectionCanvas.GetComponent<RectTransform>();
-            if (selectionRect != null)
-            {
-                LayoutRebuilder.ForceRebuildLayoutImmediate(selectionRect);
-            }
-
-            await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate, cancellationToken);
-            Canvas.ForceUpdateCanvases();
         }
 
         private void DumpSelectionContentState()

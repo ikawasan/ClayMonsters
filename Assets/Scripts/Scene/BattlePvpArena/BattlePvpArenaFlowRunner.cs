@@ -304,8 +304,14 @@ namespace Scene.BattlePvpArena
             DetachSelectionCanvasToSceneRoot();
             CanvasVisibilityUtility.SetCanvasEnabled(selectionCanvas, true);
 
-            loadSlotView?.EnsureSelectionReady();
-            await FinalizeSelectionLayoutAsync(cancellationToken);
+            loadSlotView?.EnsureSelectionInputEnabled();
+            if (loadSlotView != null)
+            {
+                await loadSlotView.PrepareSelectionContentsAsync(cancellationToken);
+            }
+
+            await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate, cancellationToken);
+            Canvas.ForceUpdateCanvases();
 
             if (sceneFade != null)
             {
@@ -702,27 +708,6 @@ namespace Scene.BattlePvpArena
             }
 
             return null;
-        }
-
-        private async UniTask FinalizeSelectionLayoutAsync(CancellationToken cancellationToken)
-        {
-            await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate, cancellationToken);
-            DetachSelectionCanvasToSceneRoot();
-            loadSlotView?.PrepareLayout(reparentToUiRoot: false);
-            loadSlotView?.EnsureSelectionReady();
-
-            ModelSaveSlotScrollListView scrollList = loadSlotView != null
-                ? loadSlotView.GetComponentInChildren<ModelSaveSlotScrollListView>(true)
-                : null;
-            scrollList?.ForceSelectionLayout();
-
-            if (selectionCanvas != null)
-            {
-                LayoutRebuilder.ForceRebuildLayoutImmediate(selectionCanvas.GetComponent<RectTransform>());
-            }
-
-            await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate, cancellationToken);
-            Canvas.ForceUpdateCanvases();
         }
 
         private void DetachSelectionCanvasToSceneRoot()

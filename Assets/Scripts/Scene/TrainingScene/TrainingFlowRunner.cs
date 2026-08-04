@@ -276,26 +276,22 @@ namespace Scene.TrainingScene
             loadSlotView?.DetachSelectionUiToSceneRoot(transform);
             SetSelectionUiVisible(true);
             loadSlotView?.PrepareLayout();
-            loadSlotView?.EnsureSelectionReady();
-            await FinalizeSelectionLayoutAsync(cancellationToken);
+            loadSlotView?.EnsureSelectionInputEnabled();
+            if (loadSlotView != null)
+            {
+                await loadSlotView.PrepareSelectionContentsAsync(cancellationToken);
+            }
+
+            loadSlotView?.PrepareForSelectionWait();
+
+            await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate, cancellationToken);
+            Canvas.ForceUpdateCanvases();
+            LogSelectionUiState("RevealSelectionAsync準備完了");
 
             if (canvasTransition != null)
             {
                 await canvasTransition.FadeInAsync(cancellationToken);
             }
-        }
-
-        private async UniTask FinalizeSelectionLayoutAsync(CancellationToken cancellationToken)
-        {
-            await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate, cancellationToken);
-            loadSlotView?.DetachSelectionUiToSceneRoot(transform);
-            loadSlotView?.PrepareLayout();
-            loadSlotView?.EnsureSelectionReady();
-            loadSlotView?.Refresh();
-
-            await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate, cancellationToken);
-            Canvas.ForceUpdateCanvases();
-            LogSelectionUiState("RevealSelectionAsync完了");
         }
 
         private void LogSelectionUiState(string phase)

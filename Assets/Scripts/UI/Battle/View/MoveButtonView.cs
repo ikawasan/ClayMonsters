@@ -51,7 +51,6 @@ namespace UI.Battle.View
         [SerializeField] private Image buttonBackground;
         [SerializeField] private Color usableBackgroundColor = new Color(1f, 0.98f, 0.94f, 0.96f);
         [SerializeField] private Color unusableBackgroundColor = new Color(0.82f, 0.8f, 0.78f, 0.72f);
-        [SerializeField] private Color highlightBackgroundColor = new Color(0.35f, 0.35f, 0.38f, 0.4f);
         [SerializeField] private Color rangeActiveColor = MoveRangeSegmentBarView.RangeInColor;
         [SerializeField] private Color rangeInactiveColor = MoveRangeSegmentBarView.RangeOutColor;
         [SerializeField] private Color rangeOutOfBandColor = MoveRangeSegmentBarView.RangeOutColor;
@@ -62,17 +61,13 @@ namespace UI.Battle.View
         [Tooltip("リキャスト蓄積ゲージ(下から上へfill)未設定なら子RecastFillを解決")]
         [SerializeField] private Image recastFillImage;
 
-        [Tooltip("ホバー時のグレーオーバーレイ(未設定なら生成)")]
-        [SerializeField] private Image hoverOverlayImage;
-
         private static readonly Color RecastFillColor = new Color(1f, 0.12f, 0.1f, 0.55f);
-        private static readonly Color HoverOverlayColor = new Color(0.32f, 0.32f, 0.35f, 0.38f);
         private const string FrameFxRootName = "FrameFxRoot";
         private const string RecastFillName = "RecastFill";
         private const string HoverOverlayName = "HoverOverlay";
 
         private bool isUsable;
-        private bool isHighlighted;
+        private bool isPointerOver;
         private Sprite rangeActiveSprite;
         private Sprite rangeInactiveSprite;
         private MoveRangeSegmentBarView rangeSegmentBarView;
@@ -92,7 +87,7 @@ namespace UI.Battle.View
             DisableRaycastOnDecorations();
             DisableBuiltInColorTint();
             EnsureRangeSegmentBarView();
-            EnsureHoverOverlay();
+            DisableHoverDarkenOverlay();
             EnsureRecastFillImage();
             EnsurePartLockOverlay();
             EnsureChromeLabelsResolved();
@@ -103,7 +98,7 @@ namespace UI.Battle.View
             }
 
             ApplyChromeLabels();
-            RefreshHighlightVisual();
+            RefreshBackgroundColor();
         }
 
         /// <summary>
@@ -120,7 +115,7 @@ namespace UI.Battle.View
         }
 
         /// <summary>
-        /// ホバー強調用のポインターイベントをボタンへ直接登録する
+        /// 部位ロック案内などホバー検知用のポインターイベントを登録する
         /// </summary>
         private void BindHoverPointerEvents()
         {
@@ -221,12 +216,11 @@ namespace UI.Battle.View
         public LHButton Button => button;
 
         /// <summary>
-        /// ホバー強調のオンオフ
+        /// 部位ロック案内のホバー表示用
         /// </summary>
         public void SetHighlighted(bool highlighted)
         {
-            isHighlighted = highlighted;
-            RefreshHighlightVisual();
+            isPointerOver = highlighted;
             if (partLockOverlay != null)
             {
                 partLockOverlay.SetMessageHoverVisible(highlighted);
@@ -284,7 +278,8 @@ namespace UI.Battle.View
             ApplyPartLockOverlay(move.LockedByMissingPart);
             ApplyRecastFill(move.RecastReady01);
             ApplyRangeSegments(move.RangeMin, move.RangeMax, maxDistance, move.Usable);
-            RefreshHighlightVisual();
+            RefreshBackgroundColor();
+            BindFrameFxMask();
         }
 
         /// <summary>
@@ -681,12 +676,6 @@ namespace UI.Battle.View
             }
 
             ConfigureRecastFillImage(recastFillImage);
-            // リキャストはホバーの下
-            if (hoverOverlayImage != null)
-            {
-                recastFillImage.transform.SetSiblingIndex(0);
-                hoverOverlayImage.transform.SetAsLastSibling();
-            }
         }
 
         private void ConfigureRecastFillImage(Image fillImage)
@@ -770,7 +759,7 @@ namespace UI.Battle.View
             }
 
             partLockOverlay.SetLocked(lockedByMissingPart);
-            partLockOverlay.SetMessageHoverVisible(isHighlighted);
+            partLockOverlay.SetMessageHoverVisible(isPointerOver);
         }
 
         private void ApplyRequiredPartIcon(MoveTargetPartId requiredPartId)
@@ -920,88 +909,18 @@ namespace UI.Battle.View
         }
 
         /// <summary>
-        /// ホバー用グレーオーバーレイを共有枠マスク内に解決する
+        /// ホバー暗転用オーバーレイを無効化する
         /// </summary>
-        private void EnsureHoverOverlay()
+        private void DisableHoverDarkenOverlay()
         {
-            Transform root = EnsureFrameFxRoot();
-            if (hoverOverlayImage == null)
-            {
-                hoverOverlayImage = ResolveOrCreateChildImage(root, HoverOverlayName);
-            }
-            else if (hoverOverlayImage.transform.parent != root)
-            {
-                hoverOverlayImage.transform.SetParent(root, false);
-                StretchIgnoreLayoutRect(hoverOverlayImage.rectTransform);
-            }
-
-            ConfigureHoverOverlay(hoverOverlayImage);
-            // ホバーはリキャストより手前
-            hoverOverlayImage.transform.SetAsLastSibling();
-            if (recastFillImage != null)
-            {
-                recastFillImage.transform.SetSiblingIndex(0);
-            }
-        }
-
-        private void ConfigureHoverOverlay(Image overlay)
-        {
+            Image overlay = FindDescendantImageNamed(HoverOverlayName);
             if (overlay == null)
             {
                 return;
             }
 
+            overlay.enabled = false;
             overlay.raycastTarget = false;
-            overlay.maskable = true;
-            overlay.type = Image.Type.Simple;
-            overlay.preserveAspect = false;
-            overlay.color = ResolveHoverOverlayColor();
-            if (overlay.sprite == null)
-            {
-                overlay.sprite = ResolveUiWhiteSprite();
-            }
-
-            overlay.enabled = isHighlighted;
-        }
-
-        private Color ResolveHoverOverlayColor()
-        {
-            Color color = highlightBackgroundColor;
-            // 半透明を保証(Inspectorの不透明設定でも最大0.45)
-            if (color.a >= 0.99f)
-            {
-                color.a = HoverOverlayColor.a;
-            }
-            else if (color.a > 0.45f)
-            {
-                color.a = 0.45f;
-            }
-
-            if (color.a <= 0.01f)
-            {
-                return HoverOverlayColor;
-            }
-
-            return color;
-        }
-
-        private void RefreshHighlightVisual()
-        {
-            EnsureHoverOverlay();
-            RefreshBackgroundColor();
-            BindFrameFxMask();
-
-            if (hoverOverlayImage == null)
-            {
-                return;
-            }
-
-            // マスクは切らずホバーImageのみ切替える(リキャスト表示を壊さない)
-            hoverOverlayImage.enabled = isHighlighted;
-            if (isHighlighted)
-            {
-                hoverOverlayImage.color = ResolveHoverOverlayColor();
-            }
         }
 
         private void RefreshBackgroundColor()
@@ -1011,7 +930,7 @@ namespace UI.Battle.View
                 return;
             }
 
-            // 枠画像ありは常に不透明の乗算(ホバーの半透明はHoverOverlay側)
+            // 枠画像ありは常に不透明の乗算
             if (UsesFrameSpriteBackground())
             {
                 buttonBackground.color = isUsable
