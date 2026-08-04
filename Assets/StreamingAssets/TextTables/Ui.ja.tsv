@@ -79,6 +79,7 @@ Enemy.Weak	弱い
 Enemy.Normal	普通
 Enemy.Strong	強い
 Enemy.VeryStrong	超強い
+Enemy.Strongest	最強
 Training.ModeSelectTitle	育成方法を選んでください
 Training.ResumeTitle	育成途中のデータがあります
 Training.AmbushTitle	強敵急襲
@@ -429,7 +430,7 @@ Training.Shop.stat_hit.Desc	命中+6
 Training.Shop.train_boost.Desc	大成功率アップ(数日間)
 Training.Shop.stat_defense.Desc	防御+6
 Training.Shop.motivation_boost.Desc	やる気が上がる
-Training.Shop.stat_hp.Desc	HP+12
+Training.Shop.stat_hp.Desc	HP+8
 Training.Shop.stat_attack.Desc	攻撃+6
 Training.Shop.train_boost_strong.Desc	大成功率アップ(強・数日間)
 Training.Shop.stamina_drink.Desc	体力+25

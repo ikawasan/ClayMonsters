@@ -79,6 +79,7 @@ Enemy.Weak	弱
 Enemy.Normal	普通
 Enemy.Strong	強
 Enemy.VeryStrong	超強
+Enemy.Strongest	最強
 Training.ModeSelectTitle	請選擇培養方式
 Training.ResumeTitle	發現進行中的培養資料
 Training.AmbushTitle	強敵突襲
@@ -429,7 +430,7 @@ Training.Shop.stat_hit.Desc	命中+6
 Training.Shop.train_boost.Desc	大成功率提升(數日)
 Training.Shop.stat_defense.Desc	防禦+6
 Training.Shop.motivation_boost.Desc	提升幹勁
-Training.Shop.stat_hp.Desc	HP+12
+Training.Shop.stat_hp.Desc	HP+8
 Training.Shop.stat_attack.Desc	攻擊+6
 Training.Shop.train_boost_strong.Desc	大成功率大幅提升
 Training.Shop.stamina_drink.Desc	體力+25

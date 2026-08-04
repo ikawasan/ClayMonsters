@@ -79,6 +79,7 @@ Enemy.Weak	Faible
 Enemy.Normal	Normal
 Enemy.Strong	Fort
 Enemy.VeryStrong	Très fort
+Enemy.Strongest	Le plus fort
 Training.ModeSelectTitle	Choisissez une méthode
 Training.ResumeTitle	Entraînement en cours trouvé
 Training.AmbushTitle	Embuscade !
@@ -429,7 +430,7 @@ Training.Shop.stat_hit.Desc	PRE+6
 Training.Shop.train_boost.Desc	Taux super reussite+
 Training.Shop.stat_defense.Desc	DEF+6
 Training.Shop.motivation_boost.Desc	Motivation+
-Training.Shop.stat_hp.Desc	PV+12
+Training.Shop.stat_hp.Desc	PV+8
 Training.Shop.stat_attack.Desc	ATT+6
 Training.Shop.train_boost_strong.Desc	Taux super reussite++
 Training.Shop.stamina_drink.Desc	Endurance+25

@@ -79,6 +79,7 @@ Enemy.Weak	약함
 Enemy.Normal	보통
 Enemy.Strong	강함
 Enemy.VeryStrong	매우 강함
+Enemy.Strongest	최강
 Training.ModeSelectTitle	육성 방법을 선택하세요
 Training.ResumeTitle	진행 중인 육성 데이터가 있습니다
 Training.AmbushTitle	강적 습격
@@ -429,7 +430,7 @@ Training.Shop.stat_hit.Desc	명중+6
 Training.Shop.train_boost.Desc	대성공률 상승(수일)
 Training.Shop.stat_defense.Desc	방어+6
 Training.Shop.motivation_boost.Desc	의욕 상승
-Training.Shop.stat_hp.Desc	HP+12
+Training.Shop.stat_hp.Desc	HP+8
 Training.Shop.stat_attack.Desc	공격+6
 Training.Shop.train_boost_strong.Desc	대성공률 대폭 상승
 Training.Shop.stamina_drink.Desc	체력+25

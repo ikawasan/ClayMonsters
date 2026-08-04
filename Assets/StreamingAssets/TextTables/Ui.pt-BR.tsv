@@ -79,6 +79,7 @@ Enemy.Weak	Fraco
 Enemy.Normal	Normal
 Enemy.Strong	Forte
 Enemy.VeryStrong	Muito forte
+Enemy.Strongest	O mais forte
 Training.ModeSelectTitle	Escolha um método
 Training.ResumeTitle	Treinamento em andamento
 Training.AmbushTitle	Emboscada!
@@ -429,7 +430,7 @@ Training.Shop.stat_hit.Desc	PRE+6
 Training.Shop.train_boost.Desc	Taxa de grande sucesso+
 Training.Shop.stat_defense.Desc	DEF+6
 Training.Shop.motivation_boost.Desc	Motivacao+
-Training.Shop.stat_hp.Desc	PV+12
+Training.Shop.stat_hp.Desc	PV+8
 Training.Shop.stat_attack.Desc	ATQ+6
 Training.Shop.train_boost_strong.Desc	Taxa de grande sucesso++
 Training.Shop.stamina_drink.Desc	Vigor+25

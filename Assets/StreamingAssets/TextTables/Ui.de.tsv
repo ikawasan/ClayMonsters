@@ -79,6 +79,7 @@ Enemy.Weak	Schwach
 Enemy.Normal	Normal
 Enemy.Strong	Stark
 Enemy.VeryStrong	Sehr stark
+Enemy.Strongest	Stärkste
 Training.ModeSelectTitle	Trainingsmethode wählen
 Training.ResumeTitle	Laufendes Training gefunden
 Training.AmbushTitle	Hinterhalt!
@@ -429,7 +430,7 @@ Training.Shop.stat_hit.Desc	TREFF+6
 Training.Shop.train_boost.Desc	Erfolgsrate+ (Tage)
 Training.Shop.stat_defense.Desc	VER+6
 Training.Shop.motivation_boost.Desc	Motivation+
-Training.Shop.stat_hp.Desc	KP+12
+Training.Shop.stat_hp.Desc	KP+8
 Training.Shop.stat_attack.Desc	ANG+6
 Training.Shop.train_boost_strong.Desc	Erfolgsrate++ (Tage)
 Training.Shop.stamina_drink.Desc	Ausdauer+25

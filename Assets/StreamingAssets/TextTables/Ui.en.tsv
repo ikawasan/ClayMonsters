@@ -79,6 +79,7 @@ Enemy.Weak	Weak
 Enemy.Normal	Normal
 Enemy.Strong	Strong
 Enemy.VeryStrong	Very Strong
+Enemy.Strongest	Strongest
 Training.ModeSelectTitle	Choose a training method
 Training.ResumeTitle	Training in progress found
 Training.AmbushTitle	Ambush!
@@ -429,7 +430,7 @@ Training.Shop.stat_hit.Desc	HIT+6
 Training.Shop.train_boost.Desc	Great-success rate up (days)
 Training.Shop.stat_defense.Desc	DEF+6
 Training.Shop.motivation_boost.Desc	Raises motivation
-Training.Shop.stat_hp.Desc	HP+12
+Training.Shop.stat_hp.Desc	HP+8
 Training.Shop.stat_attack.Desc	ATK+6
 Training.Shop.train_boost_strong.Desc	Great-success rate up+ (days)
 Training.Shop.stamina_drink.Desc	Stamina+25
