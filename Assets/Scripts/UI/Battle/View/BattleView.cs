@@ -573,8 +573,14 @@ namespace UI.Battle.View
                 return;
             }
 
-            combatHintText.text = hint ?? string.Empty;
-            combatHintText.color = string.IsNullOrEmpty(hint)
+            string next = hint ?? string.Empty;
+            if (combatHintText.text == next)
+            {
+                return;
+            }
+
+            combatHintText.text = next;
+            combatHintText.color = string.IsNullOrEmpty(next)
                 ? new Color(1f, 1f, 1f, 0.65f)
                 : combatHintActiveColor;
         }
@@ -673,6 +679,38 @@ namespace UI.Battle.View
                 {
                     enemyMoveNames[i] = hasMove ? moves[i].Name : null;
                 }
+            }
+        }
+
+        /// <inheritdoc />
+        public void SetPlayerMoveRecasts(IReadOnlyList<float> ready01ByIndex)
+        {
+            ApplyMoveRecasts(moveButtons, ready01ByIndex);
+        }
+
+        /// <inheritdoc />
+        public void SetEnemyMoveRecasts(IReadOnlyList<float> ready01ByIndex)
+        {
+            ApplyMoveRecasts(enemyMoveButtons, ready01ByIndex);
+        }
+
+        private static void ApplyMoveRecasts(MoveButtonView[] buttons, IReadOnlyList<float> ready01ByIndex)
+        {
+            if (buttons == null || ready01ByIndex == null)
+            {
+                return;
+            }
+
+            int count = Mathf.Min(buttons.Length, ready01ByIndex.Count);
+            for (int i = 0; i < count; i++)
+            {
+                MoveButtonView moveButton = buttons[i];
+                if (moveButton == null || !moveButton.gameObject.activeSelf)
+                {
+                    continue;
+                }
+
+                moveButton.SetRecastReadyRatio(ready01ByIndex[i]);
             }
         }
 

@@ -19,9 +19,11 @@ namespace Battle.Presenter
         private readonly CompositeDisposable disposables = new CompositeDisposable();
         private readonly List<MoveDisplay> playerMoveCache = new List<MoveDisplay>();
         private readonly List<MoveDisplay> enemyMoveCache = new List<MoveDisplay>();
+        private readonly List<float> playerRecastCache = new List<float>(8);
+        private readonly List<float> enemyRecastCache = new List<float>(8);
 
         private BattleSystem system;
-        private float lastMoveRefreshDistance = float.NaN;
+        private BattleDistanceBand lastMoveRefreshDistanceBand = (BattleDistanceBand)(-1);
         private float lastMoveRefreshPlayerGuts = float.NaN;
         private float lastMoveRefreshEnemyGuts = float.NaN;
         private int lastMoveRefreshPlayerHp = int.MinValue;
@@ -38,6 +40,7 @@ namespace Battle.Presenter
         private bool lastMoveRefreshEnemyPerformingAttack;
         private bool lastMoveRefreshAttackLockout;
         private bool lastMoveRefreshAnyRecast;
+        private string lastCombatHint = string.Empty;
         private bool isBattleEnded;
 
         public BattlePresenter(IBattleView view)
@@ -96,7 +99,8 @@ namespace Battle.Presenter
         private void OnLanguageChanged()
         {
             // 技名・ヒント・距離帯を次のRefreshで再構築する
-            lastMoveRefreshDistance = float.NaN;
+            lastMoveRefreshDistanceBand = (BattleDistanceBand)(-1);
+            lastCombatHint = string.Empty;
             if (system != null && !isBattleEnded)
             {
                 RefreshContinuous();
@@ -133,41 +137,59 @@ namespace Battle.Presenter
                 system.Distance,
                 system.MaxDistance,
                 BattleDistanceBandResolver.ToDisplayName(system.CurrentDistanceBand));
-            view.SetCombatHint(BuildCombatHint());
+            ApplyCombatHint(BuildCombatHint());
             view.SetTimeRemaining(system.TimeRemaining);
 
-            if (ShouldRefreshMoves(p, e))
+            bool anyRecast = p.HasActiveMoveRecast || e.HasActiveMoveRecast;
+            if (ShouldRefreshMoves(p, e, anyRecast))
             {
-                lastMoveRefreshDistance = system.Distance;
-                lastMoveRefreshPlayerGuts = p.Guts;
-                lastMoveRefreshEnemyGuts = e.Guts;
-                lastMoveRefreshPlayerHp = p.CurrentHp;
-                lastMoveRefreshEnemyHp = e.CurrentHp;
-                lastMoveRefreshPlayerLostParts = p.LostPartCount;
-                lastMoveRefreshEnemyLostParts = e.LostPartCount;
-                lastMoveRefreshPlayerCanAct = p.CanAct;
-                lastMoveRefreshEnemyCanAct = e.CanAct;
-                lastMoveRefreshPlayerChain = system.PlayerChainCount;
-                lastMoveRefreshKnockbackAvailable = system.IsKnockbackAvailable;
-                lastMoveRefreshCounterWindow = system.IsCounterWindowOpen;
-                lastMoveRefreshPendingEnemyMove = system.PendingEnemyMoveIndex;
-                lastMoveRefreshPlayerPerformingAttack = system.IsPlayerPerformingAttack;
-                lastMoveRefreshEnemyPerformingAttack = system.IsEnemyPerformingAttack;
-                lastMoveRefreshAttackLockout = system.IsAttackLockoutActive;
-                lastMoveRefreshAnyRecast = p.HasActiveMoveRecast || e.HasActiveMoveRecast;
-
+                CacheMoveRefreshState(p, e, anyRecast);
                 BuildMoveDisplays(p, playerMoveCache, true);
                 BuildMoveDisplays(e, enemyMoveCache, false);
                 view.SetPlayerMoves(playerMoveCache);
                 view.SetEnemyMoves(enemyMoveCache);
             }
+            else if (anyRecast)
+            {
+                // リキャスト中はゲージだけ毎フレーム更新する
+                BuildRecastReadyList(p, playerRecastCache);
+                BuildRecastReadyList(e, enemyRecastCache);
+                view.SetPlayerMoveRecasts(playerRecastCache);
+                view.SetEnemyMoveRecasts(enemyRecastCache);
+            }
         }
 
-        // 技ボタンの使用可否表示は間合い・ガッツ・HP・部位欠損・リキャストが変わったときだけ更新する
-        private bool ShouldRefreshMoves(BattleUnit player, BattleUnit enemy)
+        private void CacheMoveRefreshState(BattleUnit p, BattleUnit e, bool anyRecast)
         {
-            bool anyRecast = player.HasActiveMoveRecast || enemy.HasActiveMoveRecast;
-            return !Mathf.Approximately(lastMoveRefreshDistance, system.Distance)
+            lastMoveRefreshDistanceBand = system.CurrentDistanceBand;
+            lastMoveRefreshPlayerGuts = p.Guts;
+            lastMoveRefreshEnemyGuts = e.Guts;
+            lastMoveRefreshPlayerHp = p.CurrentHp;
+            lastMoveRefreshEnemyHp = e.CurrentHp;
+            lastMoveRefreshPlayerLostParts = p.LostPartCount;
+            lastMoveRefreshEnemyLostParts = e.LostPartCount;
+            lastMoveRefreshPlayerCanAct = p.CanAct;
+            lastMoveRefreshEnemyCanAct = e.CanAct;
+            lastMoveRefreshPlayerChain = system.PlayerChainCount;
+            lastMoveRefreshKnockbackAvailable = system.IsKnockbackAvailable;
+            lastMoveRefreshCounterWindow = system.IsCounterWindowOpen;
+            lastMoveRefreshPendingEnemyMove = system.PendingEnemyMoveIndex;
+            lastMoveRefreshPlayerPerformingAttack = system.IsPlayerPerformingAttack;
+            lastMoveRefreshEnemyPerformingAttack = system.IsEnemyPerformingAttack;
+            lastMoveRefreshAttackLockout = system.IsAttackLockoutActive;
+            lastMoveRefreshAnyRecast = anyRecast;
+        }
+
+        // 技ボタン全文更新は帯・使用可否に関わる状態が変わったときだけ行う
+        private bool ShouldRefreshMoves(BattleUnit player, BattleUnit enemy, bool anyRecast)
+        {
+            // リキャスト開始/終了で使用可否が切り替わるためその境界では全文更新する
+            if (anyRecast != lastMoveRefreshAnyRecast)
+            {
+                return true;
+            }
+
+            return lastMoveRefreshDistanceBand != system.CurrentDistanceBand
                 || Mathf.FloorToInt(lastMoveRefreshPlayerGuts) != Mathf.FloorToInt(player.Guts)
                 || Mathf.FloorToInt(lastMoveRefreshEnemyGuts) != Mathf.FloorToInt(enemy.Guts)
                 || lastMoveRefreshPlayerHp != player.CurrentHp
@@ -182,9 +204,7 @@ namespace Battle.Presenter
                 || lastMoveRefreshPendingEnemyMove != system.PendingEnemyMoveIndex
                 || lastMoveRefreshPlayerPerformingAttack != system.IsPlayerPerformingAttack
                 || lastMoveRefreshEnemyPerformingAttack != system.IsEnemyPerformingAttack
-                || lastMoveRefreshAttackLockout != system.IsAttackLockoutActive
-                || anyRecast
-                || lastMoveRefreshAnyRecast;
+                || lastMoveRefreshAttackLockout != system.IsAttackLockoutActive;
         }
 
         // 現在の間合いでの各技の表示情報(名前・使用可否・間合い・ガッツ・リキャスト)を作る
@@ -209,6 +229,28 @@ namespace Battle.Presenter
                     ToRequiredPartId(m.RequiredPart),
                     unit.GetMoveRecastReadyRatio(i)));
             }
+        }
+
+        private static void BuildRecastReadyList(BattleUnit unit, List<float> destination)
+        {
+            destination.Clear();
+            int count = unit.Moves.Count;
+            for (int i = 0; i < count; i++)
+            {
+                destination.Add(unit.GetMoveRecastReadyRatio(i));
+            }
+        }
+
+        private void ApplyCombatHint(string hint)
+        {
+            string next = hint ?? string.Empty;
+            if (next == lastCombatHint)
+            {
+                return;
+            }
+
+            lastCombatHint = next;
+            view.SetCombatHint(next);
         }
 
         private string BuildCombatHint()

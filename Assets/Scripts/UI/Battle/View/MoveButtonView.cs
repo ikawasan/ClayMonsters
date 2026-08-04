@@ -279,7 +279,15 @@ namespace UI.Battle.View
             ApplyRecastFill(move.RecastReady01);
             ApplyRangeSegments(move.RangeMin, move.RangeMax, maxDistance, move.Usable);
             RefreshBackgroundColor();
-            BindFrameFxMask();
+        }
+
+        /// <summary>
+        /// リキャストゲージだけを更新する
+        /// </summary>
+        /// <param name="recastReady01">準備完了度0=開始直後1=使用可</param>
+        public void SetRecastReadyRatio(float recastReady01)
+        {
+            ApplyRecastFill(recastReady01);
         }
 
         /// <summary>
@@ -701,7 +709,11 @@ namespace UI.Battle.View
 
         private void ApplyRecastFill(float recastReady01)
         {
-            EnsureRecastFillImage();
+            if (recastFillImage == null)
+            {
+                EnsureRecastFillImage();
+            }
+
             if (recastFillImage == null)
             {
                 return;
@@ -717,9 +729,6 @@ namespace UI.Battle.View
             }
 
             recastFillImage.fillAmount = ready;
-            recastFillImage.material = null;
-            recastFillImage.color = RecastFillColor;
-            BindFrameFxMask();
         }
 
         private static Sprite cachedUiWhiteSprite;

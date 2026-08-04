@@ -109,6 +109,18 @@ namespace UI.Battle.Interface
         void SetEnemyMoves(IReadOnlyList<MoveDisplay> moves);
 
         /// <summary>
+        /// プレイヤー技のリキャスト表示だけを更新する
+        /// </summary>
+        /// <param name="ready01ByIndex">技インデックスごとの準備完了度</param>
+        void SetPlayerMoveRecasts(IReadOnlyList<float> ready01ByIndex);
+
+        /// <summary>
+        /// 敵技のリキャスト表示だけを更新する
+        /// </summary>
+        /// <param name="ready01ByIndex">技インデックスごとの準備完了度</param>
+        void SetEnemyMoveRecasts(IReadOnlyList<float> ready01ByIndex);
+
+        /// <summary>
         /// 攻撃開始時などに自他の攻撃名表示を更新する
         /// </summary>
         /// <param name="isPlayer">プレイヤー側ならtrue</param>
