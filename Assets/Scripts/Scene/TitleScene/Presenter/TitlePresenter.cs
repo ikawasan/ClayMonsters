@@ -1,4 +1,5 @@
 using Cysharp.Threading.Tasks;
+using Extensions;
 using Localization;
 using R3;
 using SaveData;
@@ -170,11 +171,7 @@ namespace Scene.TitleScene.Presenter
 
         private void OnClickQuitGameButton()
         {
-#if UNITY_EDITOR
-            UnityEditor.EditorApplication.isPlaying = false;
-#else
-            UnityEngine.Application.Quit();
-#endif
+            ApplicationQuitGuard.RequestQuit();
         }
     }
 }

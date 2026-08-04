@@ -1,4 +1,5 @@
 using Cysharp.Threading.Tasks;
+using Extensions;
 using Localization;
 using Scene.BattlePVPScene.Interface;
 using Scene.BattlePVPScene.Network;
@@ -491,7 +492,16 @@ namespace Scene.BattlePVPScene.Service
             heartbeatCts = null;
 
             CurrentRoomCode = string.Empty;
-            LeaveLobbyIfNeeded().Forget();
+
+            // 終了中のLobby離脱HTTPはプロセス残留の原因になるため行わない
+            if (!ApplicationQuitGuard.IsQuitting)
+            {
+                LeaveLobbyIfNeeded().Forget();
+            }
+            else
+            {
+                currentLobbyId = string.Empty;
+            }
 
             if (!shutdownNetwork)
             {
@@ -507,7 +517,7 @@ namespace Scene.BattlePVPScene.Service
 
         private async UniTaskVoid LeaveLobbyIfNeeded()
         {
-            if (string.IsNullOrEmpty(currentLobbyId))
+            if (ApplicationQuitGuard.IsQuitting || string.IsNullOrEmpty(currentLobbyId))
             {
                 return;
             }
