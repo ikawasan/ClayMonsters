@@ -12,6 +12,10 @@ namespace Localization
     public static class LocalizedFixedChromeLabel
     {
         private const float WidthEpsilon = 1f;
+        private const float FixedBesideGap = 4f;
+        private const float FixedFallbackMaxWidth = 48f;
+        private const float AutoSizeMinScale = 0.55f;
+        private const float AutoSizeMinFontSize = 10f;
 
         /// <summary>
         /// ラベルへ文言を載せ現在幅でLayoutElementを更新する
@@ -34,14 +38,30 @@ namespace Localization
         }
 
         /// <summary>
-        /// 固定SizeDeltaの横ラベルへ全文を載せ右隣UIへ寄せる
-        /// 省略記号は使わず必要なら左へはみ出して全文を読めるようにする
+        /// 固定配置ラベルへローカライズ文言を載せ右隣UIと重ならないよう収める
+        /// HLG配下では幅追従し固定配置では表示領域を隣要素手前までにして必要なら縮小する
         /// RectTransformは変更しない
         /// </summary>
         /// <param name="text">対象TMP</param>
         /// <param name="key">文言キー</param>
         /// <param name="japaneseFallback">プレハブ原文の日本語</param>
         public static void ApplyFixedRectLabel(TMP_Text text, string key, string japaneseFallback)
+        {
+            ApplyFixedRectLabel(text, key, japaneseFallback, null);
+        }
+
+        /// <summary>
+        /// 固定配置ラベルへローカライズ文言を載せ右隣UIと重ならないよう収める
+        /// </summary>
+        /// <param name="text">対象TMP</param>
+        /// <param name="key">文言キー</param>
+        /// <param name="japaneseFallback">プレハブ原文の日本語</param>
+        /// <param name="companion">右隣の表示物(RangeColumnやゲージ根など)</param>
+        public static void ApplyFixedRectLabel(
+            TMP_Text text,
+            string key,
+            string japaneseFallback,
+            RectTransform companion)
         {
             if (text == null)
             {
@@ -54,15 +74,17 @@ namespace Localization
             text.enableWordWrapping = false;
             // 全文を残す省略記号は使わない
             text.overflowMode = TextOverflowModes.Overflow;
-            // 枠内で右寄せし短い翻訳でも右隣ゲージとの間隔を保つ
-            text.alignment = TextAlignmentOptions.MidlineRight;
-            if (text.isActiveAndEnabled)
+            // 左寄せで隣UI側へのはみ出しを減らす
+            text.alignment = TextAlignmentOptions.MidlineLeft;
+
+            if (IsHorizontalLayoutLabel(text))
             {
-                text.ForceMeshUpdate(true);
+                ResetFixedLayoutClamp(text);
+                RefreshHorizontalLayoutWidth(text);
+                return;
             }
 
-            // 親がHLGなら幅も合わせて後ろの要素を追従させる
-            RefreshHorizontalLayoutWidth(text);
+            ApplyFixedBesideCompanion(text, companion);
         }
 
         /// <summary>
@@ -117,6 +139,132 @@ namespace Localization
             layout.minWidth = -1f;
             layout.preferredWidth = width;
             layout.flexibleWidth = 0f;
+        }
+
+        private static bool IsHorizontalLayoutLabel(TMP_Text text)
+        {
+            if (text.GetComponent<LayoutElement>() == null)
+            {
+                return false;
+            }
+
+            Transform parent = text.transform.parent;
+            return parent != null && parent.GetComponent<HorizontalLayoutGroup>() != null;
+        }
+
+        private static void ResetFixedLayoutClamp(TMP_Text text)
+        {
+            text.enableAutoSizing = false;
+            text.margin = Vector4.zero;
+        }
+
+        private static void ApplyFixedBesideCompanion(TMP_Text text, RectTransform companion)
+        {
+            RectTransform labelRect = text.rectTransform;
+            RectTransform sibling = ResolveCompanionSibling(labelRect, companion);
+            float rightMargin = 0f;
+            float availableWidth = labelRect.rect.width;
+
+            if (sibling != null && availableWidth > 1f)
+            {
+                float labelLeft = GetLocalLeft(labelRect);
+                float companionLeft = GetLocalLeft(sibling);
+                float maxWidth = companionLeft - FixedBesideGap - labelLeft;
+                if (maxWidth < 8f)
+                {
+                    maxWidth = 8f;
+                }
+
+                if (maxWidth < availableWidth)
+                {
+                    rightMargin = availableWidth - maxWidth;
+                    availableWidth = maxWidth;
+                }
+            }
+            else if (availableWidth > FixedFallbackMaxWidth)
+            {
+                // ゲージ未配線時でも右隣想定帯へ被らないよう上限を掛ける
+                rightMargin = availableWidth - FixedFallbackMaxWidth;
+                availableWidth = FixedFallbackMaxWidth;
+            }
+
+            text.margin = new Vector4(0f, 0f, rightMargin, 0f);
+
+            float baseSize = ResolveBaseFontSize(text);
+            float preferred = text.GetPreferredValues(text.text ?? string.Empty, 10000f, 0f).x;
+            if (preferred <= availableWidth + WidthEpsilon)
+            {
+                text.enableAutoSizing = false;
+                text.fontSize = baseSize;
+            }
+            else
+            {
+                text.enableAutoSizing = true;
+                text.fontSizeMax = baseSize;
+                text.fontSizeMin = Mathf.Max(AutoSizeMinFontSize, baseSize * AutoSizeMinScale);
+                text.fontSize = baseSize;
+            }
+
+            if (text.isActiveAndEnabled)
+            {
+                text.ForceMeshUpdate(true);
+            }
+        }
+
+        private static float ResolveBaseFontSize(TMP_Text text)
+        {
+            if (text.enableAutoSizing && text.fontSizeMax > 0f)
+            {
+                return text.fontSizeMax;
+            }
+
+            if (text.fontSize > 0f)
+            {
+                return text.fontSize;
+            }
+
+            return 20f;
+        }
+
+        private static RectTransform ResolveCompanionSibling(
+            RectTransform labelRect,
+            RectTransform companion)
+        {
+            if (labelRect == null || companion == null)
+            {
+                return null;
+            }
+
+            Transform parent = labelRect.parent;
+            if (parent == null)
+            {
+                return null;
+            }
+
+            Transform current = companion;
+            while (current != null)
+            {
+                if (current.parent == parent)
+                {
+                    return current as RectTransform;
+                }
+
+                current = current.parent;
+            }
+
+            return null;
+        }
+
+        private static float GetLocalLeft(RectTransform rect)
+        {
+            if (rect == null)
+            {
+                return 0f;
+            }
+
+            // 同一親ローカルX上の左端
+            float pivotOffset = rect.rect.width * rect.pivot.x;
+            return rect.anchoredPosition.x - pivotOffset;
         }
     }
 }
