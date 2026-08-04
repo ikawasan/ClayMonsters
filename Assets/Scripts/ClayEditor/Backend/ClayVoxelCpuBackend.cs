@@ -132,7 +132,7 @@ namespace ClayEditor.Backend
                 SizeZ = sizeZ,
                 Voxels = voxels
             };
-            job.Schedule(voxelCount, 64).Complete();
+            job.Schedule(voxelCount, 128).Complete();
         }
 
         /// <inheritdoc/>
@@ -175,7 +175,7 @@ namespace ClayEditor.Backend
                 SizeZ = sizeZ,
                 Colors = colors
             };
-            job.Schedule(voxelCount, 64).Complete();
+            job.Schedule(voxelCount, 128).Complete();
         }
 
         /// <inheritdoc/>

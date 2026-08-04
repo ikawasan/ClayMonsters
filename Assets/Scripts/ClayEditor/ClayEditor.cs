@@ -20,7 +20,7 @@ namespace ClayEditor
         [Header("Performance")]
         [Tooltip("薄いメッシュ時に表示メッシュを更新する間隔フレーム数")]
         [SerializeField] private int shapeUpdateInterval = 2;
-        [Tooltip("厚いメッシュ時にブラシ周辺差し替えを行う間隔フレーム数")]
+        [Tooltip("厚いメッシュ時に表示メッシュを更新する間隔フレーム数")]
         [SerializeField] private int denseShapeUpdateInterval = 2;
         [Tooltip("コライダーを焼き直す間隔フレーム数")]
         [SerializeField] private int colliderUpdateInterval = 4;
@@ -60,7 +60,7 @@ namespace ClayEditor
 
         /// <summary>
         /// ワールド座標を中心にボクセルを加算 / 減算して造形する
-        /// 既存の厚いメッシュ上ではブラシ周辺だけ差し替えて更新する
+        /// 表示更新はdirtyチャンクをフル再生成する
         /// </summary>
         /// <param name="worldPos">造形する中心のワールド座標</param>
         /// <param name="isSubtract">true なら減算、false なら加算</param>
@@ -77,28 +77,16 @@ namespace ClayEditor
             lastModifyLocalRadius = localRadius;
             hasLastModify = true;
 
-            if (engine.IsDenseSculptMesh)
-            {
-                // ピンポイント: チャンク全体再生成せずブラシ周辺だけ本メッシュへ差し替える
-                shapeFrameCounter++;
-                int denseInterval = Mathf.Max(denseShapeUpdateInterval, 1);
-                if (shapeFrameCounter >= denseInterval)
-                {
-                    shapeFrameCounter = 0;
-                    engine.UpdateShapeFastNearBrush(localPos, localRadius, refreshColliders: false);
-                }
-            }
-            else
-            {
-                engine.ClearBrushSculptPreview();
+            engine.ClearBrushSculptPreview();
 
-                shapeFrameCounter++;
-                int meshInterval = Mathf.Max(shapeUpdateInterval, 1);
-                if (shapeFrameCounter >= meshInterval)
-                {
-                    shapeFrameCounter = 0;
-                    engine.UpdateShapeFast(refreshColliders: false);
-                }
+            shapeFrameCounter++;
+            int meshInterval = engine.IsDenseSculptMesh
+                ? Mathf.Max(denseShapeUpdateInterval, 1)
+                : Mathf.Max(shapeUpdateInterval, 1);
+            if (shapeFrameCounter >= meshInterval)
+            {
+                shapeFrameCounter = 0;
+                engine.UpdateShapeFast(refreshColliders: false);
             }
 
             colliderFrameCounter++;
@@ -111,7 +99,8 @@ namespace ClayEditor
         }
 
         /// <summary>
-        /// 造形ストロークの終了時などに呼び 最終形状とコライダーを確定する
+        /// 造形ストロークの終了時などに呼び 未反映メッシュを確定する
+        /// コライダー焼きはストローク中の間引き更新に任せ離した瞬間は行わない
         /// </summary>
         public void FlushShape()
         {
@@ -119,7 +108,7 @@ namespace ClayEditor
             colliderFrameCounter = 0;
             if (hasLastModify)
             {
-                // 部分差し替えの継ぎ目をストローク終了時に本更新で解消する
+                // 最終ブラシ範囲のチャンクを本更新対象にする
                 engine.MarkBrushChunksDirty(lastModifyLocalPos, lastModifyLocalRadius);
                 hasLastModify = false;
             }
@@ -144,6 +133,7 @@ namespace ClayEditor
             {
                 engine.SetVoxelData(prevState);
                 engine.FlushShape();
+                engine.FlushChunkColliders();
             }
         }
 
@@ -156,6 +146,7 @@ namespace ClayEditor
             {
                 engine.SetVoxelData(nextState);
                 engine.FlushShape();
+                engine.FlushChunkColliders();
             }
         }
 
@@ -166,6 +157,7 @@ namespace ClayEditor
         {
             engine.ClearAllVoxels();
             engine.FlushShape();
+            engine.FlushChunkColliders();
         }
     }
 }

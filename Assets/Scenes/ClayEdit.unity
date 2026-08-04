@@ -41406,6 +41406,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: UI.ClayEditor::UI.ClayEditor.View.ClayEditOperationGuideView
   canvas: {fileID: 707563701}
   visibilityToggle: {fileID: 975624143}
+  visibilityToggleLabel: {fileID: 0}
   chevronIcon: {fileID: 2888800401}
   clayGuidePanel: {fileID: 1872343499}
   paintGuidePanel: {fileID: 1837134713}

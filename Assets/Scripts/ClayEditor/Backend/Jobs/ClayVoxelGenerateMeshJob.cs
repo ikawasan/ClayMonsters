@@ -103,18 +103,31 @@ namespace ClayEditor.Backend.Jobs
             return Voxels[ClayVoxelGridIndex.ToIndex(px, py, pz, GridCount)];
         }
 
+        private float3 Interpolate(float3 p1, float v1, float3 p2, float v2)
+        {
+            float delta = v2 - v1;
+            if (math.abs(delta) < 1e-5f)
+            {
+                return (p1 + p2) * 0.5f;
+            }
+
+            float t = math.saturate((IsoLevel - v1) / delta);
+            return p1 + t * (p2 - p1);
+        }
+
         private float3 GetNormalAt(int3 p)
         {
             float nx = SampleVoxel(new int3(p.x + 1, p.y, p.z)) - SampleVoxel(new int3(p.x - 1, p.y, p.z));
             float ny = SampleVoxel(new int3(p.x, p.y + 1, p.z)) - SampleVoxel(new int3(p.x, p.y - 1, p.z));
             float nz = SampleVoxel(new int3(p.x, p.y, p.z + 1)) - SampleVoxel(new int3(p.x, p.y, p.z - 1));
             float3 n = new float3(nx, ny, nz);
-            return -math.normalize(n);
-        }
+            float lengthSq = math.lengthsq(n);
+            if (lengthSq < 1e-10f)
+            {
+                return new float3(0f, 1f, 0f);
+            }
 
-        private float3 Interpolate(float3 p1, float v1, float3 p2, float v2)
-        {
-            return p1 + (IsoLevel - v1) * (p2 - p1) / (v2 - v1);
+            return -n * math.rsqrt(lengthSq);
         }
 
         private bool IsDefaultColor(float3 color)
@@ -124,7 +137,13 @@ namespace ClayEditor.Backend.Jobs
 
         private float3 InterpolateColor(int3 cornerA, int3 cornerB, float valA, float valB)
         {
-            float t = (IsoLevel - valA) / (valB - valA);
+            float t = 0.5f;
+            float delta = valB - valA;
+            if (math.abs(delta) >= 1e-5f)
+            {
+                t = math.saturate((IsoLevel - valA) / delta);
+            }
+
             float3 colorA = Colors[ClayVoxelGridIndex.ToIndex(cornerA.x, cornerA.y, cornerA.z, GridCount)];
             float3 colorB = Colors[ClayVoxelGridIndex.ToIndex(cornerB.x, cornerB.y, cornerB.z, GridCount)];
 
@@ -203,10 +222,27 @@ namespace ClayEditor.Backend.Jobs
             float3 p1 = new float3(cornerA) * Scale;
             float3 p2 = new float3(cornerB) * Scale;
             float3 vertex = Interpolate(p1, valC1, p2, valC2) - Offset;
-            float t = (IsoLevel - valC1) / (valC2 - valC1);
+            float t = 0.5f;
+            float edgeDelta = valC2 - valC1;
+            if (math.abs(edgeDelta) >= 1e-5f)
+            {
+                t = math.saturate((IsoLevel - valC1) / edgeDelta);
+            }
+
             float3 normalC1 = GetNormalAt(id + MarchingCubesTables.CornerOffsets[c1]);
             float3 normalC2 = GetNormalAt(id + MarchingCubesTables.CornerOffsets[c2]);
-            float3 normal = math.normalize(math.lerp(normalC1, normalC2, t));
+            // math.normalizeはゼロでNaNになるので安全正規化する
+            float3 normal = math.lerp(normalC1, normalC2, t);
+            float normalLenSq = math.lengthsq(normal);
+            if (normalLenSq < 1e-10f)
+            {
+                normal = new float3(0f, 1f, 0f);
+            }
+            else
+            {
+                normal *= math.rsqrt(normalLenSq);
+            }
+
             float3 color = InterpolateColor(cornerA, cornerB, valC1, valC2);
 
             switch (vertexIndex)

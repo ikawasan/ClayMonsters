@@ -76,15 +76,18 @@ namespace ClayEditor.Backend.Jobs
             }
 
             float3 localPos = new float3(x, y, z) * Scale - Offset;
-            float dist = math.distance(localPos, HitPosition);
-            if (dist >= ModRadius)
+            float radiusSq = ModRadius * ModRadius;
+            float distSq = math.lengthsq(localPos - HitPosition);
+            if (distSq >= radiusSq)
             {
                 return;
             }
 
-            float influence = (1f - math.pow(dist / ModRadius, 2f)) * ModStrength;
+            // 1-(d/r)^2 を平方距離だけで評価する
+            float influence = (1f - distSq / radiusSq) * ModStrength;
             int voxelIndex = x * GridCount * GridCount + y * GridCount + z;
-            Voxels[voxelIndex] += influence;
+            // 極端な密度で等値面補間が壊れるのを防ぐ
+            Voxels[voxelIndex] = math.clamp(Voxels[voxelIndex] + influence, -1f, 1f);
         }
     }
 
@@ -129,7 +132,8 @@ namespace ClayEditor.Backend.Jobs
             }
 
             float3 localPos = new float3(x, y, z) * Scale - Offset;
-            if (math.distance(localPos, HitPosition) >= PaintRadius)
+            float radiusSq = PaintRadius * PaintRadius;
+            if (math.lengthsq(localPos - HitPosition) >= radiusSq)
             {
                 return;
             }

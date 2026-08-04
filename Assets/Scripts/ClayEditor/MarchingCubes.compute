@@ -88,7 +88,25 @@ void InitializeVoxelColors(uint3 id : SV_DispatchThreadID)
 
 float3 Interpolate(float3 p1, float v1, float3 p2, float v2)
 {
-    return p1 + (_IsoLevel - v1) * (p2 - p1) / (v2 - v1);
+    float delta = v2 - v1;
+    if (abs(delta) < 1e-5)
+    {
+        return (p1 + p2) * 0.5;
+    }
+
+    float t = saturate((_IsoLevel - v1) / delta);
+    return p1 + t * (p2 - p1);
+}
+
+float3 SafeNormalize(float3 n)
+{
+    float lenSq = dot(n, n);
+    if (lenSq < 1e-10)
+    {
+        return float3(0, 1, 0);
+    }
+
+    return n * rsqrt(lenSq);
 }
 
 float3 GetNormalAt(uint3 p)
@@ -97,7 +115,7 @@ float3 GetNormalAt(uint3 p)
     n.x = _Voxels[GetIndex(clamp(p.x + 1, 0, _Size), p.y, p.z)] - _Voxels[GetIndex(clamp(p.x - 1, 0, _Size), p.y, p.z)];
     n.y = _Voxels[GetIndex(p.x, clamp(p.y + 1, 0, _Size), p.z)] - _Voxels[GetIndex(p.x, clamp(p.y - 1, 0, _Size), p.z)];
     n.z = _Voxels[GetIndex(p.x, p.y, clamp(p.z + 1, 0, _Size))] - _Voxels[GetIndex(p.x, p.y, clamp(p.z - 1, 0, _Size))];
-    return -normalize(n);
+    return -SafeNormalize(n);
 }
 
 // 既定色かどうかを判定する
@@ -109,7 +127,13 @@ bool IsDefaultColor(float3 color)
 // エッジ上の補間位置に合わせて 2つのコーナーのボクセル色を補間する
 float3 InterpolateColor(uint3 cornerA, uint3 cornerB, float valA, float valB)
 {
-    float t = (_IsoLevel - valA) / (valB - valA);
+    float t = 0.5;
+    float delta = valB - valA;
+    if (abs(delta) >= 1e-5)
+    {
+        t = saturate((_IsoLevel - valA) / delta);
+    }
+
     float3 colorA = _VoxelColors[GetIndex(cornerA.x, cornerA.y, cornerA.z)];
     float3 colorB = _VoxelColors[GetIndex(cornerB.x, cornerB.y, cornerB.z)];
 
@@ -171,7 +195,10 @@ void GenerateMesh(uint3 tid : SV_DispatchThreadID)
         float3 p1_1 = (float3) corner1A * _Scale;
         float3 p2_1 = (float3) corner1B * _Scale;
         tri.v1 = Interpolate(p1_1, vals[c1_1], p2_1, vals[c2_1]) - _Offset;
-        tri.n1 = normalize(lerp(cornerNormals[c1_1], cornerNormals[c2_1], (_IsoLevel - vals[c1_1]) / (vals[c2_1] - vals[c1_1])));
+        float t1 = abs(vals[c2_1] - vals[c1_1]) < 1e-5
+            ? 0.5
+            : saturate((_IsoLevel - vals[c1_1]) / (vals[c2_1] - vals[c1_1]));
+        tri.n1 = SafeNormalize(lerp(cornerNormals[c1_1], cornerNormals[c2_1], t1));
         tri.c1 = InterpolateColor(corner1A, corner1B, vals[c1_1], vals[c2_1]);
 
         // 頂点2
@@ -183,7 +210,10 @@ void GenerateMesh(uint3 tid : SV_DispatchThreadID)
         float3 p1_2 = (float3) corner2A * _Scale;
         float3 p2_2 = (float3) corner2B * _Scale;
         tri.v2 = Interpolate(p1_2, vals[c1_2], p2_2, vals[c2_2]) - _Offset;
-        tri.n2 = normalize(lerp(cornerNormals[c1_2], cornerNormals[c2_2], (_IsoLevel - vals[c1_2]) / (vals[c2_2] - vals[c1_2])));
+        float t2 = abs(vals[c2_2] - vals[c1_2]) < 1e-5
+            ? 0.5
+            : saturate((_IsoLevel - vals[c1_2]) / (vals[c2_2] - vals[c1_2]));
+        tri.n2 = SafeNormalize(lerp(cornerNormals[c1_2], cornerNormals[c2_2], t2));
         tri.c2 = InterpolateColor(corner2A, corner2B, vals[c1_2], vals[c2_2]);
 
         // 頂点3
@@ -195,7 +225,10 @@ void GenerateMesh(uint3 tid : SV_DispatchThreadID)
         float3 p1_3 = (float3) corner3A * _Scale;
         float3 p2_3 = (float3) corner3B * _Scale;
         tri.v3 = Interpolate(p1_3, vals[c1_3], p2_3, vals[c2_3]) - _Offset;
-        tri.n3 = normalize(lerp(cornerNormals[c1_3], cornerNormals[c2_3], (_IsoLevel - vals[c1_3]) / (vals[c2_3] - vals[c1_3])));
+        float t3 = abs(vals[c2_3] - vals[c1_3]) < 1e-5
+            ? 0.5
+            : saturate((_IsoLevel - vals[c1_3]) / (vals[c2_3] - vals[c1_3]));
+        tri.n3 = SafeNormalize(lerp(cornerNormals[c1_3], cornerNormals[c2_3], t3));
         tri.c3 = InterpolateColor(corner3A, corner3B, vals[c1_3], vals[c2_3]);
 
         _Triangles.Append(tri);
@@ -224,13 +257,15 @@ void ModifyVoxels(uint3 id : SV_DispatchThreadID)
     }
 
     float3 localPos = (float3) voxelId * _Scale - _Offset;
-    float dist = distance(localPos, _HitPosition);
+    float radiusSq = _ModRadius * _ModRadius;
+    float distSq = dot(localPos - _HitPosition, localPos - _HitPosition);
 
-    if (dist < _ModRadius)
+    if (distSq < radiusSq)
     {
-        float influence = (1.0 - pow(dist / _ModRadius, 2.0)) * _ModStrength;
+        float influence = (1.0 - distSq / radiusSq) * _ModStrength;
         int idx = GetIndex(voxelId.x, voxelId.y, voxelId.z);
-        _Voxels[idx] += influence;
+        // 極端な密度で等値面補間が壊れるのを防ぐ
+        _Voxels[idx] = clamp(_Voxels[idx] + influence, -1.0, 1.0);
     }
 }
 
