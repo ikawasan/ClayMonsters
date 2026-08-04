@@ -4,6 +4,9 @@ using UnityEngine;
 
 namespace ClayEditor
 {
+    /// <summary>
+    /// 生成ボーンの関節と線をランタイム表示するEditor向けデバッグ用Visualizer
+    /// </summary>
     public class ClayBoneVisualizer : MonoBehaviour
     {
         [Header("表示設定")]
@@ -67,9 +70,20 @@ namespace ClayEditor
         // 実行時生成の前面描画用マテリアル
         private Material runtimeMaterial;
 
+        private void Awake()
+        {
+            // ROM(プレイヤービルド)ではデバッグ用ボーン表示を行わない
+            if (!Application.isEditor)
+            {
+                enabled = false;
+                ClearRuntime();
+            }
+        }
+
         private void LateUpdate()
         {
-            if (!Application.isPlaying)
+            // ROMではボーン可視化を更新しない
+            if (!Application.isEditor || !Application.isPlaying)
             {
                 return;
             }
@@ -86,14 +100,31 @@ namespace ClayEditor
 
         public void Rebuild()
         {
-            if (!Application.isPlaying)
+            // ROMでは可視化オブジェクトを生成しない
+            if (!Application.isEditor || !Application.isPlaying)
             {
+                ClearRuntime();
                 return;
             }
 
             CollectBones();
             RebuildRuntime();
             UpdateRuntimeVisualizer();
+        }
+
+        /// <summary>
+        /// 実行時に生成した可視化オブジェクトを破棄する
+        /// </summary>
+        private void ClearRuntime()
+        {
+            if (containerObject != null)
+            {
+                Destroy(containerObject);
+                containerObject = null;
+            }
+
+            bonePairs.Clear();
+            builtBones.Clear();
         }
 
         // 表示元から現在のボーンを収集する
@@ -357,14 +388,12 @@ namespace ClayEditor
 
         private void OnDestroy()
         {
-            if (containerObject != null)
-            {
-                Destroy(containerObject);
-            }
+            ClearRuntime();
 
             if (runtimeMaterial != null)
             {
                 Destroy(runtimeMaterial);
+                runtimeMaterial = null;
             }
         }
     }
