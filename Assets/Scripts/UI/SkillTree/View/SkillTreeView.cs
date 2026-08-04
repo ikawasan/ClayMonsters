@@ -46,6 +46,7 @@ namespace UI.SkillTree.View
         {
             ValidateReferences();
             RebuildNodeMap();
+            EnsureConnectionsBehindNodes();
             ApplyGridLayout();
             InitializeBonusSummaryToggle();
             EnsureBakedLabels();
@@ -247,6 +248,32 @@ namespace UI.SkillTree.View
                 {
                     connectionLines[i].enabled = false;
                 }
+            }
+
+            EnsureConnectionsBehindNodes();
+        }
+
+        /// <summary>
+        /// 接続線をノードより背面に描画する
+        /// Hierarchyで線が途中に挟まると一部アイコンより手前になるため補正する
+        /// </summary>
+        private void EnsureConnectionsBehindNodes()
+        {
+            if (connectionLines == null || connectionLines.Length == 0)
+            {
+                return;
+            }
+
+            // SetAsFirstSiblingは先頭へ移すため配列末尾から適用し順序を保つ
+            for (int i = connectionLines.Length - 1; i >= 0; i--)
+            {
+                Image line = connectionLines[i];
+                if (line == null)
+                {
+                    continue;
+                }
+
+                line.rectTransform.SetAsFirstSibling();
             }
         }
 
