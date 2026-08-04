@@ -618,4 +618,28 @@ ClayEdit.BackgroundColor	Arrière-plan
 Battle.MatchupStatus	Stats
 Training.SwapSkip	Skip
 Training.Hud.Interrupt	Pause
-
+Enemy.Name.0	Clemon
+Enemy.Name.1	Slime monoculaire
+Enemy.Name.2	Hakobuta
+Enemy.Name.3	Kamegon
+Enemy.Name.4	Dragon sombre
+Enemy.Name.5	Requinou
+Enemy.Name.6	Gyogyogyo
+Enemy.Name.7	Mogyura
+Enemy.Name.8	Araignée
+Enemy.Name.9	Chevalier des ténèbres
+Enemy.Name.10	Chauve-souris
+Enemy.Name.11	Myraman
+Enemy.Name.12	Golem
+Enemy.Name.13	Lézard jaune
+Enemy.Name.14	Lézard bleu
+Enemy.Name.15	Jammo
+Enemy.Name.16	Homme-cactus
+Enemy.Name.17	Rhino démon
+Enemy.Name.18	Lézard vert
+Enemy.Name.19	Lézard rouge
+Enemy.Name.20	Mush
+Enemy.Name.21	Minotaure
+Enemy.Name.22	Tigre
+Enemy.Name.23	Puu
+Enemy.Name.24	Robot artilleur
