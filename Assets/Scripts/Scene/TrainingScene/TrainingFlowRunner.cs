@@ -1810,11 +1810,16 @@ namespace Scene.TrainingScene
                 return false;
             }
 
-            string enemyName = saveService.GetSlot(ModelSavePool.Enemy, enemySlotIndex)?.modelName
-                ?? LocalizedText.Get(GameTextKeys.TrainingAmbushEnemyDefault);
+            string fallbackModelName = saveService.GetSlot(ModelSavePool.Enemy, enemySlotIndex)?.modelName;
+            if (string.IsNullOrEmpty(fallbackModelName))
+            {
+                fallbackModelName = LocalizedText.Get(GameTextKeys.TrainingAmbushEnemyDefault);
+            }
+
+            string enemyName = EnemyDisplayName.Resolve(enemySlotIndex, fallbackModelName);
 
             await ambushView.PlayAlertAsync(cancellationToken);
-            ambushView.ShowChoice(enemyName);
+            ambushView.ShowChoice(enemySlotIndex, fallbackModelName);
             TrainingAmbushChoice choice = await ambushView.WaitChoiceAsync(cancellationToken);
             ambushView.Hide();
 
@@ -1949,7 +1954,7 @@ namespace Scene.TrainingScene
                 return;
             }
 
-            string enemyName = saveService.GetSlot(ModelSavePool.Enemy, enemySlotIndex)?.modelName ?? LocalizedText.GetOrFallback(GameTextKeys.TrainingLogEnemyDefault, "敵");
+            string enemyName = ResolveEnemyDisplayName(enemySlotIndex);
             hudView.SetLogMessage(LocalizedText.GetOrFallback(GameTextKeys.TrainingLogAfterSchoolStart, "放課後の戦闘\n{name}との対戦が始まります", "name", enemyName));
             await hudView.WaitContinueAsync(cancellationToken);
 
@@ -2511,6 +2516,22 @@ namespace Scene.TrainingScene
             }
 
             motivationBallPlay?.ClearBall();
+        }
+
+        /// <summary>
+        /// 敵スロットの表示名を言語別で解決する
+        /// </summary>
+        /// <param name="enemySlotIndex">敵スロット</param>
+        /// <returns>表示名</returns>
+        private string ResolveEnemyDisplayName(int enemySlotIndex)
+        {
+            string fallback = saveService.GetSlot(ModelSavePool.Enemy, enemySlotIndex)?.modelName;
+            if (string.IsNullOrEmpty(fallback))
+            {
+                fallback = LocalizedText.GetOrFallback(GameTextKeys.TrainingAmbushEnemyDefault, "強敵");
+            }
+
+            return EnemyDisplayName.Resolve(enemySlotIndex, fallback);
         }
     }
 }

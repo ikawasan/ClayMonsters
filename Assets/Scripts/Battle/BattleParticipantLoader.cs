@@ -1,10 +1,11 @@
+using ClayEditor.Rigging;
+using Cysharp.Threading.Tasks;
+using Localization;
+using SaveData;
+using SaveData.Interface;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
-using ClayEditor.Rigging;
-using Cysharp.Threading.Tasks;
-using SaveData;
-using SaveData.Interface;
 using UnityEngine;
 
 namespace Battle
@@ -157,7 +158,8 @@ namespace Battle
                     slot,
                     ModelStatus.CloneOrDefault(slot.status),
                     null,
-                    -1);
+                    -1,
+                    ModelSavePool.TrainedPlayer);
                 return FinalizeSpawnPlacement(participant, spawn);
             }
             finally
@@ -192,7 +194,7 @@ namespace Battle
                 return default;
             }
 
-            BattleParticipant participant = BuildParticipant(model, slot);
+            BattleParticipant participant = BuildParticipant(model, slot, pool, slotIndex);
             return FinalizeSpawnPlacement(participant, spawn);
         }
 
@@ -218,12 +220,12 @@ namespace Battle
             ModelPartLossController partLoss = model.GetComponent<ModelPartLossController>();
             if (motion == null || !motion.IsReady)
             {
-                return BuildParticipant(model, slot, status, strengthTier, slotIndex);
+                return BuildParticipant(model, slot, status, strengthTier, slotIndex, ModelSavePool.Enemy);
             }
 
             NormalizeStatus(status, out int hp, out int attack, out int defense, out int speed, out int hit);
             var unit = new BattleUnit(
-                slot.modelName,
+                EnemyDisplayName.Resolve(slotIndex, slot.modelName),
                 hp,
                 attack,
                 defense,
@@ -341,7 +343,13 @@ namespace Battle
             ModelStatus status = strengthTier.HasValue
                 ? EnemyStrengthStatusCatalog.Resolve(slot, strengthTier.Value)
                 : ModelStatus.CloneOrDefault(slot.status);
-            BattleParticipant participant = BuildParticipant(model, slot, status, strengthTier, slotIndex);
+            BattleParticipant participant = BuildParticipant(
+                model,
+                slot,
+                status,
+                strengthTier,
+                slotIndex,
+                pool);
             return FinalizeSpawnPlacement(participant, spawn);
         }
 
@@ -378,17 +386,19 @@ namespace Battle
             return participant;
         }
 
-        private BattleParticipant BuildParticipant(GameObject model, ModelSaveSlot slot)
-        {
-            return BuildParticipant(model, slot, ModelStatus.CloneOrDefault(slot.status), null, -1);
-        }
-
         private BattleParticipant BuildParticipant(
             GameObject model,
             ModelSaveSlot slot,
-            ModelStatus status)
+            ModelSavePool pool,
+            int slotIndex)
         {
-            return BuildParticipant(model, slot, status, null, -1);
+            return BuildParticipant(
+                model,
+                slot,
+                ModelStatus.CloneOrDefault(slot.status),
+                null,
+                slotIndex,
+                pool);
         }
 
         private BattleParticipant BuildParticipant(
@@ -396,13 +406,16 @@ namespace Battle
             ModelSaveSlot slot,
             ModelStatus status,
             EnemyStrengthTier? strengthTier,
-            int slotIndex)
+            int slotIndex,
+            ModelSavePool pool)
         {
             LoadedModelConfigurator.Result cfg = configurator.Configure(model);
 
+            string displayName = ResolveDisplayName(pool, slotIndex, slot);
+
             if (cfg.Motion == null || !cfg.Motion.IsReady)
             {
-                Debug.LogWarning($"[BattleParticipantLoader] {slot.modelName}のモーション初期化に失敗しました。モデルが動かない可能性があります");
+                Debug.LogWarning($"[BattleParticipantLoader] {displayName}のモーション初期化に失敗しました。モデルが動かない可能性があります");
             }
             else
             {
@@ -414,13 +427,24 @@ namespace Battle
             NormalizeStatus(status, out int hp, out int attack, out int defense, out int speed, out int hit);
 
             var unit = new BattleUnit(
-                slot.modelName,
+                displayName,
                 hp, attack, defense, speed, hit,
                 ResolveAttackMotions(slot, model, cfg.PartLoss, strengthTier, slotIndex),
                 cfg.Motion,
                 cfg.PartLoss);
 
             return new BattleParticipant { Model = model, Unit = unit };
+        }
+
+        private static string ResolveDisplayName(ModelSavePool pool, int slotIndex, ModelSaveSlot slot)
+        {
+            string fallback = slot != null ? slot.modelName : string.Empty;
+            if (pool == ModelSavePool.Enemy)
+            {
+                return EnemyDisplayName.Resolve(slotIndex, fallback);
+            }
+
+            return fallback ?? string.Empty;
         }
 
         // 未設定や旧データのステータスを戦闘向けに補正する

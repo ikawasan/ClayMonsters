@@ -1081,7 +1081,7 @@ namespace UI.ClayEditor.View
         /// </summary>
         public static void BindScrollListFromSlot(RowElements row, ModelSaveSlot slot, int slotIndex)
         {
-            BindScrollListFromSlot(row, slot, slotIndex, ModelSaveSlotListContentMode.Full);
+            BindScrollListFromSlot(row, slot, slotIndex, ModelSaveSlotListContentMode.Full, ModelSavePool.Player);
         }
 
         /// <summary>
@@ -1097,6 +1097,25 @@ namespace UI.ClayEditor.View
             int slotIndex,
             ModelSaveSlotListContentMode contentMode)
         {
+            BindScrollListFromSlot(row, slot, slotIndex, contentMode, ModelSavePool.Player);
+        }
+
+        /// <summary>
+        /// スクロール一覧用にセーブ済みスロット内容を指定プールで反映する
+        /// 敵プールは言語別表示名を使う
+        /// </summary>
+        /// <param name="row">行要素</param>
+        /// <param name="slot">スロット</param>
+        /// <param name="slotIndex">スロット番号</param>
+        /// <param name="contentMode">表示内容</param>
+        /// <param name="pool">対象プール</param>
+        public static void BindScrollListFromSlot(
+            RowElements row,
+            ModelSaveSlot slot,
+            int slotIndex,
+            ModelSaveSlotListContentMode contentMode,
+            ModelSavePool pool)
+        {
             if (slot == null || string.IsNullOrEmpty(slot.modelName))
             {
                 BindScrollListEmpty(
@@ -1106,13 +1125,15 @@ namespace UI.ClayEditor.View
                 return;
             }
 
+            string displayName = ResolveSlotDisplayName(pool, slotIndex, slot.modelName);
+
             if (contentMode == ModelSaveSlotListContentMode.NameAndThumbnail)
             {
-                BindScrollListNameAndThumbnailFromSlot(row, slot);
+                BindScrollListNameAndThumbnailFromSlot(row, displayName);
                 return;
             }
 
-            BindScrollListHeader(row, slot.modelName);
+            BindScrollListHeader(row, displayName);
             SetThumbnailColumnVisible(row, true);
             row.ParamsText.text = ModelSaveSummaryFormatter.FormatStatusParameters(slot.status);
             row.ParamsText.gameObject.SetActive(true);
@@ -1133,7 +1154,17 @@ namespace UI.ClayEditor.View
         /// <param name="slot">スロット</param>
         public static void BindScrollListNameAndThumbnailFromSlot(RowElements row, ModelSaveSlot slot)
         {
-            BindScrollListHeader(row, slot.modelName);
+            BindScrollListNameAndThumbnailFromSlot(row, slot != null ? slot.modelName : string.Empty);
+        }
+
+        /// <summary>
+        /// 一覧向けに表示名とサムネイルだけ反映する
+        /// </summary>
+        /// <param name="row">行要素</param>
+        /// <param name="displayName">表示名</param>
+        public static void BindScrollListNameAndThumbnailFromSlot(RowElements row, string displayName)
+        {
+            BindScrollListHeader(row, displayName);
             SetThumbnailColumnVisible(row, true);
             SetParamsTextVisible(row, false);
             row.SetActiveAttackCount(0);
@@ -1142,6 +1173,16 @@ namespace UI.ClayEditor.View
             {
                 row.AttacksContainer.gameObject.SetActive(false);
             }
+        }
+
+        private static string ResolveSlotDisplayName(ModelSavePool pool, int slotIndex, string modelName)
+        {
+            if (pool == ModelSavePool.Enemy)
+            {
+                return EnemyDisplayName.Resolve(slotIndex, modelName);
+            }
+
+            return modelName ?? string.Empty;
         }
 
         /// <summary>

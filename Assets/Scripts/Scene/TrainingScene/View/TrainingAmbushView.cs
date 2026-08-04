@@ -41,7 +41,8 @@ namespace Scene.TrainingScene.View
         private bool hasChoice;
         private TrainingAmbushChoice selectedChoice = TrainingAmbushChoice.Flee;
         private bool uiBound;
-        private string cachedEnemyName = string.Empty;
+        private int cachedEnemySlotIndex = -1;
+        private string cachedEnemyFallbackName = string.Empty;
         private bool choiceVisible;
 
         private void Awake()
@@ -108,12 +109,13 @@ namespace Scene.TrainingScene.View
         }
 
         /// <inheritdoc/>
-        public void ShowChoice(string enemyName)
+        public void ShowChoice(int enemySlotIndex, string fallbackEnemyName)
         {
             EnsureUiBound();
             hasChoice = false;
             selectedChoice = TrainingAmbushChoice.Flee;
-            cachedEnemyName = enemyName ?? string.Empty;
+            cachedEnemySlotIndex = enemySlotIndex;
+            cachedEnemyFallbackName = fallbackEnemyName ?? string.Empty;
             choiceVisible = true;
             ApplyChoiceCopy();
 
@@ -152,9 +154,7 @@ namespace Scene.TrainingScene.View
 
             if (choiceMessageText != null)
             {
-                string name = string.IsNullOrEmpty(cachedEnemyName)
-                    ? LocalizedText.Get(GameTextKeys.TrainingAmbushEnemyDefault)
-                    : cachedEnemyName;
+                string name = ResolveEnemyDisplayName();
                 choiceMessageText.text = LocalizedText.Get(GameTextKeys.TrainingAmbushMessage, "name", name);
             }
 
@@ -164,6 +164,25 @@ namespace Scene.TrainingScene.View
             LhButtonLabelUtility.SetLabel(
                 fleeButton,
                 LocalizedText.GetOrFallback(GameTextKeys.TrainingAmbushFlee, "逃げる"));
+        }
+
+        private string ResolveEnemyDisplayName()
+        {
+            if (cachedEnemySlotIndex >= 0)
+            {
+                string resolved = EnemyDisplayName.Resolve(cachedEnemySlotIndex, cachedEnemyFallbackName);
+                if (!string.IsNullOrEmpty(resolved))
+                {
+                    return resolved;
+                }
+            }
+
+            if (!string.IsNullOrEmpty(cachedEnemyFallbackName))
+            {
+                return cachedEnemyFallbackName;
+            }
+
+            return LocalizedText.Get(GameTextKeys.TrainingAmbushEnemyDefault);
         }
 
         /// <inheritdoc/>
@@ -179,6 +198,8 @@ namespace Scene.TrainingScene.View
         {
             hasChoice = false;
             choiceVisible = false;
+            cachedEnemySlotIndex = -1;
+            cachedEnemyFallbackName = string.Empty;
             SetAlertVisible(false);
             SetChoiceVisible(false);
         }

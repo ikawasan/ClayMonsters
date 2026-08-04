@@ -1,0 +1,290 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8b4c1a92d7f4e6a9b0c3d5f7a8e1b2c, type: 3}
+  m_Name: EnemyNameLocalizationCatalog
+  m_EditorClassIdentifier: 
+  entries:
+  - slotIndex: 0
+    editorNote: "\u304F\u308C\u3082\u3093"
+    japanese: "\u304F\u308C\u3082\u3093"
+    english: Clemon
+    chineseSimplified: "\u514B\u96F7\u8499"
+    chineseTraditional: "\u514B\u96F7\u8499"
+    korean: "\uCFE0\uB808\uBAAC"
+    german: Clemon
+    french: Clemon
+    spanish: Clemon
+    portugueseBrazil: Clemon
+  - slotIndex: 1
+    editorNote: "\u4E00\u3064\u76EE\u30B9\u30E9\u30A4\u30E0"
+    japanese: "\u4E00\u3064\u76EE\u30B9\u30E9\u30A4\u30E0"
+    english: One-Eyed Slime
+    chineseSimplified: "\u72EC\u773C\u53F2\u83B1\u59C6"
+    chineseTraditional: "\u7368\u773C\u53F2\u840A\u59C6"
+    korean: "\uC678\uB208 \uC2AC\uB77C\uC784"
+    german: "Ein\xE4ugiger Schleim"
+    french: Slime monoculaire
+    spanish: Limo monocular
+    portugueseBrazil: Limo mono-olho
+  - slotIndex: 2
+    editorNote: "\u30CF\u30B3\u30D6\u30BF"
+    japanese: "\u30CF\u30B3\u30D6\u30BF"
+    english: Hakobuta
+    chineseSimplified: "\u54C8\u79D1\u732A"
+    chineseTraditional: "\u54C8\u79D1\u8C6C"
+    korean: "\uD558\uCF54\uBD80\uD0C0"
+    german: Hakobuta
+    french: Hakobuta
+    spanish: Hakobuta
+    portugueseBrazil: Hakobuta
+  - slotIndex: 3
+    editorNote: "\u30AB\u30E1\u30B4\u30F3"
+    japanese: "\u30AB\u30E1\u30B4\u30F3"
+    english: Kamegon
+    chineseSimplified: "\u5361\u6885\u5188"
+    chineseTraditional: "\u5361\u6885\u5CA1"
+    korean: "\uCE74\uBA54\uACE4"
+    german: Kamegon
+    french: Kamegon
+    spanish: Kamegon
+    portugueseBrazil: Kamegon
+  - slotIndex: 4
+    editorNote: "\u30C0\u30FC\u30AF\u30C9\u30E9\u30B4\u30F3"
+    japanese: "\u30C0\u30FC\u30AF\u30C9\u30E9\u30B4\u30F3"
+    english: Dark Dragon
+    chineseSimplified: "\u6697\u9ED1\u9F99"
+    chineseTraditional: "\u6697\u9ED1\u9F8D"
+    korean: "\uB2E4\uD06C \uB4DC\uB798\uACE4"
+    german: Dunkler Drache
+    french: Dragon sombre
+    spanish: "Drag\xF3n oscuro"
+    portugueseBrazil: "Drag\xE3o sombrio"
+  - slotIndex: 5
+    editorNote: "\u30B5\u30E1\u304F\u3093"
+    japanese: "\u30B5\u30E1\u304F\u3093"
+    english: Sharky
+    chineseSimplified: "\u9CA8\u9C7C\u541B"
+    chineseTraditional: "\u9BCA\u9B5A\u541B"
+    korean: "\uC0C1\uC5B4\uAD70"
+    german: Haifisch
+    french: Requinou
+    spanish: "Tibur\xF3n"
+    portugueseBrazil: "Tubar\xE3ozinho"
+  - slotIndex: 6
+    editorNote: "\u30AE\u30E7\u30AE\u30E7\u30FC\u30AE\u30E7"
+    japanese: "\u30AE\u30E7\u30AE\u30E7\u30FC\u30AE\u30E7"
+    english: Gyogyogyo
+    chineseSimplified: "\u9C7C\u9C7C\u9C7C"
+    chineseTraditional: "\u9B5A\u9B5A\u9B5A"
+    korean: "\uAD50\uAD50\uAD50"
+    german: Gyogyogyo
+    french: Gyogyogyo
+    spanish: Gyogyogyo
+    portugueseBrazil: Gyogyogyo
+  - slotIndex: 7
+    editorNote: "\u30E2\u30AE\u30E5\u30E9"
+    japanese: "\u30E2\u30AE\u30E5\u30E9"
+    english: Mogyura
+    chineseSimplified: "\u83AB\u53E4\u62C9"
+    chineseTraditional: "\u83AB\u53E4\u62C9"
+    korean: "\uBAA8\uADDC\uB77C"
+    german: Mogyura
+    french: Mogyura
+    spanish: Mogyura
+    portugueseBrazil: Mogyura
+  - slotIndex: 8
+    editorNote: "\u30B9\u30D1\u30A4\u30C0\u30FC"
+    japanese: "\u30B9\u30D1\u30A4\u30C0\u30FC"
+    english: Spider
+    chineseSimplified: "\u8718\u86DB"
+    chineseTraditional: "\u8718\u86DB"
+    korean: "\uC2A4\uD30C\uC774\uB354"
+    german: Spinne
+    french: "Araign\xE9e"
+    spanish: "Ara\xF1a"
+    portugueseBrazil: Aranha
+  - slotIndex: 9
+    editorNote: "\u95C7\u9A0E\u58EB"
+    japanese: "\u95C7\u9A0E\u58EB"
+    english: Dark Knight
+    chineseSimplified: "\u6697\u9A91\u58EB"
+    chineseTraditional: "\u95C7\u9A0E\u58EB"
+    korean: "\uC554\uD751 \uAE30\uC0AC"
+    german: Dunkler Ritter
+    french: "Chevalier des t\xE9n\xE8bres"
+    spanish: Caballero oscuro
+    portugueseBrazil: Cavaleiro sombrio
+  - slotIndex: 10
+    editorNote: "\u30D0\u30C3\u30C8"
+    japanese: "\u30D0\u30C3\u30C8"
+    english: Bat
+    chineseSimplified: "\u8759\u8760"
+    chineseTraditional: "\u8759\u8760"
+    korean: "\uBC43"
+    german: Fledermaus
+    french: Chauve-souris
+    spanish: "Murci\xE9lago"
+    portugueseBrazil: Morcego
+  - slotIndex: 11
+    editorNote: "\u30DE\u30A4\u30E9\u7537"
+    japanese: "\u30DE\u30A4\u30E9\u7537"
+    english: Myraman
+    chineseSimplified: "\u9EA6\u62C9\u7537"
+    chineseTraditional: "\u9EA5\u62C9\u7537"
+    korean: "\uB9C8\uC774\uB77C\uB9E8"
+    german: Myraman
+    french: Myraman
+    spanish: Myraman
+    portugueseBrazil: Myraman
+  - slotIndex: 12
+    editorNote: "\u30B4\u30FC\u30EC\u30E0"
+    japanese: "\u30B4\u30FC\u30EC\u30E0"
+    english: Golem
+    chineseSimplified: "\u77F3\u9B54\u50CF"
+    chineseTraditional: "\u77F3\u9B54\u50CF"
+    korean: "\uACE8\uB818"
+    german: Golem
+    french: Golem
+    spanish: Golem
+    portugueseBrazil: Golem
+  - slotIndex: 13
+    editorNote: "\u30A4\u30A8\u30ED\u30FC\u30EA\u30B6\u30FC\u30C9"
+    japanese: "\u30A4\u30A8\u30ED\u30FC\u30EA\u30B6\u30FC\u30C9"
+    english: Yellow Lizard
+    chineseSimplified: "\u9EC4\u8725\u8734"
+    chineseTraditional: "\u9EC3\u8725\u8734"
+    korean: "\uC610\uB85C\uC6B0 \uB9AC\uC790\uB4DC"
+    german: Gelbe Eidechse
+    french: "L\xE9zard jaune"
+    spanish: Lagarto amarillo
+    portugueseBrazil: Lagarto amarelo
+  - slotIndex: 14
+    editorNote: "\u30D6\u30EB\u30FC\u30EA\u30B6\u30FC\u30C9"
+    japanese: "\u30D6\u30EB\u30FC\u30EA\u30B6\u30FC\u30C9"
+    english: Blue Lizard
+    chineseSimplified: "\u84DD\u8725\u8734"
+    chineseTraditional: "\u85CD\u8725\u8734"
+    korean: "\uBE14\uB8E8 \uB9AC\uC790\uB4DC"
+    german: Blaue Eidechse
+    french: "L\xE9zard bleu"
+    spanish: Lagarto azul
+    portugueseBrazil: Lagarto azul
+  - slotIndex: 15
+    editorNote: Jammo
+    japanese: Jammo
+    english: Jammo
+    chineseSimplified: Jammo
+    chineseTraditional: Jammo
+    korean: Jammo
+    german: Jammo
+    french: Jammo
+    spanish: Jammo
+    portugueseBrazil: Jammo
+  - slotIndex: 16
+    editorNote: "\u30B5\u30DC\u30C6\u30F3\u30DE\u30F3"
+    japanese: "\u30B5\u30DC\u30C6\u30F3\u30DE\u30F3"
+    english: Cactus Man
+    chineseSimplified: "\u4ED9\u4EBA\u638C\u4EBA"
+    chineseTraditional: "\u4ED9\u4EBA\u638C\u4EBA"
+    korean: "\uC120\uC778\uC7A5\uB9E8"
+    german: Kaktusmann
+    french: Homme-cactus
+    spanish: Hombre cactus
+    portugueseBrazil: Homem-cacto
+  - slotIndex: 17
+    editorNote: "\u9B54\u30B5\u30A4"
+    japanese: "\u9B54\u30B5\u30A4"
+    english: Demon Rhino
+    chineseSimplified: "\u9B54\u7280"
+    chineseTraditional: "\u9B54\u7280"
+    korean: "\uB9C8\uC0AC\uC774"
+    german: "D\xE4monen-Rhino"
+    french: "Rhino d\xE9mon"
+    spanish: Rinoceronte demonio
+    portugueseBrazil: "Rino dem\xF4nio"
+  - slotIndex: 18
+    editorNote: "\u30B0\u30EA\u30FC\u30F3\u30EA\u30B6\u30FC\u30C9"
+    japanese: "\u30B0\u30EA\u30FC\u30F3\u30EA\u30B6\u30FC\u30C9"
+    english: Green Lizard
+    chineseSimplified: "\u7EFF\u8725\u8734"
+    chineseTraditional: "\u7DA0\u8725\u8734"
+    korean: "\uADF8\uB9B0 \uB9AC\uC790\uB4DC"
+    german: "Gr\xFCne Eidechse"
+    french: "L\xE9zard vert"
+    spanish: Lagarto verde
+    portugueseBrazil: Lagarto verde
+  - slotIndex: 19
+    editorNote: "\u30EC\u30C3\u30C9\u30EA\u30B6\u30FC\u30C9"
+    japanese: "\u30EC\u30C3\u30C9\u30EA\u30B6\u30FC\u30C9"
+    english: Red Lizard
+    chineseSimplified: "\u7EA2\u8725\u8734"
+    chineseTraditional: "\u7D05\u8725\u8734"
+    korean: "\uB808\uB4DC \uB9AC\uC790\uB4DC"
+    german: Rote Eidechse
+    french: "L\xE9zard rouge"
+    spanish: Lagarto rojo
+    portugueseBrazil: Lagarto vermelho
+  - slotIndex: 20
+    editorNote: "\u30DE\u30C3\u30B7\u30E5"
+    japanese: "\u30DE\u30C3\u30B7\u30E5"
+    english: Mush
+    chineseSimplified: "\u8611\u83C7"
+    chineseTraditional: "\u8611\u83C7"
+    korean: "\uBA38\uC2DC"
+    german: Mush
+    french: Mush
+    spanish: Mush
+    portugueseBrazil: Mush
+  - slotIndex: 21
+    editorNote: "\u30DF\u30CE\u30BF\u30A6\u30ED\u30B9"
+    japanese: "\u30DF\u30CE\u30BF\u30A6\u30ED\u30B9"
+    english: Minotaur
+    chineseSimplified: "\u5F25\u8BFA\u9676\u6D1B\u65AF"
+    chineseTraditional: "\u5F4C\u8AFE\u9676\u6D1B\u65AF"
+    korean: "\uBBF8\uB178\uD0C0\uC6B0\uB85C\uC2A4"
+    german: Minotaurus
+    french: Minotaure
+    spanish: Minotauro
+    portugueseBrazil: Minotauro
+  - slotIndex: 22
+    editorNote: "\u30BF\u30A4\u30AC\u30FC"
+    japanese: "\u30BF\u30A4\u30AC\u30FC"
+    english: Tiger
+    chineseSimplified: "\u8001\u864E"
+    chineseTraditional: "\u8001\u864E"
+    korean: "\uD0C0\uC774\uAC70"
+    german: Tiger
+    french: Tigre
+    spanish: Tigre
+    portugueseBrazil: Tigre
+  - slotIndex: 23
+    editorNote: "\u3077\u3045"
+    japanese: "\u3077\u3045"
+    english: Puu
+    chineseSimplified: "\u5657"
+    chineseTraditional: "\u5657"
+    korean: "\uD478\uC6B0"
+    german: Puu
+    french: Puu
+    spanish: Puu
+    portugueseBrazil: Puu
+  - slotIndex: 24
+    editorNote: "\u30AC\u30F3\u30CA\u30FC\u30ED\u30DC"
+    japanese: "\u30AC\u30F3\u30CA\u30FC\u30ED\u30DC"
+    english: Gunner Robo
+    chineseSimplified: "\u70AE\u624B\u673A\u5668\u4EBA"
+    chineseTraditional: "\u7832\u624B\u6A5F\u5668\u4EBA"
+    korean: "\uAC70\uB108 \uB85C\uBCF4"
+    german: Gunner-Robo
+    french: Robot artilleur
+    spanish: Robot artillero
+    portugueseBrazil: "Rob\xF4 artilheiro"

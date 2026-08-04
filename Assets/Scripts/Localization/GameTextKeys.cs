@@ -153,6 +153,11 @@ namespace Localization
         public const string EnemyStrong = "Enemy.Strong";
         public const string EnemyVeryStrong = "Enemy.VeryStrong";
 
+        /// <summary>
+        /// 敵個体名キー接頭辞(末尾にスロット番号を付ける)
+        /// </summary>
+        public const string EnemyNamePrefix = "Enemy.Name.";
+
         public const string TrainingModeSelectTitle = "Training.ModeSelectTitle";
         public const string TrainingModeSelectBody = "Training.ModeSelectBody";
         public const string TrainingModeManual = "Training.ModeManual";

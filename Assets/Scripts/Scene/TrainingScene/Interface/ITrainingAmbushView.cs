@@ -18,8 +18,9 @@ namespace Scene.TrainingScene.Interface
         /// <summary>
         /// 戦う逃げる選択ウィンドウを表示する
         /// </summary>
-        /// <param name="enemyName">敵名</param>
-        void ShowChoice(string enemyName);
+        /// <param name="enemySlotIndex">敵スロット</param>
+        /// <param name="fallbackEnemyName">セーブ上の名前などフォールバック</param>
+        void ShowChoice(int enemySlotIndex, string fallbackEnemyName);
 
         /// <summary>
         /// 選択が決まるまで待機する

@@ -359,7 +359,7 @@ namespace UI.ClayEditor.View
 
                 ModelSaveSlot slot = saveService.GetSlot(pool, i);
                 bool used = IsLoadableSlot(slot);
-                ApplyRowContent(rows[i], slot, used, i, emptySlotLabel, contentMode);
+                ApplyRowContent(rows[i], slot, used, i, emptySlotLabel, contentMode, pool);
                 ApplyThumbnail(rows[i].Elements, used, pool, i, saveService, runtimeThumbnailObjects);
                 rows[i].Button.interactable = used || allowEmptySlotSelection;
             }
@@ -402,7 +402,8 @@ namespace UI.ClayEditor.View
             bool used,
             int slotIndex,
             string emptySlotLabel,
-            ModelSaveSlotListContentMode contentMode)
+            ModelSaveSlotListContentMode contentMode,
+            ModelSavePool pool)
         {
             ModelSaveSlotRowUiBuilder.RowElements elements = row.Elements;
             if (!used)
@@ -411,7 +412,12 @@ namespace UI.ClayEditor.View
             }
             else
             {
-                ModelSaveSlotRowUiBuilder.BindScrollListFromSlot(elements, slot, slotIndex, contentMode);
+                ModelSaveSlotRowUiBuilder.BindScrollListFromSlot(
+                    elements,
+                    slot,
+                    slotIndex,
+                    contentMode,
+                    pool);
             }
         }
 

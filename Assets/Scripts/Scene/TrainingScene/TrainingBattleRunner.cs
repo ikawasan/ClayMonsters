@@ -20,6 +20,8 @@ using Cysharp.Threading.Tasks;
 
 using Extensions;
 
+using Localization;
+
 using R3;
 
 using SaveData;
@@ -263,7 +265,9 @@ namespace Scene.TrainingScene
 
 
 
-            string enemyName = saveService.GetSlot(ModelSavePool.Enemy, enemySlotIndex)?.modelName ?? "敵";
+            string fallbackName = saveService.GetSlot(ModelSavePool.Enemy, enemySlotIndex)?.modelName
+                ?? LocalizedText.GetOrFallback(GameTextKeys.TrainingLogEnemyDefault, "敵");
+            string enemyName = EnemyDisplayName.Resolve(enemySlotIndex, fallbackName);
 
 
 
