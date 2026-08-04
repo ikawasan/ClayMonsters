@@ -1131,14 +1131,30 @@ namespace UI.ClayEditor.View
             }
         }
 
+        private bool loadChromeOriginalsCaptured;
+        private string backButtonOriginal = "戻る";
+
         private void ApplyLoadConfirmButtonLabels()
         {
+            CaptureLoadChromeOriginalsIfNeeded();
+            // ロード確認は製品仕様で決定にするシーン原文ロードするは使わない
             LhButtonLabelUtility.SetLabel(
                 loadButton,
-                LocalizedText.GetOrFallback(GameTextKeys.LoadSlotLoad, "ロード"));
+                LocalizedText.GetOrFallback(GameTextKeys.LoadSlotLoad, "決定"));
             LhButtonLabelUtility.SetLabel(
                 backButton,
-                LocalizedText.GetOrFallback(GameTextKeys.CommonReturn, "戻る"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.CommonReturn, backButtonOriginal));
+        }
+
+        private void CaptureLoadChromeOriginalsIfNeeded()
+        {
+            if (loadChromeOriginalsCaptured)
+            {
+                return;
+            }
+
+            backButtonOriginal = SceneLocalizedLabel.Capture(backButton, backButtonOriginal);
+            loadChromeOriginalsCaptured = true;
         }
 
         private void ApplySelectionInstructionText()

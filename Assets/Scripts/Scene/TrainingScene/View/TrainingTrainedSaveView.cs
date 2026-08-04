@@ -401,17 +401,63 @@ namespace Scene.TrainingScene.View
             confirmView?.ShowSlot(slot, thumbnailPng, slotIndex);
         }
 
+        private bool saveModeLabelOriginalsCaptured;
+        private string saveOriginal = "保存";
+        private string saveBackOriginal = "戻る";
+        private string saveBackToTitleOriginal = "タイトルへ戻る";
+        private string decideOriginal = "決定";
+        private string inheritanceBackOriginal = "戻る";
+        private string inheritanceBackToTitleOriginal = "戻る";
+
         private void ApplySaveModeButtonLabels()
         {
+            CaptureSaveModeLabelOriginalsIfNeeded();
             LhButtonLabelUtility.SetLabel(
                 saveButtonLabel,
-                LocalizedText.GetOrFallback(GameTextKeys.CommonSave, "保存"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.CommonSave, saveOriginal));
             LhButtonLabelUtility.SetLabel(
                 backButtonLabel,
-                LocalizedText.GetOrFallback(GameTextKeys.CommonReturn, "戻る"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.CommonReturn, saveBackOriginal));
             LhButtonLabelUtility.SetLabel(
                 backToTitleButtonLabel,
-                LocalizedText.GetOrFallback(GameTextKeys.TrainingHudBackToTitle, "タイトル"));
+                SceneLocalizedLabel.Resolve(
+                    GameTextKeys.TrainingHudBackToTitle,
+                    saveBackToTitleOriginal));
+        }
+
+        private void ApplyInheritanceModeButtonLabels()
+        {
+            CaptureSaveModeLabelOriginalsIfNeeded();
+            LhButtonLabelUtility.SetLabel(
+                saveButtonLabel,
+                SceneLocalizedLabel.Resolve(GameTextKeys.CommonDecide, decideOriginal));
+            LhButtonLabelUtility.SetLabel(
+                backButtonLabel,
+                SceneLocalizedLabel.Resolve(GameTextKeys.CommonReturn, inheritanceBackOriginal));
+            LhButtonLabelUtility.SetLabel(
+                backToTitleButtonLabel,
+                SceneLocalizedLabel.Resolve(
+                    GameTextKeys.CommonReturn,
+                    inheritanceBackToTitleOriginal));
+        }
+
+        private void CaptureSaveModeLabelOriginalsIfNeeded()
+        {
+            if (saveModeLabelOriginalsCaptured)
+            {
+                return;
+            }
+
+            saveOriginal = SceneLocalizedLabel.Capture(saveButtonLabel, saveOriginal);
+            saveBackOriginal = SceneLocalizedLabel.Capture(backButtonLabel, saveBackOriginal);
+            saveBackToTitleOriginal = SceneLocalizedLabel.Capture(
+                backToTitleButtonLabel,
+                saveBackToTitleOriginal);
+            // 継承モードへ切替前に決定/戻る原文が変わることがあるため初期値も確保
+            decideOriginal = "決定";
+            inheritanceBackOriginal = saveBackOriginal;
+            inheritanceBackToTitleOriginal = saveBackOriginal;
+            saveModeLabelOriginalsCaptured = true;
         }
 
         /// <inheritdoc/>
@@ -448,19 +494,6 @@ namespace Scene.TrainingScene.View
                     OpenInheritanceParentStatusConfirm(selectedSlotIndex);
                 }
             }
-        }
-
-        private void ApplyInheritanceModeButtonLabels()
-        {
-            LhButtonLabelUtility.SetLabel(
-                saveButtonLabel,
-                LocalizedText.GetOrFallback(GameTextKeys.CommonDecide, "決定"));
-            LhButtonLabelUtility.SetLabel(
-                backButtonLabel,
-                LocalizedText.GetOrFallback(GameTextKeys.CommonReturn, "戻る"));
-            LhButtonLabelUtility.SetLabel(
-                backToTitleButtonLabel,
-                LocalizedText.GetOrFallback(GameTextKeys.CommonReturn, "戻る"));
         }
 
         private void RefreshSlotList(bool allowEmptySlotSelection)

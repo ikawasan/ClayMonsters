@@ -1230,6 +1230,9 @@ namespace Scene.TrainingScene
             selectionBackToTitleButton.gameObject.SetActive(visible);
         }
 
+        private string selectionBackToTitleOriginal;
+        private bool selectionBackToTitleOriginalCaptured;
+
         private void ApplySelectionBackToTitleLabel()
         {
             if (selectionBackToTitleButton == null)
@@ -1237,9 +1240,19 @@ namespace Scene.TrainingScene
                 return;
             }
 
+            if (!selectionBackToTitleOriginalCaptured)
+            {
+                selectionBackToTitleOriginal = SceneLocalizedLabel.Capture(
+                    selectionBackToTitleButton,
+                    "タイトルへ戻る");
+                selectionBackToTitleOriginalCaptured = true;
+            }
+
             LhButtonLabelUtility.SetLabel(
                 selectionBackToTitleButton,
-                LocalizedText.GetOrFallback(GameTextKeys.TrainingHudBackToTitle, "タイトル"));
+                SceneLocalizedLabel.Resolve(
+                    GameTextKeys.TrainingHudBackToTitle,
+                    selectionBackToTitleOriginal));
         }
 
         private void SetSelectionUiVisible(bool visible)

@@ -55,7 +55,28 @@ namespace Extensions
                 return;
             }
 
-            SetLabel(ResolveToggleLabelText(toggle), label);
+            SetLabel(ResolveLabelText(toggle), label);
+        }
+
+        /// <summary>
+        /// コンポーネント配下のラベル用TMPを返す
+        /// Toggleは装飾TMPを除外する
+        /// </summary>
+        /// <param name="component">対象コンポーネント</param>
+        /// <returns>ラベルTMP</returns>
+        public static TMP_Text ResolveLabelText(Component component)
+        {
+            if (component == null)
+            {
+                return null;
+            }
+
+            if (component is Toggle toggle)
+            {
+                return ResolveToggleLabelText(toggle);
+            }
+
+            return component.GetComponentInChildren<TMP_Text>(true);
         }
 
         private static TMP_Text ResolveToggleLabelText(Toggle toggle)

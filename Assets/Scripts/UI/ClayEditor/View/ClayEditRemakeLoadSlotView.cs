@@ -123,20 +123,41 @@ namespace UI.ClayEditor.View
             }
         }
 
+        private bool labelOriginalsCaptured;
+        private string selectOriginal = "決定";
+        private string deleteOriginal = "削除";
+        private string backOriginal = "戻る";
+        private string listBackOriginal = "戻る";
+
         private void ApplyLocalizedLabels()
         {
+            CaptureLabelOriginalsIfNeeded();
             LhButtonLabelUtility.SetLabel(
                 selectButton,
-                LocalizedText.GetOrFallback(GameTextKeys.CommonDecide, "決定"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.CommonDecide, selectOriginal));
             LhButtonLabelUtility.SetLabel(
                 deleteButton,
-                LocalizedText.GetOrFallback(GameTextKeys.ClayEditDelete, "削除"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.ClayEditDelete, deleteOriginal));
             LhButtonLabelUtility.SetLabel(
                 backButton,
-                LocalizedText.GetOrFallback(GameTextKeys.CommonReturn, "戻る"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.CommonReturn, backOriginal));
             LhButtonLabelUtility.SetLabel(
                 listBackButton,
-                LocalizedText.GetOrFallback(GameTextKeys.CommonReturn, "戻る"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.CommonReturn, listBackOriginal));
+        }
+
+        private void CaptureLabelOriginalsIfNeeded()
+        {
+            if (labelOriginalsCaptured)
+            {
+                return;
+            }
+
+            selectOriginal = SceneLocalizedLabel.Capture(selectButton, selectOriginal);
+            deleteOriginal = SceneLocalizedLabel.Capture(deleteButton, deleteOriginal);
+            backOriginal = SceneLocalizedLabel.Capture(backButton, backOriginal);
+            listBackOriginal = SceneLocalizedLabel.Capture(listBackButton, listBackOriginal);
+            labelOriginalsCaptured = true;
         }
 
         private void OnEnable()

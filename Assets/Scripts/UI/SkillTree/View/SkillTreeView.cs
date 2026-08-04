@@ -81,16 +81,48 @@ namespace UI.SkillTree.View
         {
             EnsureBakedLabels();
             bakedLabelApplier.Apply();
+            CaptureChromeOriginalsIfNeeded();
             LhButtonLabelUtility.SetLabel(
                 closeButton,
-                LocalizedText.GetOrFallback(GameTextKeys.CommonClose, "閉じる"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.CommonClose, closeOriginal));
             if (unlockButtonLabel != null
                 && string.IsNullOrEmpty(unlockButtonLabel.text))
             {
                 LhButtonLabelUtility.SetLabel(
                     unlockButtonLabel,
-                    LocalizedText.GetOrFallback(GameTextKeys.SkillTreeUnlock, "解放"));
+                    SceneLocalizedLabel.Resolve(GameTextKeys.SkillTreeUnlock, unlockOriginal));
             }
+        }
+
+        private bool chromeOriginalsCaptured;
+        private string closeOriginal = "閉じる";
+        private string unlockOriginal = "解放";
+        private string pointsTemplateOriginal = "{points} ポイント";
+
+        private void CaptureChromeOriginalsIfNeeded()
+        {
+            if (chromeOriginalsCaptured)
+            {
+                return;
+            }
+
+            closeOriginal = SceneLocalizedLabel.Capture(closeButton, closeOriginal);
+            unlockOriginal = SceneLocalizedLabel.Capture(unlockButtonLabel, unlockOriginal);
+            if (pointsText != null && !string.IsNullOrWhiteSpace(pointsText.text))
+            {
+                // 9999 ポイントなどをテンプレートへ戻す
+                string sample = pointsText.text.Trim();
+                string template = System.Text.RegularExpressions.Regex.Replace(
+                    sample,
+                    @"\d+",
+                    "{points}");
+                if (template.Contains("{points}"))
+                {
+                    pointsTemplateOriginal = template;
+                }
+            }
+
+            chromeOriginalsCaptured = true;
         }
 
         /// <inheritdoc />
@@ -139,9 +171,10 @@ namespace UI.SkillTree.View
             }
 
             cachedPoints = Mathf.Max(0, points);
-            pointsText.text = LocalizedText.GetOrFallback(
+            CaptureChromeOriginalsIfNeeded();
+            pointsText.text = SceneLocalizedLabel.Resolve(
                 GameTextKeys.SkillTreePoints,
-                "{points} pt",
+                pointsTemplateOriginal,
                 "points",
                 cachedPoints);
         }

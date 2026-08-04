@@ -70,28 +70,54 @@ namespace Scene.TrainingScene.View
             ApplyLocalizedLabels();
         }
 
+        private bool labelOriginalsCaptured;
+        private string titleOriginal = "育成方法を選んでください";
+        private string descriptionOriginal =
+            "じっくり育成は1〜6時間目の行動を自分で選びます\n昼休みは売店放課後は戦闘です\n自動育成は{days}日間を自動で進行します";
+        private string manualOriginal = "じっくり育成";
+        private string autoOriginal = "自動育成";
+
         private void ApplyLocalizedLabels()
         {
+            CaptureLabelOriginalsIfNeeded();
             if (titleText != null)
             {
-                titleText.text = LocalizedText.Get(GameTextKeys.TrainingModeSelectTitle);
+                LocalizedFont.SetText(
+                    titleText,
+                    SceneLocalizedLabel.Resolve(GameTextKeys.TrainingModeSelectTitle, titleOriginal));
             }
 
             if (descriptionText != null)
             {
-                descriptionText.text = LocalizedText.GetOrFallback(
-                    GameTextKeys.TrainingModeSelectBody,
-                    "じっくり育成は1〜6時間目の行動を自分で選びます\n昼休みは売店放課後は戦闘です\n自動育成は{days}日間を自動で進行します",
-                    "days",
-                    TrainingSettings.TotalDays);
+                LocalizedFont.SetText(
+                    descriptionText,
+                    SceneLocalizedLabel.Resolve(
+                        GameTextKeys.TrainingModeSelectBody,
+                        descriptionOriginal,
+                        "days",
+                        TrainingSettings.TotalDays));
             }
 
             LhButtonLabelUtility.SetLabel(
                 manualButton,
-                LocalizedText.GetOrFallback(GameTextKeys.TrainingModeManual, "手動"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.TrainingModeManual, manualOriginal));
             LhButtonLabelUtility.SetLabel(
                 autoButton,
-                LocalizedText.GetOrFallback(GameTextKeys.TrainingModeAuto, "自動"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.TrainingModeAuto, autoOriginal));
+        }
+
+        private void CaptureLabelOriginalsIfNeeded()
+        {
+            if (labelOriginalsCaptured)
+            {
+                return;
+            }
+
+            titleOriginal = SceneLocalizedLabel.Capture(titleText, titleOriginal);
+            descriptionOriginal = SceneLocalizedLabel.Capture(descriptionText, descriptionOriginal);
+            manualOriginal = SceneLocalizedLabel.Capture(manualButton, manualOriginal);
+            autoOriginal = SceneLocalizedLabel.Capture(autoButton, autoOriginal);
+            labelOriginalsCaptured = true;
         }
 
         /// <inheritdoc/>

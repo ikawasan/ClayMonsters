@@ -120,14 +120,31 @@ namespace Scene.BattleNpcScene.View
                 new Color(1f, 0.45f, 0.35f, 0.5f));
         }
 
+        private bool chromeOriginalsCaptured;
+        private string openOriginal = "ステータス";
+        private string closeOriginal = "閉じる";
+
         private void ApplyLocalizedChrome()
         {
+            CaptureChromeOriginalsIfNeeded();
             LhButtonLabelUtility.SetLabel(
                 openButton,
-                LocalizedText.GetOrFallback(GameTextKeys.BattleMatchupStatus, "ステータス"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.BattleMatchupStatus, openOriginal));
             LhButtonLabelUtility.SetLabel(
                 closeButton,
-                LocalizedText.GetOrFallback(GameTextKeys.CommonClose, "閉じる"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.CommonClose, closeOriginal));
+        }
+
+        private void CaptureChromeOriginalsIfNeeded()
+        {
+            if (chromeOriginalsCaptured)
+            {
+                return;
+            }
+
+            openOriginal = SceneLocalizedLabel.Capture(openButton, openOriginal);
+            closeOriginal = SceneLocalizedLabel.Capture(closeButton, closeOriginal);
+            chromeOriginalsCaptured = true;
         }
 
         /// <summary>

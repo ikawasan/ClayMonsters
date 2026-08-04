@@ -84,14 +84,31 @@ namespace Scene.BattleNpcScene.View
             ApplyLocalizedLabels();
         }
 
+        private bool labelOriginalsCaptured;
+        private string returnOriginal = "タイトルへ戻る";
+        private string rematchOriginal = "再戦";
+
         private void ApplyLocalizedLabels()
         {
+            CaptureLabelOriginalsIfNeeded();
             LhButtonLabelUtility.SetLabel(
                 returnButton,
-                LocalizedText.GetOrFallback(GameTextKeys.TrainingHudBackToTitle, "タイトル"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.TrainingHudBackToTitle, returnOriginal));
             LhButtonLabelUtility.SetLabel(
                 rematchButton,
-                LocalizedText.GetOrFallback(GameTextKeys.BattleRematch, "再戦"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.BattleRematch, rematchOriginal));
+        }
+
+        private void CaptureLabelOriginalsIfNeeded()
+        {
+            if (labelOriginalsCaptured)
+            {
+                return;
+            }
+
+            returnOriginal = SceneLocalizedLabel.Capture(returnButton, returnOriginal);
+            rematchOriginal = SceneLocalizedLabel.Capture(rematchButton, rematchOriginal);
+            labelOriginalsCaptured = true;
         }
 
         /// <inheritdoc/>

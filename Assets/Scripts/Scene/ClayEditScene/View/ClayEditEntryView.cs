@@ -21,6 +21,10 @@ namespace Scene.ClayEditScene.View
 
         private readonly Subject<Unit> newCreateSubject = new();
         private readonly Subject<Unit> remakeSubject = new();
+        private LocalizedBakedTextApplier bakedLabelApplier;
+        private string newCreateOriginal = "新規作成";
+        private string remakeOriginal = "モンスターを作り直す";
+        private bool sceneOriginalsCaptured;
 
         /// <inheritdoc />
         public Observable<Unit> OnNewCreateClicked => newCreateSubject;
@@ -45,6 +49,7 @@ namespace Scene.ClayEditScene.View
                 remakeButton.SubscribeOnClick(() => remakeSubject.OnNext(Unit.Default));
             }
 
+            CaptureSceneOriginals();
             ApplyLocalizedLabels();
             ValidateSceneLayout();
         }
@@ -52,6 +57,7 @@ namespace Scene.ClayEditScene.View
         /// <inheritdoc />
         public void Show()
         {
+            CaptureSceneOriginals();
             ApplyLocalizedLabels();
             if (entryCanvas != null)
             {
@@ -70,17 +76,27 @@ namespace Scene.ClayEditScene.View
             }
         }
 
-        private LocalizedBakedTextApplier bakedLabelApplier;
-
-
         /// <inheritdoc/>
         public void RefreshLocalizedUi()
         {
             ApplyLocalizedLabels();
         }
 
+        private void CaptureSceneOriginals()
+        {
+            if (sceneOriginalsCaptured)
+            {
+                return;
+            }
+
+            newCreateOriginal = SceneLocalizedLabel.Capture(newCreateButton, newCreateOriginal);
+            remakeOriginal = SceneLocalizedLabel.Capture(remakeButton, remakeOriginal);
+            sceneOriginalsCaptured = true;
+        }
+
         private void ApplyLocalizedLabels()
         {
+            CaptureSceneOriginals();
             if (bakedLabelApplier == null)
             {
                 bakedLabelApplier = new LocalizedBakedTextApplier();
@@ -88,9 +104,9 @@ namespace Scene.ClayEditScene.View
                 bakedLabelApplier.Register(GameTextKeys.TitleClayEdit, "エディット");
                 bakedLabelApplier.Register(GameTextKeys.TitleClayEdit, "モンスターエディット");
                 bakedLabelApplier.Register(GameTextKeys.ClayEditRemake, "作り直し");
-                bakedLabelApplier.Register(GameTextKeys.ClayEditRemakeLong, "モンスターを作り直す");
+                bakedLabelApplier.Register(GameTextKeys.ClayEditRemakeLong, remakeOriginal);
                 bakedLabelApplier.Register(GameTextKeys.ClayEditNewCreate, "新規");
-                bakedLabelApplier.Register(GameTextKeys.ClayEditNewCreate, "新規作成");
+                bakedLabelApplier.Register(GameTextKeys.ClayEditNewCreate, newCreateOriginal);
                 Transform root = entryCanvas != null ? entryCanvas.transform : transform;
                 bakedLabelApplier.Capture(root);
             }
@@ -98,10 +114,10 @@ namespace Scene.ClayEditScene.View
             bakedLabelApplier.Apply();
             LhButtonLabelUtility.SetLabel(
                 newCreateButton,
-                LocalizedText.GetOrFallback(GameTextKeys.ClayEditNewCreate, "新規"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.ClayEditNewCreate, newCreateOriginal));
             LhButtonLabelUtility.SetLabel(
                 remakeButton,
-                LocalizedText.GetOrFallback(GameTextKeys.ClayEditRemakeLong, "モンスターを作り直す"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.ClayEditRemakeLong, remakeOriginal));
         }
 
         private void ValidateSceneLayout()

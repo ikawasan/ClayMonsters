@@ -75,9 +75,10 @@ namespace Battle.View
                 Debug.LogError("[BattleTipsView] hintTextが未配線です", this);
             }
 
+            CaptureTipsChromeOriginalsIfNeeded();
             LhButtonLabelUtility.SetLabel(
                 closeButton,
-                LocalizedText.GetOrFallback(GameTextKeys.CommonClose, "閉じる"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.CommonClose, closeOriginal));
 
             if (tipsCanvas != null)
             {
@@ -89,11 +90,31 @@ namespace Battle.View
 
                 if (title != null)
                 {
+                    if (string.IsNullOrEmpty(titleOriginal))
+                    {
+                        titleOriginal = SceneLocalizedLabel.Capture(title, "戦闘チュートリアル");
+                    }
+
                     LocalizedFont.SetText(
                         title,
-                        LocalizedText.GetOrFallback(GameTextKeys.BattleTipsTitle, "戦闘チュートリアル"));
+                        SceneLocalizedLabel.Resolve(GameTextKeys.BattleTipsTitle, titleOriginal));
                 }
             }
+        }
+
+        private bool tipsChromeOriginalsCaptured;
+        private string closeOriginal = "閉じる";
+        private string titleOriginal = string.Empty;
+
+        private void CaptureTipsChromeOriginalsIfNeeded()
+        {
+            if (tipsChromeOriginalsCaptured)
+            {
+                return;
+            }
+
+            closeOriginal = SceneLocalizedLabel.Capture(closeButton, closeOriginal);
+            tipsChromeOriginalsCaptured = true;
         }
 
         private void SubscribeLanguageChange()

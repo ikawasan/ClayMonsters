@@ -62,18 +62,35 @@ namespace Scene.TrainingScene.View
             ApplyThumbnail(presentation.ThumbnailPng);
         }
 
+        private string chooseSaveOriginal = "保存先を選ぶ";
+        private bool chooseSaveOriginalCaptured;
+
         /// <inheritdoc/>
         public void RefreshLocalizedUi()
         {
+            CaptureChooseSaveOriginalIfNeeded();
             if (!isShowing)
             {
                 LhButtonLabelUtility.SetLabel(
                     backToTitleButtonLabel,
-                    LocalizedText.GetOrFallback(GameTextKeys.TrainingChooseSave, "保存先"));
+                    SceneLocalizedLabel.Resolve(GameTextKeys.TrainingChooseSave, chooseSaveOriginal));
                 return;
             }
 
             ApplyPresentationCopy(cachedPresentation);
+        }
+
+        private void CaptureChooseSaveOriginalIfNeeded()
+        {
+            if (chooseSaveOriginalCaptured)
+            {
+                return;
+            }
+
+            chooseSaveOriginal = SceneLocalizedLabel.Capture(
+                backToTitleButtonLabel,
+                chooseSaveOriginal);
+            chooseSaveOriginalCaptured = true;
         }
 
         private void ApplyPresentationCopy(TrainingAutoResultPresentation presentation)
@@ -113,7 +130,7 @@ namespace Scene.TrainingScene.View
             {
                 backToTitleButton.interactable = true;
                 string buttonLabel = string.IsNullOrEmpty(presentation.ContinueButtonLabel)
-                    ? LocalizedText.GetOrFallback(GameTextKeys.TrainingChooseSave, "保存先")
+                    ? SceneLocalizedLabel.Resolve(GameTextKeys.TrainingChooseSave, chooseSaveOriginal)
                     : presentation.ContinueButtonLabel;
                 LhButtonLabelUtility.SetLabel(backToTitleButtonLabel, buttonLabel);
             }
@@ -199,10 +216,11 @@ namespace Scene.TrainingScene.View
         {
             if (backToTitleButton != null)
             {
+                CaptureChooseSaveOriginalIfNeeded();
                 backToTitleButton.EnsureUiSoundFeedback();
                 LhButtonLabelUtility.SetLabel(
                     backToTitleButtonLabel,
-                    LocalizedText.GetOrFallback(GameTextKeys.TrainingChooseSave, "保存先"));
+                    SceneLocalizedLabel.Resolve(GameTextKeys.TrainingChooseSave, chooseSaveOriginal));
             }
         }
 

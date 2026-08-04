@@ -172,33 +172,53 @@ namespace Scene.TrainingScene.View
 
         private void ApplyStaticLocalizedCopy()
         {
+            CaptureStaticOriginalsIfNeeded();
             if (titleText != null)
             {
                 LocalizedFont.SetText(
                     titleText,
-                    LocalizedText.GetOrFallback(
-                        GameTextKeys.TrainingResumeTitle,
-                        "育成途中のデータがあります"));
+                    SceneLocalizedLabel.Resolve(GameTextKeys.TrainingResumeTitle, titleOriginal));
             }
 
             if (motivationText != null && !isShowing)
             {
                 LocalizedFont.SetText(
                     motivationText,
-                    LocalizedText.GetOrFallback(
+                    SceneLocalizedLabel.Resolve(
                         GameTextKeys.TrainingResumeMotivationLabel,
-                        "やる気"));
+                        motivationOriginal));
             }
         }
 
         private void ApplyButtonLabels()
         {
+            CaptureStaticOriginalsIfNeeded();
             LhButtonLabelUtility.SetLabel(
                 restartButton,
-                LocalizedText.GetOrFallback(GameTextKeys.TrainingResumeRestart, "最初から"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.TrainingResumeRestart, restartOriginal));
             LhButtonLabelUtility.SetLabel(
                 continueButton,
-                LocalizedText.GetOrFallback(GameTextKeys.TrainingResumeContinue, "続きから"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.TrainingResumeContinue, continueOriginal));
+        }
+
+        private bool staticOriginalsCaptured;
+        private string titleOriginal = "育成途中のデータがあります";
+        private string motivationOriginal = "やる気";
+        private string restartOriginal = "最初から育成";
+        private string continueOriginal = "続きから育成";
+
+        private void CaptureStaticOriginalsIfNeeded()
+        {
+            if (staticOriginalsCaptured)
+            {
+                return;
+            }
+
+            titleOriginal = SceneLocalizedLabel.Capture(titleText, titleOriginal);
+            motivationOriginal = SceneLocalizedLabel.Capture(motivationText, motivationOriginal);
+            restartOriginal = SceneLocalizedLabel.Capture(restartButton, restartOriginal);
+            continueOriginal = SceneLocalizedLabel.Capture(continueButton, continueOriginal);
+            staticOriginalsCaptured = true;
         }
 
         /// <inheritdoc/>

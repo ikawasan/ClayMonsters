@@ -111,17 +111,64 @@ namespace UI.Option.View
         {
             // LanguageAwareUi経路でもラベルを再適用する
             // PresenterのCurrentLanguage購読と二重でも問題ない
-            ApplyLocalizedLabels(
-                title: LocalizedText.GetOrFallback(GameTextKeys.OptionTitle, "設定"),
-                videoTitle: LocalizedText.GetOrFallback(GameTextKeys.OptionVideo, "【ビデオ】"),
-                audioTitle: LocalizedText.GetOrFallback(GameTextKeys.OptionAudio, "【オーディオ】"),
-                languageTitle: LocalizedText.GetOrFallback(GameTextKeys.OptionLanguage, "【言語】"),
-                fullScreen: LocalizedText.GetOrFallback(GameTextKeys.OptionFullScreen, "全画面"),
-                vSync: LocalizedText.GetOrFallback(GameTextKeys.OptionVSync, "垂直同期"),
-                music: LocalizedText.GetOrFallback(GameTextKeys.OptionMusic, "音楽"),
-                soundEffect: LocalizedText.GetOrFallback(GameTextKeys.OptionSoundEffect, "効果音"),
-                close: LocalizedText.GetOrFallback(GameTextKeys.OptionClose, "閉じる"));
+            ApplyCapturedLocalizedLabels();
             InitLanguageSetting(LanguageDisplayNames.Get(LocalizedText.CurrentLanguageCode));
+        }
+
+        /// <inheritdoc/>
+        public void ApplyCapturedLocalizedLabels()
+        {
+            CaptureSceneLabelOriginalsIfNeeded();
+            ApplyLocalizedLabels(
+                title: SceneLocalizedLabel.Resolve(GameTextKeys.OptionTitle, optionTitleOriginal),
+                videoTitle: SceneLocalizedLabel.Resolve(GameTextKeys.OptionVideo, videoTitleOriginal),
+                audioTitle: SceneLocalizedLabel.Resolve(GameTextKeys.OptionAudio, audioTitleOriginal),
+                languageTitle: SceneLocalizedLabel.Resolve(
+                    GameTextKeys.OptionLanguage,
+                    languageTitleOriginal),
+                fullScreen: SceneLocalizedLabel.Resolve(
+                    GameTextKeys.OptionFullScreen,
+                    fullScreenOriginal),
+                vSync: SceneLocalizedLabel.Resolve(GameTextKeys.OptionVSync, vSyncOriginal),
+                music: SceneLocalizedLabel.Resolve(GameTextKeys.OptionMusic, musicOriginal),
+                soundEffect: SceneLocalizedLabel.Resolve(
+                    GameTextKeys.OptionSoundEffect,
+                    soundEffectOriginal),
+                close: SceneLocalizedLabel.Resolve(GameTextKeys.OptionClose, closeOriginal));
+        }
+
+        private bool sceneLabelOriginalsCaptured;
+        private string optionTitleOriginal = "オプション";
+        private string videoTitleOriginal = "【ビデオ】";
+        private string audioTitleOriginal = "【オーディオ】";
+        private string languageTitleOriginal = "【言語】";
+        private string fullScreenOriginal = "全画面";
+        private string vSyncOriginal = "垂直同期";
+        private string musicOriginal = "音楽";
+        private string soundEffectOriginal = "効果音";
+        private string closeOriginal = "閉じる";
+
+        private void CaptureSceneLabelOriginalsIfNeeded()
+        {
+            if (sceneLabelOriginalsCaptured)
+            {
+                return;
+            }
+
+            optionTitleOriginal = SceneLocalizedLabel.Capture(optionTitleText, optionTitleOriginal);
+            videoTitleOriginal = SceneLocalizedLabel.Capture(videoTitleText, videoTitleOriginal);
+            audioTitleOriginal = SceneLocalizedLabel.Capture(audioTitleText, audioTitleOriginal);
+            languageTitleOriginal = SceneLocalizedLabel.Capture(
+                languageTitleText,
+                languageTitleOriginal);
+            fullScreenOriginal = SceneLocalizedLabel.Capture(fullScreenLabelText, fullScreenOriginal);
+            vSyncOriginal = SceneLocalizedLabel.Capture(vSyncLabelText, vSyncOriginal);
+            musicOriginal = SceneLocalizedLabel.Capture(musicLabelText, musicOriginal);
+            soundEffectOriginal = SceneLocalizedLabel.Capture(
+                soundEffectLabelText,
+                soundEffectOriginal);
+            closeOriginal = SceneLocalizedLabel.Capture(closeButtonLabelText, closeOriginal);
+            sceneLabelOriginalsCaptured = true;
         }
 
         /// <inheritdoc/>

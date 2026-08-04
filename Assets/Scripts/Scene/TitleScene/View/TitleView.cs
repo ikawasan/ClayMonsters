@@ -1,8 +1,8 @@
-using R3;
 using Extensions;
 using LighthouseExtends.TextTable;
 using LighthouseExtends.UIComponent.Button;
 using Localization;
+using R3;
 using Scene.TitleScene.Interface;
 using System;
 using TMPro;
@@ -32,9 +32,20 @@ namespace Scene.TitleScene.View
         private IDisposable languageSubscription;
         private int cachedPoints;
 
+        // シーン配置時の日本語原文(起動時にボタンから採取)
+        private string clayEditLabelOriginal = "モンスターエディット";
+        private string battleNpcLabelOriginal = "CPU戦";
+        private string battlePvpLabelOriginal = "対人戦";
+        private string trainingLabelOriginal = "育成";
+        private string skillTreeLabelOriginal = "スキルツリー";
+        private string modelGalleryLabelOriginal = "展示室";
+        private string optionLabelOriginal = "オプション";
+        private string quitGameLabelOriginal = "ゲームをやめる";
+
         private void Awake()
         {
             ValidateSceneUi();
+            CaptureSceneMenuLabelOriginals();
             ApplyMenuLabels();
             SubscribeLanguageChange();
         }
@@ -67,33 +78,73 @@ namespace Scene.TitleScene.View
             });
         }
 
+        /// <summary>
+        /// シーンに配置された日本語ラベルを原文として保持する
+        /// </summary>
+        private void CaptureSceneMenuLabelOriginals()
+        {
+            CaptureIfPresent(clayEditButton, ref clayEditLabelOriginal);
+            CaptureIfPresent(battleNpcButton, ref battleNpcLabelOriginal);
+            CaptureIfPresent(battlePvpButton, ref battlePvpLabelOriginal);
+            CaptureIfPresent(trainingButton, ref trainingLabelOriginal);
+            CaptureIfPresent(skillTreeButton, ref skillTreeLabelOriginal);
+            CaptureIfPresent(modelGalleryButton, ref modelGalleryLabelOriginal);
+            CaptureIfPresent(optionButton, ref optionLabelOriginal);
+            CaptureIfPresent(quitGameButton, ref quitGameLabelOriginal);
+        }
+
+        private static void CaptureIfPresent(LHButton button, ref string original)
+        {
+            string text = ReadButtonLabel(button);
+            if (!string.IsNullOrEmpty(text))
+            {
+                original = text;
+            }
+        }
+
+        private static string ReadButtonLabel(LHButton button)
+        {
+            if (button == null)
+            {
+                return string.Empty;
+            }
+
+            TMP_Text text = button.GetComponentInChildren<TMP_Text>(true);
+            if (text == null || string.IsNullOrEmpty(text.text))
+            {
+                return string.Empty;
+            }
+
+            return text.text.Trim();
+        }
+
         private void ApplyMenuLabels()
         {
-            // Titleシーン配置の日本語原文をフォールバックにする
+            // シーン配置原文を日本語フォールバックにする
             SetButtonLabel(
                 clayEditButton,
-                LocalizedText.GetOrFallback(GameTextKeys.TitleClayEdit, "エディット"));
+                LocalizedText.GetOrFallback(GameTextKeys.TitleClayEdit, clayEditLabelOriginal));
             SetButtonLabel(
                 battleNpcButton,
-                LocalizedText.GetOrFallback(GameTextKeys.TitleBattleNpc, "CPU戦"));
+                LocalizedText.GetOrFallback(GameTextKeys.TitleBattleNpc, battleNpcLabelOriginal));
             SetButtonLabel(
                 battlePvpButton,
-                LocalizedText.GetOrFallback(GameTextKeys.TitleBattlePvp, "対人戦"));
+                LocalizedText.GetOrFallback(GameTextKeys.TitleBattlePvp, battlePvpLabelOriginal));
             SetButtonLabel(
                 trainingButton,
-                LocalizedText.GetOrFallback(GameTextKeys.TitleTraining, "育成"));
+                LocalizedText.GetOrFallback(GameTextKeys.TitleTraining, trainingLabelOriginal));
             SetButtonLabel(
                 skillTreeButton,
-                LocalizedText.GetOrFallback(GameTextKeys.TitleSkillTree, "スキル"));
+                LocalizedText.GetOrFallback(GameTextKeys.TitleSkillTree, skillTreeLabelOriginal));
             SetButtonLabel(
                 modelGalleryButton,
-                LocalizedText.GetOrFallback(GameTextKeys.TitleModelGallery, "展示室"));
+                LocalizedText.GetOrFallback(GameTextKeys.TitleModelGallery, modelGalleryLabelOriginal));
             SetButtonLabel(
                 optionButton,
-                LocalizedText.GetOrFallback(GameTextKeys.TitleOption, "設定"));
+                LocalizedText.GetOrFallback(GameTextKeys.TitleOption, optionLabelOriginal));
             SetButtonLabel(
                 quitGameButton,
-                LocalizedText.GetOrFallback(GameTextKeys.TitleQuit, "やめる"));
+                LocalizedText.GetOrFallback(GameTextKeys.TitleQuit, quitGameLabelOriginal));
         }
 
         private static void SetButtonLabel(LHButton button, string label)
@@ -196,8 +247,9 @@ namespace Scene.TitleScene.View
             cachedPoints = Mathf.Max(0, points);
             LocalizedFont.SetText(
                 pointsText,
-                LocalizedText.Get(
+                LocalizedText.GetOrFallback(
                     GameTextKeys.TitlePoints,
+                    "{points} ポイント",
                     "points",
                     cachedPoints));
         }

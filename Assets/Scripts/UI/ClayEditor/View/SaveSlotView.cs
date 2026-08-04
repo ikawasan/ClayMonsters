@@ -265,44 +265,76 @@ namespace UI.ClayEditor.View
             }
         }
 
+        private LocalizedBakedTextApplier bakedChromeLabelApplier;
+        private bool sceneLabelOriginalsCaptured;
+        private string openSaveOriginal = "保存";
+        private string openEnemySaveOriginal = "敵として保存";
+        private string backOriginal = "戻る";
+        private string overwriteOriginal = "上書き保存";
+        private string deleteOriginal = "削除";
+        private string slotActionBackOriginal = "戻る";
+        private string confirmNameOriginal = "決定";
+        private string nameInputBackOriginal = "戻る";
+        private string confirmSaveOriginal = "保存する";
+        private string confirmBackOriginal = "戻る";
+
+        private void CaptureSceneLabelOriginals()
+        {
+            if (sceneLabelOriginalsCaptured)
+            {
+                return;
+            }
+
+            openSaveOriginal = SceneLocalizedLabel.Capture(openSaveButton, openSaveOriginal);
+            openEnemySaveOriginal = SceneLocalizedLabel.Capture(openEnemySaveButton, openEnemySaveOriginal);
+            backOriginal = SceneLocalizedLabel.Capture(backButton, backOriginal);
+            overwriteOriginal = SceneLocalizedLabel.Capture(slotActionOverwriteButton, overwriteOriginal);
+            deleteOriginal = SceneLocalizedLabel.Capture(slotActionDeleteButton, deleteOriginal);
+            slotActionBackOriginal = SceneLocalizedLabel.Capture(slotActionBackButton, slotActionBackOriginal);
+            confirmNameOriginal = SceneLocalizedLabel.Capture(confirmNameButton, confirmNameOriginal);
+            nameInputBackOriginal = SceneLocalizedLabel.Capture(nameInputBackButton, nameInputBackOriginal);
+            confirmSaveOriginal = SceneLocalizedLabel.Capture(confirmSaveButton, confirmSaveOriginal);
+            confirmBackOriginal = SceneLocalizedLabel.Capture(confirmBackButton, confirmBackOriginal);
+            sceneLabelOriginalsCaptured = true;
+        }
+
         private void ApplyLocalizedLabels()
         {
+            CaptureSceneLabelOriginals();
             LhButtonLabelUtility.SetLabel(
                 openSaveButton,
-                LocalizedText.GetOrFallback(GameTextKeys.ClayEditSave, "保存"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.ClayEditSave, openSaveOriginal));
             LhButtonLabelUtility.SetLabel(
                 openEnemySaveButton,
-                LocalizedText.GetOrFallback(GameTextKeys.ClayEditSaveAsEnemy, "敵保存"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.ClayEditSaveAsEnemy, openEnemySaveOriginal));
             LhButtonLabelUtility.SetLabel(
                 backButton,
-                LocalizedText.GetOrFallback(GameTextKeys.CommonReturn, "戻る"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.CommonReturn, backOriginal));
             LhButtonLabelUtility.SetLabel(
                 slotActionOverwriteButton,
-                LocalizedText.GetOrFallback(GameTextKeys.ClayEditOverwriteSave, "上書き"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.ClayEditOverwriteSave, overwriteOriginal));
             LhButtonLabelUtility.SetLabel(
                 slotActionDeleteButton,
-                LocalizedText.GetOrFallback(GameTextKeys.ClayEditDelete, "削除"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.ClayEditDelete, deleteOriginal));
             LhButtonLabelUtility.SetLabel(
                 slotActionBackButton,
-                LocalizedText.GetOrFallback(GameTextKeys.CommonReturn, "戻る"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.CommonReturn, slotActionBackOriginal));
             LhButtonLabelUtility.SetLabel(
                 confirmNameButton,
-                LocalizedText.GetOrFallback(GameTextKeys.CommonDecide, "決定"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.CommonDecide, confirmNameOriginal));
             LhButtonLabelUtility.SetLabel(
                 nameInputBackButton,
-                LocalizedText.GetOrFallback(GameTextKeys.CommonReturn, "戻る"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.CommonReturn, nameInputBackOriginal));
             LhButtonLabelUtility.SetLabel(
                 confirmSaveButton,
-                LocalizedText.GetOrFallback(GameTextKeys.CommonSave, "保存"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.CommonSave, confirmSaveOriginal));
             LhButtonLabelUtility.SetLabel(
                 confirmBackButton,
-                LocalizedText.GetOrFallback(GameTextKeys.CommonReturn, "戻る"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.CommonReturn, confirmBackOriginal));
 
             EnsureBakedChromeLabels();
             bakedChromeLabelApplier?.Apply();
         }
-
-        private LocalizedBakedTextApplier bakedChromeLabelApplier;
 
         private void EnsureBakedChromeLabels()
         {

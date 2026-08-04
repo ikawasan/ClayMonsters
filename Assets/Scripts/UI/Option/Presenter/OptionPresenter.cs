@@ -84,17 +84,8 @@ namespace UI.Option
 
         private void ApplyLabels()
         {
-            // LifetimeScope配置の日本語原文をフォールバックにする
-            optionView.ApplyLocalizedLabels(
-                title: LocalizedText.GetOrFallback(GameTextKeys.OptionTitle, "設定"),
-                videoTitle: LocalizedText.GetOrFallback(GameTextKeys.OptionVideo, "【ビデオ】"),
-                audioTitle: LocalizedText.GetOrFallback(GameTextKeys.OptionAudio, "【オーディオ】"),
-                languageTitle: LocalizedText.GetOrFallback(GameTextKeys.OptionLanguage, "【言語】"),
-                fullScreen: LocalizedText.GetOrFallback(GameTextKeys.OptionFullScreen, "全画面"),
-                vSync: LocalizedText.GetOrFallback(GameTextKeys.OptionVSync, "垂直同期"),
-                music: LocalizedText.GetOrFallback(GameTextKeys.OptionMusic, "音楽"),
-                soundEffect: LocalizedText.GetOrFallback(GameTextKeys.OptionSoundEffect, "効果音"),
-                close: LocalizedText.GetOrFallback(GameTextKeys.OptionClose, "閉じる"));
+            // シーン配置の日本語原文をフォールバックにする
+            optionView.ApplyCapturedLocalizedLabels();
         }
 
         private void CycleLanguage(int delta)

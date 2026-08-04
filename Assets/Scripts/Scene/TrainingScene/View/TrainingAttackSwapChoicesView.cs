@@ -114,16 +114,25 @@ namespace Scene.TrainingScene.View
 
             if (skipButton != null)
             {
+                if (!skipOriginalCaptured)
+                {
+                    skipOriginal = SceneLocalizedLabel.Capture(skipButton, skipOriginal);
+                    skipOriginalCaptured = true;
+                }
+
                 skipButton.gameObject.SetActive(true);
                 skipButton.EnsureUiSoundFeedback();
                 DisableChildRaycasts(skipButton);
                 LhButtonLabelUtility.SetLabel(
                     skipButton,
-                    LocalizedText.GetOrFallback(GameTextKeys.TrainingSwapSkip, "スキップ"));
+                    SceneLocalizedLabel.Resolve(GameTextKeys.TrainingSwapSkip, skipOriginal));
                 skipButton.onClick.RemoveAllListeners();
                 skipButton.onClick.AddListener(() => onSelected?.Invoke(-1));
             }
         }
+
+        private bool skipOriginalCaptured;
+        private string skipOriginal = "入れ替えない";
 
         /// <summary>
         /// 表示内容をクリアする

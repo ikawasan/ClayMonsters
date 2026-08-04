@@ -598,7 +598,7 @@ namespace Scene.TrainingScene.View
                     button.gameObject.SetActive(true);
                     SetLocationButtonLabel(
                         i,
-                        LocalizedText.GetOrFallback(GameTextKeys.TrainingShopNextPage, "次へ"));
+                        LocalizedText.GetOrFallback(GameTextKeys.TrainingShopNextPage, "次のページ"));
                     button.onClick.RemoveAllListeners();
                     button.onClick.AddListener(
                         () => OnShopClicked(TrainingShopChoiceCodes.NextPage));
@@ -751,7 +751,7 @@ namespace Scene.TrainingScene.View
                     button.gameObject.SetActive(true);
                     SetLocationButtonLabel(
                         i,
-                        LocalizedText.GetOrFallback(GameTextKeys.TrainingShopNextPage, "次へ"));
+                        LocalizedText.GetOrFallback(GameTextKeys.TrainingShopNextPage, "次のページ"));
                     button.onClick.RemoveAllListeners();
                     button.onClick.AddListener(
                         () => OnInventoryClicked(TrainingInventoryChoiceCodes.NextPage));
@@ -1798,33 +1798,56 @@ namespace Scene.TrainingScene.View
             }
         }
 
+        private bool chromeLabelOriginalsCaptured;
+        private string continueOriginal = "続ける";
+        private string backToTitleOriginal = "タイトルへ戻る";
+        private string interruptOriginal = "中断して保存";
+
         private void ApplyChromeLabels()
         {
+            CaptureChromeLabelOriginalsIfNeeded();
             if (continueButton != null)
             {
                 LhButtonLabelUtility.SetLabel(
                     continueButtonLabel,
-                    LocalizedText.GetOrFallback(GameTextKeys.TrainingHudContinue, "続ける"));
+                    SceneLocalizedLabel.Resolve(GameTextKeys.TrainingHudContinue, continueOriginal));
             }
 
             if (backToTitleButton != null)
             {
                 LhButtonLabelUtility.SetLabel(
                     backToTitleButtonLabel,
-                    LocalizedText.GetOrFallback(
-                        GameTextKeys.TrainingHudBackToTitle, "タイトル"));
+                    SceneLocalizedLabel.Resolve(
+                        GameTextKeys.TrainingHudBackToTitle,
+                        backToTitleOriginal));
             }
 
             if (interruptButton != null)
             {
                 LhButtonLabelUtility.SetLabel(
                     interruptButton,
-                    LocalizedText.GetOrFallback(
-                        GameTextKeys.TrainingHudInterrupt, "中断"));
+                    SceneLocalizedLabel.Resolve(
+                        GameTextKeys.TrainingHudInterrupt,
+                        interruptOriginal));
             }
 
             EnsureMoneyLabelApplier();
             moneyLabelApplier?.Apply();
+        }
+
+        private void CaptureChromeLabelOriginalsIfNeeded()
+        {
+            if (chromeLabelOriginalsCaptured)
+            {
+                return;
+            }
+
+            continueOriginal = SceneLocalizedLabel.Capture(continueButtonLabel, continueOriginal);
+            backToTitleOriginal = SceneLocalizedLabel.Capture(
+                backToTitleButtonLabel,
+                backToTitleOriginal);
+            interruptOriginal = SceneLocalizedLabel.Capture(interruptButton, interruptOriginal);
+            chromeLabelOriginalsCaptured = true;
         }
 
         private LocalizedBakedTextApplier moneyLabelApplier;

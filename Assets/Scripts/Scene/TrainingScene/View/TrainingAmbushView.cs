@@ -158,12 +158,29 @@ namespace Scene.TrainingScene.View
                 choiceMessageText.text = LocalizedText.Get(GameTextKeys.TrainingAmbushMessage, "name", name);
             }
 
+            CaptureChoiceOriginalsIfNeeded();
             LhButtonLabelUtility.SetLabel(
                 fightButton,
-                LocalizedText.GetOrFallback(GameTextKeys.TrainingAmbushFight, "戦う"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.TrainingAmbushFight, fightOriginal));
             LhButtonLabelUtility.SetLabel(
                 fleeButton,
-                LocalizedText.GetOrFallback(GameTextKeys.TrainingAmbushFlee, "逃げる"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.TrainingAmbushFlee, fleeOriginal));
+        }
+
+        private bool choiceOriginalsCaptured;
+        private string fightOriginal = "戦う";
+        private string fleeOriginal = "逃げる";
+
+        private void CaptureChoiceOriginalsIfNeeded()
+        {
+            if (choiceOriginalsCaptured)
+            {
+                return;
+            }
+
+            fightOriginal = SceneLocalizedLabel.Capture(fightButton, fightOriginal);
+            fleeOriginal = SceneLocalizedLabel.Capture(fleeButton, fleeOriginal);
+            choiceOriginalsCaptured = true;
         }
 
         private string ResolveEnemyDisplayName()

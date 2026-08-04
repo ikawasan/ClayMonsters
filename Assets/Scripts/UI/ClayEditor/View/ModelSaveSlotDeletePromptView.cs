@@ -95,16 +95,33 @@ namespace UI.ClayEditor.View
                 });
         }
 
+        private bool buttonOriginalsCaptured;
+        private string confirmOriginal = "削除する";
+        private string cancelOriginal = "キャンセル";
+
         private void ApplyButtonLabels()
         {
             EnsureBakedLabels();
             bakedLabelApplier?.Apply();
+            CaptureButtonOriginalsIfNeeded();
             LhButtonLabelUtility.SetLabel(
                 confirmButton,
-                LocalizedText.GetOrFallback(GameTextKeys.ClayEditDeleteConfirm, "削除"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.ClayEditDeleteConfirm, confirmOriginal));
             LhButtonLabelUtility.SetLabel(
                 cancelButton,
-                LocalizedText.GetOrFallback(GameTextKeys.CommonCancel, "キャンセル"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.CommonCancel, cancelOriginal));
+        }
+
+        private void CaptureButtonOriginalsIfNeeded()
+        {
+            if (buttonOriginalsCaptured)
+            {
+                return;
+            }
+
+            confirmOriginal = SceneLocalizedLabel.Capture(confirmButton, confirmOriginal);
+            cancelOriginal = SceneLocalizedLabel.Capture(cancelButton, cancelOriginal);
+            buttonOriginalsCaptured = true;
         }
 
         private void EnsureBakedLabels()

@@ -199,14 +199,19 @@ namespace UI.ModelGallery.View
             bakedLabelApplier.Register(GameTextKeys.ModelGalleryTabBrowse, "閲覧");
             bakedLabelApplier.Register(GameTextKeys.ModelGallerySortRandom, "ランダム");
             bakedLabelApplier.Register(GameTextKeys.ModelGallerySortMonthly, "月間");
+            bakedLabelApplier.Register(GameTextKeys.ModelGallerySortMonthly, "月間ランキング");
             bakedLabelApplier.Register(GameTextKeys.ModelGallerySortOverall, "総合");
+            bakedLabelApplier.Register(GameTextKeys.ModelGallerySortOverall, "総合ランキング");
             bakedLabelApplier.Register(GameTextKeys.ModelGalleryPrev, "前へ");
             bakedLabelApplier.Register(GameTextKeys.ModelGalleryNext, "次へ");
             bakedLabelApplier.Register(GameTextKeys.ModelGalleryRefresh, "更新");
             bakedLabelApplier.Register(GameTextKeys.ModelGalleryPublish, "投稿");
+            bakedLabelApplier.Register(GameTextKeys.ModelGalleryPublish, "投稿する");
             bakedLabelApplier.Register(GameTextKeys.CommonSave, "保存");
+            bakedLabelApplier.Register(GameTextKeys.CommonSave, "保存する");
             bakedLabelApplier.Register(GameTextKeys.CommonClose, "閉じる");
             bakedLabelApplier.Register(GameTextKeys.ModelGalleryDownload, "取得");
+            bakedLabelApplier.Register(GameTextKeys.ModelGalleryDownload, "ダウンロード");
             bakedLabelApplier.Register(GameTextKeys.ModelGalleryModelName, "モデル名");
             bakedLabelApplier.Register(GameTextKeys.ModelGalleryPointsInsufficient, "ポイントが不足しています");
             bakedLabelApplier.Register(GameTextKeys.ModelGallerySaveDestEmpty, "保存先: 空きスロット");
@@ -222,53 +227,104 @@ namespace UI.ModelGallery.View
         {
             EnsureBakedLabels();
             bakedLabelApplier?.Apply();
+            CaptureChromeOriginalsIfNeeded();
 
             if (titleText != null)
             {
                 LocalizedFont.SetText(
                     titleText,
-                    LocalizedText.GetOrFallback(GameTextKeys.TitleModelGallery, "展示室"));
+                    SceneLocalizedLabel.Resolve(GameTextKeys.TitleModelGallery, titleOriginal));
             }
 
             LhButtonLabelUtility.SetLabel(
                 closeButton,
-                LocalizedText.GetOrFallback(GameTextKeys.CommonClose, "閉じる"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.CommonClose, closeOriginal));
             LhButtonLabelUtility.SetLabel(
                 postConfirmPublishButton,
-                LocalizedText.GetOrFallback(GameTextKeys.ModelGalleryPublish, "投稿"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.ModelGalleryPublish, publishOriginal));
             LhButtonLabelUtility.SetLabel(
                 postConfirmCloseButton,
-                LocalizedText.GetOrFallback(GameTextKeys.CommonClose, "閉じる"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.CommonClose, postConfirmCloseOriginal));
             LhButtonLabelUtility.SetLabel(
                 browseRefreshButton,
-                LocalizedText.GetOrFallback(GameTextKeys.ModelGalleryRefresh, "更新"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.ModelGalleryRefresh, refreshOriginal));
             LhButtonLabelUtility.SetLabel(
                 pointsInsufficientCloseButton,
-                LocalizedText.GetOrFallback(GameTextKeys.CommonClose, "閉じる"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.CommonClose, pointsCloseOriginal));
             LhButtonLabelUtility.SetLabel(
                 downloadSlotSelectCloseButton,
-                LocalizedText.GetOrFallback(GameTextKeys.CommonClose, "閉じる"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.CommonClose, downloadSelectCloseOriginal));
             LhButtonLabelUtility.SetLabel(
                 downloadConfirmSaveButton,
-                LocalizedText.GetOrFallback(GameTextKeys.CommonSave, "保存"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.CommonSave, downloadSaveOriginal));
             LhButtonLabelUtility.SetLabel(
                 downloadConfirmCloseButton,
-                LocalizedText.GetOrFallback(GameTextKeys.CommonClose, "閉じる"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.CommonClose, downloadConfirmCloseOriginal));
             LhButtonLabelUtility.SetLabel(
                 postTabToggle,
-                LocalizedText.GetOrFallback(GameTextKeys.ModelGalleryTabPost, "投稿"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.ModelGalleryTabPost, postTabOriginal));
             LhButtonLabelUtility.SetLabel(
                 browseTabToggle,
-                LocalizedText.GetOrFallback(GameTextKeys.ModelGalleryTabBrowse, "閲覧"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.ModelGalleryTabBrowse, browseTabOriginal));
             LhButtonLabelUtility.SetLabel(
                 randomSortToggle,
-                LocalizedText.GetOrFallback(GameTextKeys.ModelGallerySortRandom, "ランダム"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.ModelGallerySortRandom, randomSortOriginal));
             LhButtonLabelUtility.SetLabel(
                 monthlyRankingToggle,
-                LocalizedText.GetOrFallback(GameTextKeys.ModelGallerySortMonthly, "月間"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.ModelGallerySortMonthly, monthlySortOriginal));
             LhButtonLabelUtility.SetLabel(
                 overallRankingToggle,
-                LocalizedText.GetOrFallback(GameTextKeys.ModelGallerySortOverall, "総合"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.ModelGallerySortOverall, overallSortOriginal));
+        }
+
+        private bool chromeOriginalsCaptured;
+        private string titleOriginal = "展示室";
+        private string closeOriginal = "閉じる";
+        private string publishOriginal = "投稿";
+        private string postConfirmCloseOriginal = "閉じる";
+        private string refreshOriginal = "更新";
+        private string pointsCloseOriginal = "閉じる";
+        private string downloadSelectCloseOriginal = "閉じる";
+        private string downloadSaveOriginal = "保存";
+        private string downloadConfirmCloseOriginal = "閉じる";
+        private string postTabOriginal = "投稿";
+        private string browseTabOriginal = "閲覧";
+        private string randomSortOriginal = "ランダム";
+        private string monthlySortOriginal = "月間ランキング";
+        private string overallSortOriginal = "総合ランキング";
+
+        private void CaptureChromeOriginalsIfNeeded()
+        {
+            if (chromeOriginalsCaptured)
+            {
+                return;
+            }
+
+            titleOriginal = SceneLocalizedLabel.Capture(titleText, titleOriginal);
+            closeOriginal = SceneLocalizedLabel.Capture(closeButton, closeOriginal);
+            publishOriginal = SceneLocalizedLabel.Capture(postConfirmPublishButton, publishOriginal);
+            postConfirmCloseOriginal = SceneLocalizedLabel.Capture(
+                postConfirmCloseButton,
+                postConfirmCloseOriginal);
+            refreshOriginal = SceneLocalizedLabel.Capture(browseRefreshButton, refreshOriginal);
+            pointsCloseOriginal = SceneLocalizedLabel.Capture(
+                pointsInsufficientCloseButton,
+                pointsCloseOriginal);
+            downloadSelectCloseOriginal = SceneLocalizedLabel.Capture(
+                downloadSlotSelectCloseButton,
+                downloadSelectCloseOriginal);
+            downloadSaveOriginal = SceneLocalizedLabel.Capture(
+                downloadConfirmSaveButton,
+                downloadSaveOriginal);
+            downloadConfirmCloseOriginal = SceneLocalizedLabel.Capture(
+                downloadConfirmCloseButton,
+                downloadConfirmCloseOriginal);
+            postTabOriginal = SceneLocalizedLabel.Capture(postTabToggle, postTabOriginal);
+            browseTabOriginal = SceneLocalizedLabel.Capture(browseTabToggle, browseTabOriginal);
+            randomSortOriginal = SceneLocalizedLabel.Capture(randomSortToggle, randomSortOriginal);
+            monthlySortOriginal = SceneLocalizedLabel.Capture(monthlyRankingToggle, monthlySortOriginal);
+            overallSortOriginal = SceneLocalizedLabel.Capture(overallRankingToggle, overallSortOriginal);
+            chromeOriginalsCaptured = true;
         }
 
         /// <inheritdoc />

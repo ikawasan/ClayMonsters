@@ -59,6 +59,27 @@ namespace Scene.TrainingScene.View
         private int cachedMoney;
         private bool cachedHasNextPage;
         private bool cachedShowOpenInventory;
+        private bool listChromeOriginalsCaptured;
+        private string shopTitleOriginal = "売店";
+        private string inventoryTitleOriginal = "所持アイテム";
+        private string closeOriginal = "戻る";
+        private string nextPageOriginal = "次のページ";
+        private string openInventoryOriginal = "所持";
+
+        private void CaptureListChromeOriginalsIfNeeded()
+        {
+            if (listChromeOriginalsCaptured)
+            {
+                return;
+            }
+
+            closeOriginal = SceneLocalizedLabel.Capture(closeButtonLabel, closeOriginal);
+            nextPageOriginal = SceneLocalizedLabel.Capture(nextPageButtonLabel, nextPageOriginal);
+            openInventoryOriginal = SceneLocalizedLabel.Capture(
+                openInventoryButtonLabel,
+                openInventoryOriginal);
+            listChromeOriginalsCaptured = true;
+        }
 
         /// <summary>
         /// 閉じるボタンがあるか
@@ -90,16 +111,18 @@ namespace Scene.TrainingScene.View
             bool showOpenInventory)
         {
             EnsureUiBound();
+            CaptureListChromeOriginalsIfNeeded();
             listMode = ListMode.Shop;
             cachedShopItems = items;
             cachedMoney = currentMoney;
             cachedHasNextPage = hasNextPage;
             cachedShowOpenInventory = showOpenInventory;
             BindActionButtons();
-            SetTitle(LocalizedText.GetOrFallback(GameTextKeys.TrainingShopTitle, "売店"));
+            SetTitle(SceneLocalizedLabel.Resolve(GameTextKeys.TrainingShopTitle, shopTitleOriginal));
             SetMoney(currentMoney);
             BindShopSlots(items);
-            ConfigureCloseButton(LocalizedText.GetOrFallback(GameTextKeys.CommonReturn, "戻る"));
+            ConfigureCloseButton(
+                SceneLocalizedLabel.Resolve(GameTextKeys.CommonReturn, closeOriginal));
             ConfigureNextPageButton(hasNextPage);
             ConfigureOpenInventoryButton(showOpenInventory);
             hasChoice = false;
@@ -114,11 +137,15 @@ namespace Scene.TrainingScene.View
             bool hasNextPage)
         {
             EnsureUiBound();
+            CaptureListChromeOriginalsIfNeeded();
             listMode = ListMode.Inventory;
             cachedInventoryEntries = entries;
             cachedHasNextPage = hasNextPage;
             BindActionButtons();
-            SetTitle(LocalizedText.GetOrFallback(GameTextKeys.TrainingInventoryTitle, "所持アイテム"));
+            SetTitle(
+                SceneLocalizedLabel.Resolve(
+                    GameTextKeys.TrainingInventoryTitle,
+                    inventoryTitleOriginal));
             if (moneyText != null)
             {
                 moneyText.text = string.Empty;
@@ -126,7 +153,8 @@ namespace Scene.TrainingScene.View
             }
 
             BindInventorySlots(entries);
-            ConfigureCloseButton(LocalizedText.GetOrFallback(GameTextKeys.CommonReturn, "戻る"));
+            ConfigureCloseButton(
+                SceneLocalizedLabel.Resolve(GameTextKeys.CommonReturn, closeOriginal));
             ConfigureNextPageButton(hasNextPage);
             ConfigureOpenInventoryButton(false);
             hasChoice = false;
@@ -354,9 +382,10 @@ namespace Scene.TrainingScene.View
             nextPageButton.interactable = visible;
             if (visible)
             {
+                CaptureListChromeOriginalsIfNeeded();
                 LhButtonLabelUtility.SetLabel(
                     nextPageButtonLabel,
-                    LocalizedText.GetOrFallback(GameTextKeys.TrainingShopNextPage, "次へ"));
+                    SceneLocalizedLabel.Resolve(GameTextKeys.TrainingShopNextPage, nextPageOriginal));
             }
         }
 
@@ -371,9 +400,12 @@ namespace Scene.TrainingScene.View
             openInventoryButton.interactable = visible;
             if (visible)
             {
+                CaptureListChromeOriginalsIfNeeded();
                 LhButtonLabelUtility.SetLabel(
                     openInventoryButtonLabel,
-                    LocalizedText.GetOrFallback(GameTextKeys.TrainingShopOpenInventory, "所持"));
+                    SceneLocalizedLabel.Resolve(
+                        GameTextKeys.TrainingShopOpenInventory,
+                        openInventoryOriginal));
             }
         }
 

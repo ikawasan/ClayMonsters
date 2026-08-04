@@ -62,6 +62,11 @@ namespace UI.Option.Interface
             string close);
 
         /// <summary>
+        /// シーン原文を採取したあと現在言語でラベルを適用する
+        /// </summary>
+        void ApplyCapturedLocalizedLabels();
+
+        /// <summary>
         /// 閉じるボタン押下を購読する
         /// </summary>
         /// <param name="action">コールバック</param>

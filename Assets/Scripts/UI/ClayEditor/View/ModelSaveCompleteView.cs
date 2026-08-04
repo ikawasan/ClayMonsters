@@ -92,11 +92,20 @@ namespace UI.ClayEditor.View
             messageText.text = LocalizedText.GetOrFallback(messageKey, messageFallback);
         }
 
+        private bool closeOriginalCaptured;
+        private string closeOriginal = "閉じる";
+
         private void ApplyCloseLabel()
         {
+            if (!closeOriginalCaptured)
+            {
+                closeOriginal = SceneLocalizedLabel.Capture(closeButton, closeOriginal);
+                closeOriginalCaptured = true;
+            }
+
             LhButtonLabelUtility.SetLabel(
                 closeButton,
-                LocalizedText.GetOrFallback(GameTextKeys.CommonClose, "閉じる"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.CommonClose, closeOriginal));
         }
 
         private void BindCloseButton()

@@ -86,26 +86,43 @@ namespace UI.ClayEditor.View
             ApplyLocalizedLabels();
         }
 
+        private bool labelOriginalsCaptured;
+        private string runOriginal = "走る";
+        private string attackOriginal = "攻撃";
+
         private void ApplyLocalizedLabels()
         {
+            CaptureLabelOriginalsIfNeeded();
             LhButtonLabelUtility.SetLabel(
                 runButton,
-                LocalizedText.GetOrFallback(GameTextKeys.ClayEditRun, "走る"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.ClayEditRun, runOriginal));
             LhButtonLabelUtility.SetLabel(
                 attackButton,
-                LocalizedText.GetOrFallback(GameTextKeys.ClayEditAttack, "攻撃"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.ClayEditAttack, attackOriginal));
 
             if (bakedLabelApplier == null)
             {
                 bakedLabelApplier = new LocalizedBakedTextApplier();
                 bakedLabelApplier.Register(GameTextKeys.ClayEditIdle, "待機");
-                bakedLabelApplier.Register(GameTextKeys.ClayEditRun, "走る");
-                bakedLabelApplier.Register(GameTextKeys.ClayEditAttack, "攻撃");
+                bakedLabelApplier.Register(GameTextKeys.ClayEditRun, runOriginal);
+                bakedLabelApplier.Register(GameTextKeys.ClayEditAttack, attackOriginal);
                 Transform root = canvas != null ? canvas.transform : transform;
                 bakedLabelApplier.Capture(root);
             }
 
             bakedLabelApplier.Apply();
+        }
+
+        private void CaptureLabelOriginalsIfNeeded()
+        {
+            if (labelOriginalsCaptured)
+            {
+                return;
+            }
+
+            runOriginal = SceneLocalizedLabel.Capture(runButton, runOriginal);
+            attackOriginal = SceneLocalizedLabel.Capture(attackButton, attackOriginal);
+            labelOriginalsCaptured = true;
         }
 
         private bool CanDriveMotion()

@@ -95,9 +95,25 @@ namespace UI.ClayEditor.View
                 return;
             }
 
+            CaptureGuideLabelOriginalIfNeeded();
             LhButtonLabelUtility.SetLabel(
                 label,
-                LocalizedText.GetOrFallback(GameTextKeys.ClayEditShowGuide, "操作"));
+                SceneLocalizedLabel.Resolve(GameTextKeys.ClayEditShowGuide, showGuideOriginal));
+        }
+
+        private bool guideLabelOriginalCaptured;
+        private string showGuideOriginal = "操作説明を表示";
+
+        private void CaptureGuideLabelOriginalIfNeeded()
+        {
+            if (guideLabelOriginalCaptured)
+            {
+                return;
+            }
+
+            TMP_Text label = ResolveVisibilityToggleLabel();
+            showGuideOriginal = SceneLocalizedLabel.Capture(label, showGuideOriginal);
+            guideLabelOriginalCaptured = true;
         }
 
         private TMP_Text ResolveVisibilityToggleLabel()
