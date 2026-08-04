@@ -44,7 +44,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7bf5b3db8fe88e4488e6e53afa83ab1f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Setting::Setting.FPSController
-  targetFPS: 60
 --- !u!1 &4628802752089385683
 GameObject:
   m_ObjectHideFlags: 0

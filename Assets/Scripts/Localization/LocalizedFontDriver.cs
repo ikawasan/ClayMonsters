@@ -109,6 +109,7 @@ namespace Localization
         private void OnSceneUnloaded(Scene scene)
         {
             LocalizedFont.NotifySceneHierarchyChanged();
+            LanguageAwareUi.NotifyHierarchyChanged();
             nextScanTime = 0f;
             nextPruneTime = 0f;
             nextCacheRefreshTime = 0f;

@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Text;
 using Battle.Interface;
 using Extensions;
 using TMPro;
@@ -8,6 +10,7 @@ namespace Battle.View
     /// <summary>
     /// 攻撃命中時にワールド空間へダメージ数値を浮かべて表示する
     /// 外れたときはミスラベルを表示する
+    /// インスタンスをプールして生成と破棄のGCを抑える
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class BattleDamagePopupView : MonoBehaviour, IBattleDamagePopup
@@ -24,6 +27,9 @@ namespace Battle.View
         [SerializeField] private Color missColor = new Color(0.78f, 0.82f, 0.92f, 1f);
 
         private UnityEngine.Camera worldCamera;
+        private readonly Stack<DamagePopupFloater> freeFloaters = new Stack<DamagePopupFloater>(8);
+        private readonly StringBuilder labelBuilder = new StringBuilder(12);
+        private Transform poolRoot;
 
         /// <summary>
         /// ラベル向き合わせに使うカメラを設定する
@@ -40,8 +46,7 @@ namespace Battle.View
                 worldPosition,
                 Localization.LocalizedText.Get(Localization.GameTextKeys.BattleMiss),
                 missColor,
-                missFontSize,
-                "MissPopup");
+                missFontSize);
         }
 
         /// <inheritdoc/>
@@ -55,48 +60,111 @@ namespace Battle.View
             bool heavy = isPartBreak || isKnockout;
             Color color = isKnockout ? knockoutColor : isPartBreak ? partBreakColor : normalColor;
             float fontSize = heavy ? heavyFontSize : normalFontSize;
-            string label = heavy ? $"-{damage}!" : $"-{damage}";
-            SpawnFloatingLabel(
-                worldPosition,
-                label,
-                color,
-                fontSize,
-                heavy ? "DamagePopupHeavy" : "DamagePopup");
+            labelBuilder.Clear();
+            labelBuilder.Append('-');
+            labelBuilder.Append(damage);
+            if (heavy)
+            {
+                labelBuilder.Append('!');
+            }
+
+            SpawnFloatingLabel(worldPosition, labelBuilder.ToString(), color, fontSize);
         }
 
         private void SpawnFloatingLabel(
             Vector3 worldPosition,
             string label,
             Color color,
-            float fontSize,
-            string objectName)
+            float fontSize)
         {
             Vector3 position = worldPosition + Vector3.up * spawnHeightOffset;
+            DamagePopupFloater floater = RentFloater();
+            floater.Play(
+                position,
+                label,
+                color,
+                fontSize,
+                duration,
+                floatDistance,
+                worldCamera,
+                ReleaseFloater);
+        }
 
-            GameObject host = new GameObject(objectName);
-            host.transform.position = position;
+        private DamagePopupFloater RentFloater()
+        {
+            if (freeFloaters.Count > 0)
+            {
+                DamagePopupFloater recycled = freeFloaters.Pop();
+                recycled.gameObject.SetActive(true);
+                return recycled;
+            }
 
+            EnsurePoolRoot();
+            var host = new GameObject("DamagePopup");
+            host.transform.SetParent(null, false);
             TextMeshPro labelText = host.AddComponent<TextMeshPro>();
             labelText.alignment = TextAlignmentOptions.Center;
-            labelText.fontSize = fontSize;
             labelText.fontStyle = FontStyles.Bold;
-            labelText.color = color;
-            labelText.text = label;
             labelText.sortingOrder = 500;
             AppTmpFontUtility.ApplyDefaultFont(labelText);
             AppTmpFontUtility.ApplyOutline(
                 labelText,
                 0.22f,
                 new Color(0.12f, 0.02f, 0.02f, 0.95f));
-
             MeshRenderer meshRenderer = labelText.GetComponent<MeshRenderer>();
             if (meshRenderer != null)
             {
                 meshRenderer.sortingOrder = 500;
             }
 
-            var floater = host.AddComponent<DamagePopupFloater>();
-            floater.Configure(duration, floatDistance, color, worldCamera);
+            return host.AddComponent<DamagePopupFloater>();
+        }
+
+        private void ReleaseFloater(DamagePopupFloater floater)
+        {
+            if (floater == null)
+            {
+                return;
+            }
+
+            EnsurePoolRoot();
+            floater.gameObject.SetActive(false);
+            floater.transform.SetParent(poolRoot, false);
+            freeFloaters.Push(floater);
+        }
+
+        private void EnsurePoolRoot()
+        {
+            if (poolRoot != null)
+            {
+                return;
+            }
+
+            var root = new GameObject("BattleDamagePopupPool")
+            {
+                hideFlags = HideFlags.HideAndDontSave
+            };
+            Object.DontDestroyOnLoad(root);
+            poolRoot = root.transform;
+            poolRoot.position = new Vector3(0f, -10000f, 0f);
+        }
+
+        private void OnDestroy()
+        {
+            while (freeFloaters.Count > 0)
+            {
+                DamagePopupFloater floater = freeFloaters.Pop();
+                if (floater != null)
+                {
+                    Destroy(floater.gameObject);
+                }
+            }
+
+            if (poolRoot != null)
+            {
+                Destroy(poolRoot.gameObject);
+                poolRoot = null;
+            }
         }
 
         private sealed class DamagePopupFloater : MonoBehaviour
@@ -108,15 +176,44 @@ namespace Battle.View
             private Vector3 startPosition;
             private float elapsed;
             private UnityEngine.Camera targetCamera;
+            private System.Action<DamagePopupFloater> onComplete;
 
-            public void Configure(float duration, float rise, Color color, UnityEngine.Camera camera)
+            public void Play(
+                Vector3 worldPosition,
+                string label,
+                Color color,
+                float fontSize,
+                float durationSeconds,
+                float rise,
+                UnityEngine.Camera camera,
+                System.Action<DamagePopupFloater> complete)
             {
-                lifetime = Mathf.Max(0.1f, duration);
+                if (labelText == null)
+                {
+                    labelText = GetComponent<TextMeshPro>();
+                }
+
+                transform.SetParent(null, false);
+                transform.position = worldPosition;
+                startPosition = worldPosition;
+                lifetime = Mathf.Max(0.1f, durationSeconds);
                 riseDistance = rise;
                 baseColor = color;
-                labelText = GetComponent<TextMeshPro>();
-                startPosition = transform.position;
+                elapsed = 0f;
                 targetCamera = camera != null ? camera : UnityEngine.Camera.main;
+                onComplete = complete;
+
+                if (labelText != null)
+                {
+                    labelText.fontSize = fontSize;
+                    labelText.color = color;
+                    labelText.text = label;
+                    Color outline = labelText.outlineColor;
+                    outline.a = 1f;
+                    labelText.outlineColor = outline;
+                }
+
+                enabled = true;
             }
 
             private void LateUpdate()
@@ -148,7 +245,10 @@ namespace Battle.View
 
                 if (normalized >= 1f)
                 {
-                    Destroy(gameObject);
+                    enabled = false;
+                    System.Action<DamagePopupFloater> complete = onComplete;
+                    onComplete = null;
+                    complete?.Invoke(this);
                 }
             }
         }

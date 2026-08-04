@@ -102,6 +102,14 @@ namespace ClayEditor.Rigging
         private Color[] battleMeshBaseColors;
         private Color[] battleMeshWorkColors;
         private BoneWeight[] cachedBattleBoneWeights;
+        private Vector3[] cachedSrcVertices;
+        private Vector3[] cachedSrcNormals;
+        private Vector4[] cachedSrcTangents;
+        private Vector2[] cachedSrcUv;
+        private Vector2[] cachedSrcUv2;
+        private Color[] cachedSrcColors;
+        private BoneWeight[] cachedSrcWeights;
+        private int[][] cachedSrcTriangles;
         private Transform[] bones;
         private readonly Dictionary<Transform, int> boneIndexOf = new Dictionary<Transform, int>();
 
@@ -133,6 +141,8 @@ namespace ClayEditor.Rigging
         private readonly Dictionary<long, (int from, int to)> rebuildKeptDirected = new Dictionary<long, (int from, int to)>(2048);
         private readonly List<List<int>> rebuildTrianglesScratch = new List<List<int>>(4);
         private BoneWeight[] rebuildBoneWeightsOut;
+        private float lastGlowSyncTime = -1f;
+        private const float GlowSyncIntervalSeconds = 0.04f;
 
         /// <summary>現在のモデルから検出した部位(リム)の一覧</summary>
         public IReadOnlyList<LimbInfo> Limbs => limbs;
@@ -168,6 +178,7 @@ namespace ClayEditor.Rigging
             {
                 skinnedRenderer = null;
                 originalMesh = null;
+                ClearSourceMeshCache();
                 return false;
             }
 
@@ -177,10 +188,12 @@ namespace ClayEditor.Rigging
                 Debug.LogWarning("[ModelPartLossController] SkinnedMeshRendererまたはMeshが見つかりません");
                 skinnedRenderer = null;
                 originalMesh = null;
+                ClearSourceMeshCache();
                 return false;
             }
 
             originalMesh = skinnedRenderer.sharedMesh;
+            CacheSourceMeshAttributes(originalMesh);
             bones = skinnedRenderer.bones;
 
             for (int i = 0; i < bones.Length; i++)
@@ -193,6 +206,42 @@ namespace ClayEditor.Rigging
 
             BuildLimbs();
             return true;
+        }
+
+        private void CacheSourceMeshAttributes(Mesh src)
+        {
+            if (src == null)
+            {
+                ClearSourceMeshCache();
+                return;
+            }
+
+            cachedSrcVertices = src.vertices;
+            cachedSrcNormals = src.normals;
+            cachedSrcTangents = src.tangents;
+            cachedSrcUv = src.uv;
+            cachedSrcUv2 = src.uv2;
+            cachedSrcColors = src.colors;
+            cachedSrcWeights = src.boneWeights;
+
+            int subMeshCount = src.subMeshCount;
+            cachedSrcTriangles = new int[subMeshCount][];
+            for (int sub = 0; sub < subMeshCount; sub++)
+            {
+                cachedSrcTriangles[sub] = src.GetTriangles(sub);
+            }
+        }
+
+        private void ClearSourceMeshCache()
+        {
+            cachedSrcVertices = null;
+            cachedSrcNormals = null;
+            cachedSrcTangents = null;
+            cachedSrcUv = null;
+            cachedSrcUv2 = null;
+            cachedSrcColors = null;
+            cachedSrcWeights = null;
+            cachedSrcTriangles = null;
         }
 
         // ボーン階層を部位分類し、リム(腕/脚など)単位にまとめる
@@ -424,7 +473,7 @@ namespace ClayEditor.Rigging
             repairWobblePhase = Random.Range(0f, 100f);
             CacheGradualRestoreBoneIndices(limbIndex);
             ApplyPartialBattleLimbShow(limbIndex, gradualRestoreProgress);
-            SyncBattleMeshVertexGlow();
+            SyncBattleMeshVertexGlow(force: true);
             return true;
         }
 
@@ -462,7 +511,7 @@ namespace ClayEditor.Rigging
             // Updateによる揺れ更新だけ止め進捗とボーン情報は残して表示を維持する
             gradualRestoreLimbIndex = -1;
             gradualRestoreRootBone = null;
-            SyncBattleMeshVertexGlow();
+            SyncBattleMeshVertexGlow(force: true);
         }
 
         private void Update()
@@ -540,7 +589,7 @@ namespace ClayEditor.Rigging
             rebuildSuspended = true;
             CancelDeferredRebuild();
             SyncBattleHiddenLimbs();
-            SyncBattleMeshVertexGlow();
+            SyncBattleMeshVertexGlow(force: true);
         }
 
         private void SyncBattleHiddenLimbs()
@@ -573,7 +622,7 @@ namespace ClayEditor.Rigging
             if (rebuildSuspended)
             {
                 ApplyBattleLimbHide(limbIndex);
-                SyncBattleMeshVertexGlow();
+                SyncBattleMeshVertexGlow(force: true);
                 return;
             }
 
@@ -596,7 +645,7 @@ namespace ClayEditor.Rigging
                 }
             }
 
-            SyncBattleMeshVertexGlow();
+            SyncBattleMeshVertexGlow(force: true);
         }
 
         private void ApplyPartRestoreVisual(int limbIndex)
@@ -604,7 +653,7 @@ namespace ClayEditor.Rigging
             if (rebuildSuspended)
             {
                 RestoreBattleLimbShow(limbIndex);
-                SyncBattleMeshVertexGlow();
+                SyncBattleMeshVertexGlow(force: true);
                 return;
             }
 
@@ -664,10 +713,23 @@ namespace ClayEditor.Rigging
 
         private void SyncBattleMeshVertexGlow()
         {
+            SyncBattleMeshVertexGlow(force: false);
+        }
+
+        private void SyncBattleMeshVertexGlow(bool force)
+        {
             if (!rebuildSuspended || !IsReady)
             {
                 return;
             }
+
+            float now = Time.unscaledTime;
+            if (!force && lastGlowSyncTime >= 0f && now - lastGlowSyncTime < GlowSyncIntervalSeconds)
+            {
+                return;
+            }
+
+            lastGlowSyncTime = now;
 
             if (removedBoneIndices.Count == 0)
             {
@@ -973,14 +1035,18 @@ namespace ClayEditor.Rigging
             }
 
             Mesh src = originalMesh;
+            if (cachedSrcVertices == null || cachedSrcVertices.Length == 0)
+            {
+                CacheSourceMeshAttributes(src);
+            }
 
-            Vector3[] srcVertices = src.vertices;
-            Vector3[] srcNormals = src.normals;
-            Vector4[] srcTangents = src.tangents;
-            Vector2[] srcUv = src.uv;
-            Vector2[] srcUv2 = src.uv2;
-            Color[] srcColors = src.colors;
-            BoneWeight[] srcWeights = src.boneWeights;
+            Vector3[] srcVertices = cachedSrcVertices;
+            Vector3[] srcNormals = cachedSrcNormals ?? System.Array.Empty<Vector3>();
+            Vector4[] srcTangents = cachedSrcTangents ?? System.Array.Empty<Vector4>();
+            Vector2[] srcUv = cachedSrcUv ?? System.Array.Empty<Vector2>();
+            Vector2[] srcUv2 = cachedSrcUv2 ?? System.Array.Empty<Vector2>();
+            Color[] srcColors = cachedSrcColors ?? System.Array.Empty<Color>();
+            BoneWeight[] srcWeights = cachedSrcWeights ?? System.Array.Empty<BoneWeight>();
 
             int vertexCount = srcVertices.Length;
             bool hasNormals = srcNormals.Length == vertexCount;
@@ -1054,7 +1120,9 @@ namespace ClayEditor.Rigging
 
             for (int sub = 0; sub < subMeshCount; sub++)
             {
-                int[] tris = src.GetTriangles(sub);
+                int[] tris = cachedSrcTriangles != null && sub < cachedSrcTriangles.Length
+                    ? cachedSrcTriangles[sub]
+                    : src.GetTriangles(sub);
                 List<int> list = rebuildTrianglesScratch[sub];
                 list.Clear();
                 if (list.Capacity < tris.Length)

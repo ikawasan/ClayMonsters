@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Battle
@@ -9,6 +10,19 @@ namespace Battle
     {
         // ベイク結果の使い回し用で毎回のMesh確保を避ける
         private static Mesh bakeMesh;
+        private static readonly List<Vector3> BakeVertexScratch = new List<Vector3>(8192);
+        private static readonly Dictionary<int, PosedBoundsCache> PosedBoundsCaches =
+            new Dictionary<int, PosedBoundsCache>(8);
+        private static readonly List<int> PosedCachePruneKeys = new List<int>(8);
+
+        private struct PosedBoundsCache
+        {
+            public Transform Root;
+            public Vector3 RootPosition;
+            public Quaternion RootRotation;
+            public Bounds Bounds;
+        }
+
 
         /// <summary>
         /// 両モデル間の注視点を返す(高さは地面基準+オフセット)
@@ -142,9 +156,71 @@ namespace Battle
         public static bool TryGetPosedModelBounds(Transform model, out Bounds bounds)
         {
             bounds = default;
+            if (model == null)
+            {
+                return false;
+            }
+
+            int id = model.GetInstanceID();
+            if (PosedBoundsCaches.TryGetValue(id, out PosedBoundsCache cache)
+                && cache.Root == model
+                && (cache.RootPosition - model.position).sqrMagnitude < 0.0001f
+                && Quaternion.Angle(cache.RootRotation, model.rotation) < 0.25f)
+            {
+                bounds = cache.Bounds;
+                return true;
+            }
+
             bool hasBounds = false;
             EncapsulatePosedRenderers(model, ref bounds, ref hasBounds);
-            return hasBounds;
+            if (!hasBounds)
+            {
+                return false;
+            }
+
+            PosedBoundsCaches[id] = new PosedBoundsCache
+            {
+                Root = model,
+                RootPosition = model.position,
+                RootRotation = model.rotation,
+                Bounds = bounds,
+            };
+            return true;
+        }
+
+        /// <summary>
+        /// 破棄済みposed境界キャッシュを捨てる
+        /// </summary>
+        public static void PrunePosedBoundsCache()
+        {
+            if (PosedBoundsCaches.Count == 0)
+            {
+                return;
+            }
+
+            PosedCachePruneKeys.Clear();
+            foreach (KeyValuePair<int, PosedBoundsCache> pair in PosedBoundsCaches)
+            {
+                if (pair.Value.Root == null)
+                {
+                    PosedCachePruneKeys.Add(pair.Key);
+                }
+            }
+
+            for (int i = 0; i < PosedCachePruneKeys.Count; i++)
+            {
+                PosedBoundsCaches.Remove(PosedCachePruneKeys[i]);
+            }
+
+            PosedCachePruneKeys.Clear();
+        }
+
+        /// <summary>
+        /// 採寸キャッシュを全破棄する
+        /// </summary>
+        public static void ClearPosedBoundsCache()
+        {
+            PosedBoundsCaches.Clear();
         }
 
         /// <summary>
@@ -251,15 +327,16 @@ namespace Battle
             float halfGap = requiredGap * 0.5f;
             float minCenterOffset = Mathf.Max(0f, minCenterOffsetFromMid);
             float midProjection = Vector3.Dot(layoutCenter, screenRight);
+            // 初回Bakeで境界を取り以降は平行移動分だけ更新してBake連発を避ける
+            if (!TryGetPosedModelBounds(playerModel, out Bounds playerBounds)
+                || !TryGetPosedModelBounds(enemyModel, out Bounds enemyBounds))
+            {
+                return;
+            }
+
             const int maxPasses = 6;
             for (int pass = 0; pass < maxPasses; pass++)
             {
-                if (!TryGetPosedModelBounds(playerModel, out Bounds playerBounds)
-                    || !TryGetPosedModelBounds(enemyModel, out Bounds enemyBounds))
-                {
-                    return;
-                }
-
                 float playerMax = ResolveMaxAxisProjection(playerBounds, Vector3.zero, screenRight);
                 float enemyMin = ResolveMinAxisProjection(enemyBounds, Vector3.zero, screenRight);
                 float playerCenter = Vector3.Dot(playerBounds.center, screenRight);
@@ -270,29 +347,79 @@ namespace Battle
                 float playerOverflow = playerMax - (midProjection - halfGap);
                 if (playerOverflow > 1e-4f)
                 {
-                    playerModel.position -= screenRight * playerOverflow;
+                    Vector3 delta = -screenRight * playerOverflow;
+                    playerModel.position += delta;
+                    playerBounds.center += delta;
                     moved = true;
                 }
 
                 float enemyOverflow = (midProjection + halfGap) - enemyMin;
                 if (enemyOverflow > 1e-4f)
                 {
-                    enemyModel.position += screenRight * enemyOverflow;
+                    Vector3 delta = screenRight * enemyOverflow;
+                    enemyModel.position += delta;
+                    enemyBounds.center += delta;
+                    moved = true;
+                }
+
+                // 中央から離す最小距離
+                if (minCenterOffset > 1e-4f)
+                {
+                    float playerCenterOffset = midProjection - playerCenter;
+                    if (playerCenterOffset < minCenterOffset)
+                    {
+                        float push = minCenterOffset - playerCenterOffset;
+                        Vector3 delta = -screenRight * push;
+                        playerModel.position += delta;
+                        playerBounds.center += delta;
+                        moved = true;
+                    }
+
+                    float enemyCenterOffset = enemyCenter - midProjection;
+                    if (enemyCenterOffset < minCenterOffset)
+                    {
+                        float push = minCenterOffset - enemyCenterOffset;
+                        Vector3 delta = screenRight * push;
+                        enemyModel.position += delta;
+                        enemyBounds.center += delta;
+                        moved = true;
+                    }
+                }
+
+                // お互いの隙間
+                playerMax = ResolveMaxAxisProjection(playerBounds, Vector3.zero, screenRight);
+                enemyMin = ResolveMinAxisProjection(enemyBounds, Vector3.zero, screenRight);
+                float gap = enemyMin - playerMax;
+                if (gap < requiredGap)
+                {
+                    float halfPush = (requiredGap - gap) * 0.5f;
+                    Vector3 playerDelta = -screenRight * halfPush;
+                    Vector3 enemyDelta = screenRight * halfPush;
+                    playerModel.position += playerDelta;
+                    enemyModel.position += enemyDelta;
+                    playerBounds.center += playerDelta;
+                    enemyBounds.center += enemyDelta;
                     moved = true;
                 }
 
                 // 短いモデルの中心が中央へ寄りすぎないよう外側下限を維持する
+                playerCenter = Vector3.Dot(playerBounds.center, screenRight);
+                enemyCenter = Vector3.Dot(enemyBounds.center, screenRight);
                 float playerCenterOvershoot = playerCenter - (midProjection - minCenterOffset);
-                if (playerCenterOvershoot > 1e-4f)
+                if (minCenterOffset > 1e-4f && playerCenterOvershoot > 1e-4f)
                 {
-                    playerModel.position -= screenRight * playerCenterOvershoot;
+                    Vector3 delta = -screenRight * playerCenterOvershoot;
+                    playerModel.position += delta;
+                    playerBounds.center += delta;
                     moved = true;
                 }
 
                 float enemyCenterOvershoot = (midProjection + minCenterOffset) - enemyCenter;
-                if (enemyCenterOvershoot > 1e-4f)
+                if (minCenterOffset > 1e-4f && enemyCenterOvershoot > 1e-4f)
                 {
-                    enemyModel.position += screenRight * enemyCenterOvershoot;
+                    Vector3 delta = screenRight * enemyCenterOvershoot;
+                    enemyModel.position += delta;
+                    enemyBounds.center += delta;
                     moved = true;
                 }
 
@@ -302,11 +429,15 @@ namespace Battle
                 }
 
                 // 中央帯と最小中心距離を侵さない範囲で余った隙間だけ内側へ寄せる
+                playerMax = ResolveMaxAxisProjection(playerBounds, Vector3.zero, screenRight);
+                enemyMin = ResolveMinAxisProjection(enemyBounds, Vector3.zero, screenRight);
+                playerCenter = Vector3.Dot(playerBounds.center, screenRight);
+                enemyCenter = Vector3.Dot(enemyBounds.center, screenRight);
                 float currentGap = enemyMin - playerMax;
                 float excessGap = currentGap - requiredGap;
                 if (excessGap <= 1e-4f)
                 {
-                    return;
+                    break;
                 }
 
                 float playerSlack = (midProjection - halfGap) - playerMax;
@@ -323,12 +454,32 @@ namespace Battle
                     Mathf.Max(0f, enemyCenterSlack));
                 if (playerPull <= 1e-4f && enemyPull <= 1e-4f)
                 {
-                    return;
+                    break;
                 }
 
-                playerModel.position += screenRight * playerPull;
-                enemyModel.position -= screenRight * enemyPull;
+                Vector3 playerPullDelta = screenRight * playerPull;
+                Vector3 enemyPullDelta = -screenRight * enemyPull;
+                playerModel.position += playerPullDelta;
+                enemyModel.position += enemyPullDelta;
+                playerBounds.center += playerPullDelta;
+                enemyBounds.center += enemyPullDelta;
             }
+
+            // 最終位置でキャッシュを整合させる
+            InvalidatePosedCache(playerModel);
+            InvalidatePosedCache(enemyModel);
+            TryGetPosedModelBounds(playerModel, out _);
+            TryGetPosedModelBounds(enemyModel, out _);
+        }
+
+        private static void InvalidatePosedCache(Transform model)
+        {
+            if (model == null)
+            {
+                return;
+            }
+
+            PosedBoundsCaches.Remove(model.GetInstanceID());
         }
 
         private static float ResolveMaxAxisProjection(Bounds bounds, Vector3 origin, Vector3 axis)
@@ -570,17 +721,18 @@ namespace Battle
             Mesh posedMesh = GetBakeMesh();
             // useScaleをfalseにしTransformPointとのスケール二重適用を避ける
             skinnedRenderer.BakeMesh(posedMesh, false);
-            Vector3[] vertices = posedMesh.vertices;
-            if (vertices.Length == 0)
+            BakeVertexScratch.Clear();
+            posedMesh.GetVertices(BakeVertexScratch);
+            if (BakeVertexScratch.Count == 0)
             {
                 EncapsulateBounds(skinnedRenderer.bounds, ref bounds, ref hasBounds);
                 return;
             }
 
             Transform rendererTransform = skinnedRenderer.transform;
-            for (int i = 0; i < vertices.Length; i++)
+            for (int i = 0; i < BakeVertexScratch.Count; i++)
             {
-                Vector3 world = rendererTransform.TransformPoint(vertices[i]);
+                Vector3 world = rendererTransform.TransformPoint(BakeVertexScratch[i]);
                 if (!hasBounds)
                 {
                     bounds = new Bounds(world, Vector3.zero);

@@ -456,17 +456,25 @@ namespace Battle
         /// </summary>
         public async UniTask RunAsync(CancellationToken cancellationToken)
         {
-            player.UpdateLocomotionMotion();
-            enemy.UpdateLocomotionMotion();
-
-            while (!IsFinished && !cancellationToken.IsCancellationRequested)
+            BattleRuntimePerformance.EnterBattle();
+            try
             {
-                await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
-                Tick(GameplayTime.DeltaTime);
-            }
+                player.UpdateLocomotionMotion();
+                enemy.UpdateLocomotionMotion();
 
-            await BattleHitStopClock.WaitUntilFinishedAsync(cancellationToken);
-            BattleHitStopClock.Clear();
+                while (!IsFinished && !cancellationToken.IsCancellationRequested)
+                {
+                    await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
+                    Tick(GameplayTime.DeltaTime);
+                }
+
+                await BattleHitStopClock.WaitUntilFinishedAsync(cancellationToken);
+                BattleHitStopClock.Clear();
+            }
+            finally
+            {
+                BattleRuntimePerformance.ExitBattle();
+            }
         }
 
         private void BeginHitFeedback(bool partLost)

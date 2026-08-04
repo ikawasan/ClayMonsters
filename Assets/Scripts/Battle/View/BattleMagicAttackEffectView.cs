@@ -21,6 +21,7 @@ namespace Battle.View
 
         private MagicAttackVfxCatalog catalog;
         private GameObject activeCastCircle;
+        private GameObject activeCastCirclePrefab;
         private CancellationTokenSource castCircleCts;
         private float battleGroundY;
         private bool hasBattleGroundY;
@@ -76,6 +77,7 @@ namespace Battle.View
             }
 
             surfacePosition.y += CastCircleSurfaceLift;
+            activeCastCirclePrefab = catalog.CastCirclePrefab;
             activeCastCircle = SpawnEffect(
                 catalog.CastCirclePrefab,
                 surfacePosition,
@@ -84,12 +86,13 @@ namespace Battle.View
                 "[BattleMagicAttackEffectView] 詠唱円prefabの生成に失敗しました");
             if (activeCastCircle == null)
             {
+                activeCastCirclePrefab = null;
                 return;
             }
 
             float playDuration = ConfigureParticlesOnce(activeCastCircle, Mathf.Max(0.2f, duration + 0.4f));
             castCircleCts = CancellationTokenSource.CreateLinkedTokenSource(this.GetCancellationTokenOnDestroy());
-            DestroyAfterAsync(activeCastCircle, playDuration, castCircleCts.Token).Forget();
+            ReleaseAfterAsync(activeCastCircle, activeCastCirclePrefab, playDuration, isCastCircle: true, castCircleCts.Token).Forget();
         }
 
         /// <summary>
@@ -103,8 +106,9 @@ namespace Battle.View
 
             if (activeCastCircle != null)
             {
-                Destroy(activeCastCircle);
+                BattleMagicEffectPools.Release(activeCastCirclePrefab, activeCastCircle);
                 activeCastCircle = null;
+                activeCastCirclePrefab = null;
             }
         }
 
@@ -182,7 +186,7 @@ namespace Battle.View
                 AlignGroundEffectToSurface(instance, surfaceY);
             }
 
-            Destroy(instance, duration);
+            BattleMagicEffectPools.ReleaseAfter(prefab, instance, duration);
         }
 
         /// <summary>
@@ -259,7 +263,7 @@ namespace Battle.View
 
             if (instance != null)
             {
-                Destroy(instance);
+                BattleMagicEffectPools.Release(prefab, instance);
             }
         }
 
@@ -273,8 +277,9 @@ namespace Battle.View
                 return;
             }
 
+            GameObject explosionPrefab = catalog.FireballExplosionPrefab;
             GameObject explosion = SpawnEffect(
-                catalog.FireballExplosionPrefab,
+                explosionPrefab,
                 position,
                 Quaternion.identity,
                 1f,
@@ -285,7 +290,7 @@ namespace Battle.View
             }
 
             float duration = ConfigureParticlesOnce(explosion, DefaultEffectDuration);
-            Destroy(explosion, duration);
+            BattleMagicEffectPools.ReleaseAfter(explosionPrefab, explosion, duration);
         }
 
         private static GameObject SpawnEffect(
@@ -301,16 +306,11 @@ namespace Battle.View
                 return null;
             }
 
-            GameObject instance = Instantiate(prefab, position, rotation);
+            GameObject instance = BattleMagicEffectPools.Rent(prefab, position, rotation, scale);
             if (instance == null)
             {
                 Debug.LogError(errorMessage);
                 return null;
-            }
-
-            if (scale > 0f && !Mathf.Approximately(scale, 1f))
-            {
-                instance.transform.localScale = Vector3.one * scale;
             }
 
             return instance;
@@ -512,9 +512,11 @@ namespace Battle.View
             return Mathf.Max(0.2f, maxDuration);
         }
 
-        private async UniTaskVoid DestroyAfterAsync(
+        private async UniTaskVoid ReleaseAfterAsync(
             GameObject instance,
+            GameObject prefab,
             float duration,
+            bool isCastCircle,
             CancellationToken cancellationToken)
         {
             try
@@ -529,15 +531,18 @@ namespace Battle.View
                 return;
             }
 
-            if (instance != null && instance == activeCastCircle)
+            if (instance == null)
+            {
+                return;
+            }
+
+            if (isCastCircle && instance == activeCastCircle)
             {
                 activeCastCircle = null;
-                Destroy(instance);
+                activeCastCirclePrefab = null;
             }
-            else if (instance != null)
-            {
-                Destroy(instance);
-            }
+
+            BattleMagicEffectPools.Release(prefab, instance);
         }
     }
 }

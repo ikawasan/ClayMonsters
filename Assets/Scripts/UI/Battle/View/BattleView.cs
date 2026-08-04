@@ -92,6 +92,16 @@ namespace UI.Battle.View
         private float lastDisplayedDistance = float.NaN;
         private string lastDisplayedBandName;
         private int lastDisplayedTimeSeconds = int.MinValue;
+        private int lastPlayerHpShown = int.MinValue;
+        private int lastPlayerMaxHpShown = int.MinValue;
+        private int lastEnemyHpShown = int.MinValue;
+        private int lastEnemyMaxHpShown = int.MinValue;
+        private int lastPlayerGutsFloorShown = int.MinValue;
+        private int lastPlayerMaxGutsFloorShown = int.MinValue;
+        private int lastEnemyGutsFloorShown = int.MinValue;
+        private int lastEnemyMaxGutsFloorShown = int.MinValue;
+        private float lastDisplayedDistanceRounded = float.NaN;
+        private string lastDistanceTextBand;
 
         private float displayPlayerHpFill;
         private float displayEnemyHpFill;
@@ -107,6 +117,18 @@ namespace UI.Battle.View
         private float lastTimeRemaining = float.MaxValue;
         private bool hasResult;
         private string cachedResultWinnerName = string.Empty;
+        private bool gaugesNeedUpdate = true;
+        private Color lastPlayerHpFillColor;
+        private Color lastEnemyHpFillColor;
+        private Color lastPlayerGutsFillColor;
+        private Color lastEnemyGutsFillColor;
+        private Color lastDistanceFillColor;
+        private bool hasLastPlayerHpFillColor;
+        private bool hasLastEnemyHpFillColor;
+        private bool hasLastPlayerGutsFillColor;
+        private bool hasLastEnemyGutsFillColor;
+        private bool hasLastDistanceFillColor;
+        private const float GaugeSettleEpsilon = 0.0008f;
 
         // HP/コスト/間合いバーがSliderで作られている場合Sliderが長さを制御する
         private Slider playerHpSlider;
@@ -219,76 +241,120 @@ namespace UI.Battle.View
         private void Update()
         {
             float deltaTime = Time.unscaledDeltaTime;
-            displayPlayerHpFill = BattleHudVisualUtility.SmoothFill(
-                displayPlayerHpFill, targetPlayerHpFill, gaugeSmoothSpeed, deltaTime);
-            displayEnemyHpFill = BattleHudVisualUtility.SmoothFill(
-                displayEnemyHpFill, targetEnemyHpFill, gaugeSmoothSpeed, deltaTime);
-            displayPlayerGutsFill = BattleHudVisualUtility.SmoothFill(
-                displayPlayerGutsFill, targetPlayerGutsFill, gaugeSmoothSpeed, deltaTime);
-            displayEnemyGutsFill = BattleHudVisualUtility.SmoothFill(
-                displayEnemyGutsFill, targetEnemyGutsFill, gaugeSmoothSpeed, deltaTime);
-            displayDistanceFill = BattleHudVisualUtility.SmoothFill(
-                displayDistanceFill, targetDistanceFill, gaugeSmoothSpeed, deltaTime);
+            bool anyMoved = SmoothToward(ref displayPlayerHpFill, targetPlayerHpFill, gaugeSmoothSpeed, deltaTime)
+                | SmoothToward(ref displayEnemyHpFill, targetEnemyHpFill, gaugeSmoothSpeed, deltaTime)
+                | SmoothToward(ref displayPlayerGutsFill, targetPlayerGutsFill, gaugeSmoothSpeed, deltaTime)
+                | SmoothToward(ref displayEnemyGutsFill, targetEnemyGutsFill, gaugeSmoothSpeed, deltaTime)
+                | SmoothToward(ref displayDistanceFill, targetDistanceFill, gaugeSmoothSpeed, deltaTime);
 
-            ApplyGaugeVisuals();
+            if (anyMoved || gaugesNeedUpdate)
+            {
+                ApplyGaugeVisuals();
+                gaugesNeedUpdate = false;
+            }
+
             UpdateTimePulse();
+        }
+
+        private static bool SmoothToward(ref float current, float target, float speed, float deltaTime)
+        {
+            float next = BattleHudVisualUtility.SmoothFill(current, target, speed, deltaTime);
+            if (Mathf.Abs(next - target) <= GaugeSettleEpsilon)
+            {
+                next = target;
+            }
+
+            if (Mathf.Abs(next - current) <= 1e-6f)
+            {
+                return false;
+            }
+
+            current = next;
+            return true;
         }
 
         private void ApplyGaugeVisuals()
         {
             if (playerHpFill != null)
             {
+                Color color = BattleHudVisualUtility.ResolveHpFillColor(
+                    displayPlayerHpFill,
+                    playerHpHealthyColor,
+                    playerHpWarningColor,
+                    playerHpCriticalColor);
                 ApplyRatioFill(
                     playerHpSlider,
                     playerHpFill,
                     displayPlayerHpFill,
-                    BattleHudVisualUtility.ResolveHpFillColor(
-                        displayPlayerHpFill,
-                        playerHpHealthyColor,
-                        playerHpWarningColor,
-                        playerHpCriticalColor));
+                    color,
+                    ref lastPlayerHpFillColor,
+                    ref hasLastPlayerHpFillColor);
             }
 
             if (enemyHpFill != null)
             {
+                Color color = BattleHudVisualUtility.ResolveHpFillColor(
+                    displayEnemyHpFill,
+                    enemyHpHealthyColor,
+                    enemyHpWarningColor,
+                    enemyHpCriticalColor);
                 ApplyRatioFill(
                     enemyHpSlider,
                     enemyHpFill,
                     displayEnemyHpFill,
-                    BattleHudVisualUtility.ResolveHpFillColor(
-                        displayEnemyHpFill,
-                        enemyHpHealthyColor,
-                        enemyHpWarningColor,
-                        enemyHpCriticalColor));
+                    color,
+                    ref lastEnemyHpFillColor,
+                    ref hasLastEnemyHpFillColor);
             }
 
             if (playerGutsFill != null)
             {
-                ApplyRatioFill(playerGutsSlider, playerGutsFill, displayPlayerGutsFill, playerGutsFillColor);
+                ApplyRatioFill(
+                    playerGutsSlider,
+                    playerGutsFill,
+                    displayPlayerGutsFill,
+                    playerGutsFillColor,
+                    ref lastPlayerGutsFillColor,
+                    ref hasLastPlayerGutsFillColor);
             }
 
             if (enemyGutsFill != null)
             {
-                ApplyRatioFill(enemyGutsSlider, enemyGutsFill, displayEnemyGutsFill, enemyGutsFillColor);
+                ApplyRatioFill(
+                    enemyGutsSlider,
+                    enemyGutsFill,
+                    displayEnemyGutsFill,
+                    enemyGutsFillColor,
+                    ref lastEnemyGutsFillColor,
+                    ref hasLastEnemyGutsFillColor);
             }
 
             if (distanceFill != null)
             {
+                Color color = BattleHudVisualUtility.ResolveDistanceFillColor(
+                    currentDistanceBandName,
+                    distanceCloseColor,
+                    distanceMidColor,
+                    distanceFarColor,
+                    distanceDefaultColor);
                 ApplyRatioFill(
                     distanceSlider,
                     distanceFill,
                     displayDistanceFill,
-                    BattleHudVisualUtility.ResolveDistanceFillColor(
-                        currentDistanceBandName,
-                        distanceCloseColor,
-                        distanceMidColor,
-                        distanceFarColor,
-                        distanceDefaultColor));
+                    color,
+                    ref lastDistanceFillColor,
+                    ref hasLastDistanceFillColor);
             }
         }
 
         // Slider付きはvalueで長さを制御しImage Type=FilledのときだけfillAmountも同期する
-        private static void ApplyRatioFill(Slider slider, Image fill, float ratio, Color color)
+        private static void ApplyRatioFill(
+            Slider slider,
+            Image fill,
+            float ratio,
+            Color color,
+            ref Color lastColor,
+            ref bool hasLastColor)
         {
             ratio = Mathf.Clamp01(ratio);
             if (slider != null)
@@ -301,7 +367,12 @@ namespace UI.Battle.View
                 fill.fillAmount = ratio;
             }
 
-            BattleHudVisualUtility.SetImageColor(fill, color);
+            if (!hasLastColor || lastColor != color)
+            {
+                BattleHudVisualUtility.SetImageColor(fill, color);
+                lastColor = color;
+                hasLastColor = true;
+            }
         }
 
         private static void ConfigureGaugeSlider(Slider slider)
@@ -502,39 +573,80 @@ namespace UI.Battle.View
         /// <inheritdoc />
         public void SetHp(bool isPlayer, int currentHp, int maxHp)
         {
-            TMP_Text text = isPlayer ? playerHpText : enemyHpText;
             float ratio = maxHp > 0 ? Mathf.Clamp01((float)currentHp / maxHp) : 0f;
 
             if (isPlayer)
             {
-                targetPlayerHpFill = ratio;
-            }
-            else
-            {
-                targetEnemyHpFill = ratio;
+                if (!Mathf.Approximately(targetPlayerHpFill, ratio))
+                {
+                    targetPlayerHpFill = ratio;
+                    gaugesNeedUpdate = true;
+                }
+
+                if (playerHpText != null
+                    && (lastPlayerHpShown != currentHp || lastPlayerMaxHpShown != maxHp))
+                {
+                    lastPlayerHpShown = currentHp;
+                    lastPlayerMaxHpShown = maxHp;
+                    playerHpText.text = $"{currentHp}/{maxHp}";
+                }
+
+                return;
             }
 
-            if (text != null) text.text = $"{currentHp}/{maxHp}";
+            if (!Mathf.Approximately(targetEnemyHpFill, ratio))
+            {
+                targetEnemyHpFill = ratio;
+                gaugesNeedUpdate = true;
+            }
+
+            if (enemyHpText != null
+                && (lastEnemyHpShown != currentHp || lastEnemyMaxHpShown != maxHp))
+            {
+                lastEnemyHpShown = currentHp;
+                lastEnemyMaxHpShown = maxHp;
+                enemyHpText.text = $"{currentHp}/{maxHp}";
+            }
         }
 
         /// <inheritdoc />
         public void SetGuts(bool isPlayer, float guts, float maxGuts)
         {
-            TMP_Text text = isPlayer ? playerGutsText : enemyGutsText;
             float ratio = maxGuts > 0f ? Mathf.Clamp01(guts / maxGuts) : 0f;
+            int gutsFloor = Mathf.FloorToInt(guts);
+            int maxFloor = Mathf.FloorToInt(maxGuts);
 
             if (isPlayer)
             {
-                targetPlayerGutsFill = ratio;
-            }
-            else
-            {
-                targetEnemyGutsFill = ratio;
+                if (!Mathf.Approximately(targetPlayerGutsFill, ratio))
+                {
+                    targetPlayerGutsFill = ratio;
+                    gaugesNeedUpdate = true;
+                }
+
+                if (playerGutsText != null
+                    && (lastPlayerGutsFloorShown != gutsFloor || lastPlayerMaxGutsFloorShown != maxFloor))
+                {
+                    lastPlayerGutsFloorShown = gutsFloor;
+                    lastPlayerMaxGutsFloorShown = maxFloor;
+                    playerGutsText.text = $"{gutsFloor}/{maxFloor}";
+                }
+
+                return;
             }
 
-            if (text != null)
+            if (!Mathf.Approximately(targetEnemyGutsFill, ratio))
             {
-                text.text = $"{Mathf.FloorToInt(guts)}/{Mathf.FloorToInt(maxGuts)}";
+                targetEnemyGutsFill = ratio;
+                gaugesNeedUpdate = true;
+            }
+
+            if (enemyGutsText != null
+                && (lastEnemyGutsFloorShown != gutsFloor || lastEnemyMaxGutsFloorShown != maxFloor))
+            {
+                lastEnemyGutsFloorShown = gutsFloor;
+                lastEnemyMaxGutsFloorShown = maxFloor;
+                enemyGutsText.text = $"{gutsFloor}/{maxFloor}";
             }
         }
 
@@ -543,25 +655,48 @@ namespace UI.Battle.View
         {
             currentMaxDistance = maxDistance > 0f ? maxDistance : currentMaxDistance;
             string safeBandName = string.IsNullOrEmpty(bandName) ? string.Empty : bandName;
+            float nextFill = maxDistance > 0f ? Mathf.Clamp01(1f - distance / maxDistance) : 0f;
+            float rounded = Mathf.Round(distance * 10f) * 0.1f;
 
-            if (Mathf.Approximately(lastDisplayedDistance, distance) && lastDisplayedBandName == safeBandName)
+            bool bandChanged = lastDisplayedBandName != safeBandName;
+            bool fillChanged = !Mathf.Approximately(lastDisplayedDistance, distance);
+            if (bandChanged || fillChanged)
+            {
+                lastDisplayedDistance = distance;
+                lastDisplayedBandName = safeBandName;
+                currentDistanceBandName = safeBandName;
+                if (!Mathf.Approximately(targetDistanceFill, nextFill) || bandChanged)
+                {
+                    targetDistanceFill = nextFill;
+                    gaugesNeedUpdate = true;
+                }
+            }
+
+            if (distanceText == null)
             {
                 return;
             }
 
-            lastDisplayedDistance = distance;
-            lastDisplayedBandName = safeBandName;
-            currentDistanceBandName = safeBandName;
-            targetDistanceFill = maxDistance > 0f ? Mathf.Clamp01(1f - distance / maxDistance) : 0f;
-
-            if (distanceText != null)
+            bool textNeedsBand = lastDistanceTextBand != safeBandName;
+            bool textNeedsValue = !Mathf.Approximately(lastDisplayedDistanceRounded, rounded);
+            if (!textNeedsBand && !textNeedsValue)
             {
-                distanceText.text = string.IsNullOrEmpty(safeBandName)
-                    ? Localization.LocalizedText.Get(
-                        Localization.GameTextKeys.BattleDistance,
-                        "distance",
-                        distance.ToString("0.0"))
-                    : $"{safeBandName} {distance:0.0}";
+                return;
+            }
+
+            lastDistanceTextBand = safeBandName;
+            lastDisplayedDistanceRounded = rounded;
+
+            if (string.IsNullOrEmpty(safeBandName))
+            {
+                distanceText.text = Localization.LocalizedText.Get(
+                    Localization.GameTextKeys.BattleDistance,
+                    "distance",
+                    rounded.ToString("0.0"));
+            }
+            else
+            {
+                distanceText.text = $"{safeBandName} {rounded:0.0}";
             }
         }
 
@@ -749,6 +884,12 @@ namespace UI.Battle.View
             BattleHudVisualUtility.ApplyValueOutline(enemyHpText);
             BattleHudVisualUtility.ApplyValueOutline(playerGutsText);
             BattleHudVisualUtility.ApplyValueOutline(enemyGutsText);
+
+            // 間合い帯文言を次のSetDistanceで張り直す
+            lastDisplayedBandName = null;
+            lastDistanceTextBand = null;
+            lastDisplayedDistance = float.NaN;
+            lastDisplayedDistanceRounded = float.NaN;
 
             if (hasResult)
             {
