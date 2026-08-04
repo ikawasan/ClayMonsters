@@ -28,6 +28,11 @@ namespace Battle.View
 
         private KnockbackEffectSettings settings;
         private bool hasLoggedMissingSettings;
+        private BattleEffectInstancePool ringPool;
+        private GameObject cachedShockwavePrefab;
+        private MaterialPropertyBlock materialPropertyBlock;
+        private AnimationCurve expandCurve;
+        private Gradient fadeGradient;
 
         private void Awake()
         {
@@ -45,6 +50,10 @@ namespace Battle.View
             {
                 Debug.LogError($"[BattleKnockbackEffectView] {error}", this);
             }
+
+            materialPropertyBlock = new MaterialPropertyBlock();
+            expandCurve = CreateExpandCurve();
+            fadeGradient = CreateFadeGradient();
         }
 
         /// <summary>
@@ -115,7 +124,8 @@ namespace Battle.View
             float lifetimeSeconds,
             float startDelay)
         {
-            GameObject instance = Instantiate(settings.ShockwavePrefab, position, Quaternion.identity);
+            BattleEffectInstancePool pool = ResolveRingPool();
+            GameObject instance = pool.Rent(position);
             if (instance == null)
             {
                 Debug.LogError(
@@ -152,11 +162,11 @@ namespace Battle.View
 
                 ParticleSystem.SizeOverLifetimeModule sizeOverLifetime = particleSystem.sizeOverLifetime;
                 sizeOverLifetime.enabled = true;
-                sizeOverLifetime.size = new ParticleSystem.MinMaxCurve(1f, CreateExpandCurve());
+                sizeOverLifetime.size = new ParticleSystem.MinMaxCurve(1f, expandCurve);
 
                 ParticleSystem.ColorOverLifetimeModule colorOverLifetime = particleSystem.colorOverLifetime;
                 colorOverLifetime.enabled = true;
-                colorOverLifetime.color = new ParticleSystem.MinMaxGradient(CreateFadeGradient());
+                colorOverLifetime.color = new ParticleSystem.MinMaxGradient(fadeGradient);
 
                 ParticleSystemRenderer renderer = particleSystem.GetComponent<ParticleSystemRenderer>();
                 if (renderer != null)
@@ -164,7 +174,7 @@ namespace Battle.View
                     renderer.renderMode = ParticleSystemRenderMode.Billboard;
                     renderer.alignment = ParticleSystemRenderSpace.View;
                     renderer.sortingFudge = -12f;
-                    ApplyShockwaveMaterial(renderer.material);
+                    ApplyShockwaveMaterial(renderer);
                 }
 
                 particleSystem.Play(true);
@@ -173,31 +183,50 @@ namespace Battle.View
                     (main.duration + main.startLifetime.constantMax + startDelay) / Mathf.Max(0.01f, simulationSpeed));
             }
 
-            ScheduleUnscaledDestroy(instance, destroyDelay);
+            pool.ReleaseAfter(instance, destroyDelay);
         }
 
-        private void ApplyShockwaveMaterial(Material material)
+        private BattleEffectInstancePool ResolveRingPool()
         {
-            if (material == null)
+            GameObject prefab = settings.ShockwavePrefab;
+            if (ringPool == null || cachedShockwavePrefab != prefab)
+            {
+                cachedShockwavePrefab = prefab;
+                ringPool = new BattleEffectInstancePool(prefab, "BattleKnockbackRing", 4);
+            }
+
+            return ringPool;
+        }
+
+        private void ApplyShockwaveMaterial(ParticleSystemRenderer renderer)
+        {
+            if (renderer == null)
             {
                 return;
             }
 
-            material.SetFloat(DistortionId, settings.Distortion);
-            material.SetFloat(DistortionDepthFadeId, settings.DistortionDepthFade);
-            material.SetFloat(DistortionNormalStrengthId, 2.4f);
-            material.SetFloat(TilingId, 4.5f);
-            material.SetFloat(ParticleAnimationId, 1.8f);
-            material.SetFloat(OuterRemapMinId, 0.08f);
-            material.SetFloat(OuterRemapMaxId, 0.92f);
-            material.SetFloat(OuterPowerId, 1.35f);
-            material.SetFloat(InnerRadiusId, 0.9f);
-            material.SetFloat(InnerHardnessId, 0.62f);
-            material.SetFloat(InnerPowerId, 1.8f);
-            material.SetFloat(RadialAlphaFeatherId, 0.22f);
-            material.SetFloat(RadialAlphaPowerId, 0.35f);
-            material.SetFloat(DebugId, 0.18f);
-            material.SetColor(ColourId, new Color(1.35f, 1.4f, 1.55f, 1f));
+            if (materialPropertyBlock == null)
+            {
+                materialPropertyBlock = new MaterialPropertyBlock();
+            }
+
+            materialPropertyBlock.Clear();
+            materialPropertyBlock.SetFloat(DistortionId, settings.Distortion);
+            materialPropertyBlock.SetFloat(DistortionDepthFadeId, settings.DistortionDepthFade);
+            materialPropertyBlock.SetFloat(DistortionNormalStrengthId, 2.4f);
+            materialPropertyBlock.SetFloat(TilingId, 4.5f);
+            materialPropertyBlock.SetFloat(ParticleAnimationId, 1.8f);
+            materialPropertyBlock.SetFloat(OuterRemapMinId, 0.08f);
+            materialPropertyBlock.SetFloat(OuterRemapMaxId, 0.92f);
+            materialPropertyBlock.SetFloat(OuterPowerId, 1.35f);
+            materialPropertyBlock.SetFloat(InnerRadiusId, 0.9f);
+            materialPropertyBlock.SetFloat(InnerHardnessId, 0.62f);
+            materialPropertyBlock.SetFloat(InnerPowerId, 1.8f);
+            materialPropertyBlock.SetFloat(RadialAlphaFeatherId, 0.22f);
+            materialPropertyBlock.SetFloat(RadialAlphaPowerId, 0.35f);
+            materialPropertyBlock.SetFloat(DebugId, 0.18f);
+            materialPropertyBlock.SetColor(ColourId, new Color(1.35f, 1.4f, 1.55f, 1f));
+            renderer.SetPropertyBlock(materialPropertyBlock);
         }
 
         private static AnimationCurve CreateExpandCurve()
@@ -272,38 +301,6 @@ namespace Battle.View
 
                 cameraData.requiresColorOption = CameraOverrideOption.On;
                 cameraData.requiresDepthOption = CameraOverrideOption.On;
-            }
-        }
-
-        private static void ScheduleUnscaledDestroy(GameObject target, float delaySeconds)
-        {
-            if (target == null)
-            {
-                return;
-            }
-
-            var destroyer = target.AddComponent<UnscaledTimedDestroy>();
-            destroyer.Begin(Mathf.Max(0.1f, delaySeconds));
-        }
-
-        private sealed class UnscaledTimedDestroy : MonoBehaviour
-        {
-            private float remaining;
-
-            public void Begin(float delaySeconds)
-            {
-                remaining = delaySeconds;
-            }
-
-            private void Update()
-            {
-                remaining -= Time.unscaledDeltaTime;
-                if (remaining > 0f)
-                {
-                    return;
-                }
-
-                Destroy(gameObject);
             }
         }
     }

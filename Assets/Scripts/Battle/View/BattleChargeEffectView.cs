@@ -559,28 +559,12 @@ namespace Battle.View
 
         private static Bounds ResolveBounds(Transform modelRoot)
         {
-            Bounds? bounds = null;
-            Renderer[] renderers = modelRoot.GetComponentsInChildren<Renderer>();
-            for (int i = 0; i < renderers.Length; i++)
+            if (BattleModelBoundsCache.TryResolveBounds(modelRoot, out Bounds bounds))
             {
-                Renderer renderer = renderers[i];
-                if (renderer == null || !renderer.enabled)
-                {
-                    continue;
-                }
-
-                if (!bounds.HasValue)
-                {
-                    bounds = renderer.bounds;
-                    continue;
-                }
-
-                Bounds combined = bounds.Value;
-                combined.Encapsulate(renderer.bounds);
-                bounds = combined;
+                return bounds;
             }
 
-            return bounds ?? new Bounds(modelRoot.position + Vector3.up * 1.1f, Vector3.one);
+            return new Bounds(modelRoot.position + Vector3.up * 1.1f, Vector3.one);
         }
     }
 }

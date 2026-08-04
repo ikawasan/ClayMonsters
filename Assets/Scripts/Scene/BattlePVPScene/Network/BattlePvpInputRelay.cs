@@ -148,6 +148,8 @@ namespace Scene.BattlePVPScene.Network
         private int pendingRemoteKnockbackSequence;
         private float pendingRemoteKnockbackDistance;
         private int consumedRemoteKnockbackSequence;
+        private bool hasPublishedLocalInput;
+        private BattlePvpInputSnapshot lastPublishedLocalInput;
 
         /// <summary>
         /// 相手の攻撃開始通知を消費する
@@ -544,6 +546,7 @@ namespace Scene.BattlePVPScene.Network
 
             isPublishingModel = true;
             ownerModelReady.Value = false;
+            byte[] chunkBuffer = null;
             try
             {
                 int transferId = ownerMatchGeneration.Value;
@@ -556,9 +559,14 @@ namespace Scene.BattlePVPScene.Network
                     cancellationToken.ThrowIfCancellationRequested();
                     int offset = chunkIndex * ModelChunkSize;
                     int length = Mathf.Min(ModelChunkSize, glbBytes.Length - offset);
-                    var chunk = new byte[length];
-                    Buffer.BlockCopy(glbBytes, offset, chunk, 0, length);
-                    ReceiveModelChunkRpc(transferId, chunkIndex, chunk);
+                    if (chunkBuffer == null || chunkBuffer.Length != length)
+                    {
+                        chunkBuffer = new byte[length];
+                    }
+
+                    Buffer.BlockCopy(glbBytes, offset, chunkBuffer, 0, length);
+                    // RPC側でコピーされるため同一バッファの再利用でよい
+                    ReceiveModelChunkRpc(transferId, chunkIndex, chunkBuffer);
                     await UniTask.Yield(cancellationToken);
                 }
 
@@ -572,6 +580,7 @@ namespace Scene.BattlePVPScene.Network
             finally
             {
                 isPublishingModel = false;
+                chunkBuffer = null;
             }
         }
 
@@ -637,6 +646,15 @@ namespace Scene.BattlePVPScene.Network
             receiveBuffer = null;
             receiveMetaJson = string.Empty;
             receivedRemoteModel = null;
+        }
+
+        /// <summary>
+        /// 自分と相手のモデル受信バッファを破棄する
+        /// </summary>
+        public void ClearAllReceivedRemoteModels()
+        {
+            ClearReceivedRemoteModel();
+            ResolveOpponentRelay()?.ClearReceivedRemoteModel();
         }
 
         [Rpc(SendTo.NotOwner)]
@@ -1137,7 +1155,7 @@ namespace Scene.BattlePVPScene.Network
             }
 
             BattleKeyboardInputState state = localInput.PeekInputState();
-            ownerInput.Value = new BattlePvpInputSnapshot
+            var snapshot = new BattlePvpInputSnapshot
             {
                 MovementIntent = state.MovementIntent,
                 PendingStepIntent = 0,
@@ -1145,6 +1163,24 @@ namespace Scene.BattlePVPScene.Network
                 PendingAttackIndex = -1,
                 IsHoldingPartRepair = state.IsHoldingPartRepair
             };
+
+            if (hasPublishedLocalInput && InputSnapshotsEqual(lastPublishedLocalInput, snapshot))
+            {
+                return;
+            }
+
+            lastPublishedLocalInput = snapshot;
+            hasPublishedLocalInput = true;
+            ownerInput.Value = snapshot;
+        }
+
+        private static bool InputSnapshotsEqual(BattlePvpInputSnapshot a, BattlePvpInputSnapshot b)
+        {
+            return a.MovementIntent == b.MovementIntent
+                && a.PendingStepIntent == b.PendingStepIntent
+                && a.KnockbackPressed == b.KnockbackPressed
+                && a.PendingAttackIndex == b.PendingAttackIndex
+                && a.IsHoldingPartRepair == b.IsHoldingPartRepair;
         }
 
         // 対戦相手のリレーを探す2体しかいないので自分以外がそのまま相手になる

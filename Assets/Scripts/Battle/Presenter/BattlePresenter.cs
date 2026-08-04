@@ -28,6 +28,7 @@ namespace Battle.Presenter
         private float lastMoveRefreshEnemyGuts = float.NaN;
         private int lastMoveRefreshPlayerHp = int.MinValue;
         private int lastMoveRefreshEnemyHp = int.MinValue;
+        private readonly Dictionary<string, object> combatHintParams = new Dictionary<string, object>(2);
         private int lastMoveRefreshPlayerLostParts = int.MinValue;
         private int lastMoveRefreshEnemyLostParts = int.MinValue;
         private int lastMoveRefreshPlayerChain = int.MinValue;
@@ -259,13 +260,12 @@ namespace Battle.Presenter
             {
                 BonePart destroyPart = system.PendingEnemyTargetDestroyPart;
                 string partLabel = MotionPartRequirement.FormatTargetDestroyPartLabel(destroyPart);
+                combatHintParams.Clear();
+                combatHintParams["part"] = partLabel;
                 return Localization.LocalizedText.GetOrFallback(
                     Localization.GameTextKeys.BattleHintCounter,
                     $"カウンター！{partLabel}技で迎撃",
-                    new System.Collections.Generic.Dictionary<string, object>
-                    {
-                        { "part", partLabel },
-                    });
+                    combatHintParams);
             }
 
             if (system.IsAttackLockoutActive)
@@ -287,13 +287,12 @@ namespace Battle.Presenter
 
             if (system.PlayerChainCount > 1)
             {
+                combatHintParams.Clear();
+                combatHintParams["count"] = system.PlayerChainCount;
                 return Localization.LocalizedText.GetOrFallback(
                     Localization.GameTextKeys.BattleHintChain,
                     $"チェーン x{system.PlayerChainCount}",
-                    new System.Collections.Generic.Dictionary<string, object>
-                    {
-                        { "count", system.PlayerChainCount },
-                    });
+                    combatHintParams);
             }
 
             return string.Empty;

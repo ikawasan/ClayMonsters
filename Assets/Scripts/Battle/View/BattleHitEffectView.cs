@@ -22,6 +22,12 @@ namespace Battle.View
 
         private static Material additiveParticleMaterial;
         private static Material alphaParticleMaterial;
+        private static BattleEffectInstancePool hitPrefabPool;
+        private static BattleEffectInstancePool partBreakPrefabPool;
+        private static BattleEffectInstancePool proceduralNormalPool;
+        private static BattleEffectInstancePool proceduralPartBreakPool;
+        private static GameObject cachedHitPrefab;
+        private static GameObject cachedPartBreakPrefab;
 
         /// <inheritdoc/>
         public void PlayHit(Vector3 worldPosition, bool isPartBreak)
@@ -32,7 +38,7 @@ namespace Battle.View
 
             if (prefab != null)
             {
-                SpawnPrefab(prefab, worldPosition);
+                SpawnPrefab(prefab, worldPosition, isPartBreak);
             }
 
             SpawnProceduralBurst(worldPosition, isPartBreak);
@@ -51,58 +57,68 @@ namespace Battle.View
         /// </summary>
         public static Vector3 ResolveWorldHitPoint(Transform modelRoot, float fallbackHeight)
         {
-            if (modelRoot == null)
-            {
-                return Vector3.zero;
-            }
-
-            Bounds? bounds = null;
-            Renderer[] renderers = modelRoot.GetComponentsInChildren<Renderer>();
-            for (int i = 0; i < renderers.Length; i++)
-            {
-                Renderer renderer = renderers[i];
-                if (renderer == null || !renderer.enabled)
-                {
-                    continue;
-                }
-
-                if (!bounds.HasValue)
-                {
-                    bounds = renderer.bounds;
-                    continue;
-                }
-
-                Bounds combined = bounds.Value;
-                combined.Encapsulate(renderer.bounds);
-                bounds = combined;
-            }
-
-            return bounds.HasValue
-                ? bounds.Value.center
-                : modelRoot.position + Vector3.up * fallbackHeight;
+            return BattleModelBoundsCache.ResolveWorldCenter(modelRoot, fallbackHeight);
         }
 
-        private static void SpawnPrefab(GameObject prefab, Vector3 position)
+        private static void SpawnPrefab(GameObject prefab, Vector3 position, bool isPartBreak)
         {
-            GameObject instance = Instantiate(prefab, position, Quaternion.identity);
+            BattleEffectInstancePool pool = ResolvePrefabPool(prefab, isPartBreak);
+            GameObject instance = pool.Rent(position);
+            if (instance == null)
+            {
+                return;
+            }
+
             ParticleSystem particleSystem = instance.GetComponent<ParticleSystem>();
             if (particleSystem != null)
             {
                 ParticleSystem.MainModule main = particleSystem.main;
                 main.useUnscaledTime = GameplayTime.UseUnscaledParticleTime;
+                particleSystem.Clear(true);
                 particleSystem.Play(true);
                 float lifetime = main.duration + main.startLifetime.constantMax;
-                ScheduleUnscaledDestroy(instance, Mathf.Max(0.5f, lifetime));
+                pool.ReleaseAfter(instance, Mathf.Max(0.5f, lifetime));
                 return;
             }
 
-            ScheduleUnscaledDestroy(instance, 2f);
+            pool.ReleaseAfter(instance, 2f);
+        }
+
+        private static BattleEffectInstancePool ResolvePrefabPool(GameObject prefab, bool isPartBreak)
+        {
+            if (isPartBreak)
+            {
+                if (partBreakPrefabPool == null || cachedPartBreakPrefab != prefab)
+                {
+                    cachedPartBreakPrefab = prefab;
+                    partBreakPrefabPool = new BattleEffectInstancePool(prefab, "BattlePartBreakFx", 2);
+                }
+
+                return partBreakPrefabPool;
+            }
+
+            if (hitPrefabPool == null || cachedHitPrefab != prefab)
+            {
+                cachedHitPrefab = prefab;
+                hitPrefabPool = new BattleEffectInstancePool(prefab, "BattleHitFx", 4);
+            }
+
+            return hitPrefabPool;
         }
 
         private static void SpawnProceduralBurst(Vector3 position, bool isPartBreak)
         {
-            var host = new GameObject(isPartBreak ? "BattlePartBreakBurst" : "BattleHitBurst");
-            host.transform.position = position;
+            BattleEffectInstancePool pool = isPartBreak
+                ? (proceduralPartBreakPool ??= new BattleEffectInstancePool(null, "BattleProceduralPartBreak", 2))
+                : (proceduralNormalPool ??= new BattleEffectInstancePool(null, "BattleProceduralHit", 4));
+
+            GameObject host = pool.Rent(position);
+            if (host == null)
+            {
+                return;
+            }
+
+            host.name = isPartBreak ? "BattlePartBreakBurst" : "BattleHitBurst";
 
             float destroyDelay = 0.2f;
             destroyDelay = Mathf.Max(destroyDelay, PlayCoreBloom(host.transform, isPartBreak));
@@ -116,23 +132,32 @@ namespace Battle.View
                 destroyDelay = Mathf.Max(destroyDelay, PlayPartBreakDebris(host.transform));
             }
 
-            ScheduleUnscaledDestroy(host, destroyDelay + 0.15f);
+            pool.ReleaseAfter(host, destroyDelay + 0.15f);
         }
 
-        private static void ScheduleUnscaledDestroy(GameObject target, float delaySeconds)
+        private static ParticleSystem GetOrCreateChildSystem(
+            Transform parent,
+            string name,
+            ParticleSystemRenderMode renderMode = ParticleSystemRenderMode.Billboard,
+            bool useAdditive = false)
         {
-            if (target == null)
+            Transform existing = parent.Find(name);
+            if (existing != null)
             {
-                return;
+                ParticleSystem existingSystem = existing.GetComponent<ParticleSystem>();
+                if (existingSystem != null)
+                {
+                    existingSystem.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                    return existingSystem;
+                }
             }
 
-            var destroyer = target.AddComponent<UnscaledTimedDestroy>();
-            destroyer.Schedule(delaySeconds);
+            return CreateChildSystem(parent, name, renderMode, useAdditive);
         }
 
         private static float PlayCoreBloom(Transform parent, bool isPartBreak)
         {
-            ParticleSystem particleSystem = CreateChildSystem(
+            ParticleSystem particleSystem = GetOrCreateChildSystem(
                 parent,
                 "CoreBloom",
                 ParticleSystemRenderMode.Billboard,
@@ -169,7 +194,7 @@ namespace Battle.View
 
         private static float PlayImpactFlash(Transform parent, bool isPartBreak)
         {
-            ParticleSystem particleSystem = CreateChildSystem(
+            ParticleSystem particleSystem = GetOrCreateChildSystem(
                 parent,
                 "ImpactFlash",
                 useAdditive: true);
@@ -205,7 +230,7 @@ namespace Battle.View
 
         private static float PlayShockRing(Transform parent, bool isPartBreak)
         {
-            ParticleSystem particleSystem = CreateChildSystem(
+            ParticleSystem particleSystem = GetOrCreateChildSystem(
                 parent,
                 "ShockRing",
                 useAdditive: true);
@@ -248,7 +273,7 @@ namespace Battle.View
 
         private static float PlaySparkBurst(Transform parent, bool isPartBreak)
         {
-            ParticleSystem particleSystem = CreateChildSystem(
+            ParticleSystem particleSystem = GetOrCreateChildSystem(
                 parent,
                 "Sparks",
                 ParticleSystemRenderMode.Stretch,
@@ -293,26 +318,40 @@ namespace Battle.View
 
         private static void PlayHitLightFlash(Transform parent, bool isPartBreak)
         {
-            var lightObject = new GameObject("HitLightFlash");
-            lightObject.transform.SetParent(parent, false);
-            lightObject.transform.localPosition = Vector3.zero;
+            Transform existing = parent.Find("HitLightFlash");
+            GameObject lightObject;
+            Light light;
+            HitLightFlicker flicker;
+            if (existing != null)
+            {
+                lightObject = existing.gameObject;
+                light = lightObject.GetComponent<Light>();
+                flicker = lightObject.GetComponent<HitLightFlicker>();
+            }
+            else
+            {
+                lightObject = new GameObject("HitLightFlash");
+                lightObject.transform.SetParent(parent, false);
+                lightObject.transform.localPosition = Vector3.zero;
+                light = lightObject.AddComponent<Light>();
+                light.type = LightType.Point;
+                light.shadows = LightShadows.None;
+                flicker = lightObject.AddComponent<HitLightFlicker>();
+            }
 
-            Light light = lightObject.AddComponent<Light>();
-            light.type = LightType.Point;
+            float intensity = isPartBreak ? 3.8f : 2.6f;
             light.range = isPartBreak ? 5.5f : 4f;
-            light.intensity = isPartBreak ? 3.8f : 2.6f;
+            light.intensity = intensity;
             light.color = isPartBreak
                 ? new Color(1f, 0.45f, 0.15f)
                 : new Color(1f, 0.82f, 0.35f);
-            light.shadows = LightShadows.None;
-
-            var flicker = lightObject.AddComponent<HitLightFlicker>();
-            flicker.Configure(isPartBreak ? 0.14f : 0.1f, light.intensity);
+            light.enabled = true;
+            flicker.Configure(isPartBreak ? 0.14f : 0.1f, intensity);
         }
 
         private static float PlayPartBreakDebris(Transform parent)
         {
-            ParticleSystem particleSystem = CreateChildSystem(parent, "PartBreakDebris");
+            ParticleSystem particleSystem = GetOrCreateChildSystem(parent, "PartBreakDebris");
             ParticleSystem.MainModule main = particleSystem.main;
             main.playOnAwake = false;
             main.loop = false;
@@ -516,7 +555,19 @@ namespace Battle.View
             {
                 duration = lifetime;
                 peakIntensity = intensity;
-                pointLight = GetComponent<Light>();
+                elapsed = 0f;
+                if (pointLight == null)
+                {
+                    pointLight = GetComponent<Light>();
+                }
+
+                if (pointLight != null)
+                {
+                    pointLight.enabled = true;
+                    pointLight.intensity = intensity;
+                }
+
+                enabled = true;
             }
 
             private void Update()
@@ -533,26 +584,8 @@ namespace Battle.View
 
                 if (normalized >= 1f)
                 {
-                    Destroy(gameObject);
-                }
-            }
-        }
-
-        private sealed class UnscaledTimedDestroy : MonoBehaviour
-        {
-            private float remainingSeconds;
-
-            public void Schedule(float delaySeconds)
-            {
-                remainingSeconds = Mathf.Max(0f, delaySeconds);
-            }
-
-            private void Update()
-            {
-                remainingSeconds -= GameplayTime.PresentationDeltaTime;
-                if (remainingSeconds <= 0f)
-                {
-                    Destroy(gameObject);
+                    pointLight.enabled = false;
+                    enabled = false;
                 }
             }
         }

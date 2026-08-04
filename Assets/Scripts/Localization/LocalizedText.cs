@@ -8,6 +8,8 @@ namespace Localization
     /// </summary>
     public static class LocalizedText
     {
+        private static readonly Dictionary<string, object> SharedSingleParam = new Dictionary<string, object>(1);
+
         /// <summary>
         /// キーに対応する文言を返す
         /// </summary>
@@ -161,13 +163,9 @@ namespace Localization
             string paramName,
             object paramValue)
         {
-            return GetOrFallback(
-                key,
-                fallbackTemplate,
-                new Dictionary<string, object>
-                {
-                    { paramName, paramValue },
-                });
+            SharedSingleParam.Clear();
+            SharedSingleParam[paramName] = paramValue;
+            return GetOrFallback(key, fallbackTemplate, SharedSingleParam);
         }
 
         /// <summary>

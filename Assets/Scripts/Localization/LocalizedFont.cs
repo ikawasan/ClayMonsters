@@ -24,6 +24,9 @@ namespace Localization
         // 実体ごとのデザイン時スタイル(輪郭Face等)
         // LHTextMeshProが後からfontを当てて潰してもここから復旧する
         private static readonly Dictionary<int, StyleSnapshot> DesignStyles = new();
+        private static readonly List<int> DesignStylePruneScratch = new List<int>(256);
+        private static readonly List<TMP_Text> LoadedTextsCache = new List<TMP_Text>(256);
+        private static bool loadedTextsCacheDirty = true;
 
         /// <summary>
         /// 現在言語のFontAssetを返す未初期化時はnull
@@ -40,6 +43,42 @@ namespace Localization
 
                 return service.CurrentFont.CurrentValue;
             }
+        }
+
+        /// <summary>
+        /// シーン遷移時などに破棄済みスタイルキャッシュを捨てる
+        /// </summary>
+        public static void NotifySceneHierarchyChanged()
+        {
+            loadedTextsCacheDirty = true;
+            PruneDestroyedDesignStyles();
+        }
+
+        /// <summary>
+        /// 破棄されたTMPに紐づくデザインキャッシュを削除する
+        /// </summary>
+        public static void PruneDestroyedDesignStyles()
+        {
+            if (DesignStyles.Count == 0)
+            {
+                return;
+            }
+
+            DesignStylePruneScratch.Clear();
+            foreach (KeyValuePair<int, StyleSnapshot> pair in DesignStyles)
+            {
+                if (Resources.InstanceIDToObject(pair.Key) == null)
+                {
+                    DesignStylePruneScratch.Add(pair.Key);
+                }
+            }
+
+            for (int i = 0; i < DesignStylePruneScratch.Count; i++)
+            {
+                DesignStyles.Remove(DesignStylePruneScratch[i]);
+            }
+
+            DesignStylePruneScratch.Clear();
         }
 
         /// <summary>
@@ -83,20 +122,63 @@ namespace Localization
         /// </summary>
         public static void ApplyToAllLoaded()
         {
+            ApplyToAllLoaded(forceRefreshCache: false);
+        }
+
+        /// <summary>
+        /// ロード済みシーンの全TMPへ現在言語フォントを適用する
+        /// </summary>
+        /// <param name="forceRefreshCache">TMP一覧を再スキャンするか</param>
+        public static void ApplyToAllLoaded(bool forceRefreshCache)
+        {
             TMP_FontAsset font = CurrentOrNull;
             if (font == null)
             {
                 return;
             }
 
+            RefreshLoadedTextsCache(forceRefreshCache);
+
+            int nullCount = 0;
+            for (int i = 0; i < LoadedTextsCache.Count; i++)
+            {
+                TMP_Text text = LoadedTextsCache[i];
+                if (text == null)
+                {
+                    nullCount++;
+                    continue;
+                }
+
+                ApplyFont(text, font);
+            }
+
+            // 破棄が多ければ次回再スキャン
+            if (nullCount > 8 || (LoadedTextsCache.Count > 0 && nullCount * 4 > LoadedTextsCache.Count))
+            {
+                loadedTextsCacheDirty = true;
+            }
+        }
+
+        private static void RefreshLoadedTextsCache(bool force)
+        {
+            if (!force && !loadedTextsCacheDirty && LoadedTextsCache.Count > 0)
+            {
+                return;
+            }
+
+            LoadedTextsCache.Clear();
             TMP_Text[] texts = Object.FindObjectsByType<TMP_Text>(
                 FindObjectsInactive.Include,
                 FindObjectsSortMode.None);
-
             for (int i = 0; i < texts.Length; i++)
             {
-                ApplyFont(texts[i], font);
+                if (texts[i] != null)
+                {
+                    LoadedTextsCache.Add(texts[i]);
+                }
             }
+
+            loadedTextsCacheDirty = false;
         }
 
         /// <summary>

@@ -626,30 +626,22 @@ namespace Battle
                 return false;
             }
 
-            Renderer[] renderers = model.GetComponentsInChildren<Renderer>(false);
-            bool encapsulated = false;
-            for (int i = 0; i < renderers.Length; i++)
+            if (!View.BattleModelBoundsCache.TryResolveBounds(model, out Bounds modelBounds))
             {
-                Renderer renderer = renderers[i];
-                if (renderer == null || !renderer.enabled)
-                {
-                    continue;
-                }
-
-                if (!hasBounds)
-                {
-                    bounds = renderer.bounds;
-                    hasBounds = true;
-                }
-                else
-                {
-                    bounds.Encapsulate(renderer.bounds);
-                }
-
-                encapsulated = true;
+                return false;
             }
 
-            return encapsulated;
+            if (!hasBounds)
+            {
+                bounds = modelBounds;
+                hasBounds = true;
+            }
+            else
+            {
+                bounds.Encapsulate(modelBounds);
+            }
+
+            return true;
         }
 
         private static Vector3 FlattenDirection(Vector3 direction)

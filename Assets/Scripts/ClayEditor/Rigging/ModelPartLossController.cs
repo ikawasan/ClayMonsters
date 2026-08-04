@@ -100,6 +100,8 @@ namespace ClayEditor.Rigging
         private Mesh generatedMesh;                // 欠損後に生成したメッシュ(作り直すたびに破棄)
         private Mesh battleColorMesh;              // 戦闘中の頂点色だけを書き換える軽量メッシュ
         private Color[] battleMeshBaseColors;
+        private Color[] battleMeshWorkColors;
+        private BoneWeight[] cachedBattleBoneWeights;
         private Transform[] bones;
         private readonly Dictionary<Transform, int> boneIndexOf = new Dictionary<Transform, int>();
 
@@ -116,6 +118,21 @@ namespace ClayEditor.Rigging
         private float gradualRestoreProgress;
         private float repairWobblePhase;
         private readonly HashSet<int> gradualRestoreBoneIndices = new HashSet<int>();
+
+        private bool[] rebuildRemoveVertex;
+        private int[] rebuildRemap;
+        private readonly List<Vector3> rebuildVertices = new List<Vector3>(4096);
+        private readonly List<Vector3> rebuildNormals = new List<Vector3>(4096);
+        private readonly List<Vector4> rebuildTangents = new List<Vector4>(4096);
+        private readonly List<Vector2> rebuildUv = new List<Vector2>(4096);
+        private readonly List<Vector2> rebuildUv2 = new List<Vector2>(4096);
+        private readonly List<Color> rebuildColors = new List<Color>(4096);
+        private readonly List<BoneWeight> rebuildWeights = new List<BoneWeight>(4096);
+        private readonly Dictionary<long, int> rebuildFullEdgeCount = new Dictionary<long, int>(2048);
+        private readonly Dictionary<long, int> rebuildKeptEdgeCount = new Dictionary<long, int>(2048);
+        private readonly Dictionary<long, (int from, int to)> rebuildKeptDirected = new Dictionary<long, (int from, int to)>(2048);
+        private readonly List<List<int>> rebuildTrianglesScratch = new List<List<int>>(4);
+        private BoneWeight[] rebuildBoneWeightsOut;
 
         /// <summary>現在のモデルから検出した部位(リム)の一覧</summary>
         public IReadOnlyList<LimbInfo> Limbs => limbs;
@@ -623,6 +640,8 @@ namespace ClayEditor.Rigging
             int vertexCount = originalMesh.vertexCount;
             Color[] sourceColors = originalMesh.colors;
             battleMeshBaseColors = new Color[vertexCount];
+            battleMeshWorkColors = new Color[vertexCount];
+            cachedBattleBoneWeights = originalMesh.boneWeights;
 
             if (sourceColors != null && sourceColors.Length == vertexCount)
             {
@@ -659,13 +678,24 @@ namespace ClayEditor.Rigging
 
             EnsureBattleColorMesh();
 
-            BoneWeight[] weights = originalMesh.boneWeights;
+            BoneWeight[] weights = cachedBattleBoneWeights;
+            if (weights == null || weights.Length != battleMeshBaseColors.Length)
+            {
+                weights = originalMesh.boneWeights;
+                cachedBattleBoneWeights = weights;
+            }
+
             if (weights == null || weights.Length != battleMeshBaseColors.Length)
             {
                 return;
             }
 
-            var colors = new Color[battleMeshBaseColors.Length];
+            if (battleMeshWorkColors == null || battleMeshWorkColors.Length != battleMeshBaseColors.Length)
+            {
+                battleMeshWorkColors = new Color[battleMeshBaseColors.Length];
+            }
+
+            Color[] colors = battleMeshWorkColors;
             float glowThreshold = Mathf.Min(removeWeightThreshold, battleGlowSuppressThreshold);
             float restoreVisibility = ResolveGradualRestoreVisibility();
 
@@ -960,9 +990,11 @@ namespace ClayEditor.Rigging
             bool hasColors = srcColors.Length == vertexCount;
             bool hasWeights = srcWeights.Length == vertexCount;
 
+            EnsureRebuildArrays(vertexCount);
+
             // 除去頂点の判定と新indexへの詰め直し
-            bool[] removeVertex = new bool[vertexCount];
-            int[] remap = new int[vertexCount];
+            bool[] removeVertex = rebuildRemoveVertex;
+            int[] remap = rebuildRemap;
             int newCount = 0;
 
             for (int v = 0; v < vertexCount; v++)
@@ -983,15 +1015,16 @@ namespace ClayEditor.Rigging
                 remap[v] = remove ? -1 : newCount++;
             }
 
+            ClearRebuildBuffers();
             var buf = new MeshBuffers
             {
-                vertices = new List<Vector3>(newCount),
-                normals = hasNormals ? new List<Vector3>(newCount) : null,
-                tangents = hasTangents ? new List<Vector4>(newCount) : null,
-                uv = hasUv ? new List<Vector2>(newCount) : null,
-                uv2 = hasUv2 ? new List<Vector2>(newCount) : null,
-                colors = hasColors ? new List<Color>(newCount) : null,
-                weights = hasWeights ? new List<BoneWeight>(newCount) : null
+                vertices = rebuildVertices,
+                normals = hasNormals ? rebuildNormals : null,
+                tangents = hasTangents ? rebuildTangents : null,
+                uv = hasUv ? rebuildUv : null,
+                uv2 = hasUv2 ? rebuildUv2 : null,
+                colors = hasColors ? rebuildColors : null,
+                weights = hasWeights ? rebuildWeights : null
             };
 
             for (int v = 0; v < vertexCount; v++)
@@ -1013,15 +1046,21 @@ namespace ClayEditor.Rigging
             int subMeshCount = src.subMeshCount;
 
             // 三角形の残し判定と、エッジ集計(キャップ用)
-            var fullEdgeCount = new Dictionary<long, int>();
-            var keptEdgeCount = new Dictionary<long, int>();
-            var keptDirected = new Dictionary<long, (int from, int to)>();
-            var newTrianglesPerSub = new List<int>[subMeshCount];
+            rebuildFullEdgeCount.Clear();
+            rebuildKeptEdgeCount.Clear();
+            rebuildKeptDirected.Clear();
+            EnsureTriangleLists(subMeshCount);
+            List<int>[] newTrianglesPerSub = new List<int>[subMeshCount];
 
             for (int sub = 0; sub < subMeshCount; sub++)
             {
                 int[] tris = src.GetTriangles(sub);
-                var list = new List<int>(tris.Length);
+                List<int> list = rebuildTrianglesScratch[sub];
+                list.Clear();
+                if (list.Capacity < tris.Length)
+                {
+                    list.Capacity = tris.Length;
+                }
 
                 for (int t = 0; t < tris.Length; t += 3)
                 {
@@ -1030,9 +1069,9 @@ namespace ClayEditor.Rigging
                     int c = tris[t + 2];
 
                     // 全三角形のエッジを数える(切断面検出の基準)
-                    AddEdge(fullEdgeCount, a, b);
-                    AddEdge(fullEdgeCount, b, c);
-                    AddEdge(fullEdgeCount, c, a);
+                    AddEdge(rebuildFullEdgeCount, a, b);
+                    AddEdge(rebuildFullEdgeCount, b, c);
+                    AddEdge(rebuildFullEdgeCount, c, a);
 
                     if (removeVertex[a] || removeVertex[b] || removeVertex[c])
                     {
@@ -1044,9 +1083,9 @@ namespace ClayEditor.Rigging
                     list.Add(remap[c]);
 
                     // 残した三角形のエッジ(向き付き)を記録
-                    AddKeptEdge(keptEdgeCount, keptDirected, a, b);
-                    AddKeptEdge(keptEdgeCount, keptDirected, b, c);
-                    AddKeptEdge(keptEdgeCount, keptDirected, c, a);
+                    AddKeptEdge(rebuildKeptEdgeCount, rebuildKeptDirected, a, b);
+                    AddKeptEdge(rebuildKeptEdgeCount, rebuildKeptDirected, b, c);
+                    AddKeptEdge(rebuildKeptEdgeCount, rebuildKeptDirected, c, a);
                 }
 
                 newTrianglesPerSub[sub] = list;
@@ -1055,7 +1094,8 @@ namespace ClayEditor.Rigging
             if (capWounds && !hasColors && subMeshCount > 0)
             {
                 hasColors = true;
-                buf.colors = new List<Color>(buf.vertices.Count);
+                buf.colors = rebuildColors;
+                buf.colors.Clear();
                 for (int i = 0; i < buf.vertices.Count; i++)
                 {
                     buf.colors.Add(Color.white);
@@ -1067,17 +1107,16 @@ namespace ClayEditor.Rigging
             {
                 BuildCaps(srcVertices, srcNormals, srcTangents, srcUv, srcUv2, srcColors, srcWeights,
                     hasNormals, hasTangents, hasUv, hasUv2, hasColors, hasWeights,
-                    fullEdgeCount, keptEdgeCount, keptDirected, buf, newTrianglesPerSub);
+                    rebuildFullEdgeCount, rebuildKeptEdgeCount, rebuildKeptDirected, buf, newTrianglesPerSub);
             }
 
-            // メッシュ生成
-            var newMesh = new Mesh
-            {
-                name = src.name + "_PartLoss",
-                indexFormat = buf.vertices.Count > 65535
-                    ? UnityEngine.Rendering.IndexFormat.UInt32
-                    : UnityEngine.Rendering.IndexFormat.UInt16
-            };
+            // メッシュ生成(生成済みMeshを可能な限り再利用する)
+            Mesh newMesh = generatedMesh != null ? generatedMesh : new Mesh();
+            newMesh.name = src.name + "_PartLoss";
+            newMesh.Clear();
+            newMesh.indexFormat = buf.vertices.Count > 65535
+                ? UnityEngine.Rendering.IndexFormat.UInt32
+                : UnityEngine.Rendering.IndexFormat.UInt16;
 
             newMesh.SetVertices(buf.vertices);
             if (hasNormals) newMesh.SetNormals(buf.normals);
@@ -1085,7 +1124,17 @@ namespace ClayEditor.Rigging
             if (hasUv) newMesh.SetUVs(0, buf.uv);
             if (hasUv2) newMesh.SetUVs(1, buf.uv2);
             if (hasColors) newMesh.SetColors(buf.colors);
-            if (hasWeights) newMesh.boneWeights = buf.weights.ToArray();
+            if (hasWeights)
+            {
+                int weightCount = buf.weights.Count;
+                if (rebuildBoneWeightsOut == null || rebuildBoneWeightsOut.Length != weightCount)
+                {
+                    rebuildBoneWeightsOut = new BoneWeight[weightCount];
+                }
+
+                buf.weights.CopyTo(rebuildBoneWeightsOut);
+                newMesh.boneWeights = rebuildBoneWeightsOut;
+            }
 
             newMesh.bindposes = src.bindposes;
 
@@ -1097,9 +1146,40 @@ namespace ClayEditor.Rigging
 
             newMesh.RecalculateBounds();
 
-            DestroyGeneratedMesh();
             generatedMesh = newMesh;
             skinnedRenderer.sharedMesh = newMesh;
+        }
+
+        private void EnsureRebuildArrays(int vertexCount)
+        {
+            if (rebuildRemoveVertex == null || rebuildRemoveVertex.Length < vertexCount)
+            {
+                rebuildRemoveVertex = new bool[vertexCount];
+            }
+
+            if (rebuildRemap == null || rebuildRemap.Length < vertexCount)
+            {
+                rebuildRemap = new int[vertexCount];
+            }
+        }
+
+        private void ClearRebuildBuffers()
+        {
+            rebuildVertices.Clear();
+            rebuildNormals.Clear();
+            rebuildTangents.Clear();
+            rebuildUv.Clear();
+            rebuildUv2.Clear();
+            rebuildColors.Clear();
+            rebuildWeights.Clear();
+        }
+
+        private void EnsureTriangleLists(int subMeshCount)
+        {
+            while (rebuildTrianglesScratch.Count < subMeshCount)
+            {
+                rebuildTrianglesScratch.Add(new List<int>(1024));
+            }
         }
 
         // 除去で新たに開いた境界エッジをループ化しへこんだ断面で塞ぐ
@@ -1531,6 +1611,8 @@ namespace ClayEditor.Rigging
             }
 
             battleMeshBaseColors = null;
+            battleMeshWorkColors = null;
+            cachedBattleBoneWeights = null;
         }
 
         private void OnDestroy()

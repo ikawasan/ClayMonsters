@@ -853,11 +853,15 @@ namespace Scene.BattlePvpArena
                 + $" opponentSlot={inputRelay.OpponentSlotIndex}"
                 + $" opponentName={remoteModel.Meta.modelName}"
                 + $" opponentBytes={remoteModel.GlbBytes.Length}");
-            return await loader.LoadFromGlbBytesAsync(
+            BattleParticipant enemy = await loader.LoadFromGlbBytesAsync(
                 remoteModel.Meta.ToTemporarySlot(),
                 remoteModel.GlbBytes,
                 enemySpawn,
                 cancellationToken);
+            // モデル生成後は受信glbバッファを解放する
+            inputRelay.ClearAllReceivedRemoteModels();
+            localGlb = null;
+            return enemy;
         }
 
         private void OnClickTitleReturn()

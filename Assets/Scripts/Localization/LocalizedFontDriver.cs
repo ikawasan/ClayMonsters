@@ -18,12 +18,16 @@ namespace Localization
     /// </summary>
     public sealed class LocalizedFontDriver : IStartable, ITickable, IDisposable
     {
-        private const float ScanIntervalSeconds = 0.25f;
+        private const float ScanIntervalSeconds = 3f;
+        private const float PruneIntervalSeconds = 8f;
+        private const float CacheRefreshIntervalSeconds = 6f;
 
         private readonly IFontService fontService;
         private IDisposable subscription;
         private TMP_FontAsset currentFont;
         private float nextScanTime;
+        private float nextPruneTime;
+        private float nextCacheRefreshTime;
         private CancellationTokenSource reapplyCts;
 
         [Inject]
@@ -38,7 +42,7 @@ namespace Localization
             subscription = fontService.CurrentFont.Subscribe(OnFontChanged);
             SceneManager.sceneLoaded += OnSceneLoaded;
             SceneManager.sceneUnloaded += OnSceneUnloaded;
-            ApplyCurrentFont();
+            ApplyCurrentFont(forceRefreshCache: true);
         }
 
         /// <inheritdoc/>
@@ -49,13 +53,26 @@ namespace Localization
                 return;
             }
 
-            if (Time.unscaledTime < nextScanTime)
+            float now = Time.unscaledTime;
+            if (now >= nextPruneTime)
+            {
+                nextPruneTime = now + PruneIntervalSeconds;
+                LocalizedFont.PruneDestroyedDesignStyles();
+            }
+
+            if (now < nextScanTime)
             {
                 return;
             }
 
-            nextScanTime = Time.unscaledTime + ScanIntervalSeconds;
-            LocalizedFont.ApplyToAllLoaded();
+            nextScanTime = now + ScanIntervalSeconds;
+            bool forceRefresh = now >= nextCacheRefreshTime;
+            if (forceRefresh)
+            {
+                nextCacheRefreshTime = now + CacheRefreshIntervalSeconds;
+            }
+
+            LocalizedFont.ApplyToAllLoaded(forceRefresh);
         }
 
         /// <inheritdoc/>
@@ -78,23 +95,26 @@ namespace Localization
             }
 
             TMP_Settings.defaultFontAsset = fontAsset;
-            LocalizedFont.ApplyToAllLoaded();
+            LocalizedFont.NotifySceneHierarchyChanged();
+            ApplyCurrentFont(forceRefreshCache: true);
             ScheduleReapplyAfterLhFontWipe();
-            nextScanTime = Time.unscaledTime + ScanIntervalSeconds;
         }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            ApplyCurrentFont();
+            LocalizedFont.NotifySceneHierarchyChanged();
+            ApplyCurrentFont(forceRefreshCache: true);
         }
 
         private void OnSceneUnloaded(Scene scene)
         {
-            // 次Tickで再スキャンさせる
+            LocalizedFont.NotifySceneHierarchyChanged();
             nextScanTime = 0f;
+            nextPruneTime = 0f;
+            nextCacheRefreshTime = 0f;
         }
 
-        private void ApplyCurrentFont()
+        private void ApplyCurrentFont(bool forceRefreshCache)
         {
             if (currentFont == null)
             {
@@ -107,9 +127,11 @@ namespace Localization
             }
 
             TMP_Settings.defaultFontAsset = currentFont;
-            LocalizedFont.ApplyToAllLoaded();
+            LocalizedFont.ApplyToAllLoaded(forceRefreshCache);
             ScheduleReapplyAfterLhFontWipe();
-            nextScanTime = Time.unscaledTime + ScanIntervalSeconds;
+            float now = Time.unscaledTime;
+            nextScanTime = now + ScanIntervalSeconds;
+            nextCacheRefreshTime = now + CacheRefreshIntervalSeconds;
         }
 
         private void ScheduleReapplyAfterLhFontWipe()
@@ -141,7 +163,7 @@ namespace Localization
                 return;
             }
 
-            LocalizedFont.ApplyToAllLoaded();
+            LocalizedFont.ApplyToAllLoaded(forceRefreshCache: false);
 
             await UniTask.DelayFrame(2, cancellationToken: cancellationToken);
             if (cancellationToken.IsCancellationRequested || currentFont == null)
@@ -149,7 +171,7 @@ namespace Localization
                 return;
             }
 
-            LocalizedFont.ApplyToAllLoaded();
+            LocalizedFont.ApplyToAllLoaded(forceRefreshCache: false);
         }
     }
 }
