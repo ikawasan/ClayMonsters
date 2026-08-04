@@ -1,11 +1,11 @@
 Common.Return	戻る
 Common.Ok	OK
-Common.Cancel	取消
+Common.Cancel	キャンセル
 Common.Yes	はい
 Common.No	いいえ
 Common.Close	閉じる
 Common.Slot	スロット{index}
-Option.Title	設定
+Option.Title	オプション
 Option.Close	閉じる
 Option.Video	【ビデオ】
 Option.Audio	【オーディオ】
@@ -14,15 +14,15 @@ Option.FullScreen	全画面
 Option.VSync	垂直同期
 Option.Music	音楽
 Option.SoundEffect	効果音
-Title.Points	{points} pt
-Title.ClayEdit	エディット
+Title.Points	{points} ポイント
+Title.ClayEdit	モンスターエディット
 Title.BattleNpc	CPU戦
 Title.BattlePvp	対人戦
 Title.Training	育成
-Title.SkillTree	スキル
+Title.SkillTree	スキルツリー
 Title.ModelGallery	展示室
-Title.Option	設定
-Title.Quit	やめる
+Title.Option	オプション
+Title.Quit	ゲームをやめる
 Battle.Draw	引き分け
 Battle.Victory	{winnerName} の勝利！
 Battle.RangeLabel	射程
@@ -70,10 +70,10 @@ Motion.Knee	膝蹴り
 Motion.GroundPound	地叩き
 Motion.Slap	平打ち
 Motion.Tackle	タックル
-BattlePvp.DisconnectMessage	通信が切断されました
+BattlePvp.DisconnectMessage	通信が切れました
 BattlePvp.DisconnectClose	閉じる
-ModelGallery.Points	{points} pt
-ModelGallery.PostConfirm	このモデルを投稿しますか？
+ModelGallery.Points	{points} ポイント
+ModelGallery.PostConfirm	投稿しますか？
 ModelGallery.Slot	スロット
 Enemy.Weak	弱い
 Enemy.Normal	普通
@@ -86,7 +86,7 @@ Training.AmbushTitleBang	強敵急襲！
 Training.AmbushEnemyDefault	強敵
 Training.AmbushMessage	{name}が襲いかかってきた\n戦うか逃げるか選んでください
 Training.Complete	育成完了
-Training.Motivation	やる気　
+Training.Motivation	やる気
 Training.LearnedHeader	▼習得する技
 Training.SwapHeader	▼入れ替えるスロット
 Training.AttackComposition	▼技構成
@@ -98,7 +98,7 @@ Training.SaveDestNotSelected	育成済みデータの保存先が選ばれませ
 Training.SaveFailed	育成済みデータの保存に失敗しました\n未育成データは保持されています
 Training.AmbushStartFailed	強敵急襲の戦闘を開始できませんでした
 Training.SwapSlotResult	スロット{slot}を入れ替え
-Training.ChooseSave	保存先
+Training.ChooseSave	保存先を選ぶ
 Training.DeleteConfirm	スロット{slot}「{name}」を削除しますか？
 Training.ModelNamePlaceholder	モデル名を入力
 Training.TrainedSlot	育成済みスロット{index}
@@ -445,7 +445,7 @@ Training.Event.StatTitle	特訓イベント
 Training.Event.StatMessage	HP+{hp} 攻撃+{atk} 防御+{def} 速度+{spd} 命中+{hit}
 Training.Shop.Title	売店
 Training.Inventory.Title	所持アイテム
-Training.Shop.NextPage	次へ
+Training.Shop.NextPage	次のページ
 Training.Shop.OpenInventory	所持
 Battle.PartLocked	部位が破壊されています
 Battle.RoleRequired	要
@@ -471,7 +471,7 @@ Save.Summary.Cost	コスト
 Save.Summary.Damage	ダメージ: 
 Save.Summary.CostLabel	コスト: 
 Save.Summary.AndMore	 他{count}
-SkillTree.Points	{points} pt
+SkillTree.Points	{points} ポイント
 BattlePvp.RoomCodeCopied	参加コード: {code}\nコピーしました
 BattlePvp.Connecting	接続中…
 BattlePvp.ModelTimeout	相手モデルの受信がタイムアウトしました ({seconds}秒)
@@ -524,7 +524,7 @@ Training.Hover.FailRate	失敗率 {value}%
 Training.Hover.StaminaCost	体力-{value}
 Training.Hover.FailRateLine	\n失敗率 {value}%
 Training.Hud.Continue	続ける
-Training.Hud.BackToTitle	タイトル
+Training.Hud.BackToTitle	タイトルへ戻る
 ModelGallery.OverwriteConfirm	既存のセーブデータに上書き保存しますか？
 ModelGallery.SaveToSlotConfirm	このスロットに保存しますか？
 LoadSlot.PlayerInstruction	あなたのモンスターを選択してください
@@ -544,18 +544,18 @@ Training.Inheritance.PickHeader1	継承する育成済みモンスターを2体�
 Training.Inheritance.PickHeader2	継承する育成済みモンスターを2体選んでください(2体目)
 Training.Inheritance.ConfirmPick	継承元{pickNumber}体目\nステータスを確認して決定してください
 Training.Resume.ScheduleWithMoney	{schedule}, 所持金 {money}G
-Training.Resume.MotivationLabel	やる気　
+Training.Resume.MotivationLabel	やる気
 Training.Resume.StaminaLabel	, 体力 {stamina} / {max}
 Training.Resume.Stats	HP {hp}\n攻撃 {atk}\n防御 {def}\n速度 {spd}\n命中 {hit}
 Training.Resume.SummaryBody	{schedule}, 所持金 {money}G\nやる気{glyph} 体力{stamina}/{max}\nHP {hp} 攻撃 {atk} 防御 {def} 速度 {spd} 命中 {hit}
 BattlePvp.LobbyTitle	通信対戦
-BattlePvp.DirectMatch	特定
-BattlePvp.RandomMatch	ランダム
-BattlePvp.CreateRoom	作成
-BattlePvp.JoinRoom	参加
-BattlePvp.StartMatch	マッチ
+BattlePvp.DirectMatch	特定の相手と対戦
+BattlePvp.RandomMatch	不特定の相手と対戦
+BattlePvp.CreateRoom	ルームを作成
+BattlePvp.JoinRoom	ルームに参加
+BattlePvp.StartMatch	マッチング開始
 BattlePvp.Matching	マッチング中
-BattlePvp.CopyCode	コピー
+BattlePvp.CopyCode	コードをコピー
 BattlePvp.JoinCodePlaceholder	参加コードを入力
 BattlePvp.OpponentWaiting	相手の応答を待っています
 Battle.Rematch	再戦
@@ -567,45 +567,45 @@ Battle.Fight	Fight
 Battle.Finish	Finish
 Battle.Break	Break!
 Battle.TipsTitle	戦闘チュートリアル
-Training.ModeManual	手動
-Training.ModeAuto	自動
-Training.ResumeRestart	最初から
-Training.ResumeContinue	続きから
+Training.ModeManual	じっくり育成
+Training.ModeAuto	自動育成
+Training.ResumeRestart	最初から育成
+Training.ResumeContinue	続きから育成
 Training.AmbushFight	戦う
 Training.AmbushFlee	逃げる
-ClayEdit.NewCreate	新規
-ClayEdit.Remake	作り直し
+ClayEdit.NewCreate	新規作成
+ClayEdit.Remake	作り直す
 ClayEdit.RemakeLong	モンスターを作り直す
 ClayEdit.Save	保存
-ClayEdit.SaveAsEnemy	敵保存
-ClayEdit.OverwriteSave	上書き
+ClayEdit.SaveAsEnemy	敵として保存
+ClayEdit.OverwriteSave	上書き保存
 ClayEdit.Delete	削除
-ClayEdit.DeleteConfirm	削除
+ClayEdit.DeleteConfirm	削除する
 ClayEdit.SaveConfirm	保存しますか？
 ClayEdit.LeaveWithoutSave	保存せずに戻りますか？
-ClayEdit.LeaveWithoutSaveButton	保存せず
+ClayEdit.LeaveWithoutSaveButton	保存せず戻る
 ClayEdit.NamePrompt	名前を付けてください
 ClayEdit.SculptMode	成形
-ClayEdit.ShowGuide	操作
+ClayEdit.ShowGuide	操作説明を表示
 ClayEdit.Idle	待機
 ClayEdit.Run	走る
 ClayEdit.Attack	攻撃
-LoadSlot.Load	ロード
+LoadSlot.Load	決定
 LoadSlot.ConfirmLoad	このモデルをロードしますか？
 ModelGallery.TabPost	投稿
 ModelGallery.TabBrowse	閲覧
 ModelGallery.SortRandom	ランダム
-ModelGallery.SortMonthly	月間
-ModelGallery.SortOverall	総合
+ModelGallery.SortMonthly	月間ランキング
+ModelGallery.SortOverall	総合ランキング
 ModelGallery.Refresh	更新
-ModelGallery.Publish	投稿
-ModelGallery.Download	取得
+ModelGallery.Publish	投稿する
+ModelGallery.Download	ダウンロード
 ModelGallery.Prev	前へ
 ModelGallery.Next	次へ
 ModelGallery.ModelName	モデル名
 ModelGallery.PointsInsufficient	ポイントが不足しています
-ModelGallery.HeldPoints	所持: {points} pt
-ModelGallery.CostPoints	消費: {points} pt
+ModelGallery.HeldPoints	所持: {points} ポイント
+ModelGallery.CostPoints	消費: {points} ポイント
 ModelGallery.SaveDestEmpty	保存先: 空きスロット
 ModelGallery.SelectSaveSlot	保存先スロットを選択
 SkillTree.Title	スキルツリー
@@ -613,11 +613,11 @@ SkillTree.Skill	スキル
 SkillTree.BonusEffects	獲得効果
 SkillTree.BonusEffectsHeader	【獲得効果】
 ClayEdit.PaintMode	塗る
-ClayEdit.AnimationMode	動く
+ClayEdit.AnimationMode	動かす
 ClayEdit.BackgroundColor	背景色
-Battle.MatchupStatus	ステ
-Training.SwapSkip	スキップ
-Training.Hud.Interrupt	中断
+Battle.MatchupStatus	ステータス
+Training.SwapSkip	入れ替えない
+Training.Hud.Interrupt	中断して保存
 Enemy.Name.0	くれもん
 Enemy.Name.1	一つ目スライム
 Enemy.Name.2	ハコブタ
@@ -629,7 +629,7 @@ Enemy.Name.7	モギュラ
 Enemy.Name.8	スパイダー
 Enemy.Name.9	闇騎士
 Enemy.Name.10	バット
-Enemy.Name.11	マイラ男
+Enemy.Name.11	ミイラ男
 Enemy.Name.12	ゴーレム
 Enemy.Name.13	イエローリザード
 Enemy.Name.14	ブルーリザード

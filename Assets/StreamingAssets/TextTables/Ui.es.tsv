@@ -590,7 +590,7 @@ ClayEdit.ShowGuide	Ayuda
 ClayEdit.Idle	Reposo
 ClayEdit.Run	Correr
 ClayEdit.Attack	Ataque
-LoadSlot.Load	Cargar
+LoadSlot.Load	Confirmar
 LoadSlot.ConfirmLoad	¿Cargar este modelo?
 ModelGallery.TabPost	Post
 ModelGallery.TabBrowse	Explorar

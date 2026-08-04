@@ -590,7 +590,7 @@ ClayEdit.ShowGuide	操作
 ClayEdit.Idle	待机
 ClayEdit.Run	跑
 ClayEdit.Attack	攻击
-LoadSlot.Load	读取
+LoadSlot.Load	决定
 LoadSlot.ConfirmLoad	要读取这个模型吗？
 ModelGallery.TabPost	投稿
 ModelGallery.TabBrowse	浏览

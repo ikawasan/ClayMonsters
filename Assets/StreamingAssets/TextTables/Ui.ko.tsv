@@ -590,7 +590,7 @@ ClayEdit.ShowGuide	조작
 ClayEdit.Idle	대기
 ClayEdit.Run	달리기
 ClayEdit.Attack	공격
-LoadSlot.Load	로드
+LoadSlot.Load	결정
 LoadSlot.ConfirmLoad	이 모델을 불러올까요?
 ModelGallery.TabPost	게시
 ModelGallery.TabBrowse	열람
