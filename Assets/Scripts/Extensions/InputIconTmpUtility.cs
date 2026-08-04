@@ -13,7 +13,8 @@ namespace Extensions
     {
         private const string ResourcesFolder = "Image/InputIcons/";
         private const float IconScale = 1.45f;
-        private const float WideKeyIconScale = 1.55f;
+        // 複数文字キーも単一キーと同程度の表示幅に揃える
+        private const float WideKeyIconScale = 1.45f;
 
         private static readonly string[] IconNames =
         {
@@ -56,7 +57,8 @@ namespace Extensions
         /// <param name="iconName">アイコン名</param>
         public static string Icon(string iconName)
         {
-            return $"<sprite name=\"{iconName}\">";
+            // 親テキスト色の影響で薄くならないよう色を固定する
+            return $"<sprite name=\"{iconName}\" color=#FFFFFFFF>";
         }
 
         /// <summary>
@@ -113,9 +115,16 @@ namespace Extensions
                 return null;
             }
 
+            // 余白を均等にした中心揃えテクスチャに整形する
+            for (int i = 0; i < textures.Count; i++)
+            {
+                textures[i] = CenterContentOnTransparentCanvas(textures[i], names[i]);
+            }
+
             var atlas = new Texture2D(2, 2, TextureFormat.RGBA32, false);
-            Rect[] rects = atlas.PackTextures(textures.ToArray(), 2, 1024, false);
-            atlas.filterMode = FilterMode.Bilinear;
+            Rect[] rects = atlas.PackTextures(textures.ToArray(), 2, 2048, false);
+            // 複数文字キーのぼやけを抑えるためニアレスト近傍
+            atlas.filterMode = FilterMode.Point;
             atlas.wrapMode = TextureWrapMode.Clamp;
             atlas.name = "InputIconAtlas";
 
@@ -136,6 +145,8 @@ namespace Extensions
                 name = "InputIcons Material",
                 mainTexture = atlas
             };
+            // 一部端末でマテリアル側のフィルタがバイリニアに戻るのを防ぐ
+            material.mainTexture.filterMode = FilterMode.Point;
             asset.material = material;
 
             List<TMP_SpriteGlyph> glyphs = asset.spriteGlyphTable;
@@ -150,11 +161,12 @@ namespace Extensions
                 int w = Mathf.Max(1, Mathf.RoundToInt(uv.width * atlas.width));
                 int h = Mathf.Max(1, Mathf.RoundToInt(uv.height * atlas.height));
 
-                // bearingYはアイコン中央が文字のxハイト付近に来るよう設定
-                float bearingY = h * 0.78f;
+                // アイコン全体の中央が大文字の中高付近に来るよう配置する
+                float bearingY = h * 0.72f;
+                float bearingX = 0f;
                 var glyph = new TMP_SpriteGlyph(
                     (uint)i,
-                    new GlyphMetrics(w, h, 0f, bearingY, w),
+                    new GlyphMetrics(w, h, bearingX, bearingY, w),
                     new GlyphRect(x, y, w, h),
                     1f,
                     0,
@@ -162,7 +174,9 @@ namespace Extensions
                         atlas,
                         new Rect(x, y, w, h),
                         new Vector2(0.5f, 0.5f),
-                        100f));
+                        100f,
+                        0,
+                        SpriteMeshType.FullRect));
                 glyphs.Add(glyph);
 
                 var character = new TMP_SpriteCharacter(0xFFFEu, asset, glyph)
@@ -187,6 +201,103 @@ namespace Extensions
             asset.UpdateLookupTables();
             cachedAsset = asset;
             return cachedAsset;
+        }
+
+        /// <summary>
+        /// 不透明領域を中心に揃えた透明キャンバスへ載せる
+        /// </summary>
+        private static Texture2D CenterContentOnTransparentCanvas(Texture2D source, string iconName)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            Color32[] pixels = source.GetPixels32();
+            int width = source.width;
+            int height = source.height;
+            if (!TryGetOpaqueBounds(pixels, width, height, out int minX, out int minY, out int maxX, out int maxY))
+            {
+                return source;
+            }
+
+            int contentW = maxX - minX + 1;
+            int contentH = maxY - minY + 1;
+            int pad = WideKeyIconNames.Contains(iconName) ? 4 : 3;
+            int canvasW = contentW + (pad * 2);
+            int canvasH = contentH + (pad * 2);
+            var centered = new Texture2D(canvasW, canvasH, TextureFormat.RGBA32, false)
+            {
+                name = source.name,
+                filterMode = FilterMode.Point,
+                wrapMode = TextureWrapMode.Clamp
+            };
+
+            var clear = new Color32[canvasW * canvasH];
+            centered.SetPixels32(clear);
+
+            var content = new Color32[contentW * contentH];
+            for (int y = 0; y < contentH; y++)
+            {
+                int srcRow = (minY + y) * width + minX;
+                int dstRow = y * contentW;
+                for (int x = 0; x < contentW; x++)
+                {
+                    content[dstRow + x] = pixels[srcRow + x];
+                }
+            }
+
+            centered.SetPixels32(pad, pad, contentW, contentH, content);
+            centered.Apply(false, false);
+            return centered;
+        }
+
+        private static bool TryGetOpaqueBounds(
+            Color32[] pixels,
+            int width,
+            int height,
+            out int minX,
+            out int minY,
+            out int maxX,
+            out int maxY)
+        {
+            minX = width;
+            minY = height;
+            maxX = -1;
+            maxY = -1;
+            for (int y = 0; y < height; y++)
+            {
+                int row = y * width;
+                for (int x = 0; x < width; x++)
+                {
+                    if (pixels[row + x].a <= 16)
+                    {
+                        continue;
+                    }
+
+                    if (x < minX)
+                    {
+                        minX = x;
+                    }
+
+                    if (y < minY)
+                    {
+                        minY = y;
+                    }
+
+                    if (x > maxX)
+                    {
+                        maxX = x;
+                    }
+
+                    if (y > maxY)
+                    {
+                        maxY = y;
+                    }
+                }
+            }
+
+            return maxX >= 0;
         }
 
         private static float ResolveIconScale(string iconName)
@@ -238,7 +349,11 @@ namespace Extensions
 
             int width = Mathf.Max(1, Mathf.RoundToInt(pixelRect.width));
             int height = Mathf.Max(1, Mathf.RoundToInt(pixelRect.height));
-            var copy = new Texture2D(width, height, TextureFormat.RGBA32, false);
+            var copy = new Texture2D(width, height, TextureFormat.RGBA32, false)
+            {
+                filterMode = FilterMode.Point,
+                wrapMode = TextureWrapMode.Clamp
+            };
             try
             {
                 Color[] pixels = source.GetPixels(
@@ -263,6 +378,7 @@ namespace Extensions
                 RenderTexture.active = previous;
                 RenderTexture.ReleaseTemporary(rt);
                 copy.name = source.name;
+                copy.filterMode = FilterMode.Point;
                 return copy;
             }
         }
