@@ -14,6 +14,7 @@ using UI.ClayEditor.View;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.Events;
+using UnityEngine.InputSystem;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
 
@@ -172,6 +173,9 @@ namespace Scene.TrainingScene.View
         private TrainingLocation[] cachedLocations;
         private int cachedLocationStamina;
         private TrainingPeriod? boundPeriod;
+        private bool isStatusHoverBound;
+        private bool isPointerOverStats;
+        private string hoveredStatusLinkId = string.Empty;
 
         private enum TrainingHudLayoutMode
         {
@@ -193,6 +197,7 @@ namespace Scene.TrainingScene.View
         private void Update()
         {
             TickMotivationIconAnimation();
+            TickStatusHover();
         }
 
         private void PlayMotivationIcon(TrainingMotivation motivation)
@@ -400,6 +405,8 @@ namespace Scene.TrainingScene.View
             if (statsText != null)
             {
                 statsText.text = FormatStatsText(session.CurrentStatus);
+                statsText.ForceMeshUpdate();
+                BindStatusHover();
             }
 
             if (staminaFill != null)
@@ -1691,6 +1698,7 @@ namespace Scene.TrainingScene.View
             }
 
             EnsureSerializedReferences();
+            BindStatusHover();
 
             if (continueButton != null)
             {
@@ -2047,6 +2055,141 @@ namespace Scene.TrainingScene.View
             CanvasVisibilityUtility.SetCanvasEnabled(rootCanvas, visible);
         }
 
+        private void BindStatusHover()
+        {
+            if (statsText == null || isStatusHoverBound)
+            {
+                return;
+            }
+
+            statsText.raycastTarget = true;
+            statsText.richText = true;
+
+            EventTrigger trigger = statsText.GetComponent<EventTrigger>();
+            if (trigger == null)
+            {
+                trigger = statsText.gameObject.AddComponent<EventTrigger>();
+            }
+
+            AddHoverEntry(
+                trigger,
+                EventTriggerType.PointerEnter,
+                () => isPointerOverStats = true);
+            AddHoverEntry(
+                trigger,
+                EventTriggerType.PointerExit,
+                OnStatusHoverExit);
+            isStatusHoverBound = true;
+        }
+
+        private void TickStatusHover()
+        {
+            if (!isPointerOverStats || statsText == null || !statsText.isActiveAndEnabled)
+            {
+                return;
+            }
+
+            if (EventSystem.current == null)
+            {
+                return;
+            }
+
+            if (!TryGetPointerScreenPosition(out Vector2 screenPosition))
+            {
+                return;
+            }
+
+            int linkIndex = TMP_TextUtilities.FindIntersectingLink(
+                statsText,
+                screenPosition,
+                null);
+            if (linkIndex < 0)
+            {
+                if (!string.IsNullOrEmpty(hoveredStatusLinkId))
+                {
+                    hoveredStatusLinkId = string.Empty;
+                    RestoreStatusHoverExitLog();
+                }
+
+                return;
+            }
+
+            TMP_LinkInfo linkInfo = statsText.textInfo.linkInfo[linkIndex];
+            string linkId = linkInfo.GetLinkID();
+            if (string.IsNullOrEmpty(linkId) || linkId == hoveredStatusLinkId)
+            {
+                return;
+            }
+
+            hoveredStatusLinkId = linkId;
+            string description = ModelSaveSummaryFormatter.FormatTrainingStatusDescription(linkId);
+            if (!string.IsNullOrEmpty(description))
+            {
+                // ログウィンドウへステータス説明を出す
+                SetLogMessage(description);
+            }
+        }
+
+        /// <summary>
+        /// Input Systemからポインタのスクリーン座標を取得する
+        /// </summary>
+        private static bool TryGetPointerScreenPosition(out Vector2 screenPosition)
+        {
+            screenPosition = default;
+            Touchscreen touch = Touchscreen.current;
+            if (touch != null && touch.primaryTouch.press.isPressed)
+            {
+                screenPosition = touch.primaryTouch.position.ReadValue();
+                return true;
+            }
+
+            Mouse mouse = Mouse.current;
+            if (mouse == null)
+            {
+                return false;
+            }
+
+            screenPosition = mouse.position.ReadValue();
+            return true;
+        }
+
+        private void OnStatusHoverExit()
+        {
+            isPointerOverStats = false;
+            if (string.IsNullOrEmpty(hoveredStatusLinkId))
+            {
+                return;
+            }
+
+            hoveredStatusLinkId = string.Empty;
+            RestoreStatusHoverExitLog();
+        }
+
+        private void RestoreStatusHoverExitLog()
+        {
+            switch (choiceMode)
+            {
+                case ChoiceMode.Command:
+                    SetLogMessage(CommandChoicePrompt);
+                    break;
+                case ChoiceMode.Focus:
+                    SetLogMessage(FocusChoicePrompt);
+                    break;
+                case ChoiceMode.Shop:
+                    SetLogMessage(ShopChoicePrompt);
+                    break;
+                case ChoiceMode.Inventory:
+                    SetLogMessage(InventoryChoicePrompt);
+                    break;
+                case ChoiceMode.Location:
+                    SetLogMessage(LocationChoicePrompt);
+                    break;
+                default:
+                    SetLogMessage(string.Empty);
+                    break;
+            }
+        }
+
         private static string FormatStatsText(ModelStatus status)
         {
             if (status == null)
@@ -2054,7 +2197,7 @@ namespace Scene.TrainingScene.View
                 return string.Empty;
             }
 
-            return ModelSaveSummaryFormatter.FormatTrainingStatusParameters(status);
+            return ModelSaveSummaryFormatter.FormatTrainingStatusParametersWithHoverLinks(status);
         }
 
         private static void ResolveInventoryDisplay(

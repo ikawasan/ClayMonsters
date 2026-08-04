@@ -200,7 +200,7 @@ namespace Battle
                 return 0f;
             }
 
-            float hitRate = context.Self.GetHitRate(moveIndex);
+            float hitRate = context.Self.GetHitRate(moveIndex, context.Opponent.Speed);
             float rangeFit = ComputeRangeFit(move.RangeMin, move.RangeMax, context.Distance);
             float score = profile.PowerWeight * move.Power
                 + profile.HitRateWeight * hitRate

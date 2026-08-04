@@ -644,3 +644,8 @@ Enemy.Name.21	미노타우로스
 Enemy.Name.22	타이거
 Enemy.Name.23	푸우
 Enemy.Name.24	거너 로보
+Training.Status.Desc.Hp	HP\n전투 중 체력. 0이 되면 패배한다
+Training.Status.Desc.Attack	공격\n주는 피해에 영향을 준다
+Training.Status.Desc.Defense	방어\n받는 피해를 줄인다
+Training.Status.Desc.Speed	속도\n이동과 기술 재사용 시간, 회피율에 영향을 준다
+Training.Status.Desc.Hit	명중\n기술의 명중률에 영향을 준다

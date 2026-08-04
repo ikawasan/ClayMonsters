@@ -644,3 +644,8 @@ Enemy.Name.21	ミノタウロス
 Enemy.Name.22	タイガー
 Enemy.Name.23	ぷぅ
 Enemy.Name.24	ガンナーロボ
+Training.Status.Desc.Hp	HP\n戦闘中の体力。0になると敗北する
+Training.Status.Desc.Attack	攻撃\n与えるダメージに影響する
+Training.Status.Desc.Defense	防御\n受けるダメージを軽減する
+Training.Status.Desc.Speed	速度\n移動と技のリキャスト時間と回避率に影響する
+Training.Status.Desc.Hit	命中\n技の命中率に影響する

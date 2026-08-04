@@ -644,3 +644,8 @@ Enemy.Name.21	Minotaurus
 Enemy.Name.22	Tiger
 Enemy.Name.23	Puu
 Enemy.Name.24	Gunner-Robo
+Training.Status.Desc.Hp	KP\nKampfpunkte im Kampf. Bei 0 verlierst du
+Training.Status.Desc.Attack	Angriff\nBeeinflusst den Schaden, den du verursachst
+Training.Status.Desc.Defense	Verteidigung\nReduziert den erlittenen Schaden
+Training.Status.Desc.Speed	Tempo\nBeeinflusst Bewegung, Abklingzeit der Techniken und Ausweichen
+Training.Status.Desc.Hit	Treffer\nBeeinflusst die Trefferquote von Angriffen

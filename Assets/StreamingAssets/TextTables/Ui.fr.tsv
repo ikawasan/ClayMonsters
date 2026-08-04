@@ -644,3 +644,8 @@ Enemy.Name.21	Minotaure
 Enemy.Name.22	Tigre
 Enemy.Name.23	Puu
 Enemy.Name.24	Robot artilleur
+Training.Status.Desc.Hp	PV\nPoints de vie en combat. A 0, c'est la defaite
+Training.Status.Desc.Attack	Attaque\nInfluence les degats infliges
+Training.Status.Desc.Defense	Defense\nReduit les degats subis
+Training.Status.Desc.Speed	Vitesse\nInfluence deplacement, temps de reutilisation et esquive
+Training.Status.Desc.Hit	Precision\nInfluence le taux de reussite des techniques

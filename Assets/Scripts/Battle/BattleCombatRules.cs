@@ -8,16 +8,35 @@ namespace Battle
     public static class BattleCombatRules
     {
         /// <summary>
-        /// ガッツ量と命中ステータスに応じた命中率を返す
+        /// ガッツ量と命中ステータスと相手速度による回避を反映した命中率を返す
         /// </summary>
-        public static float ComputeHitRate(float baseAccuracy, float guts, float maxGuts, int hit)
+        /// <param name="baseAccuracy">技の基礎命中</param>
+        /// <param name="guts">攻撃側ガッツ</param>
+        /// <param name="maxGuts">攻撃側最大ガッツ</param>
+        /// <param name="hit">攻撃側命中ステータス</param>
+        /// <param name="targetSpeed">防御側速度ステータス(高いほど回避しやすい)</param>
+        public static float ComputeHitRate(
+            float baseAccuracy,
+            float guts,
+            float maxGuts,
+            int hit,
+            int targetSpeed)
         {
             float gutsRatio = maxGuts > 0f ? Mathf.Clamp01(guts / maxGuts) : 0f;
             float hitMultiplier = Mathf.Clamp(
                 hit / (float)BattleStatusBalance.DefaultHit,
                 0.7f,
                 1.4f);
-            return Mathf.Clamp01(baseAccuracy * (0.55f + 0.45f * gutsRatio) * hitMultiplier);
+            // 既定速度で1.0速度が高いほど命中が下がる
+            float evasionMultiplier = Mathf.Clamp(
+                BattleStatusBalance.DefaultSpeed / (float)Mathf.Max(1, targetSpeed),
+                0.7f,
+                1.4f);
+            return Mathf.Clamp01(
+                baseAccuracy
+                * (0.55f + 0.45f * gutsRatio)
+                * hitMultiplier
+                * evasionMultiplier);
         }
 
         /// <summary>

@@ -644,3 +644,8 @@ Enemy.Name.21	Minotaur
 Enemy.Name.22	Tiger
 Enemy.Name.23	Puu
 Enemy.Name.24	Gunner Robo
+Training.Status.Desc.Hp	HP\nYour health in battle. Reaching 0 means defeat
+Training.Status.Desc.Attack	Attack\nAffects damage you deal
+Training.Status.Desc.Defense	Defense\nReduces damage you take
+Training.Status.Desc.Speed	Speed\nAffects movement, move recast time, and evasion
+Training.Status.Desc.Hit	Accuracy\nAffects attack hit rate

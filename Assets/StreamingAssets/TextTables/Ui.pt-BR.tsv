@@ -644,3 +644,8 @@ Enemy.Name.21	Minotauro
 Enemy.Name.22	Tigre
 Enemy.Name.23	Puu
 Enemy.Name.24	Robô artilheiro
+Training.Status.Desc.Hp	PV\nVida em combate. Chegar a 0 e derrota
+Training.Status.Desc.Attack	Ataque\nAfeta o dano que voce causa
+Training.Status.Desc.Defense	Defesa\nReduz o dano que voce recebe
+Training.Status.Desc.Speed	Velocidade\nAfeta movimento, recarga de tecnicas e evasao
+Training.Status.Desc.Hit	Precisao\nAfeta a taxa de acerto dos ataques

@@ -214,9 +214,11 @@ namespace Battle
         }
 
         /// <summary>
-        /// 技の現在命中率を返す
+        /// 技の現在命中率を返す(相手速度による回避を含む)
         /// </summary>
-        public float GetHitRate(int moveIndex)
+        /// <param name="moveIndex">技インデックス</param>
+        /// <param name="targetSpeed">防御側速度ステータス</param>
+        public float GetHitRate(int moveIndex, int targetSpeed)
         {
             if (moveIndex < 0 || moveIndex >= Moves.Count)
             {
@@ -224,7 +226,7 @@ namespace Battle
             }
 
             AttackMove move = Moves[moveIndex];
-            return BattleCombatRules.ComputeHitRate(move.Accuracy, Guts, MaxGuts, Hit);
+            return BattleCombatRules.ComputeHitRate(move.Accuracy, Guts, MaxGuts, Hit, targetSpeed);
         }
 
         /// <summary>

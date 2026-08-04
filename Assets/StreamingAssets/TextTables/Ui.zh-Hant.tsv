@@ -644,3 +644,8 @@ Enemy.Name.21	彌諾陶洛斯
 Enemy.Name.22	老虎
 Enemy.Name.23	噗
 Enemy.Name.24	砲手機器人
+Training.Status.Desc.Hp	HP\n戰鬥中的體力。歸零則敗北
+Training.Status.Desc.Attack	攻擊\n影響造成的傷害
+Training.Status.Desc.Defense	防禦\n減輕受到的傷害
+Training.Status.Desc.Speed	速度\n影響移動、技能冷卻與迴避率
+Training.Status.Desc.Hit	命中\n影響技能的命中率

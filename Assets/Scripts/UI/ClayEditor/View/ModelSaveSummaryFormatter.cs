@@ -126,6 +126,77 @@ namespace UI.ClayEditor.View
         }
 
         /// <summary>
+        /// 育成HUD向けにホバー用リンク付きステータス行を整形する
+        /// </summary>
+        /// <param name="status">ステータス</param>
+        public static string FormatTrainingStatusParametersWithHoverLinks(ModelStatus status)
+        {
+            if (status == null)
+            {
+                return string.Empty;
+            }
+
+            BattleStatusBalance.Normalize(
+                status,
+                out int hp,
+                out int attack,
+                out int defense,
+                out int speed,
+                out int hit);
+
+            string atkLabel = LocalizedText.GetOrFallback(GameTextKeys.TrainingPreviewStatAtk, "攻撃");
+            string defLabel = LocalizedText.GetOrFallback(GameTextKeys.TrainingPreviewStatDef, "防御");
+            string spdLabel = LocalizedText.GetOrFallback(GameTextKeys.TrainingPreviewStatSpd, "速度");
+            string hitLabel = LocalizedText.GetOrFallback(GameTextKeys.TrainingPreviewStatHit, "命中");
+            return $"<link=\"hp\">HP {hp}</link>\n"
+                + $"<link=\"atk\">{atkLabel} {attack}</link>\n"
+                + $"<link=\"def\">{defLabel} {defense}</link>\n"
+                + $"<link=\"spd\">{spdLabel} {speed}</link>\n"
+                + $"<link=\"hit\">{hitLabel} {hit}</link>";
+        }
+
+        /// <summary>
+        /// ステータス種別の説明文を返す
+        /// </summary>
+        /// <param name="statusLinkId">リンクID(hp/atk/def/spd/hit)</param>
+        public static string FormatTrainingStatusDescription(string statusLinkId)
+        {
+            string text;
+            switch (statusLinkId)
+            {
+                case "hp":
+                    text = LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingStatusDescHp,
+                        "HP\n戦闘中の体力。0になると敗北する");
+                    break;
+                case "atk":
+                    text = LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingStatusDescAttack,
+                        "攻撃\n与えるダメージに影響する");
+                    break;
+                case "def":
+                    text = LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingStatusDescDefense,
+                        "防御\n受けるダメージを軽減する");
+                    break;
+                case "spd":
+                    text = LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingStatusDescSpeed,
+                        "速度\n移動と技のリキャスト時間と回避率に影響する");
+                    break;
+                case "hit":
+                    text = LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingStatusDescHit,
+                        "命中\n技の命中率に影響する");
+                    break;
+                default:
+                    return string.Empty;
+            }
+
+            return text.Replace("\\n", "\n");
+        }
+
+        /// <summary>
         /// ステータスを保存確認画面向けの縦並びパラメータ行に整形する
         /// </summary>
         public static string FormatConfirmStatusParameters(ModelStatus status)

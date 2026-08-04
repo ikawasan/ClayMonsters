@@ -1722,7 +1722,8 @@ namespace Battle
                 move.Accuracy,
                 attacker.Guts,
                 attacker.MaxGuts,
-                attacker.Hit);
+                attacker.Hit,
+                target.Speed);
             if (replayAttackMotion)
             {
                 attacker.PlayMotion(move.Motion, move.Recovery);

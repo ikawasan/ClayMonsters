@@ -419,6 +419,11 @@ namespace Localization
         public const string TrainingHoverFailRate = "Training.Hover.FailRate";
         public const string TrainingHoverStaminaCost = "Training.Hover.StaminaCost";
         public const string TrainingHoverFailRateLine = "Training.Hover.FailRateLine";
+        public const string TrainingStatusDescHp = "Training.Status.Desc.Hp";
+        public const string TrainingStatusDescAttack = "Training.Status.Desc.Attack";
+        public const string TrainingStatusDescDefense = "Training.Status.Desc.Defense";
+        public const string TrainingStatusDescSpeed = "Training.Status.Desc.Speed";
+        public const string TrainingStatusDescHit = "Training.Status.Desc.Hit";
         public const string TrainingHudContinue = "Training.Hud.Continue";
         public const string TrainingHudBackToTitle = "Training.Hud.BackToTitle";
         public const string TrainingHudInterrupt = "Training.Hud.Interrupt";
