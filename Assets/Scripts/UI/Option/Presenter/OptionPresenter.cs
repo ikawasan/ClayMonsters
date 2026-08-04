@@ -36,9 +36,7 @@ namespace UI.Option
 
         public void Initialize()
         {
-            optionView.InitVideoSettings(
-                isFullScreen: optionService.GetFullScreen,
-                isVSync: optionService.GetVSync);
+            optionView.InitVideoSettings(isFullScreen: optionService.GetFullScreen);
 
             optionView.InitSoundSettings(
                 musicVolume: optionService.GetMusicVolume,
@@ -49,7 +47,6 @@ namespace UI.Option
 
             optionView.SubscribeCloseButtonClick(Hide);
             optionView.SubscribeFullScreenChanged(optionService.SetFullScreen);
-            optionView.SubscribeVSyncChanged(optionService.SetVSync);
             optionView.SubscribeMusicVolumeChanged(optionService.SetMusicVolume);
             optionView.SubscribeSoundEffectVolumeChanged(optionService.SetSoundEffectVolume);
             optionView.SubscribeLanguagePrevButtonClick(() => CycleLanguage(-1));

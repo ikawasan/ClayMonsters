@@ -22,8 +22,7 @@ namespace UI.Option.Interface
         /// 映像設定をUIへ反映する
         /// </summary>
         /// <param name="isFullScreen">フルスクリーン</param>
-        /// <param name="isVSync">垂直同期</param>
-        void InitVideoSettings(bool isFullScreen, bool isVSync);
+        void InitVideoSettings(bool isFullScreen);
 
         /// <summary>
         /// 音声設定をUIへ反映する
@@ -46,7 +45,6 @@ namespace UI.Option.Interface
         /// <param name="audioTitle">オーディオ見出し</param>
         /// <param name="languageTitle">言語見出し</param>
         /// <param name="fullScreen">フルスクリーン</param>
-        /// <param name="vSync">垂直同期</param>
         /// <param name="music">BGM</param>
         /// <param name="soundEffect">効果音</param>
         /// <param name="close">閉じる</param>
@@ -56,7 +54,6 @@ namespace UI.Option.Interface
             string audioTitle,
             string languageTitle,
             string fullScreen,
-            string vSync,
             string music,
             string soundEffect,
             string close);
@@ -78,12 +75,6 @@ namespace UI.Option.Interface
         /// </summary>
         /// <param name="action">コールバック</param>
         void SubscribeFullScreenChanged(UnityAction<bool> action);
-
-        /// <summary>
-        /// 垂直同期変更を購読する
-        /// </summary>
-        /// <param name="action">コールバック</param>
-        void SubscribeVSyncChanged(UnityAction<bool> action);
 
         /// <summary>
         /// BGM音量変更を購読する

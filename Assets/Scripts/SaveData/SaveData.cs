@@ -7,7 +7,6 @@ namespace SaveData
     public class VideoOptionSaveData
     {
         public bool IsFullScreen = true;
-        public bool VSync = true;
     }
 
     [Serializable]

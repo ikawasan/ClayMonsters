@@ -14,11 +14,6 @@ namespace UI.Option.Interface
         bool GetFullScreen { get; }
 
         /// <summary>
-        /// 垂直同期設定を返す
-        /// </summary>
-        bool GetVSync { get; }
-
-        /// <summary>
         /// BGM音量を返す
         /// </summary>
         float GetMusicVolume { get; }
@@ -43,12 +38,6 @@ namespace UI.Option.Interface
         /// </summary>
         /// <param name="isFullScreen">フルスクリーン</param>
         void SetFullScreen(bool isFullScreen);
-
-        /// <summary>
-        /// 垂直同期設定を更新する
-        /// </summary>
-        /// <param name="isVSync">垂直同期</param>
-        void SetVSync(bool isVSync);
 
         /// <summary>
         /// BGM音量を更新する

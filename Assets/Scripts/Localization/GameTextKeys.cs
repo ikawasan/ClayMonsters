@@ -11,7 +11,6 @@ namespace Localization
         public const string OptionAudio = "Option.Audio";
         public const string OptionLanguage = "Option.Language";
         public const string OptionFullScreen = "Option.FullScreen";
-        public const string OptionVSync = "Option.VSync";
         public const string OptionMusic = "Option.Music";
         public const string OptionSoundEffect = "Option.SoundEffect";
 

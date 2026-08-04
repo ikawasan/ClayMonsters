@@ -3,6 +3,7 @@ using Cysharp.Threading.Tasks;
 using LighthouseExtends.Language;
 using Localization;
 using SaveData;
+using Setting;
 using System.Threading;
 using UI.Option.Interface;
 using UnityEngine;
@@ -44,8 +45,6 @@ namespace UI.Option.Service
 
         public bool GetFullScreen => currentSaveData.VideoOptionData.IsFullScreen;
 
-        public bool GetVSync => currentSaveData.VideoOptionData.VSync;
-
         public float GetMusicVolume => currentSaveData.SoundOptionData.MusicVolume;
 
         public float GetSoundEffectVolume => currentSaveData.SoundOptionData.SoundEffectVolume;
@@ -59,13 +58,7 @@ namespace UI.Option.Service
         {
             currentSaveData.VideoOptionData.IsFullScreen = isFullScreen;
             ApplyFullScreen(isFullScreen);
-            SaveOptions();
-        }
-
-        public void SetVSync(bool isVSync)
-        {
-            currentSaveData.VideoOptionData.VSync = isVSync;
-            ApplyVSync(isVSync);
+            FPSController.ApplyFixedFrameRate();
             SaveOptions();
         }
 
@@ -129,7 +122,7 @@ namespace UI.Option.Service
         private void ApplySettings()
         {
             ApplyFullScreen(currentSaveData.VideoOptionData.IsFullScreen);
-            ApplyVSync(currentSaveData.VideoOptionData.VSync);
+            FPSController.ApplyFixedFrameRate();
             ApplyMusicVolume(currentSaveData.SoundOptionData.MusicVolume);
             ApplySoundEffectVolume(currentSaveData.SoundOptionData.SoundEffectVolume);
         }
@@ -157,11 +150,6 @@ namespace UI.Option.Service
                 WindowedHeight,
                 FullScreenMode.Windowed);
 #endif
-        }
-
-        private static void ApplyVSync(bool isVSync)
-        {
-            QualitySettings.vSyncCount = isVSync ? 1 : 0;
         }
 
         private void ApplyMusicVolume(float volume)

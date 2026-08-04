@@ -3,25 +3,34 @@ using UnityEngine;
 namespace Setting
 {
     /// <summary>
-    /// FPS設定クラス
+    /// 起動時にフレームレートを60固定し垂直同期を無効にする
     /// </summary>
-    public class FPSController : MonoBehaviour
+    public sealed class FPSController : MonoBehaviour
     {
-        [Tooltip("固定したいフレームレートを指定します")]
-        [SerializeField] private int targetFPS = 60;
+        /// <summary>
+        /// 固定フレームレート
+        /// </summary>
+        public const int TargetFps = 60;
 
-        void Start()
+        private void Awake()
         {
-            // 1. VSync（垂直同期）をオフにする
-            // ※これを0にしないとモニターのリフレッシュレートが優先されてしまう
-            QualitySettings.vSyncCount = 0;
-            Application.targetFrameRate = targetFPS;
+            ApplyFixedFrameRate();
         }
 
-        public void ChangeFPS(int newFPS)
+        private void Start()
         {
-            targetFPS = newFPS;
-            Application.targetFrameRate = targetFPS;
+            // 他システムのAwake後に上書きされても戻す
+            ApplyFixedFrameRate();
+        }
+
+        /// <summary>
+        /// 60fps固定と垂直同期オフを適用する
+        /// </summary>
+        public static void ApplyFixedFrameRate()
+        {
+            // モニターリフレッシュ率へ張り付かないようVSyncを切る
+            QualitySettings.vSyncCount = 0;
+            Application.targetFrameRate = TargetFps;
         }
     }
 }

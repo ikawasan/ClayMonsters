@@ -40,6 +40,7 @@ namespace UI.Option.View
         {
             ValidateReferences();
             HideBrightnessSettingUi();
+            HideVSyncSettingUi();
             Hide();
         }
 
@@ -50,16 +51,11 @@ namespace UI.Option.View
         public void Hide() => canvas.enabled = false;
 
         /// <inheritdoc/>
-        public void InitVideoSettings(bool isFullScreen, bool isVSync)
+        public void InitVideoSettings(bool isFullScreen)
         {
             if (fullScreenToggle != null)
             {
                 fullScreenToggle.SetIsOnWithoutNotify(isFullScreen);
-            }
-
-            if (vSyncToggle != null)
-            {
-                vSyncToggle.SetIsOnWithoutNotify(isVSync);
             }
         }
 
@@ -90,7 +86,6 @@ namespace UI.Option.View
             string audioTitle,
             string languageTitle,
             string fullScreen,
-            string vSync,
             string music,
             string soundEffect,
             string close)
@@ -100,7 +95,6 @@ namespace UI.Option.View
             SetText(audioTitleText, audioTitle);
             SetText(languageTitleText, languageTitle);
             SetText(fullScreenLabelText, fullScreen);
-            SetText(vSyncLabelText, vSync);
             SetText(musicLabelText, music);
             SetText(soundEffectLabelText, soundEffect);
             SetText(closeButtonLabelText, close);
@@ -129,7 +123,6 @@ namespace UI.Option.View
                 fullScreen: SceneLocalizedLabel.Resolve(
                     GameTextKeys.OptionFullScreen,
                     fullScreenOriginal),
-                vSync: SceneLocalizedLabel.Resolve(GameTextKeys.OptionVSync, vSyncOriginal),
                 music: SceneLocalizedLabel.Resolve(GameTextKeys.OptionMusic, musicOriginal),
                 soundEffect: SceneLocalizedLabel.Resolve(
                     GameTextKeys.OptionSoundEffect,
@@ -143,7 +136,6 @@ namespace UI.Option.View
         private string audioTitleOriginal = "【オーディオ】";
         private string languageTitleOriginal = "【言語】";
         private string fullScreenOriginal = "全画面";
-        private string vSyncOriginal = "垂直同期";
         private string musicOriginal = "音楽";
         private string soundEffectOriginal = "効果音";
         private string closeOriginal = "閉じる";
@@ -162,7 +154,6 @@ namespace UI.Option.View
                 languageTitleText,
                 languageTitleOriginal);
             fullScreenOriginal = SceneLocalizedLabel.Capture(fullScreenLabelText, fullScreenOriginal);
-            vSyncOriginal = SceneLocalizedLabel.Capture(vSyncLabelText, vSyncOriginal);
             musicOriginal = SceneLocalizedLabel.Capture(musicLabelText, musicOriginal);
             soundEffectOriginal = SceneLocalizedLabel.Capture(
                 soundEffectLabelText,
@@ -180,15 +171,6 @@ namespace UI.Option.View
             if (fullScreenToggle != null)
             {
                 fullScreenToggle.onValueChanged.AddListener(action);
-            }
-        }
-
-        /// <inheritdoc/>
-        public void SubscribeVSyncChanged(UnityAction<bool> action)
-        {
-            if (vSyncToggle != null)
-            {
-                vSyncToggle.onValueChanged.AddListener(action);
             }
         }
 
@@ -263,6 +245,25 @@ namespace UI.Option.View
             if (brightnessRoot != null)
             {
                 brightnessRoot.gameObject.SetActive(false);
+            }
+        }
+
+        private void HideVSyncSettingUi()
+        {
+            if (vSyncToggle != null)
+            {
+                vSyncToggle.gameObject.SetActive(false);
+            }
+
+            if (vSyncLabelText != null)
+            {
+                vSyncLabelText.gameObject.SetActive(false);
+            }
+
+            Transform vSyncRoot = transform.Find("OptionPanel/VideoOptionUI/VideoOption/VSyncToggle");
+            if (vSyncRoot != null)
+            {
+                vSyncRoot.gameObject.SetActive(false);
             }
         }
 
