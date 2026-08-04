@@ -112,8 +112,8 @@ namespace UI.ClayEditor.View
         }
 
         /// <summary>
-        /// 育成中の実ステータスをそのまま整形する
-        /// 作成時上限の丸めは掛けない
+        /// 育成中ステータスを戦闘上限内で整形する
+        /// 作成時上限ではなくBattleStatusBalanceの上限を使う
         /// </summary>
         public static string FormatTrainingStatusParameters(ModelStatus status)
         {
@@ -122,12 +122,7 @@ namespace UI.ClayEditor.View
                 return string.Empty;
             }
 
-            return FormatStatsBlock(
-                status.hp,
-                status.attack,
-                status.defense,
-                status.speed,
-                status.hit);
+            return FormatStatusParameters(status);
         }
 
         /// <summary>

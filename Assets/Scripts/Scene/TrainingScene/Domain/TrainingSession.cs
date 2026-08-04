@@ -236,6 +236,7 @@ namespace Scene.TrainingScene.Domain
             Motivation = TrainingSettings.StartingMotivation;
             Money = TrainingSettings.StartingMoney;
             CurrentStatus = ModelStatus.CloneOrDefault(baseStatus);
+            TrainingActionResolver.ClampStatus(CurrentStatus);
             AttackMotions = ModelAttackMotionUtility.Normalize(
                 attackMotions,
                 TrainingSettings.AttackSlotCount);
@@ -852,6 +853,7 @@ namespace Scene.TrainingScene.Domain
             CurrentStatus.defense += applied.Defense;
             CurrentStatus.speed += applied.Speed;
             CurrentStatus.hit += applied.Hit;
+            TrainingActionResolver.ClampStatus(CurrentStatus);
         }
     }
 }

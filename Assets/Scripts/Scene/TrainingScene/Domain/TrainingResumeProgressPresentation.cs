@@ -2,6 +2,7 @@ using ClayEditor.Rigging;
 using Localization;
 using SaveData;
 using System.Collections.Generic;
+using UI.ClayEditor.View;
 
 namespace Scene.TrainingScene.Domain
 {
@@ -136,24 +137,8 @@ namespace Scene.TrainingScene.Domain
         /// <summary>
         /// ステータス表示
         /// </summary>
-        public string StatsText
-        {
-            get
-            {
-                ModelStatus status = Status ?? new ModelStatus();
-                return LocalizedText.GetOrFallback(
-                    GameTextKeys.TrainingResumeStats,
-                    "HP {hp}\n攻撃 {atk}\n防御 {def}\n速度 {spd}\n命中 {hit}",
-                    new Dictionary<string, object>
-                    {
-                        { "hp", status.hp },
-                        { "atk", status.attack },
-                        { "def", status.defense },
-                        { "spd", status.speed },
-                        { "hit", status.hit },
-                    });
-            }
-        }
+        public string StatsText =>
+            ModelSaveSummaryFormatter.FormatTrainingStatusParameters(Status);
 
         private static string ResolvePeriodDisplayName(int turnIndexInDay)
         {

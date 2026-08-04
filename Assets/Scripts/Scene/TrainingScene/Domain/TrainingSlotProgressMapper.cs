@@ -1,3 +1,4 @@
+using Battle;
 using ClayEditor.Rigging;
 using Localization;
 using SaveData;
@@ -210,6 +211,13 @@ namespace Scene.TrainingScene.Domain
             }
 
             ModelStatus status = progress.status ?? new ModelStatus();
+            BattleStatusBalance.Normalize(
+                status,
+                out int hp,
+                out int attack,
+                out int defense,
+                out int speed,
+                out int hit);
             string periodLabel = ResolvePeriodDisplayName(progress.turnIndexInDay);
             string schedule =
                 $"{TrainingDayCatalog.GetDisplayName((TrainingDayOfWeek)progress.day)}"
@@ -228,11 +236,11 @@ namespace Scene.TrainingScene.Domain
                     },
                     { "stamina", progress.stamina },
                     { "max", TrainingSettings.MaxStamina },
-                    { "hp", status.hp },
-                    { "atk", status.attack },
-                    { "def", status.defense },
-                    { "spd", status.speed },
-                    { "hit", status.hit },
+                    { "hp", hp },
+                    { "atk", attack },
+                    { "def", defense },
+                    { "spd", speed },
+                    { "hit", hit },
                 });
         }
 
