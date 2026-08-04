@@ -21,6 +21,7 @@ MonoBehaviour:
   knockbackPushDistance: 3.5
   knockbackGutsCost: 15
   knockbackRecovery: 1.5
+  knockbackRecastSeconds: 4
   postAttackLockoutDuration: 1
   chainBonusWindow: 2
   counterDamageMultiplier: 1.25

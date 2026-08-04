@@ -32,8 +32,10 @@ namespace Battle
         [SerializeField] private float knockbackPushDistance = 3.5f;
         [Tooltip("ふきとばしのガッツ消費")]
         [SerializeField] private float knockbackGutsCost = 15f;
-        [Tooltip("ふきとばし硬直(秒)")]
-        [SerializeField] private float knockbackRecovery = 0.5f;
+        [Tooltip("ふきとばし硬直(秒)行動不能時間")]
+        [SerializeField] private float knockbackRecovery = 1.5f;
+        [Tooltip("ふきとばしリキャスト(秒)硬直と独立再使用不可時間")]
+        [SerializeField] private float knockbackRecastSeconds = 4f;
 
         [Header("Combo And Counter")]
         [Tooltip("攻撃演出終了後に双方が攻撃不可になる時間(秒)")]
@@ -84,6 +86,9 @@ namespace Battle
                 KnockbackPushDistance = knockbackPushDistance,
                 KnockbackGutsCost = knockbackGutsCost,
                 KnockbackRecovery = knockbackRecovery,
+                KnockbackRecastSeconds = knockbackRecastSeconds > 0f
+                    ? knockbackRecastSeconds
+                    : Mathf.Max(0f, knockbackRecovery),
                 PostAttackLockoutDuration = postAttackLockoutDuration,
                 ChainBonusWindow = chainBonusWindow,
                 EnemyAttackTelegraphDuration = enemyAttackTelegraphDuration,

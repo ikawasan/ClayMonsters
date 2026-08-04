@@ -520,7 +520,9 @@ namespace Battle
                     stagingContext.Enemy != null ? stagingContext.Enemy : enemy.Unit,
                     battleSettings,
                     movementInput,
-                    context.EnemyAi ?? new StandardBattleEnemyAi(),
+                    context.EnemyAi
+                        ?? new StandardBattleEnemyAi(
+                            BattleEnemyAiProfile.FromStrengthTier(context.EnemyStrengthTier)),
                     context.CombatSync);
 
                 BattleFieldLayout fieldLayout = new BattleFieldLayout(

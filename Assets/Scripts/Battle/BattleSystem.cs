@@ -23,6 +23,10 @@ namespace Battle
         public float KnockbackPushDistance;
         public float KnockbackGutsCost;
         public float KnockbackRecovery;
+        /// <summary>
+        /// ふきとばし再使用までの秒数硬直とは独立する
+        /// </summary>
+        public float KnockbackRecastSeconds;
         public float ChainBonusWindow;
         public float EnemyAttackTelegraphDuration;
         public float EnemyAttackCooldownMin;
@@ -121,12 +125,14 @@ namespace Battle
         private float playerStepStartDistance;
         private float playerStepTargetDistance;
         private float playerStepElapsed;
+        private float playerKnockbackRecastRemaining;
         private int enemyStepMovementIntent;
         private float enemyStepCooldownRemaining;
         private bool isEnemyStepping;
         private float enemyStepStartDistance;
         private float enemyStepTargetDistance;
         private float enemyStepElapsed;
+        private float enemyKnockbackRecastRemaining;
         private float partRepairProgress;
         private int repairingLimbIndex = -1;
         private bool isPartRepairVisualActive;
@@ -158,7 +164,7 @@ namespace Battle
             this.settings = settings;
             this.playerMovementInput = playerMovementInput;
             this.playerCombatInput = playerMovementInput as IBattlePlayerInput;
-            this.enemyAi = enemyAi ?? new StandardBattleEnemyAi();
+            this.enemyAi = enemyAi ?? new StandardBattleEnemyAi(BattleEnemyAiProfile.Default);
             this.combatSync = combatSync;
 
             Distance = settings.MaxDistance;
@@ -224,7 +230,20 @@ namespace Battle
         public bool IsKnockbackAvailable =>
             Distance < settings.MaxDistance - 1e-3f
             && player.CanAct
+            && playerKnockbackRecastRemaining <= 0f
             && player.Guts >= settings.KnockbackGutsCost;
+
+        /// <summary>
+        /// プレイヤーふきとばしリキャストの準備完了比0〜1
+        /// </summary>
+        public float PlayerKnockbackRecastReady01 =>
+            GetKnockbackRecastReady01(playerKnockbackRecastRemaining);
+
+        /// <summary>
+        /// 敵ふきとばしリキャストの準備完了比0〜1
+        /// </summary>
+        public float EnemyKnockbackRecastReady01 =>
+            GetKnockbackRecastReady01(enemyKnockbackRecastRemaining);
 
         /// <summary>
         /// プレイヤーのチェーン数
@@ -562,6 +581,11 @@ namespace Battle
                 playerStepCooldownRemaining = Mathf.Max(0f, playerStepCooldownRemaining - deltaTime);
             }
 
+            if (playerKnockbackRecastRemaining > 0f)
+            {
+                playerKnockbackRecastRemaining = Mathf.Max(0f, playerKnockbackRecastRemaining - deltaTime);
+            }
+
             if (enemyAttackCooldownRemaining > 0f)
             {
                 enemyAttackCooldownRemaining = Mathf.Max(0f, enemyAttackCooldownRemaining - deltaTime);
@@ -575,6 +599,11 @@ namespace Battle
             if (enemyStepCooldownRemaining > 0f)
             {
                 enemyStepCooldownRemaining = Mathf.Max(0f, enemyStepCooldownRemaining - deltaTime);
+            }
+
+            if (enemyKnockbackRecastRemaining > 0f)
+            {
+                enemyKnockbackRecastRemaining = Mathf.Max(0f, enemyKnockbackRecastRemaining - deltaTime);
             }
 
             TimeRemaining -= deltaTime;
@@ -693,7 +722,7 @@ namespace Battle
             Distance = Mathf.Clamp(Distance + delta, 0f, settings.MaxDistance);
         }
 
-        // 敵AI:間合い調整と技選択と部位修復をIBattleEnemyAiに委譲する
+        // 敵AI:間合い調整とふきとばしと技選択と部位修復をIBattleEnemyAiに委譲する
         private void UpdateEnemyAi(float deltaTime)
         {
             if (TryBeginNetworkSyncedEnemyAttack())
@@ -729,10 +758,20 @@ namespace Battle
                 TimeRemaining,
                 IsPlayerPerformingAttack,
                 enemyAttackCooldownRemaining,
+                enemyStepCooldownRemaining,
+                enemyKnockbackRecastRemaining,
                 deltaTime,
                 settings);
 
             BattleEnemyAiDecision decision = enemyAi.Decide(context);
+
+            if (decision.WantsKnockback)
+            {
+                enemy.MovementIntent = 0;
+                PauseEnemyPartRepair();
+                TryEnemyKnockback();
+                return;
+            }
 
             if (decision.WantsRepair)
             {
@@ -744,8 +783,10 @@ namespace Battle
             PauseEnemyPartRepair();
             if (decision.StepIntent != 0)
             {
-                TryBeginEnemyStep(decision.StepIntent);
-                return;
+                if (TryBeginEnemyStep(decision.StepIntent))
+                {
+                    return;
+                }
             }
 
             enemy.MovementIntent = decision.MovementIntent;
@@ -1134,6 +1175,7 @@ namespace Battle
             SetPlayerMovement(0);
             player.ConsumeGuts(settings.KnockbackGutsCost);
             player.BeginRecovery(settings.KnockbackRecovery);
+            playerKnockbackRecastRemaining = Mathf.Max(0f, settings.KnockbackRecastSeconds);
             player.PlayMotion(MotionType.Tackle);
             float openAmount = Mathf.Max(0f, settings.MaxDistance - Distance);
             if (fieldMovement != null)
@@ -1154,6 +1196,51 @@ namespace Battle
             knockbackPerformedSubject.OnNext(new KnockbackPerformed(player, enemy));
         }
 
+        /// <summary>
+        /// 敵がふきとばし可能か
+        /// </summary>
+        public bool IsEnemyKnockbackAvailable =>
+            Distance < settings.MaxDistance - 1e-3f
+            && enemy.CanAct
+            && enemyKnockbackRecastRemaining <= 0f
+            && enemy.Guts >= settings.KnockbackGutsCost;
+
+        private void TryEnemyKnockback()
+        {
+            if (IsFinished || IsAttackPresentationActive)
+            {
+                return;
+            }
+
+            if (!IsEnemyKnockbackAvailable)
+            {
+                return;
+            }
+
+            enemy.MovementIntent = 0;
+            enemy.ConsumeGuts(settings.KnockbackGutsCost);
+            enemy.BeginRecovery(settings.KnockbackRecovery);
+            enemyKnockbackRecastRemaining = Mathf.Max(0f, settings.KnockbackRecastSeconds);
+            enemy.PlayMotion(MotionType.Tackle);
+
+            float openAmount = Mathf.Max(0f, settings.MaxDistance - Distance);
+            if (fieldMovement != null)
+            {
+                fieldMovement.PushPlayerAway(
+                    openAmount,
+                    Distance,
+                    settings.MaxDistance,
+                    out float newDistance);
+                Distance = newDistance;
+            }
+            else
+            {
+                Distance = settings.MaxDistance;
+            }
+
+            knockbackPerformedSubject.OnNext(new KnockbackPerformed(enemy, player));
+        }
+
         private void ApplyRemoteEnemyKnockback(float resultingDistance)
         {
             if (IsFinished)
@@ -1167,6 +1254,7 @@ namespace Battle
             }
 
             enemy.BeginRecovery(settings.KnockbackRecovery);
+            enemyKnockbackRecastRemaining = Mathf.Max(0f, settings.KnockbackRecastSeconds);
             enemy.PlayMotion(MotionType.Tackle);
             float openAmount = Mathf.Max(0f, resultingDistance - Distance);
             if (fieldMovement != null && openAmount > 1e-4f)
@@ -1578,9 +1666,9 @@ namespace Battle
             combatSync?.ReportLocalPlayerStep(stepIntent, playerStepTargetDistance);
         }
 
-        private void TryBeginEnemyStep(int stepIntent)
+        private bool TryBeginEnemyStep(int stepIntent)
         {
-            TryBeginRemoteEnemyStep(stepIntent, respectPlayerAttack: true);
+            return TryBeginRemoteEnemyStep(stepIntent, respectPlayerAttack: true);
         }
 
         private bool TryBeginRemoteEnemyStep(
@@ -1920,6 +2008,17 @@ namespace Battle
             updatedSubject.OnNext(Unit.Default);
             Debug.Log($"[BattleSystem] 決着: {reason} 勝者={(winner != null ? winner.Name : "引き分け")} 残り時間={TimeRemaining:0.0}s プレイヤーHP={player.CurrentHp}/{player.MaxHp} 敵HP={enemy.CurrentHp}/{enemy.MaxHp}");
             battleEndSubject.OnNext(winner);
+        }
+
+        private float GetKnockbackRecastReady01(float remaining)
+        {
+            float duration = settings.KnockbackRecastSeconds;
+            if (duration <= 1e-5f)
+            {
+                return 1f;
+            }
+
+            return Mathf.Clamp01(1f - remaining / duration);
         }
 
         /// <summary>

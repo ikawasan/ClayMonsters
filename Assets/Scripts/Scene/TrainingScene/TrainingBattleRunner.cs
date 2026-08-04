@@ -435,17 +435,12 @@ namespace Scene.TrainingScene
                 movementInput = new BattleKeyboardMovementInput();
 
                 system = new BattleSystem(
-
                     player.Unit,
-
                     enemy.Unit,
-
                     battleSettings,
-
                     movementInput,
-
-                    new StandardBattleEnemyAi(),
-
+                    new StandardBattleEnemyAi(
+                        BattleEnemyAiProfile.FromStrengthTier(enemyStrengthTier)),
                     null);
 
 
