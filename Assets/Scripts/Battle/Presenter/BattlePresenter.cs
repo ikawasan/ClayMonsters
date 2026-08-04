@@ -37,6 +37,7 @@ namespace Battle.Presenter
         private bool lastMoveRefreshPlayerPerformingAttack;
         private bool lastMoveRefreshEnemyPerformingAttack;
         private bool lastMoveRefreshAttackLockout;
+        private bool lastMoveRefreshAnyRecast;
         private bool isBattleEnded;
 
         public BattlePresenter(IBattleView view)
@@ -153,6 +154,7 @@ namespace Battle.Presenter
                 lastMoveRefreshPlayerPerformingAttack = system.IsPlayerPerformingAttack;
                 lastMoveRefreshEnemyPerformingAttack = system.IsEnemyPerformingAttack;
                 lastMoveRefreshAttackLockout = system.IsAttackLockoutActive;
+                lastMoveRefreshAnyRecast = p.HasActiveMoveRecast || e.HasActiveMoveRecast;
 
                 BuildMoveDisplays(p, playerMoveCache, true);
                 BuildMoveDisplays(e, enemyMoveCache, false);
@@ -161,9 +163,10 @@ namespace Battle.Presenter
             }
         }
 
-        // 技ボタンの使用可否表示は間合い・ガッツ・HP・部位欠損が変わったときだけ更新する
+        // 技ボタンの使用可否表示は間合い・ガッツ・HP・部位欠損・リキャストが変わったときだけ更新する
         private bool ShouldRefreshMoves(BattleUnit player, BattleUnit enemy)
         {
+            bool anyRecast = player.HasActiveMoveRecast || enemy.HasActiveMoveRecast;
             return !Mathf.Approximately(lastMoveRefreshDistance, system.Distance)
                 || Mathf.FloorToInt(lastMoveRefreshPlayerGuts) != Mathf.FloorToInt(player.Guts)
                 || Mathf.FloorToInt(lastMoveRefreshEnemyGuts) != Mathf.FloorToInt(enemy.Guts)
@@ -179,10 +182,12 @@ namespace Battle.Presenter
                 || lastMoveRefreshPendingEnemyMove != system.PendingEnemyMoveIndex
                 || lastMoveRefreshPlayerPerformingAttack != system.IsPlayerPerformingAttack
                 || lastMoveRefreshEnemyPerformingAttack != system.IsEnemyPerformingAttack
-                || lastMoveRefreshAttackLockout != system.IsAttackLockoutActive;
+                || lastMoveRefreshAttackLockout != system.IsAttackLockoutActive
+                || anyRecast
+                || lastMoveRefreshAnyRecast;
         }
 
-        // 現在の間合いでの各技の表示情報(名前・使用可否・間合い・ガッツ)を作る
+        // 現在の間合いでの各技の表示情報(名前・使用可否・間合い・ガッツ・リキャスト)を作る
         private void BuildMoveDisplays(BattleUnit unit, List<MoveDisplay> destination, bool isPlayer)
         {
             destination.Clear();
@@ -191,16 +196,18 @@ namespace Battle.Presenter
                 AttackMove m = unit.Moves[i];
                 bool usable = system.IsMoveUsableForUnit(isPlayer, i);
                 bool lockedByMissingPart = !unit.IsMoveUsableByPart(i);
+                Vector2 range = MotionPartRequirement.GetRange(m.RangeBand, system.MaxDistance);
                 destination.Add(new MoveDisplay(
                     m.DisplayName,
                     usable,
                     lockedByMissingPart,
-                    m.RangeMin,
-                    m.RangeMax,
+                    range.x,
+                    range.y,
                     m.GutsCost,
                     m.Power,
                     ToTargetPartId(m.TargetDestroyPart),
-                    ToRequiredPartId(m.RequiredPart)));
+                    ToRequiredPartId(m.RequiredPart),
+                    unit.GetMoveRecastReadyRatio(i)));
             }
         }
 

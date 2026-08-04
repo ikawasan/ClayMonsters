@@ -42,6 +42,11 @@ namespace Battle
         public const int BandCount = 3;
 
         /// <summary>
+        /// 射程計算の既定最大間合い
+        /// </summary>
+        public const float DefaultMaxDistance = 10f;
+
+        /// <summary>
         /// 間合いから距離帯を返す
         /// </summary>
         public static BattleDistanceBand Resolve(float distance, float maxDistance)

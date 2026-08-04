@@ -20,6 +20,8 @@ namespace Battle
         private readonly int speed;
         private float baseGutsGain;
         private readonly float lossSpeedBonusPerPart;
+        private float[] moveRecastRemaining = System.Array.Empty<float>();
+        private float[] moveRecastDuration = System.Array.Empty<float>();
 
         public BattleUnit(
             string name,
@@ -78,6 +80,8 @@ namespace Battle
                     Moves.Add(new AttackMove(m));
                 }
             }
+
+            EnsureMoveRecastBuffers();
         }
 
         /// <summary>
@@ -244,7 +248,8 @@ namespace Battle
         /// </summary>
         /// <param name="deltaTime">経過秒数</param>
         /// <param name="gainGuts">ガッツを回復するか</param>
-        public void Tick(float deltaTime, bool gainGuts = true)
+        /// <param name="tickMoveRecast">技リキャストを進めるか</param>
+        public void Tick(float deltaTime, bool gainGuts = true, bool tickMoveRecast = true)
         {
             if (gainGuts)
             {
@@ -258,6 +263,120 @@ namespace Battle
             if (AttackActionRemaining > 0f)
             {
                 AttackActionRemaining = Mathf.Max(0f, AttackActionRemaining - deltaTime);
+            }
+
+            if (tickMoveRecast)
+            {
+                TickMoveRecasts(deltaTime);
+            }
+        }
+
+        /// <summary>
+        /// いずれかの技がリキャスト中か
+        /// </summary>
+        public bool HasActiveMoveRecast
+        {
+            get
+            {
+                EnsureMoveRecastBuffers();
+                for (int i = 0; i < moveRecastRemaining.Length; i++)
+                {
+                    if (moveRecastRemaining[i] > 0f)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 指定技がリキャスト中か
+        /// </summary>
+        /// <param name="moveIndex">技番号</param>
+        public bool IsMoveOnRecast(int moveIndex)
+        {
+            EnsureMoveRecastBuffers();
+            if (moveIndex < 0 || moveIndex >= moveRecastRemaining.Length)
+            {
+                return false;
+            }
+
+            return moveRecastRemaining[moveIndex] > 0f;
+        }
+
+        /// <summary>
+        /// 技リキャストの準備完了度(0=開始直後1=使用可)を返す
+        /// </summary>
+        /// <param name="moveIndex">技番号</param>
+        public float GetMoveRecastReadyRatio(int moveIndex)
+        {
+            EnsureMoveRecastBuffers();
+            if (moveIndex < 0 || moveIndex >= moveRecastRemaining.Length)
+            {
+                return 1f;
+            }
+
+            float remaining = moveRecastRemaining[moveIndex];
+            if (remaining <= 0f)
+            {
+                return 1f;
+            }
+
+            float duration = moveRecastDuration[moveIndex];
+            if (duration <= 0.0001f)
+            {
+                return 1f;
+            }
+
+            return Mathf.Clamp01(1f - (remaining / duration));
+        }
+
+        /// <summary>
+        /// 技使用後のリキャストを開始する
+        /// </summary>
+        /// <param name="moveIndex">技番号</param>
+        /// <param name="baseSeconds">基準秒数</param>
+        public void StartMoveRecast(int moveIndex, float baseSeconds)
+        {
+            EnsureMoveRecastBuffers();
+            if (moveIndex < 0 || moveIndex >= moveRecastRemaining.Length)
+            {
+                return;
+            }
+
+            float duration = BattleCombatRules.ComputeMoveRecastSeconds(Speed, baseSeconds);
+            moveRecastDuration[moveIndex] = duration;
+            moveRecastRemaining[moveIndex] = duration;
+        }
+
+        private void EnsureMoveRecastBuffers()
+        {
+            int count = Moves != null ? Moves.Count : 0;
+            if (moveRecastRemaining != null && moveRecastRemaining.Length == count)
+            {
+                return;
+            }
+
+            moveRecastRemaining = new float[count];
+            moveRecastDuration = new float[count];
+        }
+
+        private void TickMoveRecasts(float deltaTime)
+        {
+            EnsureMoveRecastBuffers();
+            if (deltaTime <= 0f)
+            {
+                return;
+            }
+
+            for (int i = 0; i < moveRecastRemaining.Length; i++)
+            {
+                if (moveRecastRemaining[i] > 0f)
+                {
+                    moveRecastRemaining[i] = Mathf.Max(0f, moveRecastRemaining[i] - deltaTime);
+                }
             }
         }
 
@@ -384,17 +503,28 @@ namespace Battle
         }
 
         /// <summary>
-        /// 現在の間合いで・その技を今すぐ使えるか(部位・間合い・ガッツ・硬直)を返す
+        /// 現在の間合いで・その技を今すぐ使えるか(部位・間合い・ガッツ・硬直・リキャスト)を返す
         /// </summary>
         public bool CanUseMove(int moveIndex, float distance)
         {
-            if (!CanAct || !IsMoveUsableByPart(moveIndex))
+            return CanUseMove(moveIndex, distance, BattleDistanceBandResolver.DefaultMaxDistance);
+        }
+
+        /// <summary>
+        /// 現在の間合いで・その技を今すぐ使えるか(部位・間合い・ガッツ・硬直・リキャスト)を返す
+        /// </summary>
+        /// <param name="moveIndex">技番号</param>
+        /// <param name="distance">現在間合い</param>
+        /// <param name="maxDistance">最大間合い</param>
+        public bool CanUseMove(int moveIndex, float distance, float maxDistance)
+        {
+            if (!CanAct || !IsMoveUsableByPart(moveIndex) || IsMoveOnRecast(moveIndex))
             {
                 return false;
             }
 
             AttackMove move = Moves[moveIndex];
-            return move.IsInRange(distance) && Guts >= move.GutsCost;
+            return move.IsInRange(distance, maxDistance) && Guts >= move.GutsCost;
         }
 
         /// <summary>

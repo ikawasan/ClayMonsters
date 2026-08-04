@@ -685,7 +685,7 @@ MonoBehaviour:
   buttonBackground: {fileID: 8363266894738936840}
   usableBackgroundColor: {r: 0.18, g: 0.24, b: 0.34, a: 0.92}
   unusableBackgroundColor: {r: 0.12, g: 0.13, b: 0.16, a: 0.72}
-  highlightBackgroundColor: {r: 0.28, g: 0.36, b: 0.5, a: 0.98}
+  highlightBackgroundColor: {r: 0.32, g: 0.32, b: 0.35, a: 0.38}
   rangeActiveColor: {r: 0.45, g: 0.92, b: 1, a: 1}
   rangeInactiveColor: {r: 0.28, g: 0.32, b: 0.38, a: 0.45}
   rangeOutOfBandColor: {r: 0.18, g: 0.2, b: 0.24, a: 0.28}
@@ -1391,7 +1391,7 @@ MonoBehaviour:
   buttonBackground: {fileID: 4156745053669337376}
   usableBackgroundColor: {r: 0.18, g: 0.24, b: 0.34, a: 0.92}
   unusableBackgroundColor: {r: 0.12, g: 0.13, b: 0.16, a: 0.72}
-  highlightBackgroundColor: {r: 0.28, g: 0.36, b: 0.5, a: 0.98}
+  highlightBackgroundColor: {r: 0.32, g: 0.32, b: 0.35, a: 0.38}
   rangeActiveColor: {r: 0.45, g: 0.92, b: 1, a: 1}
   rangeInactiveColor: {r: 0.28, g: 0.32, b: 0.38, a: 0.45}
   rangeOutOfBandColor: {r: 0.18, g: 0.2, b: 0.24, a: 0.28}
@@ -4534,7 +4534,7 @@ MonoBehaviour:
   buttonBackground: {fileID: 7438459372438040874}
   usableBackgroundColor: {r: 0.18, g: 0.24, b: 0.34, a: 0.92}
   unusableBackgroundColor: {r: 0.12, g: 0.13, b: 0.16, a: 0.72}
-  highlightBackgroundColor: {r: 0.28, g: 0.36, b: 0.5, a: 0.98}
+  highlightBackgroundColor: {r: 0.32, g: 0.32, b: 0.35, a: 0.38}
   rangeActiveColor: {r: 0.45, g: 0.92, b: 1, a: 1}
   rangeInactiveColor: {r: 0.28, g: 0.32, b: 0.38, a: 0.45}
   rangeOutOfBandColor: {r: 0.18, g: 0.2, b: 0.24, a: 0.28}
@@ -6583,7 +6583,7 @@ MonoBehaviour:
   buttonBackground: {fileID: 4479855745855588050}
   usableBackgroundColor: {r: 0.18, g: 0.24, b: 0.34, a: 0.92}
   unusableBackgroundColor: {r: 0.12, g: 0.13, b: 0.16, a: 0.72}
-  highlightBackgroundColor: {r: 0.28, g: 0.36, b: 0.5, a: 0.98}
+  highlightBackgroundColor: {r: 0.32, g: 0.32, b: 0.35, a: 0.38}
   rangeActiveColor: {r: 0.45, g: 0.92, b: 1, a: 1}
   rangeInactiveColor: {r: 0.28, g: 0.32, b: 0.38, a: 0.45}
   rangeOutOfBandColor: {r: 0.18, g: 0.2, b: 0.24, a: 0.28}

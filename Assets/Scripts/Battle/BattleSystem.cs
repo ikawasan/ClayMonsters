@@ -35,6 +35,10 @@ namespace Battle
         public float MinCloseSeparation;
         public float PartRepairSecondsPerLimb;
         public float PostAttackLockoutDuration;
+        /// <summary>
+        /// 技リキャストの基準秒数(速度で短縮)
+        /// </summary>
+        public float MoveRecastBaseSeconds;
     }
 
     /// <summary>
@@ -322,6 +326,7 @@ namespace Battle
                     AttackMove counterMove = unit.Moves[moveIndex];
                     return unit.CanAct
                         && unit.IsMoveUsableByPart(moveIndex)
+                        && !unit.IsMoveOnRecast(moveIndex)
                         && unit.Guts >= counterMove.GutsCost;
                 }
 
@@ -335,7 +340,7 @@ namespace Battle
                     return false;
                 }
 
-                return unit.CanUseMove(moveIndex, Distance);
+                return unit.CanUseMove(moveIndex, Distance, MaxDistance);
             }
 
             if (IsPlayerPerformingAttack)
@@ -343,7 +348,7 @@ namespace Battle
                 return false;
             }
 
-            return unit.CanUseMove(moveIndex, Distance);
+            return unit.CanUseMove(moveIndex, Distance, MaxDistance);
         }
 
         /// <summary>
@@ -418,7 +423,7 @@ namespace Battle
                 }
 
                 AttackMove counterMove = player.Moves[moveIndex];
-                if (player.Guts < counterMove.GutsCost)
+                if (player.Guts < counterMove.GutsCost || player.IsMoveOnRecast(moveIndex))
                 {
                     return false;
                 }
@@ -437,7 +442,7 @@ namespace Battle
                 return false;
             }
 
-            if (!player.CanUseMove(moveIndex, Distance))
+            if (!player.CanUseMove(moveIndex, Distance, MaxDistance))
             {
                 return false;
             }
@@ -567,8 +572,9 @@ namespace Battle
             TimeRemaining -= deltaTime;
 
             bool gainGuts = !IsPlayerPerformingAttack && !IsEnemyPerformingAttack;
-            player.Tick(deltaTime, gainGuts);
-            enemy.Tick(deltaTime, gainGuts);
+            // 攻撃演出中はその本体のリキャストを進めない
+            player.Tick(deltaTime, gainGuts, tickMoveRecast: !IsPlayerPerformingAttack);
+            enemy.Tick(deltaTime, gainGuts, tickMoveRecast: !IsEnemyPerformingAttack);
 
             // カウンター無効化を溜め解決より先に反映する
             ProcessRemoteCombatSync();
@@ -743,7 +749,7 @@ namespace Battle
                 return;
             }
 
-            if (!enemy.CanUseMove(decision.AttackMoveIndex, Distance))
+            if (!enemy.CanUseMove(decision.AttackMoveIndex, Distance, MaxDistance))
             {
                 return;
             }
@@ -849,6 +855,7 @@ namespace Battle
             attacker.PlayAttackCharge(move.Motion, windUp);
             attacker.MovementIntent = 0;
             target.MovementIntent = 0;
+            attacker.StartMoveRecast(moveIndex, settings.MoveRecastBaseSeconds);
 
             attackWindUpStartedSubject.OnNext(new AttackWindUpStarted(attacker, target, move, windUp));
         }

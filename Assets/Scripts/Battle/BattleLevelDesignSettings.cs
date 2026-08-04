@@ -65,6 +65,10 @@ namespace Battle
         [Tooltip("部位1本あたりの修理時間(秒)")]
         [SerializeField] private float partRepairSecondsPerLimb = 3f;
 
+        [Header("Move Recast")]
+        [Tooltip("技リキャストの基準秒数(参照速度100時速度が速いほど短縮)")]
+        [SerializeField] private float moveRecastBaseSeconds = 14f;
+
         /// <summary>
         /// ランタイム用BattleSettingsへ変換する
         /// </summary>
@@ -91,7 +95,10 @@ namespace Battle
                 StepDuration = stepDuration,
                 StepCooldown = stepCooldown,
                 MinCloseSeparation = minCloseSeparation,
-                PartRepairSecondsPerLimb = partRepairSecondsPerLimb
+                PartRepairSecondsPerLimb = partRepairSecondsPerLimb,
+                MoveRecastBaseSeconds = moveRecastBaseSeconds > 0f
+                    ? moveRecastBaseSeconds
+                    : BattleCombatRules.MoveRecastBaseSeconds
             };
         }
 

@@ -183,40 +183,79 @@ namespace Battle
         }
 
         /// <summary>
-        /// 使用できる間合い(x=最小 y=最大)を返す
-        /// 近距離帯0〜3中距離帯3〜6
-        /// 星が多いほど帯内の射程幅が広い
+        /// 技の射程距離帯を返す(短距離中距離長距離の3パターン)
         /// </summary>
-        public static Vector2 GetRange(MotionType motion)
+        /// <param name="motion">攻撃モーション</param>
+        public static BattleDistanceBand GetRangeBand(MotionType motion)
         {
             switch (motion)
             {
-                // 星1 狭い
-                case MotionType.Slap: return new Vector2(0f, 1.8f);
-                case MotionType.Punch: return new Vector2(0f, 2.0f);
-                case MotionType.HipCheck: return new Vector2(0f, 2.2f);
-                case MotionType.LowSweep: return new Vector2(3f, 4.5f);
-                case MotionType.Tackle: return new Vector2(3f, 5.0f);
-                // 星2 中程度
-                case MotionType.Bite: return new Vector2(0f, 2.2f);
-                case MotionType.Elbow: return new Vector2(0f, 2.4f);
-                case MotionType.Uppercut: return new Vector2(0f, 2.5f);
-                case MotionType.Knee: return new Vector2(0f, 2.6f);
-                case MotionType.Headbutt: return new Vector2(0f, 2.8f);
-                case MotionType.ShoulderRam: return new Vector2(3f, 5.2f);
-                case MotionType.Kick: return new Vector2(3f, 5.5f);
-                case MotionType.TailWhip: return new Vector2(3f, 5.8f);
-                // 星3 帯を広く使う
-                case MotionType.Stomp: return new Vector2(0f, 3f);
-                case MotionType.GroundPound: return new Vector2(0f, 3f);
-                case MotionType.BellyFlop: return new Vector2(0f, 3f);
-                case MotionType.BodySlam: return new Vector2(0f, 3f);
-                case MotionType.SpinTackle: return new Vector2(3f, 6f);
-                case MotionType.WindSlasher: return new Vector2(3f, 10f);
-                case MotionType.Fireball: return new Vector2(2f, 10f);
-                case MotionType.DiamondDust: return new Vector2(1f, 9f);
-                case MotionType.ThunderShock: return new Vector2(0f, 10f);
-                default: return new Vector2(0f, 2f);
+                // 中距離
+                case MotionType.LowSweep:
+                case MotionType.Tackle:
+                case MotionType.ShoulderRam:
+                case MotionType.Kick:
+                case MotionType.TailWhip:
+                case MotionType.SpinTackle:
+                    return BattleDistanceBand.Mid;
+
+                // 長距離
+                case MotionType.WindSlasher:
+                case MotionType.Fireball:
+                case MotionType.DiamondDust:
+                case MotionType.ThunderShock:
+                    return BattleDistanceBand.Far;
+
+                // 短距離(既定含む)
+                case MotionType.Slap:
+                case MotionType.Punch:
+                case MotionType.HipCheck:
+                case MotionType.Bite:
+                case MotionType.Elbow:
+                case MotionType.Uppercut:
+                case MotionType.Knee:
+                case MotionType.Headbutt:
+                case MotionType.Stomp:
+                case MotionType.GroundPound:
+                case MotionType.BellyFlop:
+                case MotionType.BodySlam:
+                default:
+                    return BattleDistanceBand.Close;
+            }
+        }
+
+        /// <summary>
+        /// 使用できる間合い(x=最小 y=最大)を返す
+        /// 短距離中距離長距離の3帯のいずれか
+        /// </summary>
+        public static Vector2 GetRange(MotionType motion)
+        {
+            return GetRange(GetRangeBand(motion), BattleDistanceBandResolver.DefaultMaxDistance);
+        }
+
+        /// <summary>
+        /// 距離帯の間合い区間を返す
+        /// </summary>
+        /// <param name="band">距離帯</param>
+        /// <param name="maxDistance">最大間合い</param>
+        public static Vector2 GetRange(BattleDistanceBand band, float maxDistance)
+        {
+            float safeMax = maxDistance > 0f
+                ? maxDistance
+                : BattleDistanceBandResolver.DefaultMaxDistance;
+            float closeMax = Mathf.Min(BattleDistanceBandResolver.CloseMaxDistance, safeMax);
+            float midMax = Mathf.Min(BattleDistanceBandResolver.MidMaxDistance, safeMax);
+            midMax = Mathf.Max(midMax, closeMax);
+
+            switch (band)
+            {
+                case BattleDistanceBand.Mid:
+                    return new Vector2(closeMax, midMax);
+                case BattleDistanceBand.Far:
+                    return new Vector2(midMax, safeMax);
+                case BattleDistanceBand.Close:
+                default:
+                    return new Vector2(0f, closeMax);
             }
         }
 
@@ -225,8 +264,7 @@ namespace Battle
         /// </summary>
         public static string FormatRangeLabel(MotionType motion)
         {
-            Vector2 range = GetRange(motion);
-            return FormatRangeLabel(range.x, range.y);
+            return BattleDistanceBandResolver.ToDisplayName(GetRangeBand(motion));
         }
 
         /// <summary>
@@ -234,12 +272,16 @@ namespace Battle
         /// </summary>
         public static string FormatRangeLabel(float rangeMin, float rangeMax)
         {
-            if (Mathf.Approximately(rangeMin, rangeMax))
-            {
-                return rangeMin.ToString("0.#");
-            }
+            BattleDistanceBand band = ResolveRangeBandFromBounds(rangeMin, rangeMax);
+            return BattleDistanceBandResolver.ToDisplayName(band);
+        }
 
-            return rangeMin.ToString("0.#") + "〜" + rangeMax.ToString("0.#");
+        private static BattleDistanceBand ResolveRangeBandFromBounds(float rangeMin, float rangeMax)
+        {
+            float center = (rangeMin + rangeMax) * 0.5f;
+            return BattleDistanceBandResolver.Resolve(
+                center,
+                BattleDistanceBandResolver.DefaultMaxDistance);
         }
 
         /// <summary>

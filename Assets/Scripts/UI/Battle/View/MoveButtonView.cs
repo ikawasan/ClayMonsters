@@ -3,6 +3,7 @@ using Localization;
 using TMPro;
 using UI.Battle.Interface;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace UI.Battle.View
@@ -11,7 +12,7 @@ namespace UI.Battle.View
     /// 1つの攻撃ボタンの表示部品
     /// 攻撃名・必要部位・破壊部位・威力・コスト・射程を表示する
     /// </summary>
-    public class MoveButtonView : MonoBehaviour, ILanguageAwareUi
+    public class MoveButtonView : MonoBehaviour, ILanguageAwareUi, IPointerEnterHandler, IPointerExitHandler
     {
         private static string RangeLabel =>
             LocalizedText.GetOrFallback(GameTextKeys.BattleRangeLabel, "射程");
@@ -50,7 +51,7 @@ namespace UI.Battle.View
         [SerializeField] private Image buttonBackground;
         [SerializeField] private Color usableBackgroundColor = new Color(1f, 0.98f, 0.94f, 0.96f);
         [SerializeField] private Color unusableBackgroundColor = new Color(0.82f, 0.8f, 0.78f, 0.72f);
-        [SerializeField] private Color highlightBackgroundColor = new Color(1f, 0.96f, 0.9f, 1f);
+        [SerializeField] private Color highlightBackgroundColor = new Color(0.35f, 0.35f, 0.38f, 0.4f);
         [SerializeField] private Color rangeActiveColor = MoveRangeSegmentBarView.RangeInColor;
         [SerializeField] private Color rangeInactiveColor = MoveRangeSegmentBarView.RangeOutColor;
         [SerializeField] private Color rangeOutOfBandColor = MoveRangeSegmentBarView.RangeOutColor;
@@ -58,12 +59,28 @@ namespace UI.Battle.View
         [Tooltip("部位欠損ロック演出(未設定なら子から解決)")]
         [SerializeField] private MoveButtonPartLockOverlay partLockOverlay;
 
+        [Tooltip("リキャスト蓄積ゲージ(下から上へfill)未設定なら子RecastFillを解決")]
+        [SerializeField] private Image recastFillImage;
+
+        [Tooltip("ホバー時のグレーオーバーレイ(未設定なら生成)")]
+        [SerializeField] private Image hoverOverlayImage;
+
+        private static readonly Color RecastFillColor = new Color(1f, 0.12f, 0.1f, 0.55f);
+        private static readonly Color HoverOverlayColor = new Color(0.32f, 0.32f, 0.35f, 0.38f);
+        private const string FrameFxRootName = "FrameFxRoot";
+        private const string RecastFillName = "RecastFill";
+        private const string HoverOverlayName = "HoverOverlay";
+
         private bool isUsable;
         private bool isHighlighted;
         private Sprite rangeActiveSprite;
         private Sprite rangeInactiveSprite;
         private MoveRangeSegmentBarView rangeSegmentBarView;
         private LocalizedBakedTextApplier bakedChromeLabelApplier;
+        private Transform frameFxRoot;
+        private Image frameFxMaskImage;
+        private Mask frameFxMask;
+        private RectMask2D frameFxRectMask;
 
         private void Awake()
         {
@@ -73,15 +90,72 @@ namespace UI.Battle.View
             }
 
             DisableRaycastOnDecorations();
+            DisableBuiltInColorTint();
             EnsureRangeSegmentBarView();
+            EnsureHoverOverlay();
+            EnsureRecastFillImage();
             EnsurePartLockOverlay();
             EnsureChromeLabelsResolved();
+            BindHoverPointerEvents();
             if (!HasConfiguredRangeSegments())
             {
                 MoveRangeSegmentBarView.ApplyDefaultSprites(rangeSegments, ref rangeActiveSprite, ref rangeInactiveSprite);
             }
 
             ApplyChromeLabels();
+            RefreshHighlightVisual();
+        }
+
+        /// <summary>
+        /// SelectableのColorTintが背景色を上書きしないよう無効化する
+        /// </summary>
+        private void DisableBuiltInColorTint()
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            button.transition = Selectable.Transition.None;
+        }
+
+        /// <summary>
+        /// ホバー強調用のポインターイベントをボタンへ直接登録する
+        /// </summary>
+        private void BindHoverPointerEvents()
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            EventTrigger trigger = button.GetComponent<EventTrigger>();
+            if (trigger == null)
+            {
+                trigger = button.gameObject.AddComponent<EventTrigger>();
+            }
+
+            AddHoverTrigger(trigger, EventTriggerType.PointerEnter, true);
+            AddHoverTrigger(trigger, EventTriggerType.PointerExit, false);
+        }
+
+        private void AddHoverTrigger(EventTrigger trigger, EventTriggerType type, bool highlighted)
+        {
+            var entry = new EventTrigger.Entry { eventID = type };
+            entry.callback.AddListener(_ => SetHighlighted(highlighted));
+            trigger.triggers.Add(entry);
+        }
+
+        /// <inheritdoc/>
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            SetHighlighted(true);
+        }
+
+        /// <inheritdoc/>
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            SetHighlighted(false);
         }
 
         /// <summary>
@@ -152,7 +226,7 @@ namespace UI.Battle.View
         public void SetHighlighted(bool highlighted)
         {
             isHighlighted = highlighted;
-            RefreshBackgroundColor();
+            RefreshHighlightVisual();
             if (partLockOverlay != null)
             {
                 partLockOverlay.SetMessageHoverVisible(highlighted);
@@ -208,8 +282,9 @@ namespace UI.Battle.View
             isUsable = move.Usable;
             SetVisualUsable(move.Usable);
             ApplyPartLockOverlay(move.LockedByMissingPart);
+            ApplyRecastFill(move.RecastReady01);
             ApplyRangeSegments(move.RangeMin, move.RangeMax, maxDistance, move.Usable);
-            RefreshBackgroundColor();
+            RefreshHighlightVisual();
         }
 
         /// <summary>
@@ -297,6 +372,385 @@ namespace UI.Battle.View
             BindPartLockOverlayMask();
         }
 
+        /// <summary>
+        /// リキャストとホバー共通の枠クリップルートを解決する
+        /// </summary>
+        private Transform EnsureFrameFxRoot()
+        {
+            if (frameFxRoot != null)
+            {
+                ConfigureFrameFxRoot(frameFxRoot);
+                return frameFxRoot;
+            }
+
+            Transform existing = FindFrameFxRootTransform();
+            if (existing != null)
+            {
+                frameFxRoot = existing;
+                ConfigureFrameFxRoot(frameFxRoot);
+                return frameFxRoot;
+            }
+
+            Transform maskParent = ResolveFrameMaskParent();
+            var rootObject = new GameObject(
+                FrameFxRootName,
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(Image),
+                typeof(LayoutElement),
+                typeof(Mask),
+                typeof(RectMask2D));
+            frameFxRoot = rootObject.transform;
+            frameFxRoot.SetParent(maskParent, false);
+            ConfigureFrameFxRoot(frameFxRoot);
+            return frameFxRoot;
+        }
+
+        private void ConfigureFrameFxRoot(Transform root)
+        {
+            if (root == null)
+            {
+                return;
+            }
+
+            // SlotFrameの子にMaskを置くと親枠のマテリアルが半透明化するため
+            // 攻撃カード直下に置き部位ロックと同じく枠スプライトでクリップする
+            if (root.parent != transform)
+            {
+                root.SetParent(transform, false);
+            }
+
+            StretchIgnoreLayoutRect((RectTransform)root);
+            PlaceFrameFxRootInHierarchy(root);
+
+            frameFxMaskImage = root.GetComponent<Image>();
+            if (frameFxMaskImage == null)
+            {
+                frameFxMaskImage = root.gameObject.AddComponent<Image>();
+            }
+
+            frameFxMask = root.GetComponent<Mask>();
+            if (frameFxMask == null)
+            {
+                frameFxMask = root.gameObject.AddComponent<Mask>();
+            }
+
+            frameFxRectMask = root.GetComponent<RectMask2D>();
+            if (frameFxRectMask == null)
+            {
+                frameFxRectMask = root.gameObject.AddComponent<RectMask2D>();
+            }
+
+            BindFrameFxMask();
+            ProtectButtonVisualsFromMask();
+        }
+
+        private void PlaceFrameFxRootInHierarchy(Transform root)
+        {
+            if (root == null)
+            {
+                return;
+            }
+
+            root.SetAsLastSibling();
+            if (partLockOverlay != null)
+            {
+                partLockOverlay.transform.SetAsLastSibling();
+            }
+        }
+
+        private void BindFrameFxMask()
+        {
+            if (frameFxMaskImage == null || frameFxMask == null || frameFxRectMask == null)
+            {
+                return;
+            }
+
+            Image frame = ResolveButtonFrameImage();
+            if (frame != null && frame.sprite != null)
+            {
+                frameFxMaskImage.sprite = frame.sprite;
+                frameFxMaskImage.type = frame.type;
+                frameFxMaskImage.pixelsPerUnitMultiplier = frame.pixelsPerUnitMultiplier;
+                frameFxMaskImage.preserveAspect = false;
+                frameFxMaskImage.fillCenter = frame.fillCenter;
+            }
+            else
+            {
+                frameFxMaskImage.sprite = ResolveUiWhiteSprite();
+                frameFxMaskImage.type = Image.Type.Simple;
+                frameFxMaskImage.preserveAspect = false;
+            }
+
+            // 枠クリップ専用マスクは常に不透明の白(表示は出さない)
+            frameFxMaskImage.color = Color.white;
+            frameFxMaskImage.raycastTarget = false;
+            frameFxMaskImage.maskable = false;
+            frameFxMask.showMaskGraphic = false;
+            frameFxMask.enabled = true;
+            frameFxRectMask.enabled = true;
+        }
+
+        /// <summary>
+        /// 攻撃カード本体がマスク対象に巻き込まれて薄くなるのを防ぐ
+        /// </summary>
+        private void ProtectButtonVisualsFromMask()
+        {
+            MaskableGraphic[] graphics = GetComponentsInChildren<MaskableGraphic>(true);
+            for (int i = 0; i < graphics.Length; i++)
+            {
+                MaskableGraphic graphic = graphics[i];
+                if (graphic == null)
+                {
+                    continue;
+                }
+
+                // FrameFxの子のみクリップ対象
+                if (frameFxRoot != null && graphic.transform.IsChildOf(frameFxRoot))
+                {
+                    if (graphic != frameFxMaskImage)
+                    {
+                        graphic.maskable = true;
+                    }
+
+                    continue;
+                }
+
+                graphic.maskable = false;
+            }
+        }
+
+        private Transform FindFrameFxRootTransform()
+        {
+            Transform direct = transform.Find(FrameFxRootName);
+            if (direct != null)
+            {
+                return direct;
+            }
+
+            Image frame = ResolveButtonFrameImage();
+            if (frame != null)
+            {
+                Transform underFrame = frame.transform.Find(FrameFxRootName);
+                if (underFrame != null)
+                {
+                    return underFrame;
+                }
+
+                // 旧ルート名から移行
+                Transform legacyRecast = frame.transform.Find("RecastFillRoot");
+                if (legacyRecast != null)
+                {
+                    legacyRecast.name = FrameFxRootName;
+                    return legacyRecast;
+                }
+
+                Transform legacyHover = frame.transform.Find("HoverOverlayRoot");
+                if (legacyHover != null)
+                {
+                    legacyHover.name = FrameFxRootName;
+                    return legacyHover;
+                }
+            }
+
+            Transform legacyRoot = transform.Find("RecastFillRoot");
+            if (legacyRoot != null)
+            {
+                legacyRoot.name = FrameFxRootName;
+                return legacyRoot;
+            }
+
+            Transform legacyHoverOnRoot = transform.Find("HoverOverlayRoot");
+            if (legacyHoverOnRoot != null)
+            {
+                legacyHoverOnRoot.name = FrameFxRootName;
+                return legacyHoverOnRoot;
+            }
+
+            return null;
+        }
+
+        private Transform ResolveFrameMaskParent()
+        {
+            return transform;
+        }
+
+        private static void StretchIgnoreLayoutRect(RectTransform rectTransform)
+        {
+            if (rectTransform == null)
+            {
+                return;
+            }
+
+            rectTransform.anchorMin = Vector2.zero;
+            rectTransform.anchorMax = Vector2.one;
+            rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            rectTransform.offsetMin = Vector2.zero;
+            rectTransform.offsetMax = Vector2.zero;
+            rectTransform.localScale = Vector3.one;
+            rectTransform.localRotation = Quaternion.identity;
+
+            if (!rectTransform.TryGetComponent(out LayoutElement layoutElement))
+            {
+                layoutElement = rectTransform.gameObject.AddComponent<LayoutElement>();
+            }
+
+            layoutElement.ignoreLayout = true;
+        }
+
+        private Image ResolveButtonFrameImage()
+        {
+            if (buttonBackground != null)
+            {
+                return buttonBackground;
+            }
+
+            if (button != null)
+            {
+                return button.targetGraphic as Image;
+            }
+
+            return null;
+        }
+
+        private Image ResolveOrCreateChildImage(Transform parent, string childName)
+        {
+            if (parent == null)
+            {
+                return null;
+            }
+
+            Transform child = parent.Find(childName);
+            if (child != null && child.TryGetComponent(out Image existing))
+            {
+                StretchIgnoreLayoutRect((RectTransform)child);
+                return existing;
+            }
+
+            // 旧階層からの引き上げ
+            Image relocated = FindDescendantImageNamed(childName);
+            if (relocated != null)
+            {
+                relocated.transform.SetParent(parent, false);
+                StretchIgnoreLayoutRect(relocated.rectTransform);
+                return relocated;
+            }
+
+            var childObject = new GameObject(
+                childName,
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(Image));
+            Transform childTransform = childObject.transform;
+            childTransform.SetParent(parent, false);
+            StretchIgnoreLayoutRect((RectTransform)childTransform);
+            return childObject.GetComponent<Image>();
+        }
+
+        private Image FindDescendantImageNamed(string objectName)
+        {
+            Transform[] children = GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < children.Length; i++)
+            {
+                Transform child = children[i];
+                if (child != null
+                    && child.name == objectName
+                    && child.TryGetComponent(out Image image))
+                {
+                    return image;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// リキャストゲージImageを共有枠マスク内に解決する
+        /// </summary>
+        private void EnsureRecastFillImage()
+        {
+            Transform root = EnsureFrameFxRoot();
+            if (recastFillImage == null)
+            {
+                recastFillImage = ResolveOrCreateChildImage(root, RecastFillName);
+            }
+            else if (recastFillImage.transform.parent != root)
+            {
+                recastFillImage.transform.SetParent(root, false);
+                StretchIgnoreLayoutRect(recastFillImage.rectTransform);
+            }
+
+            ConfigureRecastFillImage(recastFillImage);
+            // リキャストはホバーの下
+            if (hoverOverlayImage != null)
+            {
+                recastFillImage.transform.SetSiblingIndex(0);
+                hoverOverlayImage.transform.SetAsLastSibling();
+            }
+        }
+
+        private void ConfigureRecastFillImage(Image fillImage)
+        {
+            if (fillImage == null)
+            {
+                return;
+            }
+
+            fillImage.raycastTarget = false;
+            fillImage.maskable = true;
+            fillImage.type = Image.Type.Filled;
+            fillImage.fillMethod = Image.FillMethod.Vertical;
+            fillImage.fillOrigin = (int)Image.OriginVertical.Bottom;
+            fillImage.fillClockwise = true;
+            fillImage.material = null;
+            fillImage.color = RecastFillColor;
+            if (fillImage.sprite == null)
+            {
+                fillImage.sprite = ResolveUiWhiteSprite();
+            }
+        }
+
+        private void ApplyRecastFill(float recastReady01)
+        {
+            EnsureRecastFillImage();
+            if (recastFillImage == null)
+            {
+                return;
+            }
+
+            float ready = Mathf.Clamp01(recastReady01);
+            bool showFill = ready < 0.999f;
+            recastFillImage.enabled = showFill;
+            if (!showFill)
+            {
+                recastFillImage.fillAmount = 1f;
+                return;
+            }
+
+            recastFillImage.fillAmount = ready;
+            recastFillImage.material = null;
+            recastFillImage.color = RecastFillColor;
+            BindFrameFxMask();
+        }
+
+        private static Sprite cachedUiWhiteSprite;
+
+        private static Sprite ResolveUiWhiteSprite()
+        {
+            if (cachedUiWhiteSprite != null)
+            {
+                return cachedUiWhiteSprite;
+            }
+
+            Texture2D texture = Texture2D.whiteTexture;
+            cachedUiWhiteSprite = Sprite.Create(
+                texture,
+                new Rect(0f, 0f, texture.width, texture.height),
+                new Vector2(0.5f, 0.5f),
+                100f);
+            return cachedUiWhiteSprite;
+        }
+
         private void BindPartLockOverlayMask()
         {
             if (partLockOverlay == null)
@@ -304,13 +758,7 @@ namespace UI.Battle.View
                 return;
             }
 
-            Image frame = buttonBackground;
-            if (frame == null && button != null)
-            {
-                frame = button.targetGraphic as Image;
-            }
-
-            partLockOverlay.ApplyClipMask(frame);
+            partLockOverlay.ApplyClipMask(ResolveButtonFrameImage());
         }
 
         private void ApplyPartLockOverlay(bool lockedByMissingPart)
@@ -471,6 +919,91 @@ namespace UI.Battle.View
             SetTextAlpha(rangeLabelText, alpha);
         }
 
+        /// <summary>
+        /// ホバー用グレーオーバーレイを共有枠マスク内に解決する
+        /// </summary>
+        private void EnsureHoverOverlay()
+        {
+            Transform root = EnsureFrameFxRoot();
+            if (hoverOverlayImage == null)
+            {
+                hoverOverlayImage = ResolveOrCreateChildImage(root, HoverOverlayName);
+            }
+            else if (hoverOverlayImage.transform.parent != root)
+            {
+                hoverOverlayImage.transform.SetParent(root, false);
+                StretchIgnoreLayoutRect(hoverOverlayImage.rectTransform);
+            }
+
+            ConfigureHoverOverlay(hoverOverlayImage);
+            // ホバーはリキャストより手前
+            hoverOverlayImage.transform.SetAsLastSibling();
+            if (recastFillImage != null)
+            {
+                recastFillImage.transform.SetSiblingIndex(0);
+            }
+        }
+
+        private void ConfigureHoverOverlay(Image overlay)
+        {
+            if (overlay == null)
+            {
+                return;
+            }
+
+            overlay.raycastTarget = false;
+            overlay.maskable = true;
+            overlay.type = Image.Type.Simple;
+            overlay.preserveAspect = false;
+            overlay.color = ResolveHoverOverlayColor();
+            if (overlay.sprite == null)
+            {
+                overlay.sprite = ResolveUiWhiteSprite();
+            }
+
+            overlay.enabled = isHighlighted;
+        }
+
+        private Color ResolveHoverOverlayColor()
+        {
+            Color color = highlightBackgroundColor;
+            // 半透明を保証(Inspectorの不透明設定でも最大0.45)
+            if (color.a >= 0.99f)
+            {
+                color.a = HoverOverlayColor.a;
+            }
+            else if (color.a > 0.45f)
+            {
+                color.a = 0.45f;
+            }
+
+            if (color.a <= 0.01f)
+            {
+                return HoverOverlayColor;
+            }
+
+            return color;
+        }
+
+        private void RefreshHighlightVisual()
+        {
+            EnsureHoverOverlay();
+            RefreshBackgroundColor();
+            BindFrameFxMask();
+
+            if (hoverOverlayImage == null)
+            {
+                return;
+            }
+
+            // マスクは切らずホバーImageのみ切替える(リキャスト表示を壊さない)
+            hoverOverlayImage.enabled = isHighlighted;
+            if (isHighlighted)
+            {
+                hoverOverlayImage.color = ResolveHoverOverlayColor();
+            }
+        }
+
         private void RefreshBackgroundColor()
         {
             if (buttonBackground == null)
@@ -478,29 +1011,28 @@ namespace UI.Battle.View
                 return;
             }
 
+            // 枠画像ありは常に不透明の乗算(ホバーの半透明はHoverOverlay側)
             if (UsesFrameSpriteBackground())
             {
-                buttonBackground.color = isUsable && isHighlighted
-                    ? highlightBackgroundColor
-                    : Color.white;
+                buttonBackground.color = isUsable
+                    ? Color.white
+                    : new Color(0.75f, 0.75f, 0.76f, 1f);
                 return;
             }
 
             Color target = unusableBackgroundColor;
             if (isUsable)
             {
-                target = isHighlighted ? highlightBackgroundColor : usableBackgroundColor;
+                target = usableBackgroundColor;
             }
 
+            target.a = 1f;
             buttonBackground.color = target;
         }
 
         private bool UsesFrameSpriteBackground()
         {
-            return buttonBackground != null
-                && buttonBackground.sprite != null
-                && button != null
-                && button.transition == Selectable.Transition.ColorTint;
+            return buttonBackground != null && buttonBackground.sprite != null;
         }
 
         private bool HasConfiguredRangeSegments()

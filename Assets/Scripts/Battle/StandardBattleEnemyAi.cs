@@ -47,7 +47,7 @@ namespace Battle
 
             bool canAttackNow = context.AttackCooldownRemaining <= 0f
                 && bestMove >= 0
-                && context.Self.CanUseMove(bestMove, context.Distance);
+                && context.Self.CanUseMove(bestMove, context.Distance, context.MaxDistance);
 
             int attackMoveIndex = -1;
             if (canAttackNow)
@@ -86,7 +86,7 @@ namespace Battle
             if (attackCommitRemaining < 0f)
             {
                 int desiredMove = MaybePickAlternateMove(bestMove, secondBestMove);
-                if (desiredMove < 0 || !context.Self.CanUseMove(desiredMove, context.Distance))
+                if (desiredMove < 0 || !context.Self.CanUseMove(desiredMove, context.Distance, context.MaxDistance))
                 {
                     ClearAttackCommit();
                     return -1;
@@ -100,7 +100,7 @@ namespace Battle
                     : Random.Range(min, max);
             }
             else if (pendingAttackMoveIndex < 0
-                || !context.Self.CanUseMove(pendingAttackMoveIndex, context.Distance))
+                || !context.Self.CanUseMove(pendingAttackMoveIndex, context.Distance, context.MaxDistance))
             {
                 ClearAttackCommit();
                 return -1;
@@ -138,7 +138,7 @@ namespace Battle
 
             bool canAttackNow = bestMove >= 0
                 && context.AttackCooldownRemaining <= 0f
-                && context.Self.CanUseMove(bestMove, context.Distance);
+                && context.Self.CanUseMove(bestMove, context.Distance, context.MaxDistance);
             if (canAttackNow)
             {
                 return false;

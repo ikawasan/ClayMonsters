@@ -17,7 +17,8 @@ namespace UI.Battle.Interface
             float gutsCost,
             float power,
             MoveTargetPartId targetPartId,
-            MoveTargetPartId requiredPartId)
+            MoveTargetPartId requiredPartId,
+            float recastReady01)
         {
             Name = name;
             Usable = usable;
@@ -28,6 +29,7 @@ namespace UI.Battle.Interface
             Power = power;
             TargetPartId = targetPartId;
             RequiredPartId = requiredPartId;
+            RecastReady01 = recastReady01;
         }
 
         public string Name { get; }
@@ -44,6 +46,11 @@ namespace UI.Battle.Interface
         public float Power { get; }
         public MoveTargetPartId TargetPartId { get; }
         public MoveTargetPartId RequiredPartId { get; }
+
+        /// <summary>
+        /// リキャスト準備完了度0=開始直後1=使用可
+        /// </summary>
+        public float RecastReady01 { get; }
     }
 
     /// <summary>

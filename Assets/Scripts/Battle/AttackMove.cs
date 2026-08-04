@@ -15,7 +15,8 @@ namespace Battle
             TargetDestroyPart = MotionPartRequirement.GetTargetDestroyPart(motion);
             Power = MotionPartRequirement.GetPower(motion);
 
-            Vector2 range = MotionPartRequirement.GetRange(motion);
+            RangeBand = MotionPartRequirement.GetRangeBand(motion);
+            Vector2 range = MotionPartRequirement.GetRange(RangeBand, BattleDistanceBandResolver.DefaultMaxDistance);
             RangeMin = range.x;
             RangeMax = range.y;
 
@@ -45,6 +46,11 @@ namespace Battle
         /// 威力倍率。
         /// </summary>
         public float Power { get; }
+
+        /// <summary>
+        /// 技が有効な距離帯(短中長のいずれか1帯)
+        /// </summary>
+        public BattleDistanceBand RangeBand { get; }
 
         /// <summary>
         /// 使用できる最小間合い。
@@ -87,11 +93,24 @@ namespace Battle
         public string DisplayName => MotionPartRequirement.GetDisplayName(Motion);
 
         /// <summary>
-        /// 指定の間合いがこの技の射程内かを返す。
+        /// 指定の間合いがこの技の射程帯内かを返す。
         /// </summary>
         public bool IsInRange(float distance)
         {
-            return distance >= RangeMin && distance <= RangeMax;
+            return IsInRange(distance, BattleDistanceBandResolver.DefaultMaxDistance);
+        }
+
+        /// <summary>
+        /// 指定の間合いがこの技の射程帯内かを返す。
+        /// </summary>
+        /// <param name="distance">現在間合い</param>
+        /// <param name="maxDistance">最大間合い</param>
+        public bool IsInRange(float distance, float maxDistance)
+        {
+            float safeMax = maxDistance > 0f
+                ? maxDistance
+                : BattleDistanceBandResolver.DefaultMaxDistance;
+            return BattleDistanceBandResolver.Resolve(distance, safeMax) == RangeBand;
         }
     }
 }

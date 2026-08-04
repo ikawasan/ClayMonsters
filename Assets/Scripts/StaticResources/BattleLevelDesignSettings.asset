@@ -32,3 +32,4 @@ MonoBehaviour:
   stepDuration: 0.25
   stepCooldown: 1.2
   partRepairSecondsPerLimb: 3
+  moveRecastBaseSeconds: 14

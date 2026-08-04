@@ -34,6 +34,42 @@ namespace Battle
         }
 
         /// <summary>
+        /// 技リキャストの基準秒数(参照速度時)
+        /// </summary>
+        public const float MoveRecastBaseSeconds = 14f;
+
+        /// <summary>
+        /// 技リキャストの最短秒数
+        /// </summary>
+        public const float MoveRecastMinSeconds = 4.5f;
+
+        /// <summary>
+        /// 技リキャストの最長秒数
+        /// </summary>
+        public const float MoveRecastMaxSeconds = 22f;
+
+        /// <summary>
+        /// リキャスト計算の参照速度(この速度で基準秒数になる)
+        /// </summary>
+        public const float MoveRecastReferenceSpeed = 100f;
+
+        /// <summary>
+        /// 速度ステータスから技リキャスト時間(秒)を返す
+        /// 速度が高いほど短くなる
+        /// </summary>
+        /// <param name="speed">速度ステータス</param>
+        /// <param name="baseSeconds">基準秒数</param>
+        public static float ComputeMoveRecastSeconds(int speed, float baseSeconds)
+        {
+            float baseDuration = baseSeconds > 0f ? baseSeconds : MoveRecastBaseSeconds;
+            int safeSpeed = Mathf.Max(1, speed);
+            float duration = baseDuration
+                * MoveRecastReferenceSpeed
+                / safeSpeed;
+            return Mathf.Clamp(duration, MoveRecastMinSeconds, MoveRecastMaxSeconds);
+        }
+
+        /// <summary>
         /// 命中率を4段階ラベルへ変換する
         /// </summary>
         public static string ToHitRateLabel(float hitRate)
