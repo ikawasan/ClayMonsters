@@ -1,5 +1,6 @@
 using Extensions;
 using Unity.Netcode;
+using Unity.Netcode.Transports.UTP;
 using UnityEngine;
 
 namespace Scene.BattlePVPScene.Service
@@ -45,12 +46,28 @@ namespace Scene.BattlePVPScene.Service
                 return;
             }
 
+            try
+            {
+                // ソケット側の切断でネイティブ待機を早めに解放する
+                if (manager.NetworkConfig != null
+                    && manager.NetworkConfig.NetworkTransport is UnityTransport unityTransport)
+                {
+                    unityTransport.DisconnectLocalClient();
+                }
+            }
+            catch (System.Exception exception)
+            {
+                Debug.LogWarning(
+                    $"[BattlePvpNetworkExitCleanup] Transport disconnect failed: {exception.Message}");
+            }
+
             if (!manager.IsListening && !manager.IsClient && !manager.IsServer && !manager.IsHost)
             {
                 return;
             }
 
-            manager.Shutdown();
+            // discardMessageQueueで同期待ちを避けて止める
+            manager.Shutdown(true);
         }
     }
 }
