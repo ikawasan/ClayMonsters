@@ -56,7 +56,8 @@ namespace SaveData
         public float PointsGainPercent { get; }
 
         /// <summary>
-        /// 継承ステ上昇百分率加算
+        /// 継承ステ上昇百分率乗算
+        /// 基本継承量の合計に対する追加割合
         /// </summary>
         public int InheritancePercentBonus { get; }
 

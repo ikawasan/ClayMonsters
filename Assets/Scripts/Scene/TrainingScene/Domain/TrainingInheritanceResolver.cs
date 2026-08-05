@@ -129,7 +129,7 @@ namespace Scene.TrainingScene.Domain
             {
                 message += "\n" + LocalizedText.GetOrFallback(
                     GameTextKeys.TrainingInheritanceAttackCandidate,
-                    "技候補{n}: {name}",
+                    "継承技{n}: {name}",
                     new Dictionary<string, object>
                     {
                         { "n", 1 },
@@ -145,7 +145,7 @@ namespace Scene.TrainingScene.Domain
             {
                 message += "\n" + LocalizedText.GetOrFallback(
                     GameTextKeys.TrainingInheritanceAttackCandidate,
-                    "技候補{n}: {name}",
+                    "継承技{n}: {name}",
                     new Dictionary<string, object>
                     {
                         { "n", 2 },
@@ -157,33 +157,41 @@ namespace Scene.TrainingScene.Domain
                     });
             }
 
-            if (result.InheritedAttackFromParentA.HasValue
-                || result.InheritedAttackFromParentB.HasValue)
-            {
-                message += "\n" + LocalizedText.GetOrFallback(
-                    GameTextKeys.TrainingInheritanceContinueSwap,
-                    "続けて技の入れ替えスロットを選んでください");
-            }
-
             return message;
         }
 
         /// <summary>
+        /// 継承技の入れ替え案内文言を返す
+        /// 継承技があるときのみ非空
+        /// </summary>
+        /// <param name="result">継承結果</param>
+        public static string FormatContinueSwapHint(TrainingInheritanceResult result)
+        {
+            if (result == null
+                || !result.Applied
+                || (!result.InheritedAttackFromParentA.HasValue
+                    && !result.InheritedAttackFromParentB.HasValue))
+            {
+                return string.Empty;
+            }
+
+            return LocalizedText.GetOrFallback(
+                GameTextKeys.TrainingInheritanceContinueSwap,
+                "続けて技の入れ替えスロットを選んでください");
+        }
+
+        /// <summary>
         /// 1体の継承元から得られるステータス上昇を返す
+        /// 基本割合で計算したあとスキルツリー乗算を掛ける
         /// </summary>
         /// <param name="parentStatus">継承元ステータス</param>
+        /// <param name="inheritancePercentBonus">スキルツリー等の乗算用百分率</param>
         public static TrainingStatGain BuildStatGainFromParent(
             ModelStatus parentStatus,
             int inheritancePercentBonus = 0)
         {
-            ModelStatus parent = parentStatus ?? new ModelStatus();
-            int percent = ResolveInheritancePercent(inheritancePercentBonus);
-            return new TrainingStatGain(
-                CalcInheritedStatFromParent(parent.hp, percent),
-                CalcInheritedStatFromParent(parent.attack, percent),
-                CalcInheritedStatFromParent(parent.defense, percent),
-                CalcInheritedStatFromParent(parent.speed, percent),
-                CalcInheritedStatFromParent(parent.hit, percent));
+            TrainingStatGain baseGain = BuildBaseStatGainFromParent(parentStatus);
+            return ApplySkillInheritanceBonus(baseGain, inheritancePercentBonus);
         }
 
         /// <summary>
@@ -199,7 +207,7 @@ namespace Scene.TrainingScene.Domain
         /// 継承元ホバー用の上昇値文言を返す
         /// </summary>
         /// <param name="parent">継承元スロット</param>
-        /// <param name="inheritancePercentBonus">スキルツリー等の加算百分率</param>
+        /// <param name="inheritancePercentBonus">スキルツリー等の乗算用百分率</param>
         public static string FormatParentStatGainPreview(
             ModelSaveSlot parent,
             int inheritancePercentBonus)
@@ -234,26 +242,52 @@ namespace Scene.TrainingScene.Domain
             ModelStatus parentB,
             int inheritancePercentBonus = 0)
         {
-            return BuildStatGainFromParent(parentA, inheritancePercentBonus)
-                .Add(BuildStatGainFromParent(parentB, inheritancePercentBonus));
+            // 親ごとの基本10%を合算してからスキル乗算する
+            TrainingStatGain baseGain = BuildBaseStatGainFromParent(parentA)
+                .Add(BuildBaseStatGainFromParent(parentB));
+            return ApplySkillInheritanceBonus(baseGain, inheritancePercentBonus);
         }
 
-        private static int ResolveInheritancePercent(int inheritancePercentBonus)
+        private static TrainingStatGain BuildBaseStatGainFromParent(ModelStatus parentStatus)
         {
-            int percent = TrainingSettings.InheritanceStatPercentPerParent
-                + Mathf.Max(0, inheritancePercentBonus);
-            return Mathf.Clamp(
-                percent,
+            ModelStatus parent = parentStatus ?? new ModelStatus();
+            int percent = TrainingSettings.InheritanceStatPercentPerParent;
+            return new TrainingStatGain(
+                CalcInheritedStatFromParent(parent.hp, percent),
+                CalcInheritedStatFromParent(parent.attack, percent),
+                CalcInheritedStatFromParent(parent.defense, percent),
+                CalcInheritedStatFromParent(parent.speed, percent),
+                CalcInheritedStatFromParent(parent.hit, percent));
+        }
+
+        private static TrainingStatGain ApplySkillInheritanceBonus(
+            TrainingStatGain baseGain,
+            int inheritancePercentBonus)
+        {
+            int bonus = Mathf.Clamp(
+                Mathf.Max(0, inheritancePercentBonus),
                 0,
-                TrainingSettings.InheritanceStatPercentMaxPerParent);
+                TrainingSettings.InheritanceSkillBonusMaxPercent);
+            if (bonus <= 0)
+            {
+                return baseGain;
+            }
+
+            // 基本上昇量の合計に対して(100+ボーナス)/100を乗算する
+            int multiplier = 100 + bonus;
+            return new TrainingStatGain(
+                baseGain.Hp * multiplier / 100,
+                baseGain.Attack * multiplier / 100,
+                baseGain.Defense * multiplier / 100,
+                baseGain.Speed * multiplier / 100,
+                baseGain.Hit * multiplier / 100);
         }
 
         private static int CalcInheritedStatFromParent(int parentStat, int percent)
         {
-            // 親ステ×割合の切り捨て後に上昇量上限を掛ける
+            // 親ステ×基本割合の切り捨て
             int safeStat = Mathf.Max(0, parentStat);
-            int rawGain = safeStat * Mathf.Max(0, percent) / 100;
-            return Mathf.Min(rawGain, TrainingSettings.InheritanceStatGainMaxPerParent);
+            return safeStat * Mathf.Max(0, percent) / 100;
         }
 
         private static MotionType? TryPickInheritedAttack(

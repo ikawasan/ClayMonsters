@@ -370,20 +370,16 @@ namespace Scene.TrainingScene.Domain
         public const int InheritanceParentCount = 2;
 
         /// <summary>
-        /// 継承時に各親ステータスから加算する割合(百分率)
-        /// 全ステータス共通
+        /// 継承時に各親ステータスから加算する基本割合(百分率)
+        /// 全ステータス共通スキルツリーとは別に先に計算する
         /// </summary>
         public const int InheritanceStatPercentPerParent = 10;
 
         /// <summary>
-        /// スキルツリー加算込みの親あたり継承割合上限(百分率)
+        /// スキルツリーによる継承上昇量の乗算上限(百分率)
+        /// 基本継承量の合計に対して最大この分だけ乗算する
         /// </summary>
-        public const int InheritanceStatPercentMaxPerParent = 20;
-
-        /// <summary>
-        /// 親1体から各ステータスへ加算できる上昇量の上限
-        /// </summary>
-        public const int InheritanceStatGainMaxPerParent = 100;
+        public const int InheritanceSkillBonusMaxPercent = 30;
 
         /// <summary>
         /// 継承演出の配置待ち秒数

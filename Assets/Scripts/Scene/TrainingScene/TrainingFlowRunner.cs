@@ -961,6 +961,14 @@ namespace Scene.TrainingScene
             await hudView.WaitContinueAsync(cancellationToken);
             hudView.ClearOverlayMessage();
 
+            string continueHint = TrainingInheritanceResolver.FormatContinueSwapHint(result);
+            if (!string.IsNullOrEmpty(continueHint))
+            {
+                hudView.ShowOverlayMessage(continueHint);
+                await hudView.WaitContinueAsync(cancellationToken);
+                hudView.ClearOverlayMessage();
+            }
+
             List<MotionType> attacks = ModelAttackMotionUtility.Normalize(
                 result.AttackMotions,
                 TrainingSettings.AttackSlotCount);
