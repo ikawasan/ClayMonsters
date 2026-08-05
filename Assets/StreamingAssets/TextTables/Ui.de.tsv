@@ -537,7 +537,7 @@ Common.Decide	OK
 Training.ModeSelectBody	Manuelles Training: Wähle Aktionen in Periode 1-6 selbst.\nMittag: Shop. Nach der Schule: Kampf.\nAuto-Training läuft {days} Tage automatisch.
 Training.Inheritance.NoBonus	Training ohne Vererbungsbonus starten
 Training.Inheritance.BonusStats	Bonus HP+{hp} Ang+{atk} Vert+{def} Ges+{spd} Trf+{hit}
-Training.Inheritance.AttackCandidate	Attacken-Kandidat {n}: {name}
+Training.Inheritance.AttackCandidate	Vererbte Attacke {n}: {name}
 Training.Inheritance.ContinueSwap	Wähle als Nächstes den Angriffs-Slot zum Tauschen
 Training.Inheritance.ParentDefault	Elter
 Training.Inheritance.ParentPreview	{name}\nVererbung HP+{hp} Ang+{atk} Vert+{def} Ges+{spd} Trf+{hit}

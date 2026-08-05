@@ -537,7 +537,7 @@ Common.Decide	决定
 Training.ModeSelectBody	细致育成：1〜6节课由你选择行动。\n午休可商店，放学后是战斗。\n自动育成会自动推进{days}天。
 Training.Inheritance.NoBonus	无继承加成开始育成
 Training.Inheritance.BonusStats	加成 HP+{hp} 攻击+{atk} 防御+{def} 速度+{spd} 命中+{hit}
-Training.Inheritance.AttackCandidate	招式候选{n}: {name}
+Training.Inheritance.AttackCandidate	继承招式{n}: {name}
 Training.Inheritance.ContinueSwap	请接着选择要替换的招式栏位
 Training.Inheritance.ParentDefault	继承源
 Training.Inheritance.ParentPreview	{name}\n继承提升 HP+{hp} 攻击+{atk} 防御+{def} 速度+{spd} 命中+{hit}

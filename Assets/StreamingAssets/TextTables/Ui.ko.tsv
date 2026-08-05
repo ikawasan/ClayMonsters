@@ -537,7 +537,7 @@ Common.Decide	결정
 Training.ModeSelectBody	느긋한 육성: 1~6교시 행동을 직접 고릅니다.\n점심에는 상점, 방과 후에는 전투입니다.\n자동 육성은 {days}일을 자동으로 진행합니다.
 Training.Inheritance.NoBonus	보너스 없이 육성을 시작합니다
 Training.Inheritance.BonusStats	보너스 HP+{hp} 공격+{atk} 방어+{def} 속도+{spd} 명중+{hit}
-Training.Inheritance.AttackCandidate	기술 후보 {n}: {name}
+Training.Inheritance.AttackCandidate	계승 기술 {n}: {name}
 Training.Inheritance.ContinueSwap	이어서 교체할 기술 슬롯을 선택하세요
 Training.Inheritance.ParentDefault	계승원
 Training.Inheritance.ParentPreview	{name}\n계승 상승 HP+{hp} 공격+{atk} 방어+{def} 속도+{spd} 명중+{hit}

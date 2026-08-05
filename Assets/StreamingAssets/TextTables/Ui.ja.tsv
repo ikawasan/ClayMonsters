@@ -537,7 +537,7 @@ Common.Decide	決定
 Training.ModeSelectBody	じっくり育成は1〜6時間目の行動を自分で選びます\n昼休みは売店放課後は戦闘です\n自動育成は{days}日間を自動で進行します
 Training.Inheritance.NoBonus	ボーナスなしで育成を開始します
 Training.Inheritance.BonusStats	ボーナス HP+{hp} 攻撃+{atk} 防御+{def} 速度+{spd} 命中+{hit}
-Training.Inheritance.AttackCandidate	技候補{n}: {name}
+Training.Inheritance.AttackCandidate	継承技{n}: {name}
 Training.Inheritance.ContinueSwap	続けて技の入れ替えスロットを選んでください
 Training.Inheritance.ParentDefault	継承元
 Training.Inheritance.ParentPreview	{name}\n継承上昇 HP+{hp} 攻撃+{atk} 防御+{def} 速度+{spd} 命中+{hit}

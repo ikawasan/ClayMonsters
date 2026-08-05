@@ -537,7 +537,7 @@ Common.Decide	決定
 Training.ModeSelectBody	仔細育成：1〜6節課由你選擇行動。\n午休可商店，放學後是戰鬥。\n自動育成會自動推進{days}天。
 Training.Inheritance.NoBonus	無繼承加成開始育成
 Training.Inheritance.BonusStats	加成 HP+{hp} 攻擊+{atk} 防禦+{def} 速度+{spd} 命中+{hit}
-Training.Inheritance.AttackCandidate	招式候選{n}: {name}
+Training.Inheritance.AttackCandidate	繼承招式{n}: {name}
 Training.Inheritance.ContinueSwap	請接著選擇要替換的招式欄位
 Training.Inheritance.ParentDefault	繼承源
 Training.Inheritance.ParentPreview	{name}\n繼承提升 HP+{hp} 攻擊+{atk} 防禦+{def} 速度+{spd} 命中+{hit}

@@ -537,7 +537,7 @@ Common.Decide	OK
 Training.ModeSelectBody	Entrenamiento manual: elige acciones en los periodos 1-6.\nAlmuerzo: tienda. Después: combate.\nAuto: avanza {days} días solo.
 Training.Inheritance.NoBonus	Empezar el entrenamiento sin bonificación
 Training.Inheritance.BonusStats	Bonus PV+{hp} Atq+{atk} Def+{def} Vel+{spd} Pre+{hit}
-Training.Inheritance.AttackCandidate	Movimiento candidato {n}: {name}
+Training.Inheritance.AttackCandidate	Movimiento heredado {n}: {name}
 Training.Inheritance.ContinueSwap	Luego elige la ranura de movimiento a cambiar
 Training.Inheritance.ParentDefault	Progenitor
 Training.Inheritance.ParentPreview	{name}\nHerencia PV+{hp} Atq+{atk} Def+{def} Vel+{spd} Pre+{hit}

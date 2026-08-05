@@ -537,7 +537,7 @@ Common.Decide	OK
 Training.ModeSelectBody	Entraînement manuel : choisissez les actions des périodes 1 à 6.\nPause déjeuner : boutique. Après l'école : combat.\nAuto : {days} jours automatiques.
 Training.Inheritance.NoBonus	Commencer l'entraînement sans bonus d'héritage
 Training.Inheritance.BonusStats	Bonus PV+{hp} Att+{atk} Déf+{def} Vit+{spd} Pré+{hit}
-Training.Inheritance.AttackCandidate	Candidat technique {n} : {name}
+Training.Inheritance.AttackCandidate	Technique héritée {n} : {name}
 Training.Inheritance.ContinueSwap	Choisissez ensuite l'emplacement de technique à remplacer
 Training.Inheritance.ParentDefault	Parent
 Training.Inheritance.ParentPreview	{name}\nHéritage PV+{hp} Att+{atk} Déf+{def} Vit+{spd} Pré+{hit}

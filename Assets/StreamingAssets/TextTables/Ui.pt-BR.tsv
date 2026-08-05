@@ -537,7 +537,7 @@ Common.Decide	OK
 Training.ModeSelectBody	Treino manual: escolha ações nos períodos 1-6.\nAlmoço: loja. Depois: batalha.\nAutomático avança {days} dias.
 Training.Inheritance.NoBonus	Iniciar o treino sem bônus de herança
 Training.Inheritance.BonusStats	Bônus PV+{hp} Atq+{atk} Def+{def} Vel+{spd} Pre+{hit}
-Training.Inheritance.AttackCandidate	Candidato de golpe {n}: {name}
+Training.Inheritance.AttackCandidate	Golpe herdado {n}: {name}
 Training.Inheritance.ContinueSwap	Em seguida escolha o slot de golpe a trocar
 Training.Inheritance.ParentDefault	Progenitor
 Training.Inheritance.ParentPreview	{name}\nHerança PV+{hp} Atq+{atk} Def+{def} Vel+{spd} Pre+{hit}

@@ -537,7 +537,7 @@ Common.Decide	OK
 Training.ModeSelectBody	Manual training: choose actions for periods 1-6 yourself.\nLunch: shop. After school: battle.\nAuto training runs all {days} days automatically.
 Training.Inheritance.NoBonus	Start training with no inheritance bonus
 Training.Inheritance.BonusStats	Bonus HP+{hp} Atk+{atk} Def+{def} Spd+{spd} Hit+{hit}
-Training.Inheritance.AttackCandidate	Move candidate {n}: {name}
+Training.Inheritance.AttackCandidate	Inherited move {n}: {name}
 Training.Inheritance.ContinueSwap	Next choose a move slot to replace
 Training.Inheritance.ParentDefault	Parent
 Training.Inheritance.ParentPreview	{name}\nInheritance HP+{hp} Atk+{atk} Def+{def} Spd+{spd} Hit+{hit}
