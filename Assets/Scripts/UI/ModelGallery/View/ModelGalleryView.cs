@@ -69,7 +69,9 @@ namespace UI.ModelGallery.View
         private static readonly Color LabelActiveColor = new Color(0.36f, 0.24f, 0.18f, 1f);
         private static readonly Color LabelInactiveColor = new Color(0.55f, 0.5f, 0.45f, 0.7f);
         private const string ToggleOffSpritePath = "Image/GameUi/GalleryToggle_Off";
-        private const string ToggleOnSpritePath = "Image/GameUi/GalleryToggle_On";
+        // Onは押下用で暗いため選択中は明るいHighlightedを使う
+        private const string ToggleOnSpritePath = "Image/GameUi/GalleryToggle_Highlighted";
+        private const string TogglePressedSpritePath = "Image/GameUi/GalleryToggle_On";
 
         private readonly List<UnityEngine.Object> postSlotRuntimeThumbnails = new();
         private readonly Vector3[] worldCorners = new Vector3[4];
@@ -81,6 +83,7 @@ namespace UI.ModelGallery.View
         private SlotListMode slotListMode = SlotListMode.Post;
         private Sprite toggleOffSprite;
         private Sprite toggleOnSprite;
+        private Sprite togglePressedSprite;
         private bool isClickBound;
         private bool isPostSlotScrollInitialized;
         private bool isBrowseScrollBound;
@@ -851,8 +854,8 @@ namespace UI.ModelGallery.View
         }
 
         /// <summary>
-        /// タブと並び替えToggleでSelectableのSelected/SpriteSwapとgraphicオーバーレイを使わない
-        /// 選択中はPressedスプライトと太字ラベルで示す
+        /// タブと並び替えToggleでSelectableのSelected/dark tintを使わない
+        /// 選択中は明るいHighlightスプライトと太字ラベルで示す
         /// </summary>
         private void ConfigureTabAndSortTogglesNoSelected()
         {
@@ -867,6 +870,7 @@ namespace UI.ModelGallery.View
         {
             toggleOffSprite = Resources.Load<Sprite>(ToggleOffSpritePath);
             toggleOnSprite = Resources.Load<Sprite>(ToggleOnSpritePath);
+            togglePressedSprite = Resources.Load<Sprite>(TogglePressedSpritePath);
             if (toggleOffSprite == null)
             {
                 Debug.LogError($"[ModelGalleryView] ToggleOffスプライトがありません: {ToggleOffSpritePath}", this);
@@ -874,7 +878,16 @@ namespace UI.ModelGallery.View
 
             if (toggleOnSprite == null)
             {
-                Debug.LogError($"[ModelGalleryView] ToggleOnスプライトがありません: {ToggleOnSpritePath}", this);
+                Debug.LogError(
+                    $"[ModelGalleryView] Toggle選択スプライトがありません: {ToggleOnSpritePath}",
+                    this);
+            }
+
+            if (togglePressedSprite == null)
+            {
+                Debug.LogError(
+                    $"[ModelGalleryView] Toggle押下スプライトがありません: {TogglePressedSpritePath}",
+                    this);
             }
         }
 
@@ -886,16 +899,25 @@ namespace UI.ModelGallery.View
             }
 
             toggle.navigation = new Navigation { mode = Navigation.Mode.None };
-            toggle.transition = Selectable.Transition.ColorTint;
+            // 色乗算で暗くなるのを避けスプライト差し替えのみ使う
+            toggle.transition = Selectable.Transition.SpriteSwap;
             toggle.graphic = null;
             ColorBlock colors = toggle.colors;
             colors.normalColor = Color.white;
             colors.highlightedColor = Color.white;
             colors.pressedColor = Color.white;
             colors.selectedColor = Color.white;
-            colors.disabledColor = new Color(1f, 1f, 1f, 0.55f);
+            colors.disabledColor = Color.white;
+            colors.colorMultiplier = 1f;
+            colors.fadeDuration = 0f;
             toggle.colors = colors;
-            toggle.spriteState = default;
+            toggle.spriteState = new SpriteState
+            {
+                highlightedSprite = toggleOnSprite,
+                pressedSprite = togglePressedSprite != null ? togglePressedSprite : toggleOnSprite,
+                selectedSprite = toggleOnSprite,
+                disabledSprite = toggleOffSprite
+            };
             toggle.onValueChanged.AddListener(_ => ApplyToggleActiveVisual(toggle));
             ApplyToggleActiveVisual(toggle);
         }
@@ -925,6 +947,7 @@ namespace UI.ModelGallery.View
             bool isOn = toggle.isOn;
             if (toggle.targetGraphic is Image image)
             {
+                // 選択中は暗いOnではなく明るいHighlight
                 Sprite sprite = isOn ? toggleOnSprite : toggleOffSprite;
                 if (sprite != null)
                 {
@@ -932,6 +955,7 @@ namespace UI.ModelGallery.View
                     image.type = Image.Type.Sliced;
                 }
 
+                image.color = Color.white;
                 image.CrossFadeColor(Color.white, 0f, true, true);
             }
 
