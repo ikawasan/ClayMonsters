@@ -371,6 +371,7 @@ namespace Scene.TrainingScene.Domain
 
         /// <summary>
         /// 継承時に各親ステータスから加算する割合(百分率)
+        /// 全ステータス共通
         /// </summary>
         public const int InheritanceStatPercentPerParent = 10;
 
@@ -380,30 +381,9 @@ namespace Scene.TrainingScene.Domain
         public const int InheritanceStatPercentMaxPerParent = 20;
 
         /// <summary>
-        /// 継承計算に使う親HPの参照上限
-        /// 育成後の高すぎる値をそのまま%しないための天井
+        /// 親1体から各ステータスへ加算できる上昇量の上限
         /// </summary>
-        public const int InheritanceReferenceMaxHp = 280;
-
-        /// <summary>
-        /// 継承計算に使う親攻撃の参照上限
-        /// </summary>
-        public const int InheritanceReferenceMaxAttack = 250;
-
-        /// <summary>
-        /// 継承計算に使う親防御の参照上限
-        /// </summary>
-        public const int InheritanceReferenceMaxDefense = 250;
-
-        /// <summary>
-        /// 継承計算に使う親速さの参照上限
-        /// </summary>
-        public const int InheritanceReferenceMaxSpeed = 120;
-
-        /// <summary>
-        /// 継承計算に使う親命中の参照上限
-        /// </summary>
-        public const int InheritanceReferenceMaxHit = 120;
+        public const int InheritanceStatGainMaxPerParent = 100;
 
         /// <summary>
         /// 継承演出の配置待ち秒数

@@ -179,26 +179,11 @@ namespace Scene.TrainingScene.Domain
             ModelStatus parent = parentStatus ?? new ModelStatus();
             int percent = ResolveInheritancePercent(inheritancePercentBonus);
             return new TrainingStatGain(
-                CalcInheritedStatFromParent(
-                    parent.hp,
-                    percent,
-                    TrainingSettings.InheritanceReferenceMaxHp),
-                CalcInheritedStatFromParent(
-                    parent.attack,
-                    percent,
-                    TrainingSettings.InheritanceReferenceMaxAttack),
-                CalcInheritedStatFromParent(
-                    parent.defense,
-                    percent,
-                    TrainingSettings.InheritanceReferenceMaxDefense),
-                CalcInheritedStatFromParent(
-                    parent.speed,
-                    percent,
-                    TrainingSettings.InheritanceReferenceMaxSpeed),
-                CalcInheritedStatFromParent(
-                    parent.hit,
-                    percent,
-                    TrainingSettings.InheritanceReferenceMaxHit));
+                CalcInheritedStatFromParent(parent.hp, percent),
+                CalcInheritedStatFromParent(parent.attack, percent),
+                CalcInheritedStatFromParent(parent.defense, percent),
+                CalcInheritedStatFromParent(parent.speed, percent),
+                CalcInheritedStatFromParent(parent.hit, percent));
         }
 
         /// <summary>
@@ -263,10 +248,12 @@ namespace Scene.TrainingScene.Domain
                 TrainingSettings.InheritanceStatPercentMaxPerParent);
         }
 
-        private static int CalcInheritedStatFromParent(int parentStat, int percent, int referenceMax)
+        private static int CalcInheritedStatFromParent(int parentStat, int percent)
         {
-            int capped = Mathf.Clamp(Mathf.Max(0, parentStat), 0, Mathf.Max(0, referenceMax));
-            return capped * percent / 100;
+            // 親ステ×割合の切り捨て後に上昇量上限を掛ける
+            int safeStat = Mathf.Max(0, parentStat);
+            int rawGain = safeStat * Mathf.Max(0, percent) / 100;
+            return Mathf.Min(rawGain, TrainingSettings.InheritanceStatGainMaxPerParent);
         }
 
         private static MotionType? TryPickInheritedAttack(

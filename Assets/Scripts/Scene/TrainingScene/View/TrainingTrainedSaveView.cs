@@ -53,6 +53,7 @@ namespace Scene.TrainingScene.View
         [SerializeField] private TMP_Text backToTitleButtonLabel;
 
         [Inject] private readonly IClayModelSaveService saveService;
+        [Inject] private readonly ISkillTreeService skillTreeService;
 
         private readonly List<Object> runtimeThumbnailObjects = new List<Object>();
 
@@ -596,7 +597,12 @@ namespace Scene.TrainingScene.View
             }
 
             ModelSaveSlot slot = saveService.GetSlot(ModelSavePool.TrainedPlayer, slotIndex);
-            string preview = TrainingInheritanceResolver.FormatParentStatGainPreview(slot);
+            int inheritancePercentBonus = skillTreeService != null
+                ? skillTreeService.Bonuses.InheritancePercentBonus
+                : 0;
+            string preview = TrainingInheritanceResolver.FormatParentStatGainPreview(
+                slot,
+                inheritancePercentBonus);
             if (string.IsNullOrEmpty(preview))
             {
                 return;
