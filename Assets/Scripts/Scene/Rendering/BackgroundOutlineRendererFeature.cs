@@ -269,6 +269,7 @@ namespace Scene.Rendering
                 TextureDesc fieldNormalDesc = cameraColor.GetDescriptor(renderGraph);
                 fieldNormalDesc.name = "_FieldOutlineNormals";
                 fieldNormalDesc.depthBufferBits = 0;
+                // 中間RTはMSAA不要カメラカラーとは別扱い
                 fieldNormalDesc.msaaSamples = MSAASamples.None;
                 fieldNormalDesc.format = GraphicsFormat.R16G16B16A16_SFloat;
                 fieldNormalDesc.clearBuffer = true;
@@ -310,10 +311,10 @@ namespace Scene.Rendering
                 outlineMaterial.SetFloat(NormalSensitivityId, normalSensitivity);
                 outlineMaterial.SetColor(OutlineColorId, outlineColor);
 
+                // 後段パスとカメラカラーのMSAAを一致させる(Noneに落とさない)
                 TextureDesc destinationDesc = cameraColor.GetDescriptor(renderGraph);
                 destinationDesc.name = "CameraColor-BackgroundOutline";
                 destinationDesc.depthBufferBits = 0;
-                destinationDesc.msaaSamples = MSAASamples.None;
                 TextureHandle destination = renderGraph.CreateTexture(destinationDesc);
 
                 RenderGraphUtils.BlitMaterialParameters blitParams =

@@ -12,6 +12,8 @@ namespace Scene.TitleScene
 {
     public class TitleScene : FadeInSceneBase<TitleScene.TitleTransitionData>
     {
+        [SerializeField] private TitleSkyboxRotator skyboxRotator;
+
         ITitlePresenter titlePresenter;
         TitleModelDisplay titleModelDisplay;
         TitleSceneCamera titleSceneCamera;
@@ -49,6 +51,31 @@ namespace Scene.TitleScene
             TrainingSceneContentCleanup.DestroyLeakedTrainingBackgrounds();
             titlePresenter.OnEnter();
             await PrepareSceneViewAsync(cancelToken);
+            // 暗転明け後に一回だけ開始し入場直後の空差し替えと重ねない
+            ActivateSkyboxRotator();
+        }
+
+        private void ActivateSkyboxRotator()
+        {
+            if (skyboxRotator == null)
+            {
+                skyboxRotator = GetComponent<TitleSkyboxRotator>();
+            }
+
+            if (skyboxRotator == null)
+            {
+                Debug.LogError(
+                    "[TitleScene] TitleSkyboxRotatorが未配線ですHierarchyのTitleへ配置してください",
+                    this);
+                return;
+            }
+
+            if (!skyboxRotator.enabled)
+            {
+                skyboxRotator.enabled = true;
+            }
+
+            skyboxRotator.Begin();
         }
 
         private async UniTask PrepareSceneViewAsync(CancellationToken cancelToken)
@@ -75,6 +102,11 @@ namespace Scene.TitleScene
 
         protected override UniTask OnLeave(ISceneTransitionContext context, CancellationToken cancelToken)
         {
+            if (skyboxRotator != null)
+            {
+                skyboxRotator.End();
+            }
+
             titlePresenter.OnLeave();
             titleModelDisplay.Clear();
             cameraView.SetCameraEnable(false);
