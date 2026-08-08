@@ -133,6 +133,71 @@ namespace SaveData
         }
 
         /// <summary>
+        /// GZip保存されている場合のみ圧縮バイト列をそのまま返す
+        /// 対人戦の回線転送向け
+        /// </summary>
+        /// <param name="fileName">論理ファイル名</param>
+        /// <returns>圧縮バイト列なければnull</returns>
+        public static byte[] TryReadCompressedStorageBytes(string fileName)
+        {
+            if (string.IsNullOrEmpty(fileName))
+            {
+                return null;
+            }
+
+            string path = ResolveStoredPath(fileName);
+            if (string.IsNullOrEmpty(path) || !IsCompressedPath(path) || !File.Exists(path))
+            {
+                return null;
+            }
+
+            return File.ReadAllBytes(path);
+        }
+
+        /// <summary>
+        /// 生バイト列をGZip圧縮する
+        /// </summary>
+        /// <param name="rawBytes">未圧縮バイト列</param>
+        /// <returns>GZipバイト列</returns>
+        public static byte[] CompressToGzipBytes(byte[] rawBytes)
+        {
+            if (rawBytes == null || rawBytes.Length == 0)
+            {
+                return null;
+            }
+
+            using var output = new MemoryStream();
+            using (var gzip = new GZipStream(
+                output,
+                System.IO.Compression.CompressionLevel.Optimal,
+                leaveOpen: true))
+            {
+                gzip.Write(rawBytes, 0, rawBytes.Length);
+            }
+
+            return output.ToArray();
+        }
+
+        /// <summary>
+        /// GZipバイト列を展開する
+        /// </summary>
+        /// <param name="compressedBytes">GZipバイト列</param>
+        /// <returns>展開済みバイト列</returns>
+        public static byte[] DecompressGzipBytes(byte[] compressedBytes)
+        {
+            if (compressedBytes == null || compressedBytes.Length == 0)
+            {
+                return null;
+            }
+
+            using var input = new MemoryStream(compressedBytes);
+            using var gzip = new GZipStream(input, CompressionMode.Decompress);
+            using var output = new MemoryStream();
+            gzip.CopyTo(output);
+            return output.ToArray();
+        }
+
+        /// <summary>
         /// 読み取り可能な保存データを展開ストリームとして開く
         /// 呼び出し側でDisposeする
         /// </summary>

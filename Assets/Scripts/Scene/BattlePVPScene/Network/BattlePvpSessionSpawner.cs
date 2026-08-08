@@ -1,5 +1,6 @@
-using System.Threading;
 using Cysharp.Threading.Tasks;
+using System;
+using System.Threading;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -132,6 +133,22 @@ namespace Scene.BattlePVPScene.Network
                     return relay != null;
                 },
                 cancellationToken: cancellationToken);
+            if (relay == null)
+            {
+                NetworkManager manager = NetworkManager.Singleton;
+                bool networkActive = manager != null
+                    && !manager.ShutdownInProgress
+                    && (manager.IsServer || manager.IsClient || manager.IsListening);
+                if (!networkActive)
+                {
+                    throw new InvalidOperationException(
+                        "[BattlePvpSpawner] NetworkManagerが未接続のためリレー待機を中断しました");
+                }
+
+                throw new TimeoutException(
+                    $"[BattlePvpSpawner] ローカルリレーの待機がタイムアウトしました ({RelayWaitTimeoutSeconds}秒)");
+            }
+
             return relay;
         }
 

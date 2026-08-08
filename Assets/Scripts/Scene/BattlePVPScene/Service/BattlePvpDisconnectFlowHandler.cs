@@ -75,6 +75,14 @@ namespace Scene.BattlePVPScene.Service
             watcher.EndMonitoring();
         }
 
+        /// <summary>
+        /// フロー側から切断相当を強制通知する
+        /// </summary>
+        public void ForceNotifyDisconnect()
+        {
+            watcher.ForceNotify();
+        }
+
         /// <inheritdoc/>
         public void Dispose()
         {
@@ -147,40 +155,81 @@ namespace Scene.BattlePVPScene.Service
 
         private async UniTaskVoid HandleDisconnectAsync()
         {
+            // 待機中のボタン待ちはフローCTSと切り離しオブジェクト破棄のみキャンセル
+            CancellationToken destroyToken = destroyTokenProvider != null
+                ? destroyTokenProvider.Invoke()
+                : CancellationToken.None;
+
             try
             {
                 Debug.LogWarning("[BattlePvpDisconnect] 切断UIを表示します");
                 // 暗転の下に切断UIが埋もれないよう先にフェードを解除する
                 releaseSceneFade?.Invoke();
+                // 戦闘進行を止め待機ループが暗転を戻し続けないようにする
                 stopBattleFlow?.Invoke();
+                // 1フレーム空けてCanvasの再活性を安定させる
+                await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate);
 
                 if (disconnectView != null)
                 {
                     disconnectView.SetVisible(true);
-                    CancellationToken token = destroyTokenProvider != null
-                        ? destroyTokenProvider.Invoke()
-                        : CancellationToken.None;
-                    await disconnectView.WaitReturnToTitleAsync(token);
-                    disconnectView.SetVisible(false);
+                    try
+                    {
+                        await disconnectView.WaitReturnToTitleAsync(destroyToken);
+                    }
+                    finally
+                    {
+                        disconnectView.SetVisible(false);
+                    }
+                }
+                else
+                {
+                    Debug.LogError("[BattlePvpDisconnect] 切断UIが未設定のため即Titleへ戻します");
                 }
 
                 watcher.SuppressNotifications();
                 if (returnToTitleAsync != null)
                 {
+                    // 戻る遷移は破棄トークンが落ちていても必ず試行する
                     await returnToTitleAsync(CancellationToken.None);
+                }
+                else
+                {
+                    Debug.LogError("[BattlePvpDisconnect] タイトル遷移ハンドラが未登録です");
                 }
             }
             catch (OperationCanceledException)
             {
                 Debug.LogWarning("[BattlePvpDisconnect] 切断UI処理がキャンセルされました");
+                await TryReturnToTitleFallbackAsync();
             }
             catch (Exception exception)
             {
                 Debug.LogException(exception);
+                await TryReturnToTitleFallbackAsync();
             }
             finally
             {
                 isHandling = false;
+            }
+        }
+
+        private async UniTask TryReturnToTitleFallbackAsync()
+        {
+            if (returnToTitleAsync == null)
+            {
+                return;
+            }
+
+            try
+            {
+                releaseSceneFade?.Invoke();
+                watcher.SuppressNotifications();
+                await returnToTitleAsync(CancellationToken.None);
+            }
+            catch (Exception fallbackException)
+            {
+                Debug.LogException(fallbackException);
             }
         }
     }

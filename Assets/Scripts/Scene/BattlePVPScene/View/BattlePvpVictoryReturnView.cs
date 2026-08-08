@@ -120,8 +120,9 @@ namespace Scene.BattlePVPScene.View
         {
             if (titleReturnButton == null && rematchButton == null)
             {
-                Debug.LogError("[BattlePvpVictoryReturnView] 再戦/タイトル戻りボタン参照がありません", this);
-                await UniTask.WaitUntilCanceled(cancellationToken);
+                Debug.LogError(
+                    "[BattlePvpVictoryReturnView] 再戦/タイトル戻りボタン参照がありません Titleへ強制します",
+                    this);
                 return BattleVictoryReturnChoice.Title;
             }
 

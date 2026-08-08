@@ -377,8 +377,12 @@ namespace Battle
                                 return BattleVictoryReturnChoice.Title;
                             }
 
-                            ReleasePresentationInput();
-                            return BattleVictoryReturnChoice.Title;
+                            // 通信対戦などで敵ロード失敗時は選択UIを戻して再選択可能にする
+                            DestroyParticipantModels(playerModel, null);
+                            spawnedPlayerModel = null;
+                            context.RegisterSpawnedParticipants?.Invoke(null, null);
+                            await selectionSession.RestoreAfterParticipantFailureAsync(cancellationToken);
+                            continue;
                         }
 
                         if (playerModel != null)

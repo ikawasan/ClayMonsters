@@ -74,6 +74,7 @@ namespace Scene.BattlePVPScene
         private IBattlePvpOpponentWaitView opponentWaitView;
         private BattlePvpDisconnectFlowHandler disconnectHandler;
         private IMonsterSelectionSession selectionSession;
+        private IBattlePvpCombatSync activeCombatSync;
 
         private CancellationTokenSource flowCts;
         private bool isRunning;
@@ -522,10 +523,21 @@ namespace Scene.BattlePVPScene
                 };
                 context.EnemyLoader = async token =>
                 {
+                    // 選択後は教室背景を見せず暗転を維持する待機UIはフェードより前面
+                    sceneFade?.EnsureOpaque();
+
                     sessionSpawner?.TrySpawnPlayersIfNeeded();
-                    inputRelay = sessionSpawner != null
-                        ? await sessionSpawner.WaitForLocalRelayAsync(token)
-                        : null;
+                    if (sessionSpawner != null)
+                    {
+                        await BattlePvpOpponentWaitScope.RunAsync(
+                            opponentWaitView,
+                            async waitToken =>
+                            {
+                                inputRelay = await sessionSpawner.WaitForLocalRelayAsync(waitToken);
+                            },
+                            token);
+                    }
+
                     Debug.Log(
                         $"[BattlePvpFlow] ローカルリレー取得 relay={(inputRelay != null)}"
                         + $" IsOwner={(inputRelay != null && inputRelay.IsOwner)}");
@@ -536,7 +548,9 @@ namespace Scene.BattlePVPScene
                     }
 
                     context.EnemyAi = new NetworkBattleRemoteEnemyAi(inputRelay);
-                    context.CombatSync = new BattlePvpCombatSync(inputRelay);
+                    activeCombatSync?.EndListening();
+                    activeCombatSync = new BattlePvpCombatSync(inputRelay);
+                    context.CombatSync = activeCombatSync;
                     inputRelay.ResetSessionState();
                     context.WaitForMatchupStartAsync = CreateMatchupStartWaiter(inputRelay);
                     return await LoadOpponentAsync(loader, inputRelay, token);
@@ -558,8 +572,22 @@ namespace Scene.BattlePVPScene
                     BattleVictoryReturnChoice choice = await flow.RunAsync(cancellationToken);
                     if (choice == BattleVictoryReturnChoice.Rematch)
                     {
-                        await PrepareRematchAsync(inputRelay, cancellationToken);
-                        continue;
+                        try
+                        {
+                            await PrepareRematchAsync(inputRelay, cancellationToken);
+                            continue;
+                        }
+                        catch (System.OperationCanceledException)
+                        {
+                            throw;
+                        }
+                        catch (System.Exception rematchException)
+                        {
+                            Debug.LogException(rematchException);
+                            NotifyDisconnectIfNetworkDead();
+                            await ReturnToTitleAsync(cancellationToken);
+                            break;
+                        }
                     }
 
                     await ReturnToTitleAsync(cancellationToken);
@@ -617,12 +645,37 @@ namespace Scene.BattlePVPScene
             BattlePvpInputRelay inputRelay,
             CancellationToken cancellationToken)
         {
-            inputRelay?.ResetForRematch();
+            if (inputRelay == null)
+            {
+                Debug.LogError("[BattlePvpFlow] 再戦準備にリレーがありません");
+                return;
+            }
+
+            // 片方が先に進むと相手の旧スロットを拾って破綻するため再戦合意を待つ
+            sceneFade?.EnsureOpaque();
+            pvpVictoryReturnView?.SetDualButtonsVisible(false);
+            SetCanvasEnabled(battleUiCanvas, false);
+            inputRelay.SubmitRematchReady();
+            await BattlePvpOpponentWaitScope.RunAsync(
+                opponentWaitView,
+                inputRelay.WaitForBothRematchReadyAsync,
+                cancellationToken);
+
+            // NV同期が一瞬遅れても片側だけが進まないよう数フレーム空ける
+            await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
+            await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
+
+            // 両者合意後に局所状態を同時に落とす
+            inputRelay.ResetForRematch();
+            inputRelay.EndBattleInput();
+            activeCombatSync?.EndListening();
+            activeCombatSync = null;
             DestroyTrackedParticipants();
             ClearSpawnedModels(playerSpawn);
             ClearSpawnedModels(enemySpawn);
-            SetCanvasEnabled(battleUiCanvas, false);
-            pvpVictoryReturnView?.SetDualButtonsVisible(false);
+            selectionSession?.HideForLeave();
+            selectionSession?.PrepareEntry();
+            loadSlotView?.InvalidateSelectionContents();
 
             if (sceneFade != null)
             {
@@ -656,23 +709,42 @@ namespace Scene.BattlePVPScene
         private async UniTask ReturnToTitleAsync(CancellationToken cancellationToken)
         {
             sceneFade?.ForceRelease();
-            if (sceneManager == null)
-            {
-                return;
-            }
-
-            if (sceneManager.IsTransition)
-            {
-                Debug.LogWarning("[BattlePvpFlow] Title遷移保留 IsTransition中のためフェードのみ解除しました");
-                return;
-            }
-
             disconnectHandler?.SuppressNotifications();
             pvpSessionController?.EndSession();
+
+            if (sceneManager == null)
+            {
+                Debug.LogError("[BattlePvpFlow] sceneManager未設定のためTitle遷移できません");
+                return;
+            }
+
+            // 遷移中でも必ず待ち切ってからTitleへ戻す
+            await WaitForSceneTransitionIdleAsync(cancellationToken);
             await sceneManager.TransitionScene(
                 new TitleTransitionData(),
                 TransitionType.Exclusive,
                 ClayMonstersMainSceneId.Title);
+        }
+
+        private async UniTask WaitForSceneTransitionIdleAsync(CancellationToken cancellationToken)
+        {
+            if (sceneManager == null || !sceneManager.IsTransition)
+            {
+                return;
+            }
+
+            const float maxWaitSeconds = 15f;
+            float startedAt = Time.realtimeSinceStartup;
+            await UniTask.WaitUntil(
+                () => !sceneManager.IsTransition
+                    || Time.realtimeSinceStartup - startedAt >= maxWaitSeconds,
+                cancellationToken: cancellationToken);
+
+            if (sceneManager.IsTransition)
+            {
+                Debug.LogError(
+                    $"[BattlePvpFlow] Title遷移待ちがタイムアウトしました ({maxWaitSeconds}秒)");
+            }
         }
 
         private static void ClearSpawnedModels(Transform spawn)
@@ -732,53 +804,138 @@ namespace Scene.BattlePVPScene
                 return default;
             }
 
-            byte[] localGlb = ModelSaveStorage.ReadAllBytes(localModelSlot.glbFileName);
-            if (localGlb == null || localGlb.Length == 0)
+            BattlePvpRemoteModelMeta meta = BattlePvpRemoteModelMeta.FromSlot(localModelSlot);
+            BattlePvpModelTransfer.Payload transferPayload;
+            bool didSubmitSlot = false;
+            try
             {
-                Debug.LogError(
-                    $"[BattlePvpFlow] ローカルglbが読めません slot={localSlot} file={localModelSlot.glbFileName}");
+                transferPayload = await BattlePvpModelTransfer.CreateFromSaveFileAsync(
+                    localModelSlot.glbFileName,
+                    cancellationToken);
+                meta.ApplyTransferPayload(transferPayload);
+
+                string metaJson = meta.ToJson();
+                Debug.Log(
+                    $"[BattlePvpFlow] スロット送信 localSlot={localSlot} IsOwner={inputRelay.IsOwner}"
+                    + $" wireBytes={transferPayload.WireBytes.Length}"
+                    + $" rawBytes={transferPayload.UncompressedByteCount}"
+                    + $" gzip={transferPayload.IsGzipCompressed}");
+                // 相手待ち中は教室背景を出さず暗転維持する
+                sceneFade?.EnsureOpaque();
+
+                await BattlePvpOpponentWaitScope.RunAsync(
+                    opponentWaitView,
+                    async token =>
+                    {
+                        inputRelay.SubmitSlotSelection(localSlot);
+                        didSubmitSlot = true;
+                        await inputRelay.PublishLocalModelAsync(
+                            metaJson,
+                            transferPayload.WireBytes,
+                            token);
+                        await inputRelay.WaitForBothSlotsAsync(token);
+                        await inputRelay.WaitForOpponentModelAsync(token);
+                    },
+                    cancellationToken);
+
+                BattlePvpReceivedRemoteModel remoteModel = inputRelay.GetOpponentReceivedModel();
+                if (remoteModel == null || !remoteModel.IsValid)
+                {
+                    Debug.LogError("[BattlePvpFlow] 相手モデルの受信に失敗しました");
+                    return default;
+                }
+
+                Debug.Log(
+                    $"[BattlePvpFlow] 両者モデル確定 opponentSlot={inputRelay.OpponentSlotIndex}"
+                    + $" opponentName={remoteModel.Meta.modelName}");
+
+                BattleParticipant enemy = default;
+                await BattlePvpOpponentWaitScope.RunAsync(
+                    opponentWaitView,
+                    async token =>
+                    {
+                        enemy = await loader.LoadFromGlbBytesAsync(
+                            remoteModel.Meta.ToTemporarySlot(),
+                            remoteModel.GlbBytes,
+                            enemySpawn,
+                            token);
+                    },
+                    cancellationToken);
+
+                if (!enemy.IsValid)
+                {
+                    return default;
+                }
+
+                // 片方だけ見せ合いへ進まないよう両者のロード完了を待つ
+                inputRelay.SubmitStagingReady();
+                await BattlePvpOpponentWaitScope.RunAsync(
+                    opponentWaitView,
+                    inputRelay.WaitForBothStagingReadyAsync,
+                    cancellationToken);
+
+                if (!inputRelay.AreBothStagingReady)
+                {
+                    Debug.LogError("[BattlePvpFlow] 相手の見せ合い準備が揃いませんでした");
+                    if (enemy.Model != null)
+                    {
+                        Object.Destroy(enemy.Model);
+                    }
+
+                    return default;
+                }
+
+                // 両者進入後に受信glbバッファを解放する
+                inputRelay.ClearAllReceivedRemoteModels();
+                didSubmitSlot = false;
+                return enemy;
+            }
+            catch (System.OperationCanceledException)
+            {
+                throw;
+            }
+            catch (System.Exception exception)
+            {
+                Debug.LogException(exception);
                 return default;
             }
-
-            string metaJson = BattlePvpRemoteModelMeta.FromSlot(localModelSlot).ToJson();
-            Debug.Log(
-                $"[BattlePvpFlow] スロット送信 localSlot={localSlot} IsOwner={inputRelay.IsOwner} glbBytes={localGlb.Length}");
-            // 選択確定時の暗転のまま相手待ちすると真っ黒に見えるため先に明転する
-            if (sceneFade != null && sceneFade.IsOpaque)
+            finally
             {
-                await sceneFade.FadeInAsync(cancellationToken);
+                // 失敗時は相手が待ち続けないよう即時中断を通知する
+                if (didSubmitSlot)
+                {
+                    inputRelay.ReportSessionFailure();
+                }
+
+                // 切断相当は選択UI復旧に埋もれず切断ウィンドウへ誘導する
+                NotifyDisconnectIfNetworkDead();
+            }
+        }
+
+        private void NotifyDisconnectIfNetworkDead()
+        {
+            Unity.Netcode.NetworkManager manager = Unity.Netcode.NetworkManager.Singleton;
+            if (manager == null || manager.ShutdownInProgress)
+            {
+                disconnectHandler?.ForceNotifyDisconnect();
+                return;
             }
 
-            inputRelay.SubmitSlotSelection(localSlot);
-            await inputRelay.PublishLocalModelAsync(metaJson, localGlb, cancellationToken);
-            await BattlePvpOpponentWaitScope.RunAsync(
-                opponentWaitView,
-                inputRelay.WaitForBothSlotsAsync,
-                cancellationToken);
-            await BattlePvpOpponentWaitScope.RunAsync(
-                opponentWaitView,
-                inputRelay.WaitForOpponentModelAsync,
-                cancellationToken);
-
-            BattlePvpReceivedRemoteModel remoteModel = inputRelay.GetOpponentReceivedModel();
-            if (remoteModel == null || !remoteModel.IsValid)
+            if (manager.IsServer || manager.IsHost)
             {
-                Debug.LogError("[BattlePvpFlow] 相手モデルの受信に失敗しました");
-                return default;
+                if (manager.ConnectedClientsIds == null
+                    || manager.ConnectedClientsIds.Count < 2)
+                {
+                    disconnectHandler?.ForceNotifyDisconnect();
+                }
+
+                return;
             }
 
-            Debug.Log(
-                $"[BattlePvpFlow] 両者モデル確定 opponentSlot={inputRelay.OpponentSlotIndex}"
-                + $" opponentName={remoteModel.Meta.modelName}");
-            BattleParticipant enemy = await loader.LoadFromGlbBytesAsync(
-                remoteModel.Meta.ToTemporarySlot(),
-                remoteModel.GlbBytes,
-                enemySpawn,
-                cancellationToken);
-            // モデル生成後は受信glbバッファを解放する
-            inputRelay.ClearAllReceivedRemoteModels();
-            localGlb = null;
-            return enemy;
+            if (!manager.IsConnectedClient)
+            {
+                disconnectHandler?.ForceNotifyDisconnect();
+            }
         }
 
         private static void SetCanvasEnabled(Canvas canvas, bool isEnabled)

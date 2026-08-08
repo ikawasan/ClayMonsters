@@ -1,4 +1,6 @@
+using Cysharp.Threading.Tasks;
 using System;
+using System.Threading;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -6,13 +8,18 @@ namespace Scene.BattlePVPScene.Service
 {
     /// <summary>
     /// Netcodeの切断を検知して通知する
+    /// コールバック漏れ対策として接続数ポーリングも行う
     /// </summary>
     public sealed class BattlePvpDisconnectWatcher : IDisposable
     {
+        private const float PollIntervalSeconds = 0.2f;
+
         private bool isMonitoring;
         private bool suppressNotifications;
         private bool hasNotified;
         private bool isSubscribed;
+        private bool hasSeenPeer;
+        private CancellationTokenSource pollCts;
 
         /// <summary>
         /// 相手またはサーバーとの通信が切れた
@@ -27,7 +34,10 @@ namespace Scene.BattlePVPScene.Service
             isMonitoring = true;
             hasNotified = false;
             suppressNotifications = false;
+            // 監視開始時点で既に2接続なら同伴済みとする
+            hasSeenPeer = CountConnectedClients() >= 2;
             Subscribe();
+            StartPolling();
         }
 
         /// <summary>
@@ -51,6 +61,7 @@ namespace Scene.BattlePVPScene.Service
         public void EndMonitoring()
         {
             isMonitoring = false;
+            StopPolling();
             Unsubscribe();
         }
 
@@ -62,11 +73,108 @@ namespace Scene.BattlePVPScene.Service
             suppressNotifications = true;
         }
 
+        /// <summary>
+        /// 外部から強制的に切断イベントを発火する
+        /// </summary>
+        public void ForceNotify()
+        {
+            if (!ShouldNotify())
+            {
+                return;
+            }
+
+            Notify();
+        }
+
         /// <inheritdoc/>
         public void Dispose()
         {
             EndMonitoring();
             Disconnected = null;
+        }
+
+        private void StartPolling()
+        {
+            StopPolling();
+            pollCts = new CancellationTokenSource();
+            PollConnectionAsync(pollCts.Token).Forget();
+        }
+
+        private void StopPolling()
+        {
+            if (pollCts == null)
+            {
+                return;
+            }
+
+            pollCts.Cancel();
+            pollCts.Dispose();
+            pollCts = null;
+        }
+
+        private async UniTaskVoid PollConnectionAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                while (!cancellationToken.IsCancellationRequested && isMonitoring)
+                {
+                    EvaluateConnectionHealth();
+                    await UniTask.Delay(
+                        TimeSpan.FromSeconds(PollIntervalSeconds),
+                        cancellationToken: cancellationToken);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+            }
+        }
+
+        private void EvaluateConnectionHealth()
+        {
+            if (!ShouldNotify())
+            {
+                return;
+            }
+
+            NetworkManager manager = NetworkManager.Singleton;
+            if (manager == null || manager.ShutdownInProgress)
+            {
+                Notify();
+                return;
+            }
+
+            int connected = CountConnectedClients();
+            if (connected >= 2)
+            {
+                hasSeenPeer = true;
+                return;
+            }
+
+            // 一度でも対戦相手を見てから1接続以下になったら切断
+            if (hasSeenPeer && connected < 2)
+            {
+                Debug.LogWarning(
+                    "[BattlePvpDisconnect] 接続数低下を検知しました"
+                    + $" connected={connected}");
+                Notify();
+                return;
+            }
+
+            if (manager.IsClient && !manager.IsServer && !manager.IsConnectedClient)
+            {
+                Notify();
+            }
+        }
+
+        private static int CountConnectedClients()
+        {
+            NetworkManager manager = NetworkManager.Singleton;
+            if (manager == null || manager.ConnectedClientsIds == null)
+            {
+                return 0;
+            }
+
+            return manager.ConnectedClientsIds.Count;
         }
 
         private void Subscribe()
@@ -181,6 +289,14 @@ namespace Scene.BattlePVPScene.Service
             if (eventData.EventType == ConnectionEvent.ClientDisconnected
                 || eventData.EventType == ConnectionEvent.PeerDisconnected)
             {
+                // ホスト自身のLocalClient切断は無視する
+                if (manager != null
+                    && manager.IsServer
+                    && eventData.ClientId == manager.LocalClientId)
+                {
+                    return;
+                }
+
                 Notify();
             }
         }

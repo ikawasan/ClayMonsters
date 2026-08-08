@@ -29,11 +29,28 @@ namespace Scene.BattlePVPScene.Network
             NetworkVariableReadPermission.Everyone,
             NetworkVariableWritePermission.Owner);
 
+        private readonly NetworkVariable<bool> ownerStagingReady = new NetworkVariable<bool>(
+            false,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Owner);
+
+        private readonly NetworkVariable<bool> ownerSessionAbort = new NetworkVariable<bool>(
+            false,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Owner);
+
+        private readonly NetworkVariable<bool> ownerRematchReady = new NetworkVariable<bool>(
+            false,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Owner);
+
         private const int ModelChunkSize = 16 * 1024;
-        private const int MaxModelBytes = 8 * 1024 * 1024;
         private const float SlotSyncTimeoutSeconds = 60f;
         private const float ModelSyncTimeoutSeconds = 120f;
         private const float MatchupReadyTimeoutSeconds = 60f;
+        private const float StagingReadyTimeoutSeconds = 120f;
+        private const float TransferAckTimeoutSeconds = 30f;
+        private const float RematchReadyTimeoutSeconds = 120f;
 
         private int receiveTransferId = -1;
         private int receiveTotalBytes;
@@ -43,6 +60,12 @@ namespace Scene.BattlePVPScene.Network
         private string receiveMetaJson = string.Empty;
         private BattlePvpReceivedRemoteModel receivedRemoteModel;
         private bool isPublishingModel;
+        private bool receiveTransferFailed;
+        private string receiveTransferFailReason = string.Empty;
+        private int publishedTransferId = -1;
+        private bool transferAcked;
+        private bool transferRejected;
+        private string transferRejectReason = string.Empty;
 
         private readonly NetworkVariable<int> ownerStepSequence = new NetworkVariable<int>(
             0,
@@ -380,6 +403,27 @@ namespace Scene.BattlePVPScene.Network
             ownerMatchupReady.Value
             && OpponentMatchupReady;
 
+        /// <summary>
+        /// 両者が見せ合い演出へ進む準備ができたか
+        /// </summary>
+        public bool AreBothStagingReady =>
+            ownerStagingReady.Value
+            && OpponentStagingReady;
+
+        /// <summary>
+        /// 自分または相手が同期失敗を宣言しているか
+        /// </summary>
+        public bool IsSessionAborted =>
+            ownerSessionAbort.Value
+            || OpponentSessionAbort;
+
+        /// <summary>
+        /// 両者が再戦に合意したか
+        /// </summary>
+        public bool AreBothRematchReady =>
+            ownerRematchReady.Value
+            && OpponentRematchReady;
+
         private bool OpponentMatchupReady
         {
             get
@@ -389,8 +433,36 @@ namespace Scene.BattlePVPScene.Network
             }
         }
 
+        private bool OpponentStagingReady
+        {
+            get
+            {
+                BattlePvpInputRelay opponent = ResolveOpponentRelay();
+                return opponent != null && opponent.ownerStagingReady.Value;
+            }
+        }
+
+        private bool OpponentSessionAbort
+        {
+            get
+            {
+                BattlePvpInputRelay opponent = ResolveOpponentRelay();
+                return opponent != null && opponent.ownerSessionAbort.Value;
+            }
+        }
+
+        private bool OpponentRematchReady
+        {
+            get
+            {
+                BattlePvpInputRelay opponent = ResolveOpponentRelay();
+                return opponent != null && opponent.ownerRematchReady.Value;
+            }
+        }
+
         /// <summary>
         /// 対戦前状態をリセットする
+        /// 失敗通知はReportSessionFailureを使う
         /// </summary>
         public void ResetSessionState()
         {
@@ -399,12 +471,45 @@ namespace Scene.BattlePVPScene.Network
                 return;
             }
 
+            ownerSlotIndex.Value = -1;
             ownerMatchupReady.Value = false;
             ownerModelReady.Value = false;
+            ownerStagingReady.Value = false;
+            ownerSessionAbort.Value = false;
+            ownerRematchReady.Value = false;
+            publishedTransferId = -1;
+            transferAcked = false;
+            transferRejected = false;
+            transferRejectReason = string.Empty;
+        }
+
+        /// <summary>
+        /// 同期失敗を相手へ即時通知し対戦前状態を落とす
+        /// </summary>
+        public void ReportSessionFailure()
+        {
+            if (!IsOwner)
+            {
+                return;
+            }
+
+            ownerSessionAbort.Value = true;
+            ownerSlotIndex.Value = -1;
+            ownerMatchupReady.Value = false;
+            ownerModelReady.Value = false;
+            ownerStagingReady.Value = false;
+            ownerRematchReady.Value = false;
+            publishedTransferId = -1;
+            transferAcked = false;
+            transferRejected = false;
+            transferRejectReason = string.Empty;
+            ClearAllReceivedRemoteModels();
+            Debug.LogWarning("[BattlePvpRelay] 同期失敗を通知しました");
         }
 
         /// <summary>
         /// 再戦用にスロット選択と同期状態を初期化する
+        /// 再戦合意後に呼ぶ
         /// </summary>
         public void ResetForRematch()
         {
@@ -416,6 +521,13 @@ namespace Scene.BattlePVPScene.Network
             ownerSlotIndex.Value = -1;
             ownerMatchupReady.Value = false;
             ownerModelReady.Value = false;
+            ownerStagingReady.Value = false;
+            ownerSessionAbort.Value = false;
+            ownerRematchReady.Value = false;
+            publishedTransferId = -1;
+            transferAcked = false;
+            transferRejected = false;
+            transferRejectReason = string.Empty;
             ownerStepSequence.Value = 0;
             ownerStepDirection.Value = 0;
             ownerStepStartDistance.Value = 0f;
@@ -492,88 +604,111 @@ namespace Scene.BattlePVPScene.Network
         {
             if (!IsOwner)
             {
-                Debug.LogWarning("[BattlePvpRelay] スロット送信スキップ IsOwner=false");
-                return;
+                throw new InvalidOperationException("[BattlePvpRelay] スロット送信スキップ IsOwner=false");
             }
 
             if (slotIndex < 0)
             {
-                Debug.LogWarning($"[BattlePvpRelay] 無効なスロット送信を無視しました slotIndex={slotIndex}");
-                return;
+                throw new InvalidOperationException(
+                    $"[BattlePvpRelay] 無効なスロット送信 slotIndex={slotIndex}");
             }
 
+            ownerSessionAbort.Value = false;
+            ownerMatchupReady.Value = false;
+            ownerModelReady.Value = false;
+            ownerStagingReady.Value = false;
             ownerSlotIndex.Value = slotIndex;
             Debug.Log($"[BattlePvpRelay] スロット送信完了 slotIndex={slotIndex}");
         }
 
         /// <summary>
         /// ローカル選択モデルを相手へ送信する
+        /// wireBytesはGZip推奨
         /// </summary>
         /// <param name="metaJson">メタJSON</param>
-        /// <param name="glbBytes">glbバイナリ</param>
+        /// <param name="wireBytes">送信用バイナリ</param>
         /// <param name="cancellationToken">キャンセルトークン</param>
         public async UniTask PublishLocalModelAsync(
             string metaJson,
-            byte[] glbBytes,
+            byte[] wireBytes,
             CancellationToken cancellationToken)
         {
             if (!IsOwner)
             {
-                Debug.LogWarning("[BattlePvpRelay] モデル送信スキップ IsOwner=false");
-                return;
+                throw new InvalidOperationException("[BattlePvpRelay] モデル送信スキップ IsOwner=false");
             }
 
-            if (glbBytes == null || glbBytes.Length == 0)
+            if (wireBytes == null || wireBytes.Length == 0)
             {
-                Debug.LogError("[BattlePvpRelay] 送信するglbが空です");
                 ownerModelReady.Value = false;
-                return;
+                throw new InvalidOperationException(
+                    "[BattlePvpRelay] 送信するモデルペイロードが空です");
             }
 
-            if (glbBytes.Length > MaxModelBytes)
+            if (wireBytes.Length > BattlePvpModelTransfer.MaxTransferByteCount)
             {
-                Debug.LogError(
-                    $"[BattlePvpRelay] glbが大きすぎます size={glbBytes.Length} max={MaxModelBytes}");
                 ownerModelReady.Value = false;
-                return;
+                throw new InvalidOperationException(
+                    BattlePvpModelTransfer.BuildTransferTooLargeMessage(wireBytes.Length));
             }
 
             if (isPublishingModel)
             {
-                Debug.LogWarning("[BattlePvpRelay] モデル送信中のため再送を無視します");
-                return;
+                throw new InvalidOperationException("[BattlePvpRelay] モデル送信中のため再送できません");
             }
 
             isPublishingModel = true;
             ownerModelReady.Value = false;
+            publishedTransferId = -1;
+            transferAcked = false;
+            transferRejected = false;
+            transferRejectReason = string.Empty;
             byte[] chunkBuffer = null;
             try
             {
+                ThrowIfSyncUnavailable();
                 int transferId = ownerMatchGeneration.Value;
-                int totalChunks = Mathf.Max(1, (glbBytes.Length + ModelChunkSize - 1) / ModelChunkSize);
-                BeginRemoteModelRpc(transferId, glbBytes.Length, totalChunks, metaJson ?? string.Empty);
+                publishedTransferId = transferId;
+                int totalChunks = Mathf.Max(1, (wireBytes.Length + ModelChunkSize - 1) / ModelChunkSize);
+                BeginRemoteModelRpc(transferId, wireBytes.Length, totalChunks, metaJson ?? string.Empty);
                 await UniTask.Yield(cancellationToken);
 
                 for (int chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
+                    ThrowIfSyncUnavailable();
                     int offset = chunkIndex * ModelChunkSize;
-                    int length = Mathf.Min(ModelChunkSize, glbBytes.Length - offset);
+                    int length = Mathf.Min(ModelChunkSize, wireBytes.Length - offset);
                     if (chunkBuffer == null || chunkBuffer.Length != length)
                     {
                         chunkBuffer = new byte[length];
                     }
 
-                    Buffer.BlockCopy(glbBytes, offset, chunkBuffer, 0, length);
+                    Buffer.BlockCopy(wireBytes, offset, chunkBuffer, 0, length);
                     // RPC側でコピーされるため同一バッファの再利用でよい
                     ReceiveModelChunkRpc(transferId, chunkIndex, chunkBuffer);
                     await UniTask.Yield(cancellationToken);
                 }
 
+                await WaitUntilOrFailAsync(
+                    () => transferAcked || transferRejected,
+                    TransferAckTimeoutSeconds,
+                    Localization.GameTextKeys.BattlePvpTransferAckTimeout,
+                    "相手のモデル受信確認がタイムアウトしました ({seconds}秒)",
+                    cancellationToken);
+
+                if (transferRejected)
+                {
+                    throw new InvalidOperationException(
+                        string.IsNullOrEmpty(transferRejectReason)
+                            ? "[BattlePvpRelay] 相手がモデル転送を拒否しました"
+                            : transferRejectReason);
+                }
+
                 ownerModelReady.Value = true;
                 Debug.Log(
                     "[BattlePvpRelay] モデル送信完了"
-                    + $" bytes={glbBytes.Length}"
+                    + $" bytes={wireBytes.Length}"
                     + $" chunks={totalChunks}"
                     + $" transferId={transferId}");
             }
@@ -586,34 +721,55 @@ namespace Scene.BattlePVPScene.Network
 
         /// <summary>
         /// 相手モデルの受信完了を待つ
+        /// ワイヤ完了後に展開まで行う
         /// </summary>
         /// <param name="cancellationToken">キャンセルトークン</param>
         public async UniTask WaitForOpponentModelAsync(CancellationToken cancellationToken)
         {
             float startedAt = Time.realtimeSinceStartup;
             float nextLogTime = 0f;
-            await UniTask.WaitUntil(
+            await WaitUntilOrFailAsync(
                 () =>
                 {
                     BattlePvpReceivedRemoteModel model = GetOpponentReceivedModel();
-                    bool ready = model != null && model.IsValid;
-                    if (!ready && Time.realtimeSinceStartup >= nextLogTime)
+                    bool wireReady = model != null && model.IsWireReady;
+                    BattlePvpInputRelay opponent = ResolveOpponentRelay();
+                    bool receiveFailed = opponent != null && opponent.receiveTransferFailed;
+                    if (!wireReady
+                        && !receiveFailed
+                        && Time.realtimeSinceStartup >= nextLogTime)
                     {
                         nextLogTime = Time.realtimeSinceStartup + 1f;
-                        BattlePvpInputRelay opponent = ResolveOpponentRelay();
                         Debug.Log(
                             "[BattlePvpRelay] 相手モデル待機中"
                             + $" opponent={(opponent != null)}"
                             + $" published={(opponent != null && opponent.ownerModelReady.Value)}"
-                            + $" received={(model != null && model.IsValid)}");
+                            + $" wireReady={wireReady}");
                     }
 
-                    return ready || Time.realtimeSinceStartup - startedAt >= ModelSyncTimeoutSeconds;
+                    if (receiveFailed)
+                    {
+                        return true;
+                    }
+
+                    return wireReady;
                 },
-                cancellationToken: cancellationToken);
+                ModelSyncTimeoutSeconds,
+                Localization.GameTextKeys.BattlePvpModelTimeout,
+                "相手モデルの受信がタイムアウトしました ({seconds}秒)",
+                cancellationToken);
+
+            BattlePvpInputRelay opponentRelay = ResolveOpponentRelay();
+            if (opponentRelay != null && opponentRelay.receiveTransferFailed)
+            {
+                throw new InvalidOperationException(
+                    string.IsNullOrEmpty(opponentRelay.receiveTransferFailReason)
+                        ? "[BattlePvpRelay] 相手モデル転送が拒否されました"
+                        : opponentRelay.receiveTransferFailReason);
+            }
 
             BattlePvpReceivedRemoteModel received = GetOpponentReceivedModel();
-            if (received == null || !received.IsValid)
+            if (received == null || !received.IsWireReady)
             {
                 throw new TimeoutException(
                     Localization.LocalizedText.GetOrFallback(
@@ -622,6 +778,19 @@ namespace Scene.BattlePVPScene.Network
                         "seconds",
                         ModelSyncTimeoutSeconds));
             }
+
+            await received.DecodeAsync(cancellationToken);
+            if (!received.IsValid)
+            {
+                throw new InvalidOperationException(
+                    string.IsNullOrEmpty(received.DecodeError)
+                        ? "[BattlePvpRelay] 相手モデルの展開に失敗しました"
+                        : received.DecodeError);
+            }
+
+            Debug.Log(
+                "[BattlePvpRelay] 相手モデル展開完了"
+                + $" elapsed={Time.realtimeSinceStartup - startedAt:0.0}s");
         }
 
         /// <summary>
@@ -646,6 +815,8 @@ namespace Scene.BattlePVPScene.Network
             receiveBuffer = null;
             receiveMetaJson = string.Empty;
             receivedRemoteModel = null;
+            receiveTransferFailed = false;
+            receiveTransferFailReason = string.Empty;
         }
 
         /// <summary>
@@ -660,17 +831,23 @@ namespace Scene.BattlePVPScene.Network
         [Rpc(SendTo.NotOwner)]
         private void BeginRemoteModelRpc(int transferId, int totalBytes, int totalChunks, string metaJson)
         {
-            if (totalBytes <= 0 || totalBytes > MaxModelBytes || totalChunks <= 0)
+            if (totalBytes <= 0
+                || totalBytes > BattlePvpModelTransfer.MaxTransferByteCount
+                || totalChunks <= 0)
             {
-                Debug.LogError(
+                string reason =
                     "[BattlePvpRelay] 不正なモデル転送ヘッダ"
                     + $" transferId={transferId}"
                     + $" totalBytes={totalBytes}"
-                    + $" totalChunks={totalChunks}");
-                ClearReceivedRemoteModel();
+                    + $" totalChunks={totalChunks}"
+                    + $" max={BattlePvpModelTransfer.MaxTransferByteCount}";
+                Debug.LogError(reason);
+                MarkReceiveTransferFailed(reason);
                 return;
             }
 
+            receiveTransferFailed = false;
+            receiveTransferFailReason = string.Empty;
             receiveTransferId = transferId;
             receiveTotalBytes = totalBytes;
             receiveTotalChunks = totalChunks;
@@ -688,6 +865,11 @@ namespace Scene.BattlePVPScene.Network
         [Rpc(SendTo.NotOwner)]
         private void ReceiveModelChunkRpc(int transferId, int chunkIndex, byte[] chunk)
         {
+            if (receiveTransferFailed)
+            {
+                return;
+            }
+
             if (receiveBuffer == null
                 || receiveChunkFlags == null
                 || receiveTransferId != transferId
@@ -707,6 +889,8 @@ namespace Scene.BattlePVPScene.Network
             int offset = chunkIndex * ModelChunkSize;
             if (offset >= receiveTotalBytes)
             {
+                MarkReceiveTransferFailed(
+                    $"[BattlePvpRelay] チャンク範囲外 transferId={transferId} chunkIndex={chunkIndex}");
                 return;
             }
 
@@ -723,12 +907,61 @@ namespace Scene.BattlePVPScene.Network
             }
 
             BattlePvpRemoteModelMeta meta = BattlePvpRemoteModelMeta.FromJson(receiveMetaJson);
+            // receiveBufferをそのまま保持し展開後に参照解除する
             receivedRemoteModel = new BattlePvpReceivedRemoteModel(meta, receiveBuffer);
             Debug.Log(
                 "[BattlePvpRelay] モデル受信完了"
                 + $" transferId={transferId}"
                 + $" bytes={receiveTotalBytes}"
-                + $" name={meta.modelName}");
+                + $" name={meta.modelName}"
+                + $" gzip={meta.isGzipCompressed}");
+            ConfirmModelTransferRpc(transferId);
+        }
+
+        /// <summary>
+        /// 受信側がワイヤ完了を送信側へ返す
+        /// </summary>
+        /// <param name="transferId">転送ID</param>
+        [Rpc(SendTo.Owner)]
+        private void ConfirmModelTransferRpc(int transferId)
+        {
+            if (transferId == publishedTransferId)
+            {
+                transferAcked = true;
+                Debug.Log($"[BattlePvpRelay] モデル転送ACK受信 transferId={transferId}");
+            }
+        }
+
+        private void MarkReceiveTransferFailed(string reason)
+        {
+            receiveTransferFailed = true;
+            receiveTransferFailReason = reason ?? string.Empty;
+            receiveBuffer = null;
+            receiveChunkFlags = null;
+            receivedRemoteModel = null;
+            if (receiveTransferId >= 0)
+            {
+                RejectModelTransferRpc(receiveTransferId, receiveTransferFailReason);
+            }
+        }
+
+        /// <summary>
+        /// 受信側が転送拒否を送信側へ返す
+        /// </summary>
+        /// <param name="transferId">転送ID</param>
+        /// <param name="reason">拒否理由</param>
+        [Rpc(SendTo.Owner)]
+        private void RejectModelTransferRpc(int transferId, string reason)
+        {
+            if (transferId != publishedTransferId)
+            {
+                return;
+            }
+
+            transferRejected = true;
+            transferRejectReason = reason ?? string.Empty;
+            Debug.LogError(
+                $"[BattlePvpRelay] モデル転送NACK受信 transferId={transferId} reason={transferRejectReason}");
         }
 
         /// <summary>
@@ -738,11 +971,40 @@ namespace Scene.BattlePVPScene.Network
         {
             if (!IsOwner)
             {
-                return;
+                throw new InvalidOperationException("[BattlePvpRelay] 対戦開始準備 IsOwner=false");
             }
 
             ownerMatchupReady.Value = true;
             Debug.Log("[BattlePvpRelay] 対戦開始準備完了");
+        }
+
+        /// <summary>
+        /// 見せ合い演出へ進む準備完了を通知する
+        /// </summary>
+        public void SubmitStagingReady()
+        {
+            if (!IsOwner)
+            {
+                throw new InvalidOperationException("[BattlePvpRelay] 見せ合い準備 IsOwner=false");
+            }
+
+            ownerStagingReady.Value = true;
+            Debug.Log("[BattlePvpRelay] 見せ合い準備完了");
+        }
+
+        /// <summary>
+        /// 再戦希望を通知する
+        /// ResetForRematch前に両者で呼ぶ
+        /// </summary>
+        public void SubmitRematchReady()
+        {
+            if (!IsOwner)
+            {
+                throw new InvalidOperationException("[BattlePvpRelay] 再戦準備 IsOwner=false");
+            }
+
+            ownerRematchReady.Value = true;
+            Debug.Log("[BattlePvpRelay] 再戦準備完了");
         }
 
         /// <summary>
@@ -978,9 +1240,8 @@ namespace Scene.BattlePVPScene.Network
         /// </summary>
         public async UniTask WaitForBothSlotsAsync(CancellationToken cancellationToken)
         {
-            float startedAt = Time.realtimeSinceStartup;
             float nextLogTime = 0f;
-            await UniTask.WaitUntil(
+            await WaitUntilOrFailAsync(
                 () =>
                 {
                     if (!AreBothSlotsReady && Time.realtimeSinceStartup >= nextLogTime)
@@ -994,20 +1255,12 @@ namespace Scene.BattlePVPScene.Network
                             + $" opponentSlot={(opponent != null ? opponent.ownerSlotIndex.Value : -99)}");
                     }
 
-                    return AreBothSlotsReady
-                        || Time.realtimeSinceStartup - startedAt >= SlotSyncTimeoutSeconds;
+                    return AreBothSlotsReady;
                 },
-                cancellationToken: cancellationToken);
-
-            if (!AreBothSlotsReady)
-            {
-                throw new TimeoutException(
-                    Localization.LocalizedText.GetOrFallback(
-                        Localization.GameTextKeys.BattlePvpSlotTimeout,
-                        "相手のスロット選択待ちがタイムアウトしました ({seconds}秒)",
-                        "seconds",
-                        SlotSyncTimeoutSeconds));
-            }
+                SlotSyncTimeoutSeconds,
+                Localization.GameTextKeys.BattlePvpSlotTimeout,
+                "相手のスロット選択待ちがタイムアウトしました ({seconds}秒)",
+                cancellationToken);
         }
 
         /// <summary>
@@ -1015,9 +1268,8 @@ namespace Scene.BattlePVPScene.Network
         /// </summary>
         public async UniTask WaitForBothMatchupReadyAsync(CancellationToken cancellationToken)
         {
-            float startedAt = Time.realtimeSinceStartup;
             float nextLogTime = 0f;
-            await UniTask.WaitUntil(
+            await WaitUntilOrFailAsync(
                 () =>
                 {
                     if (!AreBothMatchupReady && Time.realtimeSinceStartup >= nextLogTime)
@@ -1029,20 +1281,202 @@ namespace Scene.BattlePVPScene.Network
                             + $" opponentReady={OpponentMatchupReady}");
                     }
 
-                    return AreBothMatchupReady
-                        || Time.realtimeSinceStartup - startedAt >= MatchupReadyTimeoutSeconds;
+                    return AreBothMatchupReady;
+                },
+                MatchupReadyTimeoutSeconds,
+                Localization.GameTextKeys.BattlePvpMatchupTimeout,
+                "対戦開始準備待ちがタイムアウトしました ({seconds}秒)",
+                cancellationToken);
+        }
+
+        /// <summary>
+        /// 両者の見せ合い演出準備完了を待つ
+        /// </summary>
+        /// <param name="cancellationToken">キャンセルトークン</param>
+        public async UniTask WaitForBothStagingReadyAsync(CancellationToken cancellationToken)
+        {
+            float nextLogTime = 0f;
+            await WaitUntilOrFailAsync(
+                () =>
+                {
+                    if (!AreBothStagingReady && Time.realtimeSinceStartup >= nextLogTime)
+                    {
+                        nextLogTime = Time.realtimeSinceStartup + 1f;
+                        Debug.Log(
+                            "[BattlePvpRelay] 見せ合い準備待機中"
+                            + $" localReady={ownerStagingReady.Value}"
+                            + $" opponentReady={OpponentStagingReady}");
+                    }
+
+                    return AreBothStagingReady;
+                },
+                StagingReadyTimeoutSeconds,
+                Localization.GameTextKeys.BattlePvpStagingTimeout,
+                "相手の見せ合い準備待ちがタイムアウトしました ({seconds}秒)",
+                cancellationToken);
+        }
+
+        /// <summary>
+        /// 両者の再戦合意を待つ
+        /// 一度揃ったことをラッチしReset後に待ちが外れないようにする
+        /// </summary>
+        /// <param name="cancellationToken">キャンセルトークン</param>
+        public async UniTask WaitForBothRematchReadyAsync(CancellationToken cancellationToken)
+        {
+            bool bothSeen = false;
+            float nextLogTime = 0f;
+            float startedAt = Time.realtimeSinceStartup;
+            await UniTask.WaitUntil(
+                () =>
+                {
+                    if (AreBothRematchReady)
+                    {
+                        bothSeen = true;
+                    }
+
+                    if (!bothSeen && Time.realtimeSinceStartup >= nextLogTime)
+                    {
+                        nextLogTime = Time.realtimeSinceStartup + 1f;
+                        Debug.Log(
+                            "[BattlePvpRelay] 再戦合意待機中"
+                            + $" localReady={ownerRematchReady.Value}"
+                            + $" opponentReady={OpponentRematchReady}");
+                    }
+
+                    if (bothSeen)
+                    {
+                        return true;
+                    }
+
+                    if (IsSessionAborted || !IsNetworkSessionAlive())
+                    {
+                        return true;
+                    }
+
+                    return Time.realtimeSinceStartup - startedAt >= RematchReadyTimeoutSeconds;
                 },
                 cancellationToken: cancellationToken);
 
-            if (!AreBothMatchupReady)
+            if (bothSeen)
             {
-                throw new TimeoutException(
-                    Localization.LocalizedText.GetOrFallback(
-                        Localization.GameTextKeys.BattlePvpMatchupTimeout,
-                        "対戦開始準備待ちがタイムアウトしました ({seconds}秒)",
-                        "seconds",
-                        MatchupReadyTimeoutSeconds));
+                return;
             }
+
+            if (IsSessionAborted)
+            {
+                throw new InvalidOperationException(
+                    Localization.LocalizedText.GetOrFallback(
+                        Localization.GameTextKeys.BattlePvpSessionAborted,
+                        "相手が対戦準備を中断しました"));
+            }
+
+            if (!IsNetworkSessionAlive())
+            {
+                throw new InvalidOperationException(
+                    Localization.LocalizedText.GetOrFallback(
+                        Localization.GameTextKeys.BattlePvpNetworkLost,
+                        "通信が切断されたため対戦を中断しました"));
+            }
+
+            throw new TimeoutException(
+                Localization.LocalizedText.GetOrFallback(
+                    Localization.GameTextKeys.BattlePvpRematchTimeout,
+                    "相手の再戦準備待ちがタイムアウトしました ({seconds}秒)",
+                    "seconds",
+                    RematchReadyTimeoutSeconds));
+        }
+
+        private async UniTask WaitUntilOrFailAsync(
+            Func<bool> isReady,
+            float timeoutSeconds,
+            string timeoutKey,
+            string timeoutFallback,
+            CancellationToken cancellationToken)
+        {
+            float startedAt = Time.realtimeSinceStartup;
+            await UniTask.WaitUntil(
+                () =>
+                {
+                    if (isReady())
+                    {
+                        return true;
+                    }
+
+                    if (IsSessionAborted || !IsNetworkSessionAlive())
+                    {
+                        return true;
+                    }
+
+                    return Time.realtimeSinceStartup - startedAt >= timeoutSeconds;
+                },
+                cancellationToken: cancellationToken);
+
+            if (isReady())
+            {
+                return;
+            }
+
+            if (IsSessionAborted)
+            {
+                throw new InvalidOperationException(
+                    Localization.LocalizedText.GetOrFallback(
+                        Localization.GameTextKeys.BattlePvpSessionAborted,
+                        "相手が対戦準備を中断しました"));
+            }
+
+            if (!IsNetworkSessionAlive())
+            {
+                throw new InvalidOperationException(
+                    Localization.LocalizedText.GetOrFallback(
+                        Localization.GameTextKeys.BattlePvpNetworkLost,
+                        "通信が切断されたため対戦を中断しました"));
+            }
+
+            throw new TimeoutException(
+                Localization.LocalizedText.GetOrFallback(
+                    timeoutKey,
+                    timeoutFallback,
+                    "seconds",
+                    timeoutSeconds));
+        }
+
+        private void ThrowIfSyncUnavailable()
+        {
+            if (IsSessionAborted)
+            {
+                throw new InvalidOperationException(
+                    Localization.LocalizedText.GetOrFallback(
+                        Localization.GameTextKeys.BattlePvpSessionAborted,
+                        "相手が対戦準備を中断しました"));
+            }
+
+            if (!IsNetworkSessionAlive())
+            {
+                throw new InvalidOperationException(
+                    Localization.LocalizedText.GetOrFallback(
+                        Localization.GameTextKeys.BattlePvpNetworkLost,
+                        "通信が切断されたため対戦を中断しました"));
+            }
+        }
+
+        private static bool IsNetworkSessionAlive()
+        {
+            NetworkManager manager = NetworkManager.Singleton;
+            if (manager == null || manager.ShutdownInProgress)
+            {
+                return false;
+            }
+
+            if (manager.IsServer || manager.IsHost)
+            {
+                // ホストは相手未接続を即失敗とみなす
+                return manager.IsListening
+                    && manager.ConnectedClientsIds != null
+                    && manager.ConnectedClientsIds.Count >= 2;
+            }
+
+            // クライアントはサーバ接続が生きているか
+            return manager.IsClient && manager.IsConnectedClient;
         }
 
         public override void OnNetworkSpawn()

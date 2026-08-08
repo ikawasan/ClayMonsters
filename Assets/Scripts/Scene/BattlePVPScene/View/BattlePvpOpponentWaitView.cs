@@ -1,8 +1,10 @@
+using Extensions;
+using Localization;
 using Scene.BattlePVPScene.Interface;
 using TMPro;
+using UI.ClayEditor.View;
 using UnityEngine;
 using UnityEngine.UI;
-using Localization;
 
 namespace Scene.BattlePVPScene.View
 {
@@ -11,6 +13,9 @@ namespace Scene.BattlePVPScene.View
     /// </summary>
     public sealed class BattlePvpOpponentWaitView : MonoBehaviour, IBattlePvpOpponentWaitView, ILanguageAwareUi
     {
+        // SceneFade(32000)より前面に出し暗転下に埋もれないようにする
+        private const int VisibleSortingOrder = 32500;
+
         [Tooltip("ONのときフォールバックUIを実行時生成しない")]
         [SerializeField] private bool useSceneCanvasLayout = true;
 
@@ -22,7 +27,10 @@ namespace Scene.BattlePVPScene.View
         {
             ValidateSceneLayout();
             ApplyLocalizedLabels();
-            SetVisible(false);
+            if (rootCanvas != null)
+            {
+                rootCanvas.enabled = false;
+            }
         }
 
         /// <inheritdoc/>
@@ -31,26 +39,58 @@ namespace Scene.BattlePVPScene.View
             if (visible)
             {
                 ApplyLocalizedLabels();
+                EnsureVisibleHierarchy();
             }
 
-            if (rootCanvas != null)
-            {
-                if (visible)
-                {
-                    // SceneFade(32000)より前面に出し暗転下に埋もれないようにする
-                    rootCanvas.overrideSorting = true;
-                    rootCanvas.sortingOrder = 32500;
-                }
+            CanvasVisibilityUtility.SetCanvasEnabled(rootCanvas, visible);
 
-                rootCanvas.enabled = visible;
+            if (visible && rootCanvas != null)
+            {
+                EnsureVisibleHierarchy();
+                CanvasVisibilityUtility.SetCanvasEnabled(rootCanvas, true);
             }
         }
-
 
         /// <inheritdoc/>
         public void RefreshLocalizedUi()
         {
             ApplyLocalizedLabels();
+        }
+
+        private void EnsureVisibleHierarchy()
+        {
+            if (rootCanvas == null)
+            {
+                rootCanvas = GetComponent<Canvas>();
+            }
+
+            if (rootCanvas == null)
+            {
+                return;
+            }
+
+            Transform current = rootCanvas.transform;
+            while (current != null)
+            {
+                if (!current.gameObject.activeSelf)
+                {
+                    current.gameObject.SetActive(true);
+                }
+
+                current = current.parent;
+            }
+
+            ModelSaveSlotScrollListView.FixCanvasScaleHierarchy(rootCanvas);
+            if (rootCanvas.transform.localScale.sqrMagnitude < 0.001f)
+            {
+                rootCanvas.transform.localScale = Vector3.one;
+            }
+
+            rootCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            rootCanvas.worldCamera = null;
+            rootCanvas.overrideSorting = true;
+            rootCanvas.sortingOrder = VisibleSortingOrder;
+            rootCanvas.transform.SetAsLastSibling();
         }
 
         private void ApplyLocalizedLabels()
@@ -60,10 +100,10 @@ namespace Scene.BattlePVPScene.View
                 return;
             }
 
-            Localization.LocalizedFont.SetText(
+            LocalizedFont.SetText(
                 messageText,
-                Localization.LocalizedText.GetOrFallback(
-                    Localization.GameTextKeys.BattlePvpOpponentWaiting,
+                LocalizedText.GetOrFallback(
+                    GameTextKeys.BattlePvpOpponentWaiting,
                     "相手の応答を待っています"));
         }
 

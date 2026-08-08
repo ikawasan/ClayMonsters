@@ -3,9 +3,9 @@ using Extensions;
 using LighthouseExtends.UIComponent.Button;
 using Localization;
 using Scene.BattlePVPScene.Interface;
-using System;
 using System.Threading;
 using TMPro;
+using UI.ClayEditor.View;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -23,7 +23,6 @@ namespace Scene.BattlePVPScene.View
             LocalizedText.Get(GameTextKeys.BattlePvpDisconnectClose);
         // SceneFade(32000)より前面に出し暗転下に埋もれないようにする
         private const int VisibleSortingOrder = 33000;
-        private const float MissingButtonFallbackSeconds = 1.5f;
 
         [Tooltip("ONのときフォールバックUIを実行時生成しない")]
         [SerializeField] private bool useSceneCanvasLayout = true;
@@ -35,22 +34,31 @@ namespace Scene.BattlePVPScene.View
 
         private int cachedSortingOrder = 350;
         private bool hasCachedSortingOrder;
+        private bool isPrepared;
 
         private void Awake()
         {
-            ValidateSceneLayout();
-            titleReturnButton?.EnsureUiSoundFeedback();
-            CacheSortingOrderIfNeeded();
-            ApplyDisconnectCopy();
-            CanvasVisibilityUtility.SetCanvasEnabled(rootCanvas, false);
+            PrepareIfNeeded();
+            // 初回Awakeでは非表示にするがscaleを潰さない
+            if (rootCanvas != null)
+            {
+                rootCanvas.enabled = false;
+                GraphicRaycaster raycaster = rootCanvas.GetComponent<GraphicRaycaster>();
+                if (raycaster != null)
+                {
+                    raycaster.enabled = false;
+                }
+            }
         }
 
         /// <inheritdoc/>
         public void SetVisible(bool visible)
         {
+            PrepareIfNeeded();
             if (visible)
             {
                 ApplyDisconnectCopy();
+                EnsureVisibleHierarchy();
             }
 
             if (rootCanvas != null)
@@ -69,6 +77,20 @@ namespace Scene.BattlePVPScene.View
 
             CanvasVisibilityUtility.SetCanvasEnabled(rootCanvas, visible);
 
+            if (visible)
+            {
+                // SetActive直後のAwakeなどでenabledが下がることがあるため再保証する
+                EnsureVisibleHierarchy();
+                CanvasVisibilityUtility.SetCanvasEnabled(rootCanvas, true);
+                Debug.Log(
+                    "[BattlePvpDisconnectView] 切断UI表示"
+                    + $" canvas={(rootCanvas != null)}"
+                    + $" active={(rootCanvas != null && rootCanvas.gameObject.activeInHierarchy)}"
+                    + $" enabled={(rootCanvas != null && rootCanvas.enabled)}"
+                    + $" scale={(rootCanvas != null ? rootCanvas.transform.lossyScale.ToString() : "null")}"
+                    + $" button={(titleReturnButton != null)}");
+            }
+
             if (titleReturnButton != null)
             {
                 if (!titleReturnButton.gameObject.activeSelf)
@@ -85,12 +107,14 @@ namespace Scene.BattlePVPScene.View
         {
             if (titleReturnButton == null)
             {
-                Debug.LogError("[BattlePvpDisconnectView] 閉じるボタン参照がありません", this);
-                await UniTask.Delay(
-                    TimeSpan.FromSeconds(MissingButtonFallbackSeconds),
-                    cancellationToken: cancellationToken);
+                Debug.LogError(
+                    "[BattlePvpDisconnectView] 閉じるボタン参照がありません 即時Title戻りします",
+                    this);
                 return;
             }
+
+            // 非表示状態で待てないよう再表示する
+            SetVisible(true);
 
             bool decided = false;
 
@@ -110,11 +134,63 @@ namespace Scene.BattlePVPScene.View
             }
         }
 
-
         /// <inheritdoc/>
         public void RefreshLocalizedUi()
         {
             ApplyDisconnectCopy();
+        }
+
+        private void PrepareIfNeeded()
+        {
+            if (isPrepared)
+            {
+                return;
+            }
+
+            isPrepared = true;
+            ValidateSceneLayout();
+            titleReturnButton?.EnsureUiSoundFeedback();
+            CacheSortingOrderIfNeeded();
+            ApplyDisconnectCopy();
+        }
+
+        private void EnsureVisibleHierarchy()
+        {
+            if (rootCanvas == null)
+            {
+                rootCanvas = GetComponent<Canvas>();
+            }
+
+            if (rootCanvas == null)
+            {
+                Debug.LogError("[BattlePvpDisconnectView] rootCanvasがありません", this);
+                return;
+            }
+
+            // 親が非アクティブだと表示できない
+            Transform current = rootCanvas.transform;
+            while (current != null)
+            {
+                if (!current.gameObject.activeSelf)
+                {
+                    current.gameObject.SetActive(true);
+                }
+
+                current = current.parent;
+            }
+
+            // Overlayキャンバスのscale=0崩れを補正する
+            ModelSaveSlotScrollListView.FixCanvasScaleHierarchy(rootCanvas);
+            if (rootCanvas.transform.localScale.sqrMagnitude < 0.001f)
+            {
+                rootCanvas.transform.localScale = Vector3.one;
+            }
+
+            rootCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            rootCanvas.worldCamera = null;
+            rootCanvas.overrideSorting = true;
+            rootCanvas.sortingOrder = VisibleSortingOrder;
+            rootCanvas.transform.SetAsLastSibling();
         }
 
         private void ApplyDisconnectCopy()

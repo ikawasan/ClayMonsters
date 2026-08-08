@@ -1,7 +1,9 @@
 using ClayEditor.Rigging;
+using Cysharp.Threading.Tasks;
 using SaveData;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using UnityEngine;
 
 namespace Scene.BattlePVPScene.Network
@@ -28,6 +30,16 @@ namespace Scene.BattlePVPScene.Network
         public int[] attackMotions = Array.Empty<int>();
 
         /// <summary>
+        /// ペイロードがGZip圧縮されているか
+        /// </summary>
+        public bool isGzipCompressed;
+
+        /// <summary>
+        /// 展開後のglbバイト数
+        /// </summary>
+        public int uncompressedByteCount;
+
+        /// <summary>
         /// スロットから送信用メタを作る
         /// </summary>
         /// <param name="slot">ローカルスロット</param>
@@ -52,6 +64,16 @@ namespace Scene.BattlePVPScene.Network
             }
 
             return meta;
+        }
+
+        /// <summary>
+        /// 転送情報を埋め込む
+        /// </summary>
+        /// <param name="payload">送信用ペイロード</param>
+        public void ApplyTransferPayload(BattlePvpModelTransfer.Payload payload)
+        {
+            isGzipCompressed = payload.IsGzipCompressed;
+            uncompressedByteCount = payload.UncompressedByteCount;
         }
 
         /// <summary>
@@ -110,30 +132,79 @@ namespace Scene.BattlePVPScene.Network
     /// </summary>
     public sealed class BattlePvpReceivedRemoteModel
     {
+        private readonly byte[] wireBytes;
+        private byte[] glbBytes;
+        private bool decodeFailed;
+        private string decodeError;
+
         /// <summary>
         /// メタ情報
         /// </summary>
         public BattlePvpRemoteModelMeta Meta { get; }
 
         /// <summary>
-        /// glbバイナリ
+        /// 回線受信が完了しているか
         /// </summary>
-        public byte[] GlbBytes { get; }
+        public bool IsWireReady => wireBytes != null && wireBytes.Length > 0;
 
         /// <summary>
-        /// 受信済みモデルを保持する
+        /// 展開済みglbバイナリ
+        /// </summary>
+        public byte[] GlbBytes => glbBytes ?? Array.Empty<byte>();
+
+        /// <summary>
+        /// 展開済みで利用可能か
+        /// </summary>
+        public bool IsValid =>
+            !decodeFailed
+            && glbBytes != null
+            && glbBytes.Length > 0;
+
+        /// <summary>
+        /// 展開エラー内容
+        /// </summary>
+        public string DecodeError => decodeError ?? string.Empty;
+
+        /// <summary>
+        /// ワイヤ受信済みモデルを保持する
         /// </summary>
         /// <param name="meta">メタ</param>
-        /// <param name="glbBytes">glb</param>
-        public BattlePvpReceivedRemoteModel(BattlePvpRemoteModelMeta meta, byte[] glbBytes)
+        /// <param name="wireBytes">回線上のバイナリ</param>
+        public BattlePvpReceivedRemoteModel(BattlePvpRemoteModelMeta meta, byte[] wireBytes)
         {
             Meta = meta ?? new BattlePvpRemoteModelMeta();
-            GlbBytes = glbBytes ?? Array.Empty<byte>();
+            this.wireBytes = wireBytes ?? Array.Empty<byte>();
         }
 
         /// <summary>
-        /// 利用可能か
+        /// ワイヤペイロードを展開済みglbへ変換する
         /// </summary>
-        public bool IsValid => GlbBytes != null && GlbBytes.Length > 0;
+        /// <param name="cancellationToken">キャンセルトークン</param>
+        public async UniTask DecodeAsync(CancellationToken cancellationToken)
+        {
+            if (IsValid || decodeFailed)
+            {
+                return;
+            }
+
+            try
+            {
+                glbBytes = await BattlePvpModelTransfer.DecodeWirePayloadAsync(
+                    wireBytes,
+                    Meta,
+                    cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                decodeFailed = true;
+                decodeError = exception.Message;
+                glbBytes = null;
+                Debug.LogError($"[BattlePvpTransfer] 受信モデル展開失敗 {exception.Message}");
+            }
+        }
     }
 }
