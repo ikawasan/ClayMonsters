@@ -1,9 +1,11 @@
 using ClayEditor;
 using ClayEditor.Interface;
+using ClayEditor.Paint;
 using ClayEditor.Rigging;
 using GameData;
 using TMPro;
 using UI.ClayEditor.View;
+using UI.ColorPicker;
 using UnityEngine;
 using VContainer;
 
@@ -11,13 +13,17 @@ namespace Scene.ClayEditScene
 {
     /// <summary>
     /// ClayEdit シーンから別シーンへ遷移する際に、シーンの状態を初期化する。
-    /// 造形メッシュ・ボクセル・Undo履歴・生成済みモデル・編集モードをリセットする。
+    /// 造形メッシュ・ボクセル色・Undo/ペイント履歴・カラーピッカー・編集モードをリセットする。
     /// </summary>
     public sealed class ClayEditSceneResetter
     {
         private readonly IClaySceneContext context;
         private readonly ClayEditor.ClayEditor editor;
+        private readonly ClayVoxelEngine engine;
         private readonly ClayHistoryManager historyManager;
+        private readonly ClayPaintHistoryManager paintHistoryManager;
+        private readonly ColorPicker colorPicker;
+        private readonly ClayPainter clayPainter;
         private readonly ClayAutoRigger rigger;
         private readonly ClayEditSessionContext sessionContext;
 
@@ -25,13 +31,21 @@ namespace Scene.ClayEditScene
         public ClayEditSceneResetter(
             IClaySceneContext context,
             ClayEditor.ClayEditor editor,
+            ClayVoxelEngine engine,
             ClayHistoryManager historyManager,
+            ClayPaintHistoryManager paintHistoryManager,
+            ColorPicker colorPicker,
+            ClayPainter clayPainter,
             ClayAutoRigger rigger,
             ClayEditSessionContext sessionContext)
         {
             this.context = context;
             this.editor = editor;
+            this.engine = engine;
             this.historyManager = historyManager;
+            this.paintHistoryManager = paintHistoryManager;
+            this.colorPicker = colorPicker;
+            this.clayPainter = clayPainter;
             this.rigger = rigger;
             this.sessionContext = sessionContext;
         }
@@ -46,8 +60,16 @@ namespace Scene.ClayEditScene
             // 造形メッシュ・ボクセルを空に戻す
             editor.ClearMesh();
 
+            // ペイント頂点色を既定へ戻す(密度クリア後も色バッファは残るため明示的に初期化)
+            engine.ResetVoxelColors();
+
             // Undo / Redo 履歴を破棄する
             historyManager.Clear();
+            paintHistoryManager.Clear();
+
+            // カラーピッカーの使用色履歴とブラシ色を初期化する
+            colorPicker.ClearHistory();
+            clayPainter.ResetPaintState();
 
             // 自動生成したボーンを破棄する（固定モデル自体は破棄しない）
             ClayModel model = context.CurrentModel.Value;

@@ -61,6 +61,16 @@ namespace ClayEditor.Paint
         }
 
         /// <summary>
+        /// ブラシ色とストローク状態を初期化する
+        /// </summary>
+        public void ResetPaintState()
+        {
+            currentColor = initialColor;
+            hasLastDabInStroke = false;
+            lastDabWorldPos = Vector3.zero;
+        }
+
+        /// <summary>
         /// ブラシ半径を相対的に変更する
         /// </summary>
         /// <param name="delta">加算する半径量</param>
