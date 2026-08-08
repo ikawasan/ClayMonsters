@@ -108,7 +108,9 @@ namespace UI.ModelGallery.View
             ConfigureTabAndSortTogglesNoSelected();
             BindCellClicks();
             BindBrowseScroll();
+            // 翻訳適用前に日本語原文を採取する
             EnsureBakedLabels();
+            CaptureChromeOriginalsIfNeeded();
             Hide();
         }
 
@@ -228,9 +230,10 @@ namespace UI.ModelGallery.View
 
         private void ApplyChromeLabels()
         {
+            // 原文採取は翻訳より先に行う(翻訳後採取だと日本語時フォールバックが崩れる)
             EnsureBakedLabels();
-            bakedLabelApplier?.Apply();
             CaptureChromeOriginalsIfNeeded();
+            bakedLabelApplier?.Apply();
 
             if (titleText != null)
             {
@@ -303,31 +306,95 @@ namespace UI.ModelGallery.View
                 return;
             }
 
-            titleOriginal = SceneLocalizedLabel.Capture(titleText, titleOriginal);
-            closeOriginal = SceneLocalizedLabel.Capture(closeButton, closeOriginal);
-            publishOriginal = SceneLocalizedLabel.Capture(postConfirmPublishButton, publishOriginal);
-            postConfirmCloseOriginal = SceneLocalizedLabel.Capture(
+            // 既に他言語へ差し替わっている場合は配置文言を原文扱いしない
+            titleOriginal = CaptureJapaneseOriginal(titleText, titleOriginal);
+            closeOriginal = CaptureJapaneseOriginal(closeButton, closeOriginal);
+            publishOriginal = CaptureJapaneseOriginal(postConfirmPublishButton, publishOriginal);
+            postConfirmCloseOriginal = CaptureJapaneseOriginal(
                 postConfirmCloseButton,
                 postConfirmCloseOriginal);
-            refreshOriginal = SceneLocalizedLabel.Capture(browseRefreshButton, refreshOriginal);
-            pointsCloseOriginal = SceneLocalizedLabel.Capture(
+            refreshOriginal = CaptureJapaneseOriginal(browseRefreshButton, refreshOriginal);
+            pointsCloseOriginal = CaptureJapaneseOriginal(
                 pointsInsufficientCloseButton,
                 pointsCloseOriginal);
-            downloadSelectCloseOriginal = SceneLocalizedLabel.Capture(
+            downloadSelectCloseOriginal = CaptureJapaneseOriginal(
                 downloadSlotSelectCloseButton,
                 downloadSelectCloseOriginal);
-            downloadSaveOriginal = SceneLocalizedLabel.Capture(
+            downloadSaveOriginal = CaptureJapaneseOriginal(
                 downloadConfirmSaveButton,
                 downloadSaveOriginal);
-            downloadConfirmCloseOriginal = SceneLocalizedLabel.Capture(
+            downloadConfirmCloseOriginal = CaptureJapaneseOriginal(
                 downloadConfirmCloseButton,
                 downloadConfirmCloseOriginal);
-            postTabOriginal = SceneLocalizedLabel.Capture(postTabToggle, postTabOriginal);
-            browseTabOriginal = SceneLocalizedLabel.Capture(browseTabToggle, browseTabOriginal);
-            randomSortOriginal = SceneLocalizedLabel.Capture(randomSortToggle, randomSortOriginal);
-            monthlySortOriginal = SceneLocalizedLabel.Capture(monthlyRankingToggle, monthlySortOriginal);
-            overallSortOriginal = SceneLocalizedLabel.Capture(overallRankingToggle, overallSortOriginal);
+            postTabOriginal = CaptureJapaneseOriginal(postTabToggle, postTabOriginal);
+            browseTabOriginal = CaptureJapaneseOriginal(browseTabToggle, browseTabOriginal);
+            randomSortOriginal = CaptureJapaneseOriginal(randomSortToggle, randomSortOriginal);
+            monthlySortOriginal = CaptureJapaneseOriginal(monthlyRankingToggle, monthlySortOriginal);
+            overallSortOriginal = CaptureJapaneseOriginal(overallRankingToggle, overallSortOriginal);
             chromeOriginalsCaptured = true;
+        }
+
+        // 日本語原文フォールバックを守るため漢字かなを含む配置文だけを原文として採用する
+        private static string CaptureJapaneseOriginal(TMP_Text text, string fallback)
+        {
+            string captured = SceneLocalizedLabel.Capture(text, fallback);
+            return PreferJapaneseOriginal(captured, fallback);
+        }
+
+        private static string CaptureJapaneseOriginal(Component component, string fallback)
+        {
+            string captured = SceneLocalizedLabel.Capture(component, fallback);
+            return PreferJapaneseOriginal(captured, fallback);
+        }
+
+        private static string CaptureJapaneseOriginal(Toggle toggle, string fallback)
+        {
+            string captured = SceneLocalizedLabel.Capture(toggle, fallback);
+            return PreferJapaneseOriginal(captured, fallback);
+        }
+
+        private static string PreferJapaneseOriginal(string captured, string fallback)
+        {
+            if (string.IsNullOrEmpty(captured))
+            {
+                return fallback ?? string.Empty;
+            }
+
+            if (ContainsJapaneseScript(captured))
+            {
+                return captured;
+            }
+
+            return string.IsNullOrEmpty(fallback) ? captured : fallback;
+        }
+
+        private static bool ContainsJapaneseScript(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return false;
+            }
+
+            for (int i = 0; i < value.Length; i++)
+            {
+                char c = value[i];
+                if (c >= 0x3040 && c <= 0x30FF)
+                {
+                    return true;
+                }
+
+                if (c >= 0x3400 && c <= 0x9FFF)
+                {
+                    return true;
+                }
+
+                if (c >= 0xFF66 && c <= 0xFF9D)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         /// <inheritdoc />

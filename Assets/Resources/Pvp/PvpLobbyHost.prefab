@@ -1375,6 +1375,7 @@ MonoBehaviour:
   cancelMatchButton: {fileID: 4133883815721657271}
   copyJoinCodeButton: {fileID: 2008484092897183317}
   statusText: {fileID: 5768669251902833341}
+  lobbyTitleText: {fileID: 363337765481854209}
 --- !u!1 &2293008335365460995
 GameObject:
   m_ObjectHideFlags: 0

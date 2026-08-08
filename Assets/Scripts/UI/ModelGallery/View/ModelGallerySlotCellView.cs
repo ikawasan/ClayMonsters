@@ -1,5 +1,6 @@
 using Extensions;
 using LighthouseExtends.UIComponent.Button;
+using Localization;
 using System;
 using TMPro;
 using UnityEngine;
@@ -94,21 +95,24 @@ namespace UI.ModelGallery.View
         {
             if (indexText != null)
             {
-                indexText.text = $"{cachedSlotIndex + 1}";
+                LocalizedFont.SetText(indexText, $"{cachedSlotIndex + 1}");
             }
 
             if (nameText != null)
             {
-                nameText.text = cachedIsUsed
+                string nameLabel = cachedIsUsed
                     ? (cachedModelName ?? string.Empty)
-                    : Localization.LocalizedText.GetOrFallback(
-                        Localization.GameTextKeys.ModelGalleryEmptySlot,
+                    : LocalizedText.GetOrFallback(
+                        GameTextKeys.ModelGalleryEmptySlot,
                         "空きスロット");
+                LocalizedFont.SetText(nameText, nameLabel);
             }
 
             if (paramsText != null)
             {
-                paramsText.text = cachedIsUsed ? (cachedStatusParams ?? string.Empty) : string.Empty;
+                LocalizedFont.SetText(
+                    paramsText,
+                    cachedIsUsed ? (cachedStatusParams ?? string.Empty) : string.Empty);
             }
         }
 

@@ -65,6 +65,7 @@ namespace Scene.BattlePVPScene.View
 
         private void Awake()
         {
+            ValidateRequiredLabels();
             CaptureSceneLabelOriginals();
             ApplyLocalizedLabels();
         }
@@ -75,9 +76,15 @@ namespace Scene.BattlePVPScene.View
             ApplyLocalizedLabels();
         }
 
-        /// <summary>
-        /// ボタンと固定ラベルを現在言語で更新する
-        /// </summary>
+        private void ValidateRequiredLabels()
+        {
+            if (lobbyTitleText == null)
+            {
+                Debug.LogError(
+                    "[BattlePVPView] lobbyTitleTextが未配線ですPvpLobbyHostで接続してください",
+                    this);
+            }
+        }
 
         /// <inheritdoc/>
         public void RefreshLocalizedUi()
