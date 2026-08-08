@@ -476,8 +476,14 @@ SkillTree.Points	{points} pt
 BattlePvp.RoomCodeCopied	加入碼: {code}\n已複製
 BattlePvp.Connecting	連線中…
 BattlePvp.ModelTimeout	對方模型接收逾時({seconds}秒)
+BattlePvp.ModelTooLarge	模型過大無法傳送 ({sizeMb}MB / 上限{maxMb}MB)
 BattlePvp.SlotTimeout	對方選槽等待逾時({seconds}秒)
 BattlePvp.MatchupTimeout	開戰準備等待逾時({seconds}秒)
+BattlePvp.StagingTimeout	Opponent matchup prep timed out ({seconds}s)
+BattlePvp.SessionAborted	Opponent aborted match preparation
+BattlePvp.NetworkLost	Match aborted due to network disconnect
+BattlePvp.TransferAckTimeout	Opponent model receive ack timed out ({seconds}s)
+BattlePvp.RematchTimeout	Opponent rematch prep timed out ({seconds}s)
 Training.Debug.NoSession	沒有進行中的育成
 Training.Debug.UnknownItem	未知道具ID: {id}
 Training.Debug.ItemAdded	已新增{name} x{count}

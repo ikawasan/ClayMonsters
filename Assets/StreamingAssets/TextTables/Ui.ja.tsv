@@ -476,8 +476,14 @@ SkillTree.Points	{points} ポイント
 BattlePvp.RoomCodeCopied	参加コード: {code}\nコピーしました
 BattlePvp.Connecting	接続中…
 BattlePvp.ModelTimeout	相手モデルの受信がタイムアウトしました ({seconds}秒)
+BattlePvp.ModelTooLarge	モデルが大きすぎて送信できません ({sizeMb}MB / 上限{maxMb}MB)
 BattlePvp.SlotTimeout	相手のスロット選択待ちがタイムアウトしました ({seconds}秒)
 BattlePvp.MatchupTimeout	対戦開始準備待ちがタイムアウトしました ({seconds}秒)
+BattlePvp.StagingTimeout	相手の見せ合い準備待ちがタイムアウトしました ({seconds}秒)
+BattlePvp.SessionAborted	相手が対戦準備を中断しました
+BattlePvp.NetworkLost	通信が切断されたため対戦を中断しました
+BattlePvp.TransferAckTimeout	相手のモデル受信確認がタイムアウトしました ({seconds}秒)
+BattlePvp.RematchTimeout	相手の再戦準備待ちがタイムアウトしました ({seconds}秒)
 Training.Debug.NoSession	進行中の育成セッションがありません
 Training.Debug.UnknownItem	未知のアイテムIDです: {id}
 Training.Debug.ItemAdded	{name}を{count}個追加しました

@@ -476,8 +476,14 @@ SkillTree.Points	{points} pt
 BattlePvp.RoomCodeCopied	Beitrittscode: {code}\nKopiert
 BattlePvp.Connecting	Verbinde...
 BattlePvp.ModelTimeout	Gegner-Modell Timeout ({seconds}s)
+BattlePvp.ModelTooLarge	Modell zu groß zum Senden ({sizeMb}MB / max {maxMb}MB)
 BattlePvp.SlotTimeout	Slotwahl Timeout ({seconds}s)
 BattlePvp.MatchupTimeout	Kampfbereit Timeout ({seconds}s)
+BattlePvp.StagingTimeout	Opponent matchup prep timed out ({seconds}s)
+BattlePvp.SessionAborted	Opponent aborted match preparation
+BattlePvp.NetworkLost	Match aborted due to network disconnect
+BattlePvp.TransferAckTimeout	Opponent model receive ack timed out ({seconds}s)
+BattlePvp.RematchTimeout	Opponent rematch prep timed out ({seconds}s)
 Training.Debug.NoSession	Keine Trainingssession
 Training.Debug.UnknownItem	Unbekannte Item-ID: {id}
 Training.Debug.ItemAdded	{count} x {name} hinzugefuegt

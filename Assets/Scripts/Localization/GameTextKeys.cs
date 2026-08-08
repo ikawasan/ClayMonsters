@@ -97,8 +97,14 @@ namespace Localization
         public const string BattlePvpRelayHostFailed = "BattlePvp.RelayHostFailed";
         public const string BattlePvpRelayClientFailed = "BattlePvp.RelayClientFailed";
         public const string BattlePvpModelTimeout = "BattlePvp.ModelTimeout";
+        public const string BattlePvpModelTooLarge = "BattlePvp.ModelTooLarge";
         public const string BattlePvpSlotTimeout = "BattlePvp.SlotTimeout";
         public const string BattlePvpMatchupTimeout = "BattlePvp.MatchupTimeout";
+        public const string BattlePvpStagingTimeout = "BattlePvp.StagingTimeout";
+        public const string BattlePvpSessionAborted = "BattlePvp.SessionAborted";
+        public const string BattlePvpNetworkLost = "BattlePvp.NetworkLost";
+        public const string BattlePvpTransferAckTimeout = "BattlePvp.TransferAckTimeout";
+        public const string BattlePvpRematchTimeout = "BattlePvp.RematchTimeout";
         public const string BattlePvpLobbyTitle = "BattlePvp.LobbyTitle";
         public const string BattlePvpDirectMatch = "BattlePvp.DirectMatch";
         public const string BattlePvpRandomMatch = "BattlePvp.RandomMatch";
