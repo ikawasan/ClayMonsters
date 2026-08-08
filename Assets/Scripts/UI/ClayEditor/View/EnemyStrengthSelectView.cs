@@ -10,7 +10,7 @@ namespace UI.ClayEditor.View
 {
     /// <summary>
     /// 敵の強さ段階を選ぶUI
-    /// 表示は弱い〜超強いのまま中身は普通〜最強
+    /// 表示弱い→弱い/普通→普通/強い→超強い/超強い→最強
     /// </summary>
     public class EnemyStrengthSelectView : MonoBehaviour, ILanguageAwareUi
     {
@@ -28,7 +28,7 @@ namespace UI.ClayEditor.View
             EnemyStrengthTier.VeryStrong,
         };
 
-        // 選択時の中身(普通強い超強い最強)
+        // 選択時の中身(弱い普通超強い最強)
         private static readonly EnemyStrengthTier[] ContentTiers =
             EnemyStrengthStatusCatalog.NpcSelectableTiers;
 
@@ -266,13 +266,6 @@ namespace UI.ClayEditor.View
                 return preferred;
             }
 
-            // 弱いのみ開放のときは中身の最初(普通)へ寄せる
-            if (preferred == EnemyStrengthTier.Weak
-                && IsTierUnlocked(EnemyStrengthTier.Normal))
-            {
-                return EnemyStrengthTier.Normal;
-            }
-
             for (int i = ContentTiers.Length - 1; i >= 0; i--)
             {
                 EnemyStrengthTier tier = ContentTiers[i];
@@ -426,7 +419,7 @@ namespace UI.ClayEditor.View
         {
             if (label != null)
             {
-                // 表示専用中身の段階名は使わない
+                // 表示専用ラベル段階の名前を使う
                 label.text = EnemyStrengthStatusCatalog.GetDisplayName(labelTier);
             }
         }

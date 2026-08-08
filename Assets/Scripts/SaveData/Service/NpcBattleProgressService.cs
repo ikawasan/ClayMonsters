@@ -55,13 +55,33 @@ namespace SaveData.Service
                 return EnemyStrengthTier.Weak;
             }
 
-            int highest = GetSlotStrengthCount(slotIndex) - 1;
-            if (highest < 0)
+            EnemyStrengthTier[] selectable = EnemyStrengthStatusCatalog.NpcSelectableTiers;
+            EnemyStrengthTier highest = EnemyStrengthTier.Weak;
+            bool found = false;
+            for (int i = 0; i < selectable.Length; i++)
+            {
+                EnemyStrengthTier tier = selectable[i];
+                if (!IsEnemyStrengthUnlocked(slotIndex, tier))
+                {
+                    continue;
+                }
+
+                highest = tier;
+                found = true;
+            }
+
+            if (found)
+            {
+                return highest;
+            }
+
+            int highestIndex = GetSlotStrengthCount(slotIndex) - 1;
+            if (highestIndex < 0)
             {
                 return EnemyStrengthTier.Weak;
             }
 
-            return (EnemyStrengthTier)highest;
+            return (EnemyStrengthTier)highestIndex;
         }
 
         /// <inheritdoc />
@@ -86,13 +106,11 @@ namespace SaveData.Service
             EnsureSlotStrengthArray();
             bool changed = false;
             int enemyCount = UnlockedEnemyCount;
-            int slotStrengthCount = GetSlotStrengthCount(slotIndex);
 
-            // そのスロットの現在最高強さに勝利すると同スロットの次の強さを開放する
-            if ((int)tier == slotStrengthCount - 1
-                && slotStrengthCount < NpcBattleProgressRules.MaxStrengthCount)
+            // NPC選択段階の最高強さに勝利したら次の選択段階を開放する
+            // 強い=超強いのように内部段階が飛ぶケースにも対応する
+            if (TryUnlockNextNpcSelectableStrength(slotIndex, tier))
             {
-                progress.slotUnlockedStrengthCounts[slotIndex] = slotStrengthCount + 1;
                 changed = true;
             }
 
@@ -119,6 +137,58 @@ namespace SaveData.Service
                 + $" tier={tier}"
                 + $" unlockedEnemyCount={progress.unlockedEnemyCount}"
                 + $" slotStrength={GetSlotStrengthCount(slotIndex)}");
+            return true;
+        }
+
+        // 倒した強さがNPC選択の現在最高なら次の選択強さを開放する
+        private bool TryUnlockNextNpcSelectableStrength(int slotIndex, EnemyStrengthTier defeatedTier)
+        {
+            EnemyStrengthTier[] selectable = EnemyStrengthStatusCatalog.NpcSelectableTiers;
+            if (selectable == null || selectable.Length == 0)
+            {
+                return false;
+            }
+
+            int defeatedIndex = -1;
+            int highestUnlockedIndex = -1;
+            for (int i = 0; i < selectable.Length; i++)
+            {
+                EnemyStrengthTier tier = selectable[i];
+                if (tier == defeatedTier)
+                {
+                    defeatedIndex = i;
+                }
+
+                if (IsEnemyStrengthUnlocked(slotIndex, tier))
+                {
+                    highestUnlockedIndex = i;
+                }
+            }
+
+            if (defeatedIndex < 0 || defeatedIndex != highestUnlockedIndex)
+            {
+                return false;
+            }
+
+            if (highestUnlockedIndex >= selectable.Length - 1)
+            {
+                return false;
+            }
+
+            EnemyStrengthTier nextTier = selectable[highestUnlockedIndex + 1];
+            int requiredCount = (int)nextTier + 1;
+            int currentCount = GetSlotStrengthCount(slotIndex);
+            if (requiredCount <= currentCount)
+            {
+                return false;
+            }
+
+            if (requiredCount > NpcBattleProgressRules.MaxStrengthCount)
+            {
+                requiredCount = NpcBattleProgressRules.MaxStrengthCount;
+            }
+
+            progress.slotUnlockedStrengthCounts[slotIndex] = requiredCount;
             return true;
         }
 
@@ -238,7 +308,39 @@ namespace SaveData.Service
                 {
                     data.slotUnlockedStrengthCounts[i] = NpcBattleProgressRules.InitialSlotStrengthCount;
                 }
+
+                // 強い=超強いのように中間段階を飛ばす設定で詰まった開放数を繰り上げる
+                data.slotUnlockedStrengthCounts[i] = AdvanceThroughNpcSelectableGaps(
+                    data.slotUnlockedStrengthCounts[i]);
             }
+        }
+
+        // 選択に出ない中間段階だけが開いている開放数を次の選択段階まで進める
+        private static int AdvanceThroughNpcSelectableGaps(int strengthCount)
+        {
+            EnemyStrengthTier[] selectable = EnemyStrengthStatusCatalog.NpcSelectableTiers;
+            if (selectable == null || selectable.Length < 2)
+            {
+                return strengthCount;
+            }
+
+            int count = strengthCount;
+            for (int i = 0; i < selectable.Length - 1; i++)
+            {
+                int currentThreshold = (int)selectable[i] + 1;
+                int nextThreshold = (int)selectable[i + 1] + 1;
+                if (count > currentThreshold && count < nextThreshold)
+                {
+                    count = nextThreshold;
+                }
+            }
+
+            if (count > NpcBattleProgressRules.MaxStrengthCount)
+            {
+                return NpcBattleProgressRules.MaxStrengthCount;
+            }
+
+            return count;
         }
     }
 }

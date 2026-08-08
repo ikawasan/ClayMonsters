@@ -17,7 +17,7 @@ namespace SaveData
 
         /// <summary>
         /// 弱い進行度
-        /// 表示テキストは旧のまま中身を1段階上げる
+        /// 未育成基準からソフト目標への途中地点
         /// </summary>
         public const float WeakProgress = 0.55f;
 
@@ -156,13 +156,13 @@ namespace SaveData
         }
 
         /// <summary>
-        /// NPC対戦で選択時に使う中身の強さ段階
-        /// 表示は弱い〜超強いのまま割り当てる
+        /// NPC対戦で選択時に使う強さ段階
+        /// 表示弱い→弱い/普通→普通/強い→超強い/超強い→最強
         /// </summary>
         public static readonly EnemyStrengthTier[] NpcSelectableTiers =
         {
+            EnemyStrengthTier.Weak,
             EnemyStrengthTier.Normal,
-            EnemyStrengthTier.Strong,
             EnemyStrengthTier.VeryStrong,
             EnemyStrengthTier.Strongest,
         };

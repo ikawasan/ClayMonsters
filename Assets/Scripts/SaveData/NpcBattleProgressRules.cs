@@ -17,7 +17,7 @@ namespace SaveData
 
         /// <summary>
         /// スロット開放時の初期強さ数
-        /// 弱いと普通を開放しNPCは普通から選べる
+        /// 弱いと普通を開放する
         /// </summary>
         public const int InitialSlotStrengthCount = 2;
 
