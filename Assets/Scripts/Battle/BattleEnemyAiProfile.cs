@@ -156,6 +156,18 @@ namespace Battle
             return profile;
         }
 
+        /// <summary>
+        /// 育成専用強さに応じたAIプロファイルを作る
+        /// NPC対戦より反応と技選択を控えめにする
+        /// </summary>
+        /// <param name="tier">育成強さ段階</param>
+        public static BattleEnemyAiProfile FromTrainingStrengthTier(TrainingEnemyStrengthTier tier)
+        {
+            // 育成最強でもNPCの強い相当まで
+            EnemyStrengthTier mapped = TrainingEnemyStrengthStatusCatalog.ToAiTier(tier);
+            return FromStrengthTier(mapped);
+        }
+
         private void ApplyStrengthTier(EnemyStrengthTier tier)
         {
             // 0=弱 1=普通 2=強 3=超強 4=最強

@@ -1,46 +1,46 @@
 using SaveData;
 using SaveData.Interface;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace Scene.TrainingScene.Domain
 {
     /// <summary>
-    /// 放課後戦闘と強敵急襲の敵スロットを決める
+    /// 放課後戦闘と強敵急襲の敵スロットと育成強さを決める
     /// </summary>
     public static class TrainingEnemyResolver
     {
         /// <summary>
-        /// 曜日に応じた放課後戦闘の敵強さ段階を返す
+        /// 曜日に応じた放課後戦闘の育成強さ段階を返す
         /// </summary>
         /// <param name="day">育成曜日</param>
-        public static EnemyStrengthTier ResolveAfterSchoolTier(TrainingDayOfWeek day)
+        public static TrainingEnemyStrengthTier ResolveAfterSchoolTier(TrainingDayOfWeek day)
         {
             return day switch
             {
-                TrainingDayOfWeek.Monday => EnemyStrengthTier.Weak,
-                TrainingDayOfWeek.Tuesday => EnemyStrengthTier.Normal,
-                TrainingDayOfWeek.Wednesday => EnemyStrengthTier.Normal,
-                TrainingDayOfWeek.Thursday => EnemyStrengthTier.Strong,
-                TrainingDayOfWeek.Friday => EnemyStrengthTier.VeryStrong,
-                _ => EnemyStrengthTier.Normal
+                TrainingDayOfWeek.Monday => TrainingEnemyStrengthTier.Weak,
+                TrainingDayOfWeek.Tuesday => TrainingEnemyStrengthTier.Normal,
+                TrainingDayOfWeek.Wednesday => TrainingEnemyStrengthTier.Normal,
+                TrainingDayOfWeek.Thursday => TrainingEnemyStrengthTier.Strong,
+                TrainingDayOfWeek.Friday => TrainingEnemyStrengthTier.Strongest,
+                _ => TrainingEnemyStrengthTier.Normal
             };
         }
 
         /// <summary>
-        /// 曜日に応じた強敵急襲の敵強さ段階を返す
+        /// 曜日に応じた強敵急襲の育成強さ段階を返す
         /// 放課後より1段階強い
         /// </summary>
         /// <param name="day">育成曜日</param>
-        public static EnemyStrengthTier ResolveAmbushTier(TrainingDayOfWeek day)
+        public static TrainingEnemyStrengthTier ResolveAmbushTier(TrainingDayOfWeek day)
         {
-            // 育成では最強は出さない
             int next = (int)ResolveAfterSchoolTier(day) + 1;
-            if (next > (int)EnemyStrengthTier.VeryStrong)
+            if (next > (int)TrainingEnemyStrengthTier.Strongest)
             {
-                return EnemyStrengthTier.VeryStrong;
+                return TrainingEnemyStrengthTier.Strongest;
             }
 
-            return (EnemyStrengthTier)next;
+            return (TrainingEnemyStrengthTier)next;
         }
 
         /// <summary>
@@ -54,7 +54,7 @@ namespace Scene.TrainingScene.Domain
             int week,
             out int slotIndex)
         {
-            TrainingDayOfWeek day = (TrainingDayOfWeek)UnityEngine.Mathf.Clamp(
+            TrainingDayOfWeek day = (TrainingDayOfWeek)Mathf.Clamp(
                 week,
                 (int)TrainingDayOfWeek.Monday,
                 TrainingSettings.TotalDays);
@@ -129,7 +129,7 @@ namespace Scene.TrainingScene.Domain
                 return false;
             }
 
-            slotIndex = matches[UnityEngine.Random.Range(0, matches.Count)];
+            slotIndex = matches[Random.Range(0, matches.Count)];
             return true;
         }
     }

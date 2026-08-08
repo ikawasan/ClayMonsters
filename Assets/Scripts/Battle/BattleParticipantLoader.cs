@@ -92,6 +92,59 @@ namespace Battle
             return await LoadEnemyAsync(slotIndex, spawn, (EnemyStrengthTier?)strengthTier, cancellationToken);
         }
 
+        /// <summary>
+        /// 育成専用強さで敵参加者を返す
+        /// NPC対戦の段階ステータスは使わない
+        /// </summary>
+        /// <param name="slotIndex">敵スロット</param>
+        /// <param name="spawn">配置先</param>
+        /// <param name="trainingTier">育成強さ段階</param>
+        /// <param name="cancellationToken">キャンセルトークン</param>
+        public async UniTask<BattleParticipant> LoadEnemyForTrainingAsync(
+            int slotIndex,
+            Transform spawn,
+            TrainingEnemyStrengthTier trainingTier,
+            CancellationToken cancellationToken)
+        {
+            ModelSaveSlot slot = saveService.GetSlot(ModelSavePool.Enemy, slotIndex);
+            if (slot == null || string.IsNullOrEmpty(slot.glbFileName))
+            {
+                Debug.LogWarning($"[BattleParticipantLoader] Enemyスロット{slotIndex}にモデルがありません");
+                return default;
+            }
+
+            string filePath = ModelSaveStorage.ResolveReadPath(slot.glbFileName);
+            if (!File.Exists(filePath))
+            {
+                Debug.LogError($"[BattleParticipantLoader] glbが見つかりません: {filePath}");
+                return default;
+            }
+
+            await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate, cancellationToken);
+            GameObject model = await ImportWithTimeoutAsync(
+                ModelSavePool.Enemy,
+                slotIndex,
+                filePath,
+                cancellationToken);
+            if (model == null)
+            {
+                Debug.LogError($"[BattleParticipantLoader] Enemyスロット{slotIndex}のインポートに失敗しました");
+                return default;
+            }
+
+            ModelStatus status = TrainingEnemyStrengthStatusCatalog.Resolve(slot, trainingTier);
+            EnemyStrengthTier attackTier =
+                TrainingEnemyStrengthStatusCatalog.ToAttackSelectionTier(trainingTier);
+            BattleParticipant participant = BuildParticipant(
+                model,
+                slot,
+                status,
+                attackTier,
+                slotIndex,
+                ModelSavePool.Enemy);
+            return FinalizeSpawnPlacement(participant, spawn);
+        }
+
         private async UniTask<BattleParticipant> LoadEnemyAsync(
             int slotIndex,
             Transform spawn,

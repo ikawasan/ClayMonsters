@@ -209,7 +209,7 @@ namespace Scene.TrainingScene
 
         /// <param name="enemySlotIndex">敵スロット</param>
 
-        /// <param name="enemyStrengthTier">敵強さ段階</param>
+        /// <param name="enemyStrengthTier">育成敵強さ段階</param>
 
         /// <param name="cancellationToken">キャンセルトークン</param>
 
@@ -223,7 +223,7 @@ namespace Scene.TrainingScene
 
             int enemySlotIndex,
 
-            EnemyStrengthTier enemyStrengthTier,
+            TrainingEnemyStrengthTier enemyStrengthTier,
 
             CancellationToken cancellationToken)
 
@@ -329,7 +329,11 @@ namespace Scene.TrainingScene
 
 
 
-                BattleParticipant enemy = await loader.LoadEnemyAsync(enemySlotIndex, enemySpawn, enemyStrengthTier, cancellationToken);
+                BattleParticipant enemy = await loader.LoadEnemyForTrainingAsync(
+                    enemySlotIndex,
+                    enemySpawn,
+                    enemyStrengthTier,
+                    cancellationToken);
 
                 if (!enemy.IsValid)
 
@@ -440,7 +444,7 @@ namespace Scene.TrainingScene
                     battleSettings,
                     movementInput,
                     new StandardBattleEnemyAi(
-                        BattleEnemyAiProfile.FromStrengthTier(enemyStrengthTier)),
+                        BattleEnemyAiProfile.FromTrainingStrengthTier(enemyStrengthTier)),
                     null);
 
 

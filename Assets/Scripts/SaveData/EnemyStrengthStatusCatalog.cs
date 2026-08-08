@@ -168,12 +168,6 @@ namespace SaveData
         };
 
         /// <summary>
-        /// 育成モードで使う最大強さ
-        /// 最強は出さない
-        /// </summary>
-        public const EnemyStrengthTier TrainingMaxTier = EnemyStrengthTier.VeryStrong;
-
-        /// <summary>
         /// 指定強さ段階のステータスを返す
         /// 未設定なら基準ステータスから生成する
         /// </summary>
