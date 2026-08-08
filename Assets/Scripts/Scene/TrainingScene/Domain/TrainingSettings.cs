@@ -150,6 +150,11 @@ namespace Scene.TrainingScene.Domain
         public const int TournamentRewardPerWeek = 50;
 
         /// <summary>
+        /// 放課後戦闘敗北時の参加賞金
+        /// </summary>
+        public const int AfterSchoolDefeatReward = 50;
+
+        /// <summary>
         /// 売店ページサイズ
         /// </summary>
         public const int ShopPageSize = 3;

@@ -168,6 +168,11 @@ namespace Scene.TrainingScene.Domain
             else
             {
                 session.LowerMotivation(1);
+                int defeatReward = TrainingSettings.AfterSchoolDefeatReward;
+                if (defeatReward > 0)
+                {
+                    session.AddMoney(defeatReward);
+                }
             }
 
             session.RefreshShopOffer(random);

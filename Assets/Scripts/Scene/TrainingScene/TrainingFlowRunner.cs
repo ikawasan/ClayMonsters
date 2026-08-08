@@ -2070,12 +2070,26 @@ namespace Scene.TrainingScene
             else
             {
                 session.LowerMotivation(1);
+                int defeatReward = TrainingSettings.AfterSchoolDefeatReward;
+                if (defeatReward > 0)
+                {
+                    session.AddMoney(defeatReward);
+                }
+
                 session.RefreshShopOffer(random);
                 hudView.BindSession(session, period, turnNumber);
+                string defeatRewardText = defeatReward > 0
+                    ? LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingLogRewardMoney,
+                        " 賞金+{reward}G",
+                        "reward",
+                        defeatReward)
+                    : string.Empty;
                 hudView.SetLogMessage(
                     LocalizedText.GetOrFallback(
                         GameTextKeys.TrainingLoseAfterSchool,
-                        "放課後の戦闘に敗北した\nやる気が下がった"));
+                        "放課後の戦闘に敗北した\nやる気が下がった")
+                    + defeatRewardText);
             }
 
             await FadeInAfterBattleResultReadyAsync(cancellationToken);
