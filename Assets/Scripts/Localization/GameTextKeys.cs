@@ -354,6 +354,7 @@ namespace Localization
         public const string TrainingShopNotOwned = "Training.Shop.NotOwned";
         public const string TrainingShopUsedMotivated = "Training.Shop.UsedMotivated";
         public const string TrainingShopUsed = "Training.Shop.Used";
+        public const string TrainingGreatSuccessBoostActive = "Training.Status.GreatSuccessBoostActive";
 
         public const string TrainingAttackPower = "Training.Attack.Power";
         public const string TrainingAttackCost = "Training.Attack.Cost";

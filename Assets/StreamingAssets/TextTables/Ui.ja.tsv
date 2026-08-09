@@ -427,12 +427,13 @@ Common.Empty	空き
 ClayEdit.ClayGuideIcons	【成形操作】\n{I:MouseLeft} ドラッグ : 盛る\n{W:KeyCtrl}+{I:MouseLeft} ドラッグ : 削る\n{I:MouseRight} ドラッグ : 削る\n{I:MouseWheel} : ブラシサイズ変更\n{W:KeyShift}+ドラッグ : 深度固定\n{W:KeyAlt}+ドラッグ : カメラ操作\n{W:KeyCtrl}+{I:KeyZ} : 取り消し\n{W:KeyCtrl}+{I:KeyY} : やり直し\n{W:KeyDel} : 全削除
 Training.Shop.stat_speed.Desc	速度+6
 Training.Shop.stat_hit.Desc	命中+6
-Training.Shop.train_boost.Desc	大成功率アップ(数日間)
+Training.Shop.train_boost.Desc	大成功率+{percent}%を{turns}ターン
 Training.Shop.stat_defense.Desc	防御+6
 Training.Shop.motivation_boost.Desc	やる気が上がる
 Training.Shop.stat_hp.Desc	HP+8
 Training.Shop.stat_attack.Desc	攻撃+6
-Training.Shop.train_boost_strong.Desc	大成功率アップ(強・数日間)
+Training.Shop.train_boost_strong.Desc	大成功率+{percent}%を{turns}ターン
+Training.Status.GreatSuccessBoostActive	大成功率アップ中 残り{turns}ターン
 Training.Shop.stamina_drink.Desc	体力+25
 Training.Shop.motivation_tennis.Desc	やる気が上がる
 Training.Shop.stamina_full.Desc	体力を全回復

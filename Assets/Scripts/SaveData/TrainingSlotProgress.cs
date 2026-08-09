@@ -56,7 +56,7 @@ namespace SaveData
         public float trainGreatSuccessBonusPercent;
 
         /// <summary>
-        /// 訓練大成功ボーナスの残り週数
+        /// 訓練大成功ボーナスの残りターン数
         /// </summary>
         public int trainGreatSuccessBonusWeeks;
 

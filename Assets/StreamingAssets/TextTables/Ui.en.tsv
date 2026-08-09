@@ -427,12 +427,13 @@ Common.Empty	Empty
 ClayEdit.ClayGuideIcons	【Sculpt】\n{I:MouseLeft} drag : add\n{W:KeyCtrl}+{I:MouseLeft} drag : carve\n{I:MouseRight} drag : carve\n{I:MouseWheel} : brush size\n{W:KeyShift}+drag : lock depth\n{W:KeyAlt}+drag : camera\n{W:KeyCtrl}+{I:KeyZ} : undo\n{W:KeyCtrl}+{I:KeyY} : redo\n{W:KeyDel} : clear all
 Training.Shop.stat_speed.Desc	SPD+6
 Training.Shop.stat_hit.Desc	HIT+6
-Training.Shop.train_boost.Desc	Great-success rate up (days)
+Training.Shop.train_boost.Desc	Great-success rate +{percent}% for {turns} turns
 Training.Shop.stat_defense.Desc	DEF+6
 Training.Shop.motivation_boost.Desc	Raises motivation
 Training.Shop.stat_hp.Desc	HP+8
 Training.Shop.stat_attack.Desc	ATK+6
-Training.Shop.train_boost_strong.Desc	Great-success rate up+ (days)
+Training.Shop.train_boost_strong.Desc	Great-success rate +{percent}% for {turns} turns
+Training.Status.GreatSuccessBoostActive	Great-success rate up ({turns} turns left)
 Training.Shop.stamina_drink.Desc	Stamina+25
 Training.Shop.motivation_tennis.Desc	Raises motivation
 Training.Shop.stamina_full.Desc	Fully restore stamina

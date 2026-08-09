@@ -427,12 +427,13 @@ Common.Empty	空
 ClayEdit.ClayGuideIcons	【塑造】\n{I:MouseLeft} 拖动 : 堆砌\n{W:KeyCtrl}+{I:MouseLeft} 拖动 : 削切\n{I:MouseRight} 拖动 : 削切\n{I:MouseWheel} : 笔刷大小\n{W:KeyShift}+拖动 : 锁定深度\n{W:KeyAlt}+拖动 : 相机\n{W:KeyCtrl}+{I:KeyZ} : 撤销\n{W:KeyCtrl}+{I:KeyY} : 重做\n{W:KeyDel} : 全部删除
 Training.Shop.stat_speed.Desc	速度+6
 Training.Shop.stat_hit.Desc	命中+6
-Training.Shop.train_boost.Desc	大成功率提升(数日)
+Training.Shop.train_boost.Desc	大成功率+{percent}%持续{turns}回合
 Training.Shop.stat_defense.Desc	防御+6
 Training.Shop.motivation_boost.Desc	提升干劲
 Training.Shop.stat_hp.Desc	HP+8
 Training.Shop.stat_attack.Desc	攻击+6
-Training.Shop.train_boost_strong.Desc	大成功率大幅提升
+Training.Shop.train_boost_strong.Desc	大成功率+{percent}%持续{turns}回合
+Training.Status.GreatSuccessBoostActive	大成功率提升中 剩余{turns}回合
 Training.Shop.stamina_drink.Desc	体力+25
 Training.Shop.motivation_tennis.Desc	提升干劲
 Training.Shop.stamina_full.Desc	体力全恢复

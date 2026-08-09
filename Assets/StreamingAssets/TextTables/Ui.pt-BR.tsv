@@ -427,12 +427,13 @@ Common.Empty	Vazio
 ClayEdit.ClayGuideIcons	【Modelagem】\n{I:MouseLeft} arrastar : adicionar\n{W:KeyCtrl}+{I:MouseLeft} arrastar : esculpir\n{I:MouseRight} arrastar : esculpir\n{I:MouseWheel} : tamanho do pincel\n{W:KeyShift}+arrastar : travar profundidade\n{W:KeyAlt}+arrastar : camera\n{W:KeyCtrl}+{I:KeyZ} : desfazer\n{W:KeyCtrl}+{I:KeyY} : refazer\n{W:KeyDel} : limpar tudo
 Training.Shop.stat_speed.Desc	VEL+6
 Training.Shop.stat_hit.Desc	PRE+6
-Training.Shop.train_boost.Desc	Taxa de grande sucesso+
+Training.Shop.train_boost.Desc	Taxa de grande sucesso +{percent}% por {turns} turnos
 Training.Shop.stat_defense.Desc	DEF+6
 Training.Shop.motivation_boost.Desc	Motivacao+
 Training.Shop.stat_hp.Desc	PV+8
 Training.Shop.stat_attack.Desc	ATQ+6
-Training.Shop.train_boost_strong.Desc	Taxa de grande sucesso++
+Training.Shop.train_boost_strong.Desc	Taxa de grande sucesso +{percent}% por {turns} turnos
+Training.Status.GreatSuccessBoostActive	Grande sucesso ativo ({turns} turnos)
 Training.Shop.stamina_drink.Desc	Vigor+25
 Training.Shop.motivation_tennis.Desc	Motivacao+
 Training.Shop.stamina_full.Desc	Vigor total

@@ -1,5 +1,6 @@
 using Localization;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace Scene.TrainingScene.Domain
 {
@@ -87,24 +88,24 @@ namespace Scene.TrainingScene.Domain
                 "train_boost",
                 "カクリツン",
                 $"大成功率+{TrainingSettings.ShopTrainBoostPercent:0}%を"
-                    + $"{TrainingSettings.ShopTrainBoostWeeks}日間",
+                    + $"{TrainingSettings.ShopTrainBoostTurns}ターン",
                 TrainingSettings.ShopTrainBoostPrice,
                 TrainingShopItemType.TrainEfficiency,
                 default,
                 0,
                 TrainingSettings.ShopTrainBoostPercent,
-                TrainingSettings.ShopTrainBoostWeeks),
+                TrainingSettings.ShopTrainBoostTurns),
             new TrainingShopItem(
                 "train_boost_strong",
                 "カクリツン改",
                 $"大成功率+{TrainingSettings.ShopTrainBoostStrongPercent:0}%を"
-                    + $"{TrainingSettings.ShopTrainBoostStrongWeeks}日間",
+                    + $"{TrainingSettings.ShopTrainBoostStrongTurns}ターン",
                 TrainingSettings.ShopTrainBoostStrongPrice,
                 TrainingShopItemType.TrainEfficiency,
                 default,
                 0,
                 TrainingSettings.ShopTrainBoostStrongPercent,
-                TrainingSettings.ShopTrainBoostStrongWeeks),
+                TrainingSettings.ShopTrainBoostStrongTurns),
             new TrainingShopItem(
                 "motivation_tennis",
                 "テニスボール",
@@ -146,6 +147,18 @@ namespace Scene.TrainingScene.Domain
         /// <param name="item">商品</param>
         public static string GetLocalizedDescription(TrainingShopItem item)
         {
+            if (item.GreatSuccessBonusPercent > 0f && item.GreatSuccessBonusWeeks > 0)
+            {
+                return LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingShopDesc(item.Id),
+                    item.Description,
+                    new System.Collections.Generic.Dictionary<string, object>
+                    {
+                        { "percent", Mathf.RoundToInt(item.GreatSuccessBonusPercent) },
+                        { "turns", item.GreatSuccessBonusWeeks },
+                    });
+            }
+
             return LocalizedText.GetOrFallback(
                 GameTextKeys.TrainingShopDesc(item.Id),
                 item.Description);

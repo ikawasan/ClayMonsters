@@ -427,12 +427,13 @@ Common.Empty	Frei
 ClayEdit.ClayGuideIcons	【Formen】\n{I:MouseLeft} ziehen : auffuellen\n{W:KeyCtrl}+{I:MouseLeft} ziehen : abtragen\n{I:MouseRight} ziehen : abtragen\n{I:MouseWheel} : Pinselgroesse\n{W:KeyShift}+ziehen : Tiefe fix\n{W:KeyAlt}+ziehen : Kamera\n{W:KeyCtrl}+{I:KeyZ} : rueckgaengig\n{W:KeyCtrl}+{I:KeyY} : wiederholen\n{W:KeyDel} : alles loeschen
 Training.Shop.stat_speed.Desc	TEMP+6
 Training.Shop.stat_hit.Desc	TREFF+6
-Training.Shop.train_boost.Desc	Erfolgsrate+ (Tage)
+Training.Shop.train_boost.Desc	Erfolgsrate +{percent}% fuer {turns} Zuege
 Training.Shop.stat_defense.Desc	VER+6
 Training.Shop.motivation_boost.Desc	Motivation+
 Training.Shop.stat_hp.Desc	KP+8
 Training.Shop.stat_attack.Desc	ANG+6
-Training.Shop.train_boost_strong.Desc	Erfolgsrate++ (Tage)
+Training.Shop.train_boost_strong.Desc	Erfolgsrate +{percent}% fuer {turns} Zuege
+Training.Status.GreatSuccessBoostActive	Erfolgsrate erhoeht ({turns} Zuege)
 Training.Shop.stamina_drink.Desc	Ausdauer+25
 Training.Shop.motivation_tennis.Desc	Motivation+
 Training.Shop.stamina_full.Desc	Ausdauer voll

@@ -14,19 +14,19 @@ namespace SaveData
         public const float WeakProgress = 0f;
 
         /// <summary>
-        /// 普通進行度(ソフト目標への半分)
+        /// 普通進行度
         /// </summary>
-        public const float NormalProgress = 0.5f;
+        public const float NormalProgress = 2f;
 
         /// <summary>
-        /// 強い進行度(ソフト目標到達)
+        /// 強い進行度
         /// </summary>
-        public const float StrongProgress = 1f;
+        public const float StrongProgress = 4f;
 
         /// <summary>
-        /// 最強進行度(ソフト目標を超えて伸ばす)
+        /// 最強進行度
         /// </summary>
-        public const float StrongestProgress = 2f;
+        public const float StrongestProgress = 8f;
 
         /// <summary>
         /// 育成普通相当のHPソフト目標

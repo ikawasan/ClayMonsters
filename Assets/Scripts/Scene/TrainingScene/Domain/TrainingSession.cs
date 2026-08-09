@@ -170,7 +170,7 @@ namespace Scene.TrainingScene.Domain
         public float TrainGreatSuccessBonusPercent { get; private set; }
 
         /// <summary>
-        /// 訓練大成功ボーナスの残り週数
+        /// 訓練大成功ボーナスの残りターン数
         /// </summary>
         public int TrainGreatSuccessBonusWeeks { get; private set; }
 
@@ -704,10 +704,10 @@ namespace Scene.TrainingScene.Domain
         /// 訓練効率アップ効果を適用する
         /// </summary>
         /// <param name="bonusPercent">大成功率加算</param>
-        /// <param name="weeks">継続週数</param>
-        public void ApplyTrainEfficiencyBoost(float bonusPercent, int weeks)
+        /// <param name="turns">継続ターン数</param>
+        public void ApplyTrainEfficiencyBoost(float bonusPercent, int turns)
         {
-            if (bonusPercent <= 0f || weeks <= 0)
+            if (bonusPercent <= 0f || turns <= 0)
             {
                 return;
             }
@@ -715,14 +715,14 @@ namespace Scene.TrainingScene.Domain
             if (bonusPercent >= TrainGreatSuccessBonusPercent)
             {
                 TrainGreatSuccessBonusPercent = bonusPercent;
-                TrainGreatSuccessBonusWeeks = weeks;
+                TrainGreatSuccessBonusWeeks = turns;
                 return;
             }
 
             if (TrainGreatSuccessBonusWeeks <= 0)
             {
                 TrainGreatSuccessBonusPercent = bonusPercent;
-                TrainGreatSuccessBonusWeeks = weeks;
+                TrainGreatSuccessBonusWeeks = turns;
             }
         }
 
@@ -732,14 +732,6 @@ namespace Scene.TrainingScene.Domain
         public void AdvanceDay()
         {
             TurnIndexInDay = 0;
-            if (TrainGreatSuccessBonusWeeks > 0)
-            {
-                TrainGreatSuccessBonusWeeks--;
-                if (TrainGreatSuccessBonusWeeks <= 0)
-                {
-                    TrainGreatSuccessBonusPercent = 0f;
-                }
-            }
 
             if ((int)CurrentDay >= TrainingSettings.TotalDays)
             {
@@ -811,6 +803,21 @@ namespace Scene.TrainingScene.Domain
         public void CompletePeriod()
         {
             TurnIndexInDay++;
+            TickTrainGreatSuccessBonusTurn();
+        }
+
+        private void TickTrainGreatSuccessBonusTurn()
+        {
+            if (TrainGreatSuccessBonusWeeks <= 0)
+            {
+                return;
+            }
+
+            TrainGreatSuccessBonusWeeks--;
+            if (TrainGreatSuccessBonusWeeks <= 0)
+            {
+                TrainGreatSuccessBonusPercent = 0f;
+            }
         }
 
         /// <summary>

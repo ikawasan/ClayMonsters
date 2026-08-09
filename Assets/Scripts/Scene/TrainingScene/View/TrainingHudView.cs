@@ -34,8 +34,9 @@ namespace Scene.TrainingScene.View
         [SerializeField] private TMP_Text dayText;
         [Tooltip("現在の時間割。1時間目〜放課後。完了時はモデル名")]
         [SerializeField] private TMP_Text periodText;
-        [Tooltip("未使用。ターン表示は出さない")]
-        [SerializeField] private TMP_Text turnText;
+        [Tooltip("未使用だったターン表示欄を大成功率アップ中表示に使う")]
+        [FormerlySerializedAs("turnText")]
+        [SerializeField] private TMP_Text greatSuccessBoostStatusText;
         [Tooltip("体力の数値表示。体力 現在/最大")]
         [SerializeField] private TMP_Text staminaText;
         [Tooltip("やる気のテキスト。やる気　のあとにアイコンまたは記号を出す")]
@@ -176,6 +177,11 @@ namespace Scene.TrainingScene.View
         private bool isStatusHoverBound;
         private bool isPointerOverStats;
         private string hoveredStatusLinkId = string.Empty;
+        private bool isShowingStatusHoverDescription;
+        private string logMessageBeforeStatusHover = string.Empty;
+        private Color greatSuccessBoostBaseColor = Color.white;
+        private bool hasGreatSuccessBoostBaseColor;
+        private const float GreatSuccessBoostBlinkSeconds = 2.2f;
 
         private enum TrainingHudLayoutMode
         {
@@ -189,7 +195,7 @@ namespace Scene.TrainingScene.View
         private void Awake()
         {
             EnsureSerializedReferences();
-            HideTurnText();
+            HideGreatSuccessBoostStatus();
             BindUi();
             Hide();
         }
@@ -198,6 +204,7 @@ namespace Scene.TrainingScene.View
         {
             TickMotivationIconAnimation();
             TickStatusHover();
+            TickGreatSuccessBoostStatusBlink();
         }
 
         private void PlayMotivationIcon(TrainingMotivation motivation)
@@ -344,6 +351,7 @@ namespace Scene.TrainingScene.View
             SetLocationChoicePanelVisible(false);
             SetPanelVisible(attackSwapPanel, false);
             attackSwapChoicesView?.Clear();
+            HideGreatSuccessBoostStatus();
             SetHudRootVisible(false);
         }
 
@@ -413,6 +421,8 @@ namespace Scene.TrainingScene.View
             {
                 staminaFill.fillAmount = session.Stamina / (float)TrainingSettings.MaxStamina;
             }
+
+            UpdateGreatSuccessBoostStatus();
         }
 
         /// <inheritdoc/>
@@ -1896,6 +1906,7 @@ namespace Scene.TrainingScene.View
             SetPanelVisible(attackSwapPanel, false);
             SetInterruptButtonVisible(true);
             UpdateLogPanelVisibility();
+            UpdateGreatSuccessBoostStatus();
         }
 
         /// <summary>
@@ -1912,6 +1923,7 @@ namespace Scene.TrainingScene.View
             SetPanelVisible(attackSwapPanel, false);
             SetPanelVisible(logPanel, true);
             SetInterruptButtonVisible(true);
+            UpdateGreatSuccessBoostStatus();
         }
 
         private void ApplyAttackSwapLayout(bool showSessionPanels)
@@ -1924,6 +1936,14 @@ namespace Scene.TrainingScene.View
             SetLocationChoicePanelVisible(false);
             SetPanelVisible(logPanel, false);
             SetInterruptButtonVisible(false);
+            if (showSessionPanels)
+            {
+                UpdateGreatSuccessBoostStatus();
+            }
+            else
+            {
+                HideGreatSuccessBoostStatus();
+            }
         }
 
         private void ApplyResumeLayout()
@@ -1938,6 +1958,7 @@ namespace Scene.TrainingScene.View
             SetPanelVisible(attackSwapPanel, false);
             SetPanelVisible(logPanel, false);
             SetInterruptButtonVisible(false);
+            HideGreatSuccessBoostStatus();
         }
 
         private TrainingResumeWindowView GetResumeWindowView()
@@ -2025,15 +2046,81 @@ namespace Scene.TrainingScene.View
             }
         }
 
-        private void HideTurnText()
+        private void HideGreatSuccessBoostStatus()
         {
-            if (turnText == null)
+            if (greatSuccessBoostStatusText == null)
             {
                 return;
             }
 
-            turnText.text = string.Empty;
-            SetPanelVisible(turnText.gameObject, false);
+            greatSuccessBoostStatusText.text = string.Empty;
+            if (hasGreatSuccessBoostBaseColor)
+            {
+                greatSuccessBoostStatusText.color = greatSuccessBoostBaseColor;
+            }
+
+            SetPanelVisible(greatSuccessBoostStatusText.gameObject, false);
+        }
+
+        private void UpdateGreatSuccessBoostStatus()
+        {
+            if (greatSuccessBoostStatusText == null)
+            {
+                return;
+            }
+
+            bool show = boundSession != null
+                && boundSession.TrainGreatSuccessBonusPercent > 0f
+                && boundSession.TrainGreatSuccessBonusWeeks > 0
+                && layoutMode != TrainingHudLayoutMode.Hidden
+                && layoutMode != TrainingHudLayoutMode.Resume;
+
+            if (!show)
+            {
+                HideGreatSuccessBoostStatus();
+                return;
+            }
+
+            if (!hasGreatSuccessBoostBaseColor)
+            {
+                greatSuccessBoostBaseColor = greatSuccessBoostStatusText.color;
+                hasGreatSuccessBoostBaseColor = true;
+            }
+
+            greatSuccessBoostStatusText.text = LocalizedText.GetOrFallback(
+                GameTextKeys.TrainingGreatSuccessBoostActive,
+                "大成功率アップ中 残り{turns}ターン",
+                "turns",
+                boundSession.TrainGreatSuccessBonusWeeks);
+            greatSuccessBoostStatusText.color = greatSuccessBoostBaseColor;
+            SetPanelVisible(greatSuccessBoostStatusText.gameObject, true);
+        }
+
+        private void TickGreatSuccessBoostStatusBlink()
+        {
+            if (greatSuccessBoostStatusText == null
+                || !greatSuccessBoostStatusText.isActiveAndEnabled
+                || !greatSuccessBoostStatusText.gameObject.activeInHierarchy)
+            {
+                return;
+            }
+
+            if (string.IsNullOrEmpty(greatSuccessBoostStatusText.text))
+            {
+                return;
+            }
+
+            if (!hasGreatSuccessBoostBaseColor)
+            {
+                greatSuccessBoostBaseColor = greatSuccessBoostStatusText.color;
+                hasGreatSuccessBoostBaseColor = true;
+            }
+
+            float wave = (Mathf.Sin(Time.unscaledTime * (Mathf.PI * 2f / GreatSuccessBoostBlinkSeconds)) + 1f)
+                * 0.5f;
+            Color color = greatSuccessBoostBaseColor;
+            color.a = Mathf.Lerp(0.28f, 1f, wave);
+            greatSuccessBoostStatusText.color = color;
         }
 
         private static void SetPanelVisible(GameObject panel, bool visible)
@@ -2123,11 +2210,19 @@ namespace Scene.TrainingScene.View
 
             hoveredStatusLinkId = linkId;
             string description = ModelSaveSummaryFormatter.FormatTrainingStatusDescription(linkId);
-            if (!string.IsNullOrEmpty(description))
+            if (string.IsNullOrEmpty(description))
             {
-                // ログウィンドウへステータス説明を出す
-                SetLogMessage(description);
+                return;
             }
+
+            // 説明に切り替える直前の本文を保持し退出時に戻す
+            if (!isShowingStatusHoverDescription)
+            {
+                logMessageBeforeStatusHover = logText != null ? logText.text : string.Empty;
+                isShowingStatusHoverDescription = true;
+            }
+
+            SetLogMessage(description);
         }
 
         /// <summary>
@@ -2156,7 +2251,7 @@ namespace Scene.TrainingScene.View
         private void OnStatusHoverExit()
         {
             isPointerOverStats = false;
-            if (string.IsNullOrEmpty(hoveredStatusLinkId))
+            if (string.IsNullOrEmpty(hoveredStatusLinkId) && !isShowingStatusHoverDescription)
             {
                 return;
             }
@@ -2167,27 +2262,14 @@ namespace Scene.TrainingScene.View
 
         private void RestoreStatusHoverExitLog()
         {
-            switch (choiceMode)
+            if (!isShowingStatusHoverDescription)
             {
-                case ChoiceMode.Command:
-                    SetLogMessage(CommandChoicePrompt);
-                    break;
-                case ChoiceMode.Focus:
-                    SetLogMessage(FocusChoicePrompt);
-                    break;
-                case ChoiceMode.Shop:
-                    SetLogMessage(ShopChoicePrompt);
-                    break;
-                case ChoiceMode.Inventory:
-                    SetLogMessage(InventoryChoicePrompt);
-                    break;
-                case ChoiceMode.Location:
-                    SetLogMessage(LocationChoicePrompt);
-                    break;
-                default:
-                    SetLogMessage(string.Empty);
-                    break;
+                return;
             }
+
+            isShowingStatusHoverDescription = false;
+            SetLogMessage(logMessageBeforeStatusHover);
+            logMessageBeforeStatusHover = string.Empty;
         }
 
         private static string FormatStatsText(ModelStatus status)

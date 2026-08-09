@@ -58057,7 +58057,7 @@ MonoBehaviour:
   rootCanvas: {fileID: 4245089897388195601}
   dayText: {fileID: 2660783595595563319}
   periodText: {fileID: 484926055299106661}
-  turnText: {fileID: 8308476725251691179}
+  greatSuccessBoostStatusText: {fileID: 8308476725251691179}
   staminaText: {fileID: 803398336577242297}
   motivationText: {fileID: 803398336577242301}
   motivationIcon: {fileID: 803398336577242302}
@@ -68845,7 +68845,7 @@ MonoBehaviour:
   m_PixelsPerUnitMultiplier: 1
 --- !u!114 &8308476725251691179 stripped
 MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 2988749653070807388, guid: da51dbbf90d3cbd4d9e704fe6fedc3ae, type: 3}
+  m_CorrespondingSourceObject: {fileID: 910001001001001004, guid: da51dbbf90d3cbd4d9e704fe6fedc3ae, type: 3}
   m_PrefabInstance: {fileID: 6946402975382824022}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}

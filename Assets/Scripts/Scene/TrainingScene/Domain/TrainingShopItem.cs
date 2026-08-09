@@ -73,7 +73,7 @@ namespace Scene.TrainingScene.Domain
         public float GreatSuccessBonusPercent { get; }
 
         /// <summary>
-        /// 大成功ボーナスの継続週数
+        /// 大成功ボーナスの継続ターン数
         /// </summary>
         public int GreatSuccessBonusWeeks { get; }
 

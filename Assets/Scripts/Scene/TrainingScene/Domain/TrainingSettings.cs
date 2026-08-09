@@ -181,8 +181,9 @@ namespace Scene.TrainingScene.Domain
 
         /// <summary>
         /// カクリツン価格
+        /// 4ターン+25%向け
         /// </summary>
-        public const int ShopTrainBoostPrice = 250;
+        public const int ShopTrainBoostPrice = 120;
 
         /// <summary>
         /// カクリツンの大成功率加算
@@ -190,14 +191,20 @@ namespace Scene.TrainingScene.Domain
         public const float ShopTrainBoostPercent = 25f;
 
         /// <summary>
-        /// カクリツンの継続週数
+        /// カクリツンの継続ターン数
         /// </summary>
-        public const int ShopTrainBoostWeeks = 4;
+        public const int ShopTrainBoostTurns = 4;
+
+        /// <summary>
+        /// 互換別名
+        /// </summary>
+        public const int ShopTrainBoostWeeks = ShopTrainBoostTurns;
 
         /// <summary>
         /// カクリツン改価格
+        /// 2ターン+50%向け
         /// </summary>
-        public const int ShopTrainBoostStrongPrice = 480;
+        public const int ShopTrainBoostStrongPrice = 220;
 
         /// <summary>
         /// カクリツン改の大成功率加算
@@ -205,9 +212,14 @@ namespace Scene.TrainingScene.Domain
         public const float ShopTrainBoostStrongPercent = 50f;
 
         /// <summary>
-        /// カクリツン改の継続週数
+        /// カクリツン改の継続ターン数
         /// </summary>
-        public const int ShopTrainBoostStrongWeeks = 2;
+        public const int ShopTrainBoostStrongTurns = 2;
+
+        /// <summary>
+        /// 互換別名
+        /// </summary>
+        public const int ShopTrainBoostStrongWeeks = ShopTrainBoostStrongTurns;
 
         /// <summary>
         /// テニスボール価格
