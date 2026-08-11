@@ -57,6 +57,9 @@ namespace SaveData
                     runtimeRenderer,
                     exportMesh,
                     bonesInHierarchy.transform);
+                // 複製メッシュを非表示にする(enabled=falseだとExport対象外になるため描画のみ切る)
+                HideExportRenderers(bonesInHierarchy);
+                HideExportRenderers(meshObject);
                 export.AddScene(new[] { bonesInHierarchy, meshObject });
 
                 bool success = await export
@@ -68,17 +71,39 @@ namespace SaveData
             finally
             {
                 // meshObjectを残すと育成表示モデルと二重になる
+                // 即時破棄してDestroy遅延1フレームのチラつきも防ぐ
                 if (meshObject != null)
                 {
-                    Object.Destroy(meshObject);
+                    Object.DestroyImmediate(meshObject);
                 }
 
                 if (bonesInHierarchy != null)
                 {
-                    Object.Destroy(bonesInHierarchy);
+                    Object.DestroyImmediate(bonesInHierarchy);
                 }
 
                 Object.Destroy(exportMesh);
+            }
+        }
+
+        /// <summary>
+        /// エクスポート用オブジェクトの描画だけ切る
+        /// コンポーネント無効化はglTFastのDisabledComponents除外と衝突するため使わない
+        /// </summary>
+        private static void HideExportRenderers(GameObject root)
+        {
+            if (root == null)
+            {
+                return;
+            }
+
+            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                if (renderers[i] != null)
+                {
+                    renderers[i].forceRenderingOff = true;
+                }
             }
         }
 
@@ -118,7 +143,10 @@ namespace SaveData
         /// <summary>
         /// メッシュオブジェクトを生成し、複製されたボーンに再バインドして返します。
         /// </summary>
-        private GameObject CreateMeshObject(SkinnedMeshRenderer runtimeRenderer, Mesh exportMesh, Transform clonedBonesTransform)
+        private GameObject CreateMeshObject(
+            SkinnedMeshRenderer runtimeRenderer,
+            Mesh exportMesh,
+            Transform clonedBonesTransform)
         {
             GameObject meshObject = new GameObject("Mesh");
             meshObject.transform.localPosition = runtimeRenderer.transform.localPosition;
@@ -132,7 +160,9 @@ namespace SaveData
             // ルートボーンを複製側から名前で再バインドする
             if (runtimeRenderer.rootBone != null)
             {
-                Transform mappedRoot = FindChildRecursive(clonedBonesTransform, runtimeRenderer.rootBone.name);
+                Transform mappedRoot = FindChildRecursive(
+                    clonedBonesTransform,
+                    runtimeRenderer.rootBone.name);
                 skinnedMeshRenderer.rootBone = mappedRoot != null ? mappedRoot : clonedBonesTransform;
             }
             else
@@ -154,7 +184,9 @@ namespace SaveData
 
                 if (foundBone == null)
                 {
-                    foundBone = skinnedMeshRenderer.rootBone != null ? skinnedMeshRenderer.rootBone : clonedBonesTransform;
+                    foundBone = skinnedMeshRenderer.rootBone != null
+                        ? skinnedMeshRenderer.rootBone
+                        : clonedBonesTransform;
                 }
 
                 newBones[i] = foundBone;
