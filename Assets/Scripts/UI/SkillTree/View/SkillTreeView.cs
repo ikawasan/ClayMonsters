@@ -1,9 +1,11 @@
+using Cysharp.Threading.Tasks;
 using Extensions;
 using LighthouseExtends.UIComponent.Button;
 using Localization;
 using SaveData;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using TMPro;
 using UI.SkillTree.Interface;
 using UnityEngine;
@@ -37,10 +39,18 @@ namespace UI.SkillTree.View
         [SerializeField] private Image[] connectionLines;
         [SerializeField] private float connectionThickness = 4f;
 
+        private static readonly Color ConnectionUnlockFlashColor = new(1.35f, 1.05f, 0.25f, 1f);
+        private const float ConnectionFlashDurationSeconds = 0.7f;
+        private const float ConnectionFlashThicknessMul = 2.6f;
+        private const float RevealStaggerSeconds = 0.07f;
+
         private UnityAction<SkillTreeNodeId> nodeSelectedAction;
         private Dictionary<SkillTreeNodeId, SkillTreeNodeView> nodeMap;
         private LocalizedBakedTextApplier bakedLabelApplier;
         private int cachedPoints;
+        private CancellationTokenSource connectionFlashCts;
+        private readonly Dictionary<Image, Color> connectionBaseColors = new();
+        private readonly Dictionary<Image, Vector2> connectionBaseSizes = new();
 
         private void Awake()
         {
@@ -51,6 +61,16 @@ namespace UI.SkillTree.View
             InitializeBonusSummaryToggle();
             EnsureBakedLabels();
             Hide();
+        }
+
+        private void OnDisable()
+        {
+            CancelConnectionFlash(restore: true);
+        }
+
+        private void OnDestroy()
+        {
+            CancelConnectionFlash(restore: false);
         }
 
         /// <inheritdoc/>
@@ -142,7 +162,7 @@ namespace UI.SkillTree.View
             }
 
             canvas.enabled = true;
-            ApplyBonusSummaryCanvasVisibility();
+            CloseBonusSummary();
             Canvas.ForceUpdateCanvases();
             RefreshConnectionLayoutOnly();
         }
@@ -157,10 +177,7 @@ namespace UI.SkillTree.View
 
             canvas.enabled = false;
             // 入れ子Canvasは親無効でも単独描画されるため明示的に閉じる
-            if (bonusSummaryCanvas != null)
-            {
-                bonusSummaryCanvas.enabled = false;
-            }
+            CloseBonusSummary();
         }
 
         /// <inheritdoc />
@@ -212,6 +229,8 @@ namespace UI.SkillTree.View
                 unlockedNode.PlayUnlockAnimation();
             }
 
+            PlayConnectionUnlockFlash(unlockedNodeId);
+
             if (revealedNodeIds == null || revealedNodeIds.Count == 0)
             {
                 return;
@@ -227,14 +246,180 @@ namespace UI.SkillTree.View
 
                 if (TryGetNode(revealedId, out SkillTreeNodeView revealedNode))
                 {
-                    revealedNode.PlayRevealAnimation();
+                    float delay = 0.12f + (i * RevealStaggerSeconds);
+                    revealedNode.PlayRevealAnimation(delay);
                 }
             }
+        }
+
+        private void PlayConnectionUnlockFlash(SkillTreeNodeId unlockedNodeId)
+        {
+            if (connectionLines == null || connectionLines.Length == 0)
+            {
+                return;
+            }
+
+            CancelConnectionFlash(restore: true);
+            connectionFlashCts = CancellationTokenSource.CreateLinkedTokenSource(
+                this.GetCancellationTokenOnDestroy());
+            PlayConnectionUnlockFlashAsync(unlockedNodeId, connectionFlashCts.Token).Forget();
+        }
+
+        private async UniTaskVoid PlayConnectionUnlockFlashAsync(
+            SkillTreeNodeId unlockedNodeId,
+            CancellationToken cancellationToken)
+        {
+            IReadOnlyList<SkillTreeEdge> edges = SkillTreeCatalog.PrerequisiteEdges;
+            int count = Mathf.Min(connectionLines.Length, edges.Count);
+            List<Image> flashTargets = new();
+
+            for (int i = 0; i < count; i++)
+            {
+                Image line = connectionLines[i];
+                if (line == null || !line.enabled)
+                {
+                    continue;
+                }
+
+                SkillTreeEdge edge = edges[i];
+                if (edge.From != unlockedNodeId && edge.To != unlockedNodeId)
+                {
+                    continue;
+                }
+
+                if (!connectionBaseColors.ContainsKey(line))
+                {
+                    connectionBaseColors[line] = line.color;
+                }
+
+                if (!connectionBaseSizes.ContainsKey(line))
+                {
+                    connectionBaseSizes[line] = line.rectTransform.sizeDelta;
+                }
+
+                flashTargets.Add(line);
+            }
+
+            if (flashTargets.Count == 0)
+            {
+                return;
+            }
+
+            try
+            {
+                float elapsed = 0f;
+                while (elapsed < ConnectionFlashDurationSeconds)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    elapsed += Time.unscaledDeltaTime;
+                    float t = Mathf.Clamp01(elapsed / ConnectionFlashDurationSeconds);
+                    float pulse = Mathf.Abs(Mathf.Sin(t * Mathf.PI * 5.5f));
+                    float envelope = 1f - Mathf.Pow(Mathf.Clamp01((t - 0.55f) / 0.45f), 2f);
+                    float strength = pulse * envelope;
+
+                    for (int i = 0; i < flashTargets.Count; i++)
+                    {
+                        Image line = flashTargets[i];
+                        if (line == null)
+                        {
+                            continue;
+                        }
+
+                        if (!connectionBaseColors.TryGetValue(line, out Color baseColor)
+                            || !connectionBaseSizes.TryGetValue(line, out Vector2 baseSize))
+                        {
+                            continue;
+                        }
+
+                        line.color = Color.Lerp(baseColor, ConnectionUnlockFlashColor, strength);
+                        float thickness = Mathf.Lerp(
+                            baseSize.y,
+                            baseSize.y * ConnectionFlashThicknessMul,
+                            strength);
+                        line.rectTransform.sizeDelta = new Vector2(baseSize.x, thickness);
+                    }
+
+                    await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
+                }
+
+                RestoreConnectionVisuals(flashTargets);
+                if (connectionFlashCts != null)
+                {
+                    connectionFlashCts.Dispose();
+                    connectionFlashCts = null;
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // 中断時はCancelConnectionFlash側で戻す
+            }
+        }
+
+        private void CancelConnectionFlash(bool restore)
+        {
+            if (connectionFlashCts != null)
+            {
+                connectionFlashCts.Cancel();
+                connectionFlashCts.Dispose();
+                connectionFlashCts = null;
+            }
+
+            if (restore)
+            {
+                List<Image> all = new();
+                if (connectionLines != null)
+                {
+                    for (int i = 0; i < connectionLines.Length; i++)
+                    {
+                        if (connectionLines[i] != null)
+                        {
+                            all.Add(connectionLines[i]);
+                        }
+                    }
+                }
+
+                RestoreConnectionVisuals(all);
+                return;
+            }
+
+            connectionBaseColors.Clear();
+            connectionBaseSizes.Clear();
+        }
+
+        private void RestoreConnectionVisuals(List<Image> targets)
+        {
+            if (targets == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < targets.Count; i++)
+            {
+                Image line = targets[i];
+                if (line == null)
+                {
+                    continue;
+                }
+
+                if (connectionBaseColors.TryGetValue(line, out Color color))
+                {
+                    line.color = color;
+                }
+
+                if (connectionBaseSizes.TryGetValue(line, out Vector2 size))
+                {
+                    line.rectTransform.sizeDelta = size;
+                }
+            }
+
+            connectionBaseColors.Clear();
+            connectionBaseSizes.Clear();
         }
 
         /// <inheritdoc />
         public void RefreshConnections(Func<SkillTreeNodeId, int> getLevel)
         {
+            CancelConnectionFlash(restore: true);
             if (connectionLines == null || getLevel == null)
             {
                 return;
@@ -570,7 +755,7 @@ namespace UI.SkillTree.View
 
             bonusSummaryToggle.onValueChanged.AddListener(OnBonusSummaryToggleChanged);
             // 起動時はスキルツリー非表示なので一覧も閉じる
-            bonusSummaryCanvas.enabled = false;
+            CloseBonusSummary();
         }
 
         private void OnBonusSummaryToggleChanged(bool isOn)
@@ -584,15 +769,17 @@ namespace UI.SkillTree.View
             bonusSummaryCanvas.enabled = isOn && canvas != null && canvas.enabled;
         }
 
-        private void ApplyBonusSummaryCanvasVisibility()
+        private void CloseBonusSummary()
         {
-            if (bonusSummaryCanvas == null)
+            if (bonusSummaryToggle != null)
             {
-                return;
+                bonusSummaryToggle.SetIsOnWithoutNotify(false);
             }
 
-            bool toggleOn = bonusSummaryToggle == null || bonusSummaryToggle.isOn;
-            bonusSummaryCanvas.enabled = toggleOn;
+            if (bonusSummaryCanvas != null)
+            {
+                bonusSummaryCanvas.enabled = false;
+            }
         }
 
         private void ValidateReferences()

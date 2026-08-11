@@ -16,12 +16,19 @@ namespace UI.SkillTree.View
     public sealed class SkillTreeNodeView : MonoBehaviour
     {
         private static readonly Color SelectedOutlineColor = new(1f, 0.92f, 0.28f, 1f);
-        private static readonly Color UnlockFlashColor = new(1f, 0.95f, 0.55f, 1f);
+        private static readonly Color UnlockFlashHot = new(1.4f, 1.25f, 0.35f, 1f);
+        private static readonly Color UnlockFlashWhite = new(1.6f, 1.55f, 1.3f, 1f);
+        private static readonly Color UnlockOutlineColor = new(1f, 0.85f, 0.15f, 1f);
+        private static readonly Color CheckmarkFlashColor = new(1.3f, 1.15f, 0.4f, 1f);
         private static readonly Vector2 SelectedOutlineDistance = new(5f, 5f);
-        private const float UnlockScalePeak = 1.22f;
-        private const float UnlockDurationSeconds = 0.38f;
-        private const float RevealDurationSeconds = 0.28f;
-        private const float CheckmarkPopDelaySeconds = 0.08f;
+        private static readonly Vector2 UnlockOutlineDistancePeak = new(18f, 18f);
+
+        private const float UnlockAnticipationScale = 0.45f;
+        private const float UnlockBurstScale = 1.85f;
+        private const float UnlockDurationSeconds = 0.85f;
+        private const float RevealDurationSeconds = 0.55f;
+        private const float CheckmarkPopDelaySeconds = 0.18f;
+        private const float UnlockSpinDegrees = 28f;
 
         [SerializeField] private SkillTreeNodeId nodeId;
         [SerializeField] private LHButton button;
@@ -32,6 +39,8 @@ namespace UI.SkillTree.View
         private Outline selectionOutline;
         private bool isSelected;
         private CancellationTokenSource animationCts;
+        private Color checkmarkBaseColor = Color.white;
+        private bool checkmarkBaseColorCached;
 
         /// <summary>
         /// ノードID
@@ -46,6 +55,7 @@ namespace UI.SkillTree.View
         private void Awake()
         {
             HideFrameBackground();
+            CacheCheckmarkBaseColor();
         }
 
         private void OnDisable()
@@ -97,6 +107,8 @@ namespace UI.SkillTree.View
         public void PlayUnlockAnimation()
         {
             CancelAnimation(resetVisuals: true);
+            // 解放演出中は前面に出して見えやすくする
+            transform.SetAsLastSibling();
             animationCts = CancellationTokenSource.CreateLinkedTokenSource(
                 this.GetCancellationTokenOnDestroy());
             PlayUnlockAnimationAsync(animationCts.Token).Forget();
@@ -105,12 +117,13 @@ namespace UI.SkillTree.View
         /// <summary>
         /// 前提達成で新たに出現したノードの演出を再生する
         /// </summary>
-        public void PlayRevealAnimation()
+        /// <param name="startDelaySeconds">開始遅延秒</param>
+        public void PlayRevealAnimation(float startDelaySeconds = 0f)
         {
             CancelAnimation(resetVisuals: true);
             animationCts = CancellationTokenSource.CreateLinkedTokenSource(
                 this.GetCancellationTokenOnDestroy());
-            PlayRevealAnimationAsync(animationCts.Token).Forget();
+            PlayRevealAnimationAsync(startDelaySeconds, animationCts.Token).Forget();
         }
 
         /// <summary>
@@ -140,6 +153,17 @@ namespace UI.SkillTree.View
             frameImage.raycastTarget = true;
         }
 
+        private void CacheCheckmarkBaseColor()
+        {
+            if (checkmarkImage == null || checkmarkBaseColorCached)
+            {
+                return;
+            }
+
+            checkmarkBaseColor = checkmarkImage.color;
+            checkmarkBaseColorCached = true;
+        }
+
         private void ApplyVisibility(bool visible, bool unlocked)
         {
             if (frameImage != null)
@@ -149,8 +173,11 @@ namespace UI.SkillTree.View
 
             if (checkmarkImage != null)
             {
+                CacheCheckmarkBaseColor();
                 checkmarkImage.enabled = visible && unlocked;
                 checkmarkImage.rectTransform.localScale = Vector3.one;
+                checkmarkImage.rectTransform.localRotation = Quaternion.identity;
+                checkmarkImage.color = checkmarkBaseColor;
             }
 
             if (iconImage == null)
@@ -171,6 +198,7 @@ namespace UI.SkillTree.View
             iconImage.raycastTarget = false;
             iconImage.enabled = sprite != null;
             iconImage.color = Color.white;
+            iconImage.rectTransform.localRotation = Quaternion.identity;
         }
 
         private void ApplySelectionOutline()
@@ -181,6 +209,15 @@ namespace UI.SkillTree.View
                 return;
             }
 
+            EnsureOutline(outlineTarget);
+            selectionOutline.effectColor = SelectedOutlineColor;
+            selectionOutline.effectDistance = SelectedOutlineDistance;
+            selectionOutline.useGraphicAlpha = true;
+            selectionOutline.enabled = isSelected && outlineTarget.enabled;
+        }
+
+        private void EnsureOutline(Graphic outlineTarget)
+        {
             if (selectionOutline == null || selectionOutline.gameObject != outlineTarget.gameObject)
             {
                 selectionOutline = outlineTarget.GetComponent<Outline>();
@@ -189,49 +226,175 @@ namespace UI.SkillTree.View
                     selectionOutline = outlineTarget.gameObject.AddComponent<Outline>();
                 }
             }
-
-            selectionOutline.effectColor = SelectedOutlineColor;
-            selectionOutline.effectDistance = SelectedOutlineDistance;
-            selectionOutline.useGraphicAlpha = true;
-            selectionOutline.enabled = isSelected && outlineTarget.enabled;
         }
 
         private async UniTaskVoid PlayUnlockAnimationAsync(CancellationToken cancellationToken)
         {
             Transform root = transform;
-            root.localScale = Vector3.one * 0.72f;
+            root.localScale = Vector3.one * UnlockAnticipationScale;
+            root.localRotation = Quaternion.identity;
 
             if (checkmarkImage != null && checkmarkImage.enabled)
             {
                 checkmarkImage.rectTransform.localScale = Vector3.zero;
+                checkmarkImage.rectTransform.localRotation = Quaternion.Euler(0f, 0f, -48f);
+                CacheCheckmarkBaseColor();
+                checkmarkImage.color = CheckmarkFlashColor;
             }
 
             if (iconImage != null && iconImage.enabled)
             {
-                iconImage.color = UnlockFlashColor;
+                iconImage.color = UnlockFlashHot;
             }
 
             try
             {
                 await UniTask.WhenAll(
-                    AnimateScaleAsync(
-                        root,
-                        0.72f,
-                        UnlockScalePeak,
-                        1f,
-                        UnlockDurationSeconds,
-                        cancellationToken),
+                    AnimateUnlockRootAsync(root, cancellationToken),
+                    AnimateUnlockIconFlashAsync(cancellationToken),
+                    AnimateUnlockOutlineAsync(cancellationToken),
                     AnimateCheckmarkUnlockAsync(cancellationToken));
 
-                if (iconImage != null && iconImage.enabled)
-                {
-                    iconImage.color = Color.white;
-                }
+                ResetAnimatedVisualsKeepingSelection();
             }
             catch (OperationCanceledException)
             {
                 // 中断時はBindまたはOnDisableで正規化する
             }
+        }
+
+        private async UniTask AnimateUnlockRootAsync(
+            Transform root,
+            CancellationToken cancellationToken)
+        {
+            float duration = UnlockDurationSeconds;
+            float elapsed = 0f;
+
+            while (elapsed < duration)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+
+                // 予縮->爆発->強弾性で収束
+                float scale;
+                if (t < 0.12f)
+                {
+                    float localT = t / 0.12f;
+                    scale = Mathf.LerpUnclamped(
+                        UnlockAnticipationScale,
+                        UnlockAnticipationScale * 0.82f,
+                        EaseInCubic(localT));
+                }
+                else if (t < 0.38f)
+                {
+                    float localT = (t - 0.12f) / 0.26f;
+                    scale = Mathf.LerpUnclamped(
+                        UnlockAnticipationScale * 0.82f,
+                        UnlockBurstScale,
+                        EaseOutBack(localT));
+                }
+                else
+                {
+                    float localT = (t - 0.38f) / 0.62f;
+                    float bounce = Mathf.Exp(-5.2f * localT)
+                        * Mathf.Cos(localT * Mathf.PI * 5.5f);
+                    scale = 1f + ((UnlockBurstScale - 1f) * bounce);
+                    scale = Mathf.Max(0.82f, scale);
+                }
+
+                // 左右に振って着地
+                float spinWave = Mathf.Sin(t * Mathf.PI * 3.2f)
+                    * (1f - EaseOutCubic(t))
+                    * UnlockSpinDegrees;
+                root.localScale = Vector3.one * scale;
+                root.localRotation = Quaternion.Euler(0f, 0f, spinWave);
+                await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
+            }
+
+            root.localScale = Vector3.one;
+            root.localRotation = Quaternion.identity;
+        }
+
+        private async UniTask AnimateUnlockIconFlashAsync(CancellationToken cancellationToken)
+        {
+            if (iconImage == null || !iconImage.enabled)
+            {
+                return;
+            }
+
+            float duration = UnlockDurationSeconds;
+            float elapsed = 0f;
+            RectTransform iconRect = iconImage.rectTransform;
+
+            while (elapsed < duration)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+
+                // 金白交互フラッシュ
+                float flash = Mathf.Abs(Mathf.Sin(t * Mathf.PI * 7.5f));
+                Color flashColor = Color.Lerp(UnlockFlashHot, UnlockFlashWhite, flash);
+                // 終盤は白へ
+                float settle = EaseInCubic(Mathf.Clamp01((t - 0.65f) / 0.35f));
+                iconImage.color = Color.Lerp(flashColor, Color.white, settle);
+
+                float iconSpin = Mathf.Sin(t * Mathf.PI * 4f)
+                    * (1f - t)
+                    * 12f;
+                iconRect.localRotation = Quaternion.Euler(0f, 0f, iconSpin);
+                await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
+            }
+
+            iconImage.color = Color.white;
+            iconRect.localRotation = Quaternion.identity;
+        }
+
+        private async UniTask AnimateUnlockOutlineAsync(CancellationToken cancellationToken)
+        {
+            Graphic outlineTarget = iconImage != null ? iconImage : (Graphic)frameImage;
+            if (outlineTarget == null)
+            {
+                return;
+            }
+
+            EnsureOutline(outlineTarget);
+            selectionOutline.enabled = true;
+            selectionOutline.useGraphicAlpha = true;
+
+            float duration = UnlockDurationSeconds;
+            float elapsed = 0f;
+
+            while (elapsed < duration)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+
+                float pulse = 0.5f + (0.5f * Mathf.Sin(t * Mathf.PI * 8f));
+                float envelope = 1f - EaseInCubic(Mathf.Clamp01((t - 0.55f) / 0.45f));
+                float distance = Mathf.Lerp(6f, UnlockOutlineDistancePeak.x, pulse) * envelope;
+                // 終盤は選択枠へ収束
+                if (isSelected)
+                {
+                    distance = Mathf.Lerp(distance, SelectedOutlineDistance.x, Settle01(t));
+                }
+
+                selectionOutline.effectDistance = new Vector2(distance, distance);
+                selectionOutline.effectColor = Color.Lerp(
+                    UnlockOutlineColor,
+                    isSelected ? SelectedOutlineColor : new Color(1f, 0.85f, 0.15f, 0f),
+                    Settle01(t));
+                await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
+            }
+
+            ApplySelectionOutline();
+        }
+
+        private static float Settle01(float t)
+        {
+            return EaseInCubic(Mathf.Clamp01((t - 0.7f) / 0.3f));
         }
 
         private async UniTask AnimateCheckmarkUnlockAsync(CancellationToken cancellationToken)
@@ -246,41 +409,81 @@ namespace UI.SkillTree.View
                 DelayType.UnscaledDeltaTime,
                 cancellationToken: cancellationToken);
 
-            await AnimateScaleAsync(
-                checkmarkImage.rectTransform,
-                0f,
-                1.35f,
-                1f,
-                UnlockDurationSeconds * 0.75f,
-                cancellationToken);
+            RectTransform checkRect = checkmarkImage.rectTransform;
+            float duration = UnlockDurationSeconds * 0.72f;
+            float elapsed = 0f;
+
+            while (elapsed < duration)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+
+                float scaleEnvelope;
+                if (t < 0.45f)
+                {
+                    float localT = t / 0.45f;
+                    scaleEnvelope = Mathf.LerpUnclamped(0f, 1.7f, EaseOutBack(localT));
+                }
+                else
+                {
+                    float localT = (t - 0.45f) / 0.55f;
+                    float bounce = Mathf.Exp(-4.5f * localT)
+                        * Mathf.Cos(localT * Mathf.PI * 4.2f);
+                    scaleEnvelope = 1f + (0.7f * bounce);
+                    scaleEnvelope = Mathf.Max(0.85f, scaleEnvelope);
+                }
+
+                float zRot = Mathf.LerpUnclamped(-48f, 0f, EaseOutBack(Mathf.Clamp01(t * 1.2f)));
+                // 終盤微振動
+                zRot += Mathf.Sin(t * Mathf.PI * 6f) * (1f - t) * 10f;
+
+                checkRect.localScale = Vector3.one * scaleEnvelope;
+                checkRect.localRotation = Quaternion.Euler(0f, 0f, zRot);
+
+                float flash = Mathf.Abs(Mathf.Sin(t * Mathf.PI * 6f));
+                checkmarkImage.color = Color.Lerp(
+                    CheckmarkFlashColor,
+                    checkmarkBaseColor,
+                    EaseInCubic(t) * (0.35f + (0.65f * (1f - flash))));
+                await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
+            }
+
+            checkRect.localScale = Vector3.one;
+            checkRect.localRotation = Quaternion.identity;
+            checkmarkImage.color = checkmarkBaseColor;
         }
 
-        private async UniTaskVoid PlayRevealAnimationAsync(CancellationToken cancellationToken)
+        private async UniTaskVoid PlayRevealAnimationAsync(
+            float startDelaySeconds,
+            CancellationToken cancellationToken)
         {
             Transform root = transform;
-            root.localScale = Vector3.one * 0.55f;
+            root.localScale = Vector3.one * 0.15f;
+            root.localRotation = Quaternion.identity;
 
             if (iconImage != null && iconImage.enabled)
             {
-                Color c = iconImage.color;
-                c.a = 0.35f;
+                Color c = UnlockFlashHot;
+                c.a = 0.2f;
                 iconImage.color = c;
             }
 
             try
             {
-                await AnimateScaleAsync(
-                    root,
-                    0.55f,
-                    1.12f,
-                    1f,
-                    RevealDurationSeconds,
-                    cancellationToken);
-
-                if (iconImage != null && iconImage.enabled)
+                if (startDelaySeconds > 0f)
                 {
-                    iconImage.color = Color.white;
+                    await UniTask.Delay(
+                        TimeSpan.FromSeconds(startDelaySeconds),
+                        DelayType.UnscaledDeltaTime,
+                        cancellationToken: cancellationToken);
                 }
+
+                await UniTask.WhenAll(
+                    AnimateRevealRootAsync(root, cancellationToken),
+                    AnimateRevealIconAsync(cancellationToken));
+
+                ResetAnimatedVisualsKeepingSelection();
             }
             catch (OperationCanceledException)
             {
@@ -288,54 +491,107 @@ namespace UI.SkillTree.View
             }
         }
 
-        private static async UniTask AnimateScaleAsync(
-            Transform target,
-            float from,
-            float peak,
-            float to,
-            float durationSeconds,
+        private async UniTask AnimateRevealRootAsync(
+            Transform root,
             CancellationToken cancellationToken)
         {
-            if (target == null)
-            {
-                return;
-            }
-
-            float duration = Mathf.Max(0.01f, durationSeconds);
+            float duration = RevealDurationSeconds;
             float elapsed = 0f;
-            // 前半peak後半to
-            float upRatio = 0.55f;
 
             while (elapsed < duration)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 elapsed += Time.unscaledDeltaTime;
                 float t = Mathf.Clamp01(elapsed / duration);
+
                 float scale;
-                if (t <= upRatio)
+                if (t < 0.55f)
                 {
-                    float localT = t / upRatio;
-                    float eased = EaseOutCubic(localT);
-                    scale = Mathf.LerpUnclamped(from, peak, eased);
+                    float localT = t / 0.55f;
+                    scale = Mathf.LerpUnclamped(0.15f, 1.35f, EaseOutBack(localT));
                 }
                 else
                 {
-                    float localT = (t - upRatio) / (1f - upRatio);
-                    float eased = EaseOutCubic(localT);
-                    scale = Mathf.LerpUnclamped(peak, to, eased);
+                    float localT = (t - 0.55f) / 0.45f;
+                    float bounce = Mathf.Exp(-5f * localT)
+                        * Mathf.Cos(localT * Mathf.PI * 3.5f);
+                    scale = 1f + (0.35f * bounce);
                 }
 
-                target.localScale = Vector3.one * scale;
+                float spin = Mathf.Sin(t * Mathf.PI * 2.4f) * (1f - t) * 16f;
+                root.localScale = Vector3.one * scale;
+                root.localRotation = Quaternion.Euler(0f, 0f, spin);
                 await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
             }
 
-            target.localScale = Vector3.one * to;
+            root.localScale = Vector3.one;
+            root.localRotation = Quaternion.identity;
+        }
+
+        private async UniTask AnimateRevealIconAsync(CancellationToken cancellationToken)
+        {
+            if (iconImage == null || !iconImage.enabled)
+            {
+                return;
+            }
+
+            float duration = RevealDurationSeconds;
+            float elapsed = 0f;
+
+            while (elapsed < duration)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+
+                Color hot = UnlockFlashHot;
+                hot.a = Mathf.Lerp(0.2f, 1f, EaseOutCubic(t));
+                iconImage.color = Color.Lerp(hot, Color.white, EaseInCubic(t));
+                await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
+            }
+
+            iconImage.color = Color.white;
+        }
+
+        private void ResetAnimatedVisualsKeepingSelection()
+        {
+            transform.localScale = Vector3.one;
+            transform.localRotation = Quaternion.identity;
+
+            if (iconImage != null && iconImage.enabled)
+            {
+                iconImage.color = Color.white;
+                iconImage.rectTransform.localRotation = Quaternion.identity;
+            }
+
+            if (checkmarkImage != null)
+            {
+                CacheCheckmarkBaseColor();
+                checkmarkImage.rectTransform.localScale = Vector3.one;
+                checkmarkImage.rectTransform.localRotation = Quaternion.identity;
+                checkmarkImage.color = checkmarkBaseColor;
+            }
+
+            ApplySelectionOutline();
         }
 
         private static float EaseOutCubic(float t)
         {
             float inv = 1f - t;
             return 1f - (inv * inv * inv);
+        }
+
+        private static float EaseInCubic(float t)
+        {
+            return t * t * t;
+        }
+
+        private static float EaseOutBack(float t)
+        {
+            const float c1 = 1.70158f;
+            const float c3 = c1 + 1f;
+            float inv = t - 1f;
+            return 1f + (c3 * inv * inv * inv) + (c1 * inv * inv);
         }
 
         private void CancelAnimation(bool resetVisuals)
@@ -352,16 +608,7 @@ namespace UI.SkillTree.View
                 return;
             }
 
-            transform.localScale = Vector3.one;
-            if (checkmarkImage != null)
-            {
-                checkmarkImage.rectTransform.localScale = Vector3.one;
-            }
-
-            if (iconImage != null && iconImage.enabled)
-            {
-                iconImage.color = Color.white;
-            }
+            ResetAnimatedVisualsKeepingSelection();
         }
 
         private sealed class EmptyDisposable : IDisposable
