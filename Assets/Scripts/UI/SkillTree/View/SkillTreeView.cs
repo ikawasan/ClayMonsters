@@ -202,6 +202,37 @@ namespace UI.SkillTree.View
         }
 
         /// <inheritdoc />
+        public void PlayUnlockFeedback(
+            SkillTreeNodeId unlockedNodeId,
+            IReadOnlyList<SkillTreeNodeId> revealedNodeIds)
+        {
+            RebuildNodeMap();
+            if (TryGetNode(unlockedNodeId, out SkillTreeNodeView unlockedNode))
+            {
+                unlockedNode.PlayUnlockAnimation();
+            }
+
+            if (revealedNodeIds == null || revealedNodeIds.Count == 0)
+            {
+                return;
+            }
+
+            for (int i = 0; i < revealedNodeIds.Count; i++)
+            {
+                SkillTreeNodeId revealedId = revealedNodeIds[i];
+                if (revealedId == unlockedNodeId)
+                {
+                    continue;
+                }
+
+                if (TryGetNode(revealedId, out SkillTreeNodeView revealedNode))
+                {
+                    revealedNode.PlayRevealAnimation();
+                }
+            }
+        }
+
+        /// <inheritdoc />
         public void RefreshConnections(Func<SkillTreeNodeId, int> getLevel)
         {
             if (connectionLines == null || getLevel == null)

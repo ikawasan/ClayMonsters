@@ -2,6 +2,7 @@ using Localization;
 using R3;
 using SaveData;
 using SaveData.Interface;
+using System.Collections.Generic;
 using UI.SkillTree.Interface;
 using UI.SkillTree.View;
 using UnityEngine;
@@ -21,6 +22,7 @@ namespace UI.SkillTree.Presenter
         private SkillTreeNodeId selectedNodeId = SkillTreeNodeId.Center;
         private bool isSetup;
         private bool isVisible;
+        private bool suppressRefreshAnimation;
         private System.IDisposable pointsSubscription;
         private System.IDisposable bonusesSubscription;
         private System.IDisposable languageSubscription;
@@ -55,7 +57,7 @@ namespace UI.SkillTree.Presenter
             bonusesSubscription = skillTreeService.BonusesObservable
                 .Subscribe(_ =>
                 {
-                    if (isVisible)
+                    if (isVisible && !suppressRefreshAnimation)
                     {
                         RefreshAll();
                     }
@@ -107,7 +109,21 @@ namespace UI.SkillTree.Presenter
 
         private void OnClickUnlock()
         {
-            if (!skillTreeService.TryUnlockNextLevel(selectedNodeId))
+            SkillTreeNodeId unlockingNodeId = selectedNodeId;
+            List<SkillTreeNodeId> hiddenBefore = CollectHiddenNodeIds();
+
+            suppressRefreshAnimation = true;
+            bool unlocked;
+            try
+            {
+                unlocked = skillTreeService.TryUnlockNextLevel(unlockingNodeId);
+            }
+            finally
+            {
+                suppressRefreshAnimation = false;
+            }
+
+            if (!unlocked)
             {
                 RefreshDetail();
                 return;
@@ -115,6 +131,55 @@ namespace UI.SkillTree.Presenter
 
             view.SetPoints(pointsService.Points);
             RefreshAll();
+
+            List<SkillTreeNodeId> newlyRevealed = CollectNewlyRevealedNodeIds(hiddenBefore);
+            view.PlayUnlockFeedback(unlockingNodeId, newlyRevealed);
+        }
+
+        private List<SkillTreeNodeId> CollectHiddenNodeIds()
+        {
+            IReadOnlyList<SkillTreeNodeDefinition> nodes = skillTreeService.AllNodes;
+            List<SkillTreeNodeId> hidden = new(nodes.Count);
+            for (int i = 0; i < nodes.Count; i++)
+            {
+                SkillTreeNodeId id = nodes[i].Id;
+                if (!IsNodeVisible(id))
+                {
+                    hidden.Add(id);
+                }
+            }
+
+            return hidden;
+        }
+
+        private List<SkillTreeNodeId> CollectNewlyRevealedNodeIds(List<SkillTreeNodeId> hiddenBefore)
+        {
+            List<SkillTreeNodeId> revealed = new();
+            if (hiddenBefore == null || hiddenBefore.Count == 0)
+            {
+                return revealed;
+            }
+
+            for (int i = 0; i < hiddenBefore.Count; i++)
+            {
+                SkillTreeNodeId id = hiddenBefore[i];
+                if (IsNodeVisible(id) && skillTreeService.GetLevel(id) <= 0)
+                {
+                    revealed.Add(id);
+                }
+            }
+
+            return revealed;
+        }
+
+        private bool IsNodeVisible(SkillTreeNodeId nodeId)
+        {
+            if (skillTreeService.GetLevel(nodeId) > 0)
+            {
+                return true;
+            }
+
+            return skillTreeService.ArePrerequisitesMet(nodeId);
         }
 
         private void RefreshAll()

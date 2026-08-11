@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UI.SkillTree.View;
 using UnityEngine.Events;
 
@@ -36,6 +37,15 @@ namespace UI.SkillTree.Interface
         /// </summary>
         /// <param name="getLevel">ノードレベル取得</param>
         void RefreshConnections(Func<SaveData.SkillTreeNodeId, int> getLevel);
+
+        /// <summary>
+        /// ノード解放時の演出を再生する
+        /// </summary>
+        /// <param name="unlockedNodeId">解放したノード</param>
+        /// <param name="revealedNodeIds">新たに出現したノード</param>
+        void PlayUnlockFeedback(
+            SaveData.SkillTreeNodeId unlockedNodeId,
+            IReadOnlyList<SaveData.SkillTreeNodeId> revealedNodeIds);
 
         /// <summary>
         /// 詳細パネルを更新する
