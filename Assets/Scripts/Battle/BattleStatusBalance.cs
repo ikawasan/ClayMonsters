@@ -32,7 +32,7 @@ namespace Battle
         public const int MaxDefense = 999;
         public const int DefaultDefense = ModelStatusDefaults.DefaultDefense;
         public const int DefaultSpeed = ModelStatusDefaults.DefaultSpeed;
-        public const int MinSpeed = 6;
+        public const int MinSpeed = ModelStatusDefaults.MinSpeed;
         /// <summary>
         /// 育成後を含む戦闘上限
         /// 作成時上限より高い

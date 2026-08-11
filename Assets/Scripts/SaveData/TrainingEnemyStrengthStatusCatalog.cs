@@ -29,33 +29,33 @@ namespace SaveData
         public const float StrongestProgress = 8f;
 
         /// <summary>
-        /// 育成普通相当のHPソフト目標
-        /// NPCの280より低く育成序盤向けに抑える
+        /// 育成HPソフト目標
+        /// 作成時上限100を超えて段階差が付く値
         /// </summary>
-        public const int SoftTargetHp = 150;
+        public const int SoftTargetHp = 220;
 
         /// <summary>
         /// 育成攻撃ソフト目標
         /// </summary>
-        public const int SoftTargetAttack = 70;
+        public const int SoftTargetAttack = 160;
 
         /// <summary>
         /// 育成防御ソフト目標
         /// </summary>
-        public const int SoftTargetDefense = 70;
+        public const int SoftTargetDefense = 160;
 
         /// <summary>
         /// 育成速さソフト目標
         /// </summary>
-        public const int SoftTargetSpeed = 16;
+        public const int SoftTargetSpeed = 140;
 
         /// <summary>
         /// 育成命中ソフト目標
         /// </summary>
-        public const int SoftTargetHit = 20;
+        public const int SoftTargetHit = 140;
 
-        private const int CreationMinSpeed = 6;
-        private const int CreationMaxSpeed = 18;
+        private const int CreationMinSpeed = ModelStatusDefaults.MinSpeed;
+        private const int CreationMaxSpeed = ModelStatusDefaults.MaxSpeed;
 
         /// <summary>
         /// 強さ段階の表示名を返す

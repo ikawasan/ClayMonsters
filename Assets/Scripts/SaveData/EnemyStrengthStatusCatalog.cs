@@ -13,7 +13,7 @@ namespace SaveData
         /// <summary>
         /// バランス改訂番号(不一致なら段階ステータスを再生成する)
         /// </summary>
-        public const int BalanceVersion = 13;
+        public const int BalanceVersion = 14;
 
         /// <summary>
         /// 弱い進行度
@@ -93,8 +93,8 @@ namespace SaveData
         public const int MaxHit = 999;
 
         // ModelStatusCalculatorの速さ範囲と揃える
-        private const int ModelStatusCalculatorMinSpeed = 6;
-        private const int ModelStatusCalculatorMaxSpeed = 18;
+        private const int ModelStatusCalculatorMinSpeed = ModelStatusDefaults.MinSpeed;
+        private const int ModelStatusCalculatorMaxSpeed = ModelStatusDefaults.MaxSpeed;
 
         // 特化主ステの目標倍率
         private const float PrimaryWeight = 1.38f;
