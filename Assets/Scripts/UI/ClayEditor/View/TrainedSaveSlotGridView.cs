@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using System.Threading;
 using Cysharp.Threading.Tasks;
@@ -31,8 +32,8 @@ namespace UI.ClayEditor.View
             new TrainedSaveSlotCellView[SlotCount];
 
         private readonly List<UnityEngine.Object> runtimeThumbnailObjects = new List<UnityEngine.Object>();
-        private readonly Dictionary<ThumbnailCacheKey, Sprite> thumbnailCache =
-            new Dictionary<ThumbnailCacheKey, Sprite>();
+        private readonly Dictionary<ThumbnailCacheKey, CachedThumbnail> thumbnailCache =
+            new Dictionary<ThumbnailCacheKey, CachedThumbnail>();
         private readonly StringBuilder displayedCharactersBuilder = new StringBuilder(512);
 
         private Action<int> onSlotSelected;
@@ -225,8 +226,7 @@ namespace UI.ClayEditor.View
                 Sprite thumbnail = null;
                 if (interactable)
                 {
-                    bool wasCached = thumbnailCache.ContainsKey(
-                        new ThumbnailCacheKey(pool, i));
+                    bool wasCached = TryGetCachedThumbnail(saveService, pool, i, out _);
                     thumbnail = LoadThumbnailSprite(saveService, pool, i);
                     if (!wasCached && thumbnail != null)
                     {
@@ -474,12 +474,13 @@ namespace UI.ClayEditor.View
             ModelSavePool pool,
             int slotIndex)
         {
-            var key = new ThumbnailCacheKey(pool, slotIndex);
-            if (thumbnailCache.TryGetValue(key, out Sprite cached)
-                && cached != null)
+            if (TryGetCachedThumbnail(saveService, pool, slotIndex, out Sprite cached))
             {
                 return cached;
             }
+
+            long revision = ResolveThumbnailRevision(saveService, pool, slotIndex);
+            EvictThumbnailCacheEntry(pool, slotIndex);
 
             Texture2D texture = saveService.LoadThumbnail(pool, slotIndex);
             if (texture == null)
@@ -494,8 +495,112 @@ namespace UI.ClayEditor.View
                 new Vector2(0.5f, 0.5f),
                 100f);
             runtimeThumbnailObjects.Add(sprite);
-            thumbnailCache[key] = sprite;
+            thumbnailCache[new ThumbnailCacheKey(pool, slotIndex)] = new CachedThumbnail(revision, sprite, texture);
             return sprite;
+        }
+
+        private bool TryGetCachedThumbnail(
+            IClayModelSaveService saveService,
+            ModelSavePool pool,
+            int slotIndex,
+            out Sprite sprite)
+        {
+            sprite = null;
+            var key = new ThumbnailCacheKey(pool, slotIndex);
+            if (!thumbnailCache.TryGetValue(key, out CachedThumbnail cached)
+                || cached.Sprite == null)
+            {
+                return false;
+            }
+
+            long revision = ResolveThumbnailRevision(saveService, pool, slotIndex);
+            if (cached.Revision != revision)
+            {
+                return false;
+            }
+
+            sprite = cached.Sprite;
+            return true;
+        }
+
+        private void EvictThumbnailCacheEntry(ModelSavePool pool, int slotIndex)
+        {
+            var key = new ThumbnailCacheKey(pool, slotIndex);
+            if (!thumbnailCache.TryGetValue(key, out CachedThumbnail cached))
+            {
+                return;
+            }
+
+            thumbnailCache.Remove(key);
+            DestroyCachedThumbnail(cached);
+        }
+
+        private void DestroyCachedThumbnail(CachedThumbnail cached)
+        {
+            if (cached.Sprite != null)
+            {
+                runtimeThumbnailObjects.Remove(cached.Sprite);
+                Destroy(cached.Sprite);
+            }
+
+            if (cached.Texture != null)
+            {
+                runtimeThumbnailObjects.Remove(cached.Texture);
+                Destroy(cached.Texture);
+            }
+        }
+
+        private static long ResolveThumbnailRevision(
+            IClayModelSaveService saveService,
+            ModelSavePool pool,
+            int slotIndex)
+        {
+            if (saveService == null)
+            {
+                return 0L;
+            }
+
+            ModelSaveSlot slot = saveService.GetSlot(pool, slotIndex);
+            if (slot == null || string.IsNullOrEmpty(slot.thumbnailFileName))
+            {
+                return 0L;
+            }
+
+            // 書込直後も分かるよう永続領域の実体ファイルを優先する
+            string writableRaw = ModelSaveStorage.GetWritablePath(slot.thumbnailFileName);
+            string writableCompressed = writableRaw + ".gz";
+            string path = null;
+            if (File.Exists(writableCompressed))
+            {
+                path = writableCompressed;
+            }
+            else if (File.Exists(writableRaw))
+            {
+                path = writableRaw;
+            }
+            else
+            {
+                path = ModelSaveStorage.ResolveReadPath(slot.thumbnailFileName);
+            }
+
+            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+            {
+                return 0L;
+            }
+
+            try
+            {
+                var info = new FileInfo(path);
+                return info.Length ^ info.LastWriteTimeUtc.Ticks;
+            }
+            catch (IOException)
+            {
+                return 0L;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return 0L;
+            }
         }
 
         private void EnsureCells()
@@ -604,6 +709,20 @@ namespace UI.ClayEditor.View
             {
                 return ((int)Pool * 397) ^ SlotIndex;
             }
+        }
+
+        private readonly struct CachedThumbnail
+        {
+            public CachedThumbnail(long revision, Sprite sprite, Texture2D texture)
+            {
+                Revision = revision;
+                Sprite = sprite;
+                Texture = texture;
+            }
+
+            public long Revision { get; }
+            public Sprite Sprite { get; }
+            public Texture2D Texture { get; }
         }
     }
 }

@@ -12,6 +12,17 @@ namespace Battle
         private float attackCommitRemaining = -1f;
         private int pendingAttackMoveIndex = -1;
 
+        // 直前の移動意図(待機と微小な接近後退の往復を抑える)
+        private int stickyMovementIntent;
+
+        // 直前に狙った技(射程目標のフレーム単位の揺れを抑える)
+        private int stickyTargetMoveIndex = -1;
+
+        /// <summary>
+        /// 接近から停止へ切り替えるとき帯からこの分だけ内側まで進む
+        /// </summary>
+        private const float MovementReleasePadding = 0.45f;
+
         /// <summary>
         /// プロファイルを指定して敵AIを生成する
         /// </summary>
@@ -26,16 +37,20 @@ namespace Battle
             if (context.Self == null || context.Opponent == null)
             {
                 ClearAttackCommit();
+                stickyMovementIntent = 0;
+                stickyTargetMoveIndex = -1;
                 return BattleEnemyAiDecision.Hold;
             }
 
             if (!context.Self.CanAct)
             {
                 ClearAttackCommit();
+                stickyMovementIntent = 0;
                 return BattleEnemyAiDecision.Hold;
             }
 
             int bestMove = SelectBestMove(context, out int secondBestMove);
+            bestMove = StabilizeTargetMove(context, bestMove);
 
             if (ShouldKnockback(context, bestMove))
             {
@@ -62,8 +77,10 @@ namespace Battle
                 attackMoveIndex = UpdateAttackCommit(context, bestMove, secondBestMove);
                 if (attackMoveIndex >= 0 || attackCommitRemaining >= 0f)
                 {
+                    // 攻撃待ち中は歩きを止めるが間合い意図のstickyは維持する
                     movement = 0;
                     stepIntent = 0;
+                    return new BattleEnemyAiDecision(movement, attackMoveIndex, stepIntent: stepIntent);
                 }
             }
             else
@@ -71,6 +88,7 @@ namespace Battle
                 ClearAttackCommit();
             }
 
+            stickyMovementIntent = movement;
             return new BattleEnemyAiDecision(movement, attackMoveIndex, stepIntent: stepIntent);
         }
 
@@ -322,15 +340,70 @@ namespace Battle
             return Random.value < profile.SecondBestMoveChance ? secondBestMove : bestMove;
         }
 
+        private int StabilizeTargetMove(BattleEnemyAiContext context, int bestMove)
+        {
+            if (bestMove < 0)
+            {
+                stickyTargetMoveIndex = -1;
+                return -1;
+            }
+
+            if (stickyTargetMoveIndex < 0
+                || stickyTargetMoveIndex >= context.Self.Moves.Count
+                || !context.Self.IsMoveUsableByPart(stickyTargetMoveIndex))
+            {
+                stickyTargetMoveIndex = bestMove;
+                return bestMove;
+            }
+
+            if (stickyTargetMoveIndex == bestMove)
+            {
+                return bestMove;
+            }
+
+            // 現状の間合いにまだ効く技は少し粘り射程目標の瞬時切替を抑える
+            AttackMove stickyMove = context.Self.Moves[stickyTargetMoveIndex];
+            float stickyGap = ComputeRangeGap(
+                stickyMove.RangeMin,
+                stickyMove.RangeMax,
+                context.Distance);
+            AttackMove best = context.Self.Moves[bestMove];
+            float bestGap = ComputeRangeGap(best.RangeMin, best.RangeMax, context.Distance);
+
+            float keepBias = Mathf.Max(0.55f, profile.ApproachMargin + profile.RetreatMargin);
+            if (stickyGap <= bestGap + keepBias)
+            {
+                return stickyTargetMoveIndex;
+            }
+
+            stickyTargetMoveIndex = bestMove;
+            return bestMove;
+        }
+
         private int ResolveMovement(BattleEnemyAiContext context, int bestMove, int secondBestMove)
         {
             int targetMove = bestMove >= 0 ? bestMove : secondBestMove;
             if (targetMove < 0)
             {
-                return ResolveFallbackMovement(context);
+                return ApplyMovementHysteresis(
+                    ResolveFallbackMovement(context),
+                    context.Distance,
+                    preferredMin: context.MaxDistance * 0.45f,
+                    preferredMax: context.MaxDistance * 0.65f);
             }
 
             AttackMove move = context.Self.Moves[targetMove];
+            int desired = ResolveDesiredMovementForMove(context, move);
+            return ApplyMovementHysteresis(
+                desired,
+                context.Distance,
+                preferredMin: move.RangeMin,
+                preferredMax: move.RangeMax);
+        }
+
+        private int ResolveDesiredMovementForMove(BattleEnemyAiContext context, AttackMove move)
+        {
+            // 射程外へ出たときだけ寄る/下がる(帯内の中央寄せはしない)
             if (context.Distance > move.RangeMax + profile.ApproachMargin)
             {
                 return -1;
@@ -341,30 +414,56 @@ namespace Battle
                 return 1;
             }
 
-            // 帯の中央へ微調整する強敵ほど補正帯が狭い
-            float center = (move.RangeMin + move.RangeMax) * 0.5f;
-            float halfSpan = Mathf.Max(0.25f, (move.RangeMax - move.RangeMin) * 0.5f);
-            float deadzone = Mathf.Clamp(
-                Mathf.Max(profile.ApproachMargin, profile.RetreatMargin) * 1.4f,
-                0.12f,
-                halfSpan * 0.85f);
-            if (context.Distance > center + deadzone)
-            {
-                return -1;
-            }
-
-            if (context.Distance < center - deadzone)
-            {
-                return 1;
-            }
-
-            if (context.SelfHpRatio <= profile.LowSelfHpAggression
-                && context.Distance < move.RangeMin + profile.RetreatMargin)
-            {
-                return 1;
-            }
-
             return 0;
+        }
+
+        private int ApplyMovementHysteresis(
+            int desired,
+            float distance,
+            float preferredMin,
+            float preferredMax)
+        {
+            // いったん動き始めたら余裕分だけ内側に入るまで同じ方向を維持する
+            float releasePad = Mathf.Max(
+                MovementReleasePadding,
+                Mathf.Max(profile.ApproachMargin, profile.RetreatMargin) * 1.25f);
+
+            if (stickyMovementIntent < 0)
+            {
+                float releaseDistance = preferredMax - releasePad;
+                if (distance > Mathf.Max(preferredMin, releaseDistance))
+                {
+                    return -1;
+                }
+            }
+            else if (stickyMovementIntent > 0)
+            {
+                float releaseDistance = preferredMin + releasePad;
+                if (distance < Mathf.Min(preferredMax, releaseDistance))
+                {
+                    return 1;
+                }
+            }
+
+            // 逆方向へいきなり切り替えるのは明確な帯外のみ
+            if (desired != 0
+                && stickyMovementIntent != 0
+                && desired != stickyMovementIntent)
+            {
+                if (stickyMovementIntent < 0
+                    && distance > preferredMax + profile.ApproachMargin * 0.5f)
+                {
+                    return -1;
+                }
+
+                if (stickyMovementIntent > 0
+                    && distance < preferredMin - profile.RetreatMargin * 0.5f)
+                {
+                    return 1;
+                }
+            }
+
+            return desired;
         }
 
         private int ResolveStepIntent(
@@ -390,6 +489,7 @@ namespace Battle
                 gap = Mathf.Abs(context.Distance - context.MaxDistance * 0.5f);
             }
 
+            // 通常歩行で足りる小さなズレはステップしない(細かいステップ連打を避ける)
             if (gap < profile.StepGapThreshold)
             {
                 return 0;
@@ -421,14 +521,14 @@ namespace Battle
 
             if (closestMove < 0)
             {
-                // 技が無いときは安全距離へ下がる/寄る
                 float preferred = context.MaxDistance * 0.55f;
-                if (context.Distance > preferred + 0.4f)
+                float deadzone = 0.55f;
+                if (context.Distance > preferred + deadzone)
                 {
                     return -1;
                 }
 
-                if (context.Distance < preferred - 0.4f)
+                if (context.Distance < preferred - deadzone)
                 {
                     return 1;
                 }
@@ -437,17 +537,7 @@ namespace Battle
             }
 
             AttackMove fallback = context.Self.Moves[closestMove];
-            if (context.Distance > fallback.RangeMax)
-            {
-                return -1;
-            }
-
-            if (context.Distance < fallback.RangeMin)
-            {
-                return 1;
-            }
-
-            return 0;
+            return ResolveDesiredMovementForMove(context, fallback);
         }
 
         private bool WouldFinish(BattleEnemyAiContext context, AttackMove move)
