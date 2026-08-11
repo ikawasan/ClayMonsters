@@ -151,6 +151,21 @@ namespace Battle
         private IBattleFieldBoundary fieldBoundary;
         private IBattleFieldMovement fieldMovement;
 
+        /// <summary>
+        /// 戦闘開始直後の敵接近ステップ抑止秒
+        /// </summary>
+        private const float BattleStartEnemyApproachStepSuppressSeconds = 2.0f;
+
+        /// <summary>
+        /// プレイヤーの押し返し直後の敵接近ステップ抑止秒
+        /// </summary>
+        private const float AfterPlayerKnockbackEnemyApproachStepSuppressSeconds = 1.6f;
+
+        /// <summary>
+        /// 敵の接近ステップ(-1)を抑止する残り秒
+        /// </summary>
+        private float enemyApproachStepSuppressRemaining;
+
         public BattleSystem(
             BattleUnit player,
             BattleUnit enemy,
@@ -173,6 +188,8 @@ namespace Battle
             enemy.InitializeBattleGuts(settings.InitialGuts, settings.GutsGainPerSecond);
             player.SuspendPartLossRebuild();
             enemy.SuspendPartLossRebuild();
+            // 開幕は離れた状態から通常歩きで寄せる(即座のステップ詰めを避ける)
+            SuppressEnemyApproachSteps(BattleStartEnemyApproachStepSuppressSeconds);
         }
 
         /// <summary>
@@ -604,6 +621,13 @@ namespace Battle
             if (enemyKnockbackRecastRemaining > 0f)
             {
                 enemyKnockbackRecastRemaining = Mathf.Max(0f, enemyKnockbackRecastRemaining - deltaTime);
+            }
+
+            if (enemyApproachStepSuppressRemaining > 0f)
+            {
+                enemyApproachStepSuppressRemaining = Mathf.Max(
+                    0f,
+                    enemyApproachStepSuppressRemaining - deltaTime);
             }
 
             TimeRemaining -= deltaTime;
@@ -1194,6 +1218,44 @@ namespace Battle
 
             combatSync?.ReportLocalKnockback(Distance);
             knockbackPerformedSubject.OnNext(new KnockbackPerformed(player, enemy));
+            combatSync?.ReportLocalKnockback(Distance);
+            knockbackPerformedSubject.OnNext(new KnockbackPerformed(player, enemy));
+            // 進行中の接近ステップを切って押し返した直後の詰め戻りを防ぐ
+            CancelEnemyApproachStepIfAny();
+            SuppressEnemyApproachSteps(AfterPlayerKnockbackEnemyApproachStepSuppressSeconds);
+        }
+
+        /// <summary>
+        /// 敵の接近ステップを指定秒間抑止する
+        /// </summary>
+        /// <param name="seconds">抑止秒</param>
+        private void SuppressEnemyApproachSteps(float seconds)
+        {
+            if (seconds <= 0f)
+            {
+                return;
+            }
+
+            enemyApproachStepSuppressRemaining = Mathf.Max(
+                enemyApproachStepSuppressRemaining,
+                seconds);
+        }
+
+        /// <summary>
+        /// 敵が接近ステップ中なら中断する
+        /// </summary>
+        private void CancelEnemyApproachStepIfAny()
+        {
+            if (!isEnemyStepping || enemyStepMovementIntent >= 0)
+            {
+                return;
+            }
+
+            // PushEnemyAway後のオフセットを維持しステップ補間を止める
+            isEnemyStepping = false;
+            enemyStepMovementIntent = 0;
+            enemyStepElapsed = 0f;
+            enemy.MovementIntent = 0;
         }
 
         /// <summary>
@@ -1688,6 +1750,14 @@ namespace Battle
             }
 
             if (!isNetworkSynced && (!enemy.CanAct || enemyStepCooldownRemaining > 0f))
+            {
+                return false;
+            }
+
+            // 開幕・押し返し直後は接近側ステップのみ抑止(後退は許可)
+            if (!isNetworkSynced
+                && stepIntent < 0
+                && enemyApproachStepSuppressRemaining > 0f)
             {
                 return false;
             }
