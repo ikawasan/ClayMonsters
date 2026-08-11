@@ -425,13 +425,13 @@ Training.Preview.StatSpd	VIT
 Training.Preview.StatHit	PRE
 Common.Empty	Vide
 ClayEdit.ClayGuideIcons	【Modelage】\n{I:MouseLeft} drag : ajouter\n{W:KeyCtrl}+{I:MouseLeft} drag : sculpter\n{I:MouseRight} drag : sculpter\n{I:MouseWheel} : taille pinceau\n{W:KeyShift}+drag : profondeur fixe\n{W:KeyAlt}+drag : camera\n{W:KeyCtrl}+{I:KeyZ} : annuler\n{W:KeyCtrl}+{I:KeyY} : refaire\n{W:KeyDel} : tout effacer
-Training.Shop.stat_speed.Desc	VIT+6
-Training.Shop.stat_hit.Desc	PRE+6
+Training.Shop.stat_speed.Desc	VIT+24
+Training.Shop.stat_hit.Desc	PRE+24
 Training.Shop.train_boost.Desc	Taux super reussite +{percent}% ({turns} tours)
-Training.Shop.stat_defense.Desc	DEF+6
+Training.Shop.stat_defense.Desc	DEF+24
 Training.Shop.motivation_boost.Desc	Motivation+
-Training.Shop.stat_hp.Desc	PV+8
-Training.Shop.stat_attack.Desc	ATT+6
+Training.Shop.stat_hp.Desc	PV+32
+Training.Shop.stat_attack.Desc	ATT+24
 Training.Shop.train_boost_strong.Desc	Taux super reussite +{percent}% ({turns} tours)
 Training.Status.GreatSuccessBoostActive	Super reussite renforcee ({turns} tours)
 Training.Shop.stamina_drink.Desc	Endurance+25

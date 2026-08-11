@@ -425,13 +425,13 @@ Training.Preview.StatSpd	속도
 Training.Preview.StatHit	명중
 Common.Empty	비어 있음
 ClayEdit.ClayGuideIcons	【조형】\n{I:MouseLeft} 드래그 : 쌓기\n{W:KeyCtrl}+{I:MouseLeft} 드래그 : 깎기\n{I:MouseRight} 드래그 : 깎기\n{I:MouseWheel} : 브러시 크기\n{W:KeyShift}+드래그 : 깊이 고정\n{W:KeyAlt}+드래그 : 카메라\n{W:KeyCtrl}+{I:KeyZ} : 실행 취소\n{W:KeyCtrl}+{I:KeyY} : 다시 실행\n{W:KeyDel} : 전체 삭제
-Training.Shop.stat_speed.Desc	속도+6
-Training.Shop.stat_hit.Desc	명중+6
+Training.Shop.stat_speed.Desc	속도+24
+Training.Shop.stat_hit.Desc	명중+24
 Training.Shop.train_boost.Desc	대성공률 +{percent}% {turns}턴
-Training.Shop.stat_defense.Desc	방어+6
+Training.Shop.stat_defense.Desc	방어+24
 Training.Shop.motivation_boost.Desc	의욕 상승
-Training.Shop.stat_hp.Desc	HP+8
-Training.Shop.stat_attack.Desc	공격+6
+Training.Shop.stat_hp.Desc	HP+32
+Training.Shop.stat_attack.Desc	공격+24
 Training.Shop.train_boost_strong.Desc	대성공률 +{percent}% {turns}턴
 Training.Status.GreatSuccessBoostActive	대성공률 상승 중 남은 {turns}턴
 Training.Shop.stamina_drink.Desc	체력+25

@@ -425,13 +425,13 @@ Training.Preview.StatSpd	VEL
 Training.Preview.StatHit	PRE
 Common.Empty	Vacio
 ClayEdit.ClayGuideIcons	【Modelar】\n{I:MouseLeft} arrastrar : anadir\n{W:KeyCtrl}+{I:MouseLeft} arrastrar : tallar\n{I:MouseRight} arrastrar : tallar\n{I:MouseWheel} : tamano pincel\n{W:KeyShift}+arrastrar : profundidad fija\n{W:KeyAlt}+arrastrar : camara\n{W:KeyCtrl}+{I:KeyZ} : deshacer\n{W:KeyCtrl}+{I:KeyY} : rehacer\n{W:KeyDel} : borrar todo
-Training.Shop.stat_speed.Desc	VEL+6
-Training.Shop.stat_hit.Desc	PRE+6
+Training.Shop.stat_speed.Desc	VEL+24
+Training.Shop.stat_hit.Desc	PRE+24
 Training.Shop.train_boost.Desc	Tasa gran exito +{percent}% por {turns} turnos
-Training.Shop.stat_defense.Desc	DEF+6
+Training.Shop.stat_defense.Desc	DEF+24
 Training.Shop.motivation_boost.Desc	Motivacion+
-Training.Shop.stat_hp.Desc	PV+8
-Training.Shop.stat_attack.Desc	ATQ+6
+Training.Shop.stat_hp.Desc	PV+32
+Training.Shop.stat_attack.Desc	ATQ+24
 Training.Shop.train_boost_strong.Desc	Tasa gran exito +{percent}% por {turns} turnos
 Training.Status.GreatSuccessBoostActive	Gran exito activo ({turns} turnos)
 Training.Shop.stamina_drink.Desc	Energia+25
