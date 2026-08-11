@@ -15,6 +15,7 @@ Option.VSync	垂直同步
 Option.Music	音樂
 Option.SoundEffect	音效
 Title.Points	{points} pt
+Title.PointsTooltip	戰鬥中累積的點數。\n可用於技能樹與展示室
 Title.ClayEdit	編輯
 Title.BattleNpc	CPU戰
 Title.BattlePvp	對戰

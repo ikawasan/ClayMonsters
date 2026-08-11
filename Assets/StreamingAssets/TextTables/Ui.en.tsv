@@ -15,6 +15,7 @@ Option.VSync	VSync
 Option.Music	Music
 Option.SoundEffect	SFX
 Title.Points	{points} pt
+Title.PointsTooltip	Points earned in battle.\nUsable in the Skill Tree and Gallery.
 Title.ClayEdit	Edit
 Title.BattleNpc	CPU
 Title.BattlePvp	PvP

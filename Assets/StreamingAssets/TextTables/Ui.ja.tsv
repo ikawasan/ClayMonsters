@@ -15,6 +15,7 @@ Option.VSync	垂直同期
 Option.Music	音楽
 Option.SoundEffect	効果音
 Title.Points	{points} ポイント
+Title.PointsTooltip	戦闘でたまるポイント。\nスキルツリーや展示室で使用可能
 Title.ClayEdit	モンスターエディット
 Title.BattleNpc	CPU戦
 Title.BattlePvp	対人戦

@@ -15,6 +15,7 @@ namespace Localization
         public const string OptionSoundEffect = "Option.SoundEffect";
 
         public const string TitlePoints = "Title.Points";
+        public const string TitlePointsTooltip = "Title.PointsTooltip";
         public const string TitleClayEdit = "Title.ClayEdit";
         public const string TitleBattleNpc = "Title.BattleNpc";
         public const string TitleBattlePvp = "Title.BattlePvp";

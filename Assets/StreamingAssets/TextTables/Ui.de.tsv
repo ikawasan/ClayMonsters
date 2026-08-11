@@ -15,6 +15,7 @@ Option.VSync	VSync
 Option.Music	Musik
 Option.SoundEffect	Effekte
 Title.Points	{points} pt
+Title.PointsTooltip	In Kampfen gesammelte Punkte.\nIm Skillbaum und der Galerie nutzbar.
 Title.ClayEdit	Formen
 Title.BattleNpc	CPU
 Title.BattlePvp	PvP

@@ -15,6 +15,7 @@ Option.VSync	수직 동기화
 Option.Music	음악
 Option.SoundEffect	효과음
 Title.Points	{points} pt
+Title.PointsTooltip	전투로 모이는 포인트.\n스킬 트리와 전시실에서 사용 가능
 Title.ClayEdit	편집
 Title.BattleNpc	CPU
 Title.BattlePvp	대전

@@ -6,8 +6,10 @@ using R3;
 using Scene.TitleScene.Interface;
 using System;
 using TMPro;
+using UI.ClayEditor.View;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace Scene.TitleScene.View
@@ -18,6 +20,9 @@ namespace Scene.TitleScene.View
     /// </summary>
     public class TitleView : MonoBehaviour, ITitleView, ILanguageAwareUi
     {
+        private const string PointsTooltipFallback =
+            "戦闘でたまるポイント。\nスキルツリーや展示室で使用可能";
+
         [SerializeField] private LHButton clayEditButton;
         [SerializeField] private LHButton battleNpcButton;
         [SerializeField] private LHButton battlePvpButton;
@@ -28,9 +33,18 @@ namespace Scene.TitleScene.View
         [SerializeField] private LHButton quitGameButton;
         [SerializeField] private Image titleLogoImage;
         [SerializeField] private TMP_Text pointsText;
+        [Tooltip("ポイント表示のホバー判定領域(未設定ならpointsText親のGraphic)")]
+        [SerializeField] private Graphic pointsHoverTarget;
+        [Tooltip("ポイント説明ウィンドウのCanvas表示はenabledで切替")]
+        [SerializeField] private Canvas pointsTooltipCanvas;
+        [Tooltip("ポイント説明本文")]
+        [SerializeField] private TMP_Text pointsTooltipText;
+        [Tooltip("ポイント説明パネル背景任意")]
+        [SerializeField] private Image pointsTooltipPanelImage;
 
         private IDisposable languageSubscription;
         private int cachedPoints;
+        private string pointsTooltipOriginal = PointsTooltipFallback;
 
         // シーン配置時の日本語原文(起動時にボタンから採取)
         private string clayEditLabelOriginal = "モンスターエディット";
@@ -46,7 +60,12 @@ namespace Scene.TitleScene.View
         {
             ValidateSceneUi();
             CaptureSceneMenuLabelOriginals();
+            CapturePointsTooltipOriginal();
             ApplyMenuLabels();
+            ApplyPointsTooltipVisual();
+            BindPointsTooltipHover();
+            SetPointsTooltipVisible(false);
+            ApplyPointsTooltipText();
             SubscribeLanguageChange();
         }
 
@@ -61,6 +80,7 @@ namespace Scene.TitleScene.View
         {
             ApplyMenuLabels();
             SetPoints(cachedPoints);
+            ApplyPointsTooltipText();
         }
 
         private void SubscribeLanguageChange()
@@ -75,6 +95,7 @@ namespace Scene.TitleScene.View
             languageSubscription = service.CurrentLanguage.Subscribe(_ =>
             {
                 ApplyMenuLabels();
+                ApplyPointsTooltipText();
             });
         }
 
@@ -91,6 +112,13 @@ namespace Scene.TitleScene.View
             CaptureIfPresent(modelGalleryButton, ref modelGalleryLabelOriginal);
             CaptureIfPresent(optionButton, ref optionLabelOriginal);
             CaptureIfPresent(quitGameButton, ref quitGameLabelOriginal);
+        }
+
+        private void CapturePointsTooltipOriginal()
+        {
+            pointsTooltipOriginal = SceneLocalizedLabel.Capture(
+                pointsTooltipText,
+                PointsTooltipFallback);
         }
 
         private static void CaptureIfPresent(LHButton button, ref string original)
@@ -163,6 +191,94 @@ namespace Scene.TitleScene.View
             LocalizedFont.SetText(text, label);
         }
 
+        private void ApplyPointsTooltipVisual()
+        {
+            if (pointsTooltipPanelImage != null)
+            {
+                TitleClayUiVisualUtility.ApplyPanel(pointsTooltipPanelImage);
+            }
+
+            if (pointsTooltipText != null)
+            {
+                TitleClayUiVisualUtility.EnsureTextFontOnly(pointsTooltipText);
+                pointsTooltipText.raycastTarget = false;
+            }
+        }
+
+        private void ApplyPointsTooltipText()
+        {
+            if (pointsTooltipText == null)
+            {
+                return;
+            }
+
+            LocalizedFont.SetText(
+                pointsTooltipText,
+                LocalizedText.GetOrFallback(
+                    GameTextKeys.TitlePointsTooltip,
+                    pointsTooltipOriginal));
+        }
+
+        private void BindPointsTooltipHover()
+        {
+            Graphic hoverTarget = ResolvePointsHoverTarget();
+            if (hoverTarget == null)
+            {
+                return;
+            }
+
+            hoverTarget.raycastTarget = true;
+
+            EventTrigger trigger = hoverTarget.GetComponent<EventTrigger>();
+            if (trigger == null)
+            {
+                trigger = hoverTarget.gameObject.AddComponent<EventTrigger>();
+            }
+
+            AddHoverEntry(trigger, EventTriggerType.PointerEnter, () => SetPointsTooltipVisible(true));
+            AddHoverEntry(trigger, EventTriggerType.PointerExit, () => SetPointsTooltipVisible(false));
+        }
+
+        private Graphic ResolvePointsHoverTarget()
+        {
+            if (pointsHoverTarget != null)
+            {
+                return pointsHoverTarget;
+            }
+
+            if (pointsText == null || pointsText.transform.parent == null)
+            {
+                return null;
+            }
+
+            return pointsText.transform.parent.GetComponent<Graphic>();
+        }
+
+        private void SetPointsTooltipVisible(bool visible)
+        {
+            if (pointsTooltipCanvas == null)
+            {
+                return;
+            }
+
+            CanvasVisibilityUtility.SetCanvasEnabled(pointsTooltipCanvas, visible);
+        }
+
+        private static void AddHoverEntry(
+            EventTrigger trigger,
+            EventTriggerType type,
+            Action action)
+        {
+            if (trigger == null || action == null)
+            {
+                return;
+            }
+
+            var entry = new EventTrigger.Entry { eventID = type };
+            entry.callback.AddListener(_ => action.Invoke());
+            trigger.triggers.Add(entry);
+        }
+
         private void ValidateSceneUi()
         {
             if (titleLogoImage == null || battlePvpButton == null)
@@ -176,6 +292,13 @@ namespace Scene.TitleScene.View
             {
                 Debug.LogError(
                     "[TitleView] pointsTextが未配線です。Titleシーン右上にTMPを配置しInspectorで接続してください",
+                    this);
+            }
+
+            if (pointsTooltipCanvas == null || pointsTooltipText == null)
+            {
+                Debug.LogError(
+                    "[TitleView] ポイント説明Tooltipが未配線です。Canvasと本文TMPをInspectorで接続してください",
                     this);
             }
 

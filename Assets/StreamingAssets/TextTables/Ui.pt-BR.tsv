@@ -15,6 +15,7 @@ Option.VSync	VSync
 Option.Music	Música
 Option.SoundEffect	SFX
 Title.Points	{points} pt
+Title.PointsTooltip	Pontos ganhos em batalha.\nUsados na arvore de habilidades e na galeria.
 Title.ClayEdit	Editar
 Title.BattleNpc	CPU
 Title.BattlePvp	JxJ
