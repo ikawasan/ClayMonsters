@@ -10,7 +10,7 @@ namespace UI.ClayEditor.View
 {
     /// <summary>
     /// セーブ完了専用ウィンドウ
-    /// メッセージと閉じるボタンのみを表示する
+    /// セーブ中と完了メッセージを同じウィンドウで表示する
     /// </summary>
     public sealed class ModelSaveCompleteView : MonoBehaviour, ILanguageAwareUi
     {
@@ -23,6 +23,7 @@ namespace UI.ClayEditor.View
         private readonly Subject<Unit> closedSubject = new Subject<Unit>();
         private bool isBound;
         private bool isShowing;
+        private bool closeButtonEnabled = true;
         private string messageKey = GameTextKeys.SaveComplete;
         private string messageFallback = "セーブが完了しました";
 
@@ -38,12 +39,20 @@ namespace UI.ClayEditor.View
         }
 
         /// <summary>
+        /// セーブ中ウィンドウを表示する
+        /// </summary>
+        public void ShowSaving()
+        {
+            ShowLocalized(GameTextKeys.SaveSaving, "セーブ中…", closeEnabled: false);
+        }
+
+        /// <summary>
         /// 完了ウィンドウを表示する
         /// </summary>
         /// <param name="message">表示メッセージ</param>
         public void Show(string message)
         {
-            ShowLocalized(GameTextKeys.SaveComplete, message);
+            ShowLocalized(GameTextKeys.SaveComplete, message, closeEnabled: true);
         }
 
         /// <summary>
@@ -53,11 +62,23 @@ namespace UI.ClayEditor.View
         /// <param name="fallback">フォールバック</param>
         public void ShowLocalized(string key, string fallback)
         {
+            ShowLocalized(key, fallback, closeEnabled: true);
+        }
+
+        /// <summary>
+        /// メッセージウィンドウをキーで表示する
+        /// </summary>
+        /// <param name="key">文言キー</param>
+        /// <param name="fallback">フォールバック</param>
+        /// <param name="closeEnabled">閉じるボタンを出すか</param>
+        public void ShowLocalized(string key, string fallback, bool closeEnabled)
+        {
             BindCloseButton();
             isShowing = true;
             messageKey = key ?? GameTextKeys.SaveComplete;
             messageFallback = fallback ?? "セーブが完了しました";
             ApplyMessage();
+            SetCloseButtonEnabled(closeEnabled);
             CanvasVisibilityUtility.SetCanvasEnabled(canvas, true, CanvasSortingOrder);
         }
 
@@ -67,6 +88,7 @@ namespace UI.ClayEditor.View
         public void Hide()
         {
             isShowing = false;
+            SetCloseButtonEnabled(true);
             CanvasVisibilityUtility.SetCanvasEnabled(canvas, false, CanvasSortingOrder);
         }
 
@@ -108,6 +130,17 @@ namespace UI.ClayEditor.View
                 SceneLocalizedLabel.Resolve(GameTextKeys.CommonClose, closeOriginal));
         }
 
+        private void SetCloseButtonEnabled(bool enabled)
+        {
+            closeButtonEnabled = enabled;
+            if (closeButton == null)
+            {
+                return;
+            }
+
+            closeButton.gameObject.SetActive(enabled);
+        }
+
         private void BindCloseButton()
         {
             ApplyCloseLabel();
@@ -122,6 +155,11 @@ namespace UI.ClayEditor.View
 
         private void OnCloseClicked()
         {
+            if (!closeButtonEnabled)
+            {
+                return;
+            }
+
             Hide();
             closedSubject.OnNext(Unit.Default);
         }

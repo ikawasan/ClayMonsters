@@ -12,10 +12,11 @@ using SaveData.Service;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using UI.ClayEditor.Interface;
+using UI.ClayEditor.ViewModel;
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
-using UI.ClayEditor.ViewModel;
 using VContainer;
 
 namespace UI.ClayEditor.View
@@ -34,6 +35,7 @@ namespace UI.ClayEditor.View
         [Inject] private readonly ClayVoxelEngine voxelEngine;
         [Inject] private readonly ClayEditModeViewModel editModeViewModel;
         [Inject] private readonly ClayEditSessionContext sessionContext;
+        [Inject] private readonly IPlayerModelSaveSideEffect playerModelSaveSideEffect;
 
         [Header("保存UI")]
         [Tooltip("ONのとき確認画面などのフォールバックUIを実行時生成しない")]
@@ -348,6 +350,7 @@ namespace UI.ClayEditor.View
             bakedChromeLabelApplier.Register(GameTextKeys.ClayEditNamePrompt, "モデル名を入力");
             bakedChromeLabelApplier.Register(GameTextKeys.ClayEditSaveConfirm, "保存しますか？");
             bakedChromeLabelApplier.Register(GameTextKeys.SaveComplete, "セーブが完了しました");
+            bakedChromeLabelApplier.Register(GameTextKeys.SaveSaving, "セーブ中…");
             bakedChromeLabelApplier.Register(GameTextKeys.ClayEditDeleteConfirm, "削除");
             bakedChromeLabelApplier.Register(GameTextKeys.CommonYes, "はい");
             bakedChromeLabelApplier.Register(GameTextKeys.CommonNo, "いいえ");
@@ -671,7 +674,23 @@ namespace UI.ClayEditor.View
                 return;
             }
 
+            int deletedSlot = selectedSlot;
+            ModelSavePool deletedPool = currentSavePool;
             saveService.DeleteSlot(currentSavePool, selectedSlot);
+            if (deletedPool == ModelSavePool.Player)
+            {
+                if (playerModelSaveSideEffect == null)
+                {
+                    Debug.LogError(
+                        "[SaveSlotView] IPlayerModelSaveSideEffectが未注入のためデスクトップペットキャッシュ削除をスキップします",
+                        this);
+                }
+                else
+                {
+                    playerModelSaveSideEffect.OnPlayerModelDeleted(deletedSlot);
+                }
+            }
+
             selectedSlot = -1;
             slotActionConfirmView?.Clear();
             slotActionDeletePromptView?.Hide();
@@ -859,6 +878,8 @@ namespace UI.ClayEditor.View
                     return;
                 }
 
+                ShowSavingInProgressWindow();
+
                 byte[] thumbnailPng = pendingThumbnailPng;
                 if (thumbnailPng == null && thumbnailCapturer != null)
                 {
@@ -915,6 +936,7 @@ namespace UI.ClayEditor.View
                 if (!success)
                 {
                     Debug.LogError("[SaveSlotView] セーブに失敗しました");
+                    RestoreConfirmCanvasAfterSaveFailure();
                     return;
                 }
 
@@ -933,6 +955,22 @@ namespace UI.ClayEditor.View
 
                 Debug.Log($"[SaveSlotView] {currentSavePool}スロット{selectedSlot}へ保存しました: {modelName}");
 
+                if (currentSavePool == ModelSavePool.Player)
+                {
+                    if (playerModelSaveSideEffect == null)
+                    {
+                        Debug.LogError(
+                            "[SaveSlotView] IPlayerModelSaveSideEffectが未注入のためデスクトップペット事前焼き出しをスキップします",
+                            this);
+                    }
+                    else
+                    {
+                        await playerModelSaveSideEffect.OnPlayerModelSavedAsync(
+                            selectedSlot,
+                            cancellationToken);
+                    }
+                }
+
                 hasSavedOnConfirmCanvas = true;
                 ClearPendingSaveData();
                 RestoreSculptMeshAfterPreview();
@@ -942,6 +980,35 @@ namespace UI.ClayEditor.View
             {
                 isSaving = false;
             }
+        }
+
+        // セーブ中ウィンドウを表示する
+        private void ShowSavingInProgressWindow()
+        {
+            if (saveCompleteView == null)
+            {
+                Debug.LogError(
+                    "[SaveSlotView] saveCompleteViewが未設定ですSaveCompletePromptCanvasを配置して配線してください",
+                    this);
+                return;
+            }
+
+            SetCanvasEnabled(nameInputCanvas, false);
+            SetCanvasEnabled(slotCanvas, false);
+            SetCanvasEnabled(slotActionCanvas, false);
+            SetCanvasEnabled(saveConfirmCanvas, false);
+            SetConfirmCanvasButtonsVisible(previewVisible: false);
+            saveCompleteView.ShowSaving();
+            SetSaveUiOpenState(true);
+        }
+
+        // セーブ失敗時に確認画面へ戻す
+        private void RestoreConfirmCanvasAfterSaveFailure()
+        {
+            saveCompleteView?.Hide();
+            SetConfirmCanvasButtonsVisible(previewVisible: true);
+            SetCanvasEnabled(saveConfirmCanvas, true);
+            SetSaveUiOpenState(true);
         }
 
         // セーブ完了専用ウィンドウを表示し閉じる操作を待つ

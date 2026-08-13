@@ -146,7 +146,13 @@ namespace UI.ClayEditor.View
 
 
 
-            backgroundImage.raycastTarget = false;
+            backgroundImage.raycastTarget = true;
+            if (backgroundImage.color.a < 0.01f)
+            {
+                Color color = backgroundImage.color;
+                color.a = 1f;
+                backgroundImage.color = color;
+            }
         }
 
         /// <summary>
@@ -284,6 +290,31 @@ namespace UI.ClayEditor.View
         }
 
 
+
+        /// <summary>
+        /// 複数選択の選択マークを各行へ反映する
+        /// </summary>
+        /// <param name="selectedSlotIndices">選択中スロット番号</param>
+        public void SetSelectionMarks(ICollection<int> selectedSlotIndices)
+        {
+            EnsureBuilt();
+            if (!isBuilt)
+            {
+                return;
+            }
+
+            for (int i = 0; i < rowElementRefs.Count; i++)
+            {
+                ModelSaveSlotRowElementRefs refs = rowElementRefs[i];
+                if (refs == null)
+                {
+                    continue;
+                }
+
+                bool marked = selectedSlotIndices != null && selectedSlotIndices.Contains(i);
+                refs.SetSelectionMarked(marked);
+            }
+        }
 
         /// <summary>
         /// 各スロットの表示を最新のセーブ内容に更新する
@@ -433,6 +464,7 @@ namespace UI.ClayEditor.View
 
 
 
+            DisposeAllRowClickSubscriptions();
             rows.Clear();
 
             isClickBound = false;
@@ -821,12 +853,21 @@ namespace UI.ClayEditor.View
 
             rowElementRefs = new List<ModelSaveSlotRowElementRefs>(
                 GetComponentsInChildren<ModelSaveSlotRowElementRefs>(true));
+            DisposeAllRowClickSubscriptions();
             rows.Clear();
             isBuilt = false;
             isClickBound = false;
         }
 
 
+
+        private void DisposeAllRowClickSubscriptions()
+        {
+            for (int i = 0; i < rows.Count; i++)
+            {
+                rows[i]?.DisposeClickSubscription();
+            }
+        }
 
         private void BindRowClicks()
 
@@ -860,7 +901,9 @@ namespace UI.ClayEditor.View
 
 
 
-                row.Button.SubscribeOnClick(() => onSlotSelected?.Invoke(slotIndex));
+                row.DisposeClickSubscription();
+
+                row.ClickSubscription = row.Button.SubscribeOnClick(() => onSlotSelected?.Invoke(slotIndex));
 
             }
 
@@ -965,6 +1008,14 @@ namespace UI.ClayEditor.View
 
 
             public RectTransform RowWrapper { get; set; }
+
+            public System.IDisposable ClickSubscription { get; set; }
+
+            public void DisposeClickSubscription()
+            {
+                ClickSubscription?.Dispose();
+                ClickSubscription = null;
+            }
 
         }
 

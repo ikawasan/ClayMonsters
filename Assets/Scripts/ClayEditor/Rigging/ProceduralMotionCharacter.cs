@@ -191,6 +191,8 @@ namespace ClayEditor.Rigging
         private MotionType currentMotion = MotionType.None;
         private MotionType previousMotion = MotionType.Idle;
         private float time;
+        private bool bakeSampling;
+        private float bakeLocomotionScale = 1f;
         private float attackStartTime;
         private float activeMotionDuration;
         private bool isFinishingTimedMotion;
@@ -259,6 +261,24 @@ namespace ClayEditor.Rigging
         public void SetRootTranslationEnabled(bool enabled)
         {
             enableRootTranslation = enabled;
+        }
+
+        /// <summary>
+        /// スプライト焼き出し中はUpdateによる実時間進行を止める
+        /// </summary>
+        /// <param name="enabled">焼き出し中ならtrue</param>
+        public void SetBakeSampling(bool enabled)
+        {
+            bakeSampling = enabled;
+        }
+
+        /// <summary>
+        /// スプライト焼き出し時の歩行シルエット強調倍率を設定する
+        /// </summary>
+        /// <param name="scale">1で通常再生2以上で2D向けに強調</param>
+        public void SetBakeLocomotionScale(float scale)
+        {
+            bakeLocomotionScale = Mathf.Max(1f, scale);
         }
 
         /// <summary>
@@ -962,6 +982,11 @@ namespace ClayEditor.Rigging
                 return;
             }
 
+            if (!IsAttackMotion(type) && !IsStepMotion(type) && !IsHitMotion(type))
+            {
+                time = 0f;
+            }
+
             if (IsAttackMotion(type) || IsStepMotion(type) || IsHitMotion(type))
             {
                 bool comingFromCharge = currentMotion == MotionType.AttackCharge && IsAttackMotion(type);
@@ -1190,9 +1215,22 @@ namespace ClayEditor.Rigging
             }
         }
 
+        /// <summary>
+        /// 焼き出し用に指定秒だけモーションを進めてポーズを確定する
+        /// </summary>
+        public void SampleForBake(float deltaTime)
+        {
+            if (infos.Count == 0 || currentMotion == MotionType.None)
+            {
+                return;
+            }
+
+            EvaluateMotion(Mathf.Max(0f, deltaTime));
+        }
+
         private void Update()
         {
-            if (infos.Count == 0)
+            if (infos.Count == 0 || bakeSampling)
             {
                 return;
             }
@@ -1202,10 +1240,20 @@ namespace ClayEditor.Rigging
                 float motionDelta = currentMotion == MotionType.Hit && GameplayTime.IsHitStopActive
                     ? Time.unscaledDeltaTime
                     : GameplayTime.DeltaTime;
-                time += motionDelta;
+                EvaluateMotion(motionDelta);
+            }
 
-                switch (currentMotion)
-                {
+            if (hasBattlePositionConstraint)
+            {
+                EnforceBattlePositionConstraint();
+            }
+        }
+
+        private void EvaluateMotion(float motionDelta)
+        {
+            time += motionDelta;
+            switch (currentMotion)
+            {
                     case MotionType.Idle:
                         ApplyIdle();
                         break;
@@ -1288,12 +1336,6 @@ namespace ClayEditor.Rigging
                         ApplyHit();
                         break;
                 }
-            }
-
-            if (hasBattlePositionConstraint)
-            {
-                EnforceBattlePositionConstraint();
-            }
         }
 
         private float ResolveTimedMotionDuration(MotionType type, float duration)
@@ -1329,8 +1371,13 @@ namespace ClayEditor.Rigging
                 if (info.isLimb && IsLocomotionSwingRoot(info, b => b.isLimb))
                 {
                     float sign = ResolveLimbSwingSign(info, 1f);
-                    float swing = Mathf.Sin(w) * MotionSettings.RunLimbAmplitude * sign;
+                    float swing = Mathf.Sin(w) * MotionSettings.RunLimbAmplitude * sign * bakeLocomotionScale;
                     info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, swing);
+                }
+                else if (bakeLocomotionScale > 1.01f)
+                {
+                    float lean = Mathf.Sin(w) * 8f * bakeLocomotionScale;
+                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, lean);
                 }
                 else
                 {
@@ -1358,7 +1405,7 @@ namespace ClayEditor.Rigging
                     continue;
                 }
 
-                float yaw = Mathf.Sin(phase) * MotionSettings.LocomotionYawAmplitude;
+                float yaw = Mathf.Sin(phase) * MotionSettings.LocomotionYawAmplitude * bakeLocomotionScale;
                 rootBone.localRotation = WorldSwingLocalRotation(infos[i], Vector3.up, yaw);
                 return;
             }
@@ -1401,14 +1448,14 @@ namespace ClayEditor.Rigging
                 {
                     // 左右のボーンで符号が逆になるので片脚前片脚後ろで交互になる
                     float sign = ResolveLimbSwingSign(info, 1f);
-                    float swing = Mathf.Sin(w) * MotionSettings.LegRunLegAmplitude * sign;
+                    float swing = Mathf.Sin(w) * MotionSettings.LegRunLegAmplitude * sign * bakeLocomotionScale;
                     info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, swing);
                 }
                 else if (info.isArm && IsLocomotionSwingRoot(info, b => b.isArm))
                 {
                     // 腕は同じ側の脚と逆位相にして自然な相互振りにする
                     float sign = ResolveLimbSwingSign(info, -1f);
-                    float swing = Mathf.Sin(w) * MotionSettings.LegRunArmAmplitude * (-sign);
+                    float swing = Mathf.Sin(w) * MotionSettings.LegRunArmAmplitude * (-sign) * bakeLocomotionScale;
                     info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, swing);
                 }
                 else if (info.isLimb
@@ -1418,8 +1465,13 @@ namespace ClayEditor.Rigging
                 {
                     // 部位判定漏れの手足も走行として振る
                     float sign = ResolveLimbSwingSign(info, 1f);
-                    float swing = Mathf.Sin(w) * MotionSettings.RunLimbAmplitude * sign;
+                    float swing = Mathf.Sin(w) * MotionSettings.RunLimbAmplitude * sign * bakeLocomotionScale;
                     info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, swing);
+                }
+                else if (bakeLocomotionScale > 1.01f)
+                {
+                    float lean = Mathf.Sin(w) * 8f * bakeLocomotionScale;
+                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, lean);
                 }
                 else
                 {

@@ -71,6 +71,21 @@ namespace Extensions
 #endif
         }
 
+        /// <summary>
+        /// 外部プロセスへ引き継いだあとUnityを即終了する
+        /// </summary>
+        public static void RequestImmediateQuit()
+        {
+            IsQuitting = true;
+
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+#else
+            // 引き継ぎ済みなのでクリーンアップ待ちせずプロセスを殺す
+            TerminateCurrentProcess();
+#endif
+        }
+
         private static bool OnWantsToQuit()
         {
             PerformExitCleanup();
@@ -170,14 +185,16 @@ namespace Extensions
 
         private static void TerminateCurrentProcess()
         {
+#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
             try
             {
-                Environment.Exit(0);
+                TerminateProcess(GetCurrentProcess(), 0);
             }
             catch
             {
                 // fallthrough
             }
+#endif
 
             try
             {
@@ -188,16 +205,14 @@ namespace Extensions
                 // fallthrough
             }
 
-#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
             try
             {
-                TerminateProcess(GetCurrentProcess(), 1);
+                Environment.Exit(0);
             }
             catch
             {
                 // ignore
             }
-#endif
         }
 
 #if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
