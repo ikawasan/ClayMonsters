@@ -30,6 +30,7 @@ namespace Scene.TitleScene.View
         [SerializeField] private LHButton skillTreeButton;
         [SerializeField] private LHButton modelGalleryButton;
         [SerializeField] private LHButton optionButton;
+        [SerializeField] private LHButton desktopPetButton;
         [SerializeField] private LHButton quitGameButton;
         [SerializeField] private Image titleLogoImage;
         [SerializeField] private TMP_Text pointsText;
@@ -54,6 +55,7 @@ namespace Scene.TitleScene.View
         private string skillTreeLabelOriginal = "スキルツリー";
         private string modelGalleryLabelOriginal = "展示室";
         private string optionLabelOriginal = "オプション";
+        private string desktopPetLabelOriginal = "デスクトップペット";
         private string quitGameLabelOriginal = "ゲームをやめる";
 
         private void Awake()
@@ -111,6 +113,7 @@ namespace Scene.TitleScene.View
             CaptureIfPresent(skillTreeButton, ref skillTreeLabelOriginal);
             CaptureIfPresent(modelGalleryButton, ref modelGalleryLabelOriginal);
             CaptureIfPresent(optionButton, ref optionLabelOriginal);
+            CaptureIfPresent(desktopPetButton, ref desktopPetLabelOriginal);
             CaptureIfPresent(quitGameButton, ref quitGameLabelOriginal);
         }
 
@@ -170,6 +173,9 @@ namespace Scene.TitleScene.View
             SetButtonLabel(
                 optionButton,
                 LocalizedText.GetOrFallback(GameTextKeys.TitleOption, optionLabelOriginal));
+            SetButtonLabel(
+                desktopPetButton,
+                LocalizedText.GetOrFallback(GameTextKeys.TitleDesktopPet, desktopPetLabelOriginal));
             SetButtonLabel(
                 quitGameButton,
                 LocalizedText.GetOrFallback(GameTextKeys.TitleQuit, quitGameLabelOriginal));
@@ -315,6 +321,13 @@ namespace Scene.TitleScene.View
                     "[TitleView] modelGalleryButtonが未配線です。ModelGalleryButton配下のLHButtonを接続してください",
                     this);
             }
+
+            if (desktopPetButton == null)
+            {
+                Debug.LogError(
+                    "[TitleView] desktopPetButtonが未配線ですQuitGameButtonの上にDesktopPetButtonを配置し接続してください",
+                    this);
+            }
         }
 
         public IDisposable SubscribeClayEditButtonClick(UnityAction action) => clayEditButton.SubscribeOnClick(action);
@@ -356,6 +369,17 @@ namespace Scene.TitleScene.View
         }
 
         public IDisposable SubscribeOptionButtonClick(UnityAction action) => optionButton.SubscribeOnClick(action);
+
+        /// <inheritdoc />
+        public IDisposable SubscribeDesktopPetButtonClick(UnityAction action)
+        {
+            if (desktopPetButton == null)
+            {
+                return new EmptyDisposable();
+            }
+
+            return desktopPetButton.SubscribeOnClick(action);
+        }
 
         public IDisposable SubscribeQuitGameButtonClick(UnityAction action) => quitGameButton.SubscribeOnClick(action);
 

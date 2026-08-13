@@ -15,6 +15,8 @@ using Scene.BattleNpcScene;
 using Scene.BattleNpcScene.View;
 using Scene.ClayEditScene.Presenter;
 using Scene.ClayEditScene.View;
+using Scene.DesktopPet;
+using UI.ClayEditor.Interface;
 using UI.ClayEditor.View;
 using UI.ClayEditor.ViewModel;
 using UI.ColorPicker;
@@ -130,6 +132,8 @@ namespace Scene.ClayEditScene
             builder.RegisterComponent(saveSlotView);
             builder.Register<ClayModelGltfImporter>(Lifetime.Singleton).As<IClayModelImporter>();
             builder.Register<ClayModelGltfExporter>(Lifetime.Singleton).As<IClayModelExporter>();
+            builder.Register<DesktopPetSpritePreBakeService>(Lifetime.Singleton)
+                .As<IPlayerModelSaveSideEffect>();
 
             builder.RegisterComponent(clayEditEntryView).AsImplementedInterfaces();
             builder.RegisterComponent(clayEditRemakeLoadSlotView);

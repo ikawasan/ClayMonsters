@@ -5,8 +5,10 @@ using R3;
 using SaveData;
 using SaveData.Interface;
 using Scene.Core.Interface;
+using Scene.DesktopPet.Interface;
 using Scene.PvpLobby.Interface;
 using Scene.TitleScene.Interface;
+using System.Collections.Generic;
 using UI.ModelGallery.Interface;
 using UI.Option.Interface;
 using UI.SkillTree.Interface;
@@ -22,11 +24,17 @@ namespace Scene.TitleScene.Presenter
         private readonly IPvpLobby pvpLobby;
         private readonly ITitleView titleView;
         private readonly ITitleMessageWindowView messageWindowView;
+        private readonly ITitleConfirmWindowView confirmWindowView;
+        private readonly ITitleDesktopPetSlotSelectView desktopPetSlotSelectView;
+        private readonly IDesktopPetLauncher desktopPetLauncher;
         private readonly IOptionPresenter optionPresenter;
         private readonly ISkillTreePresenter skillTreePresenter;
         private readonly IModelGalleryPresenter modelGalleryPresenter;
 
         private System.IDisposable pointsSubscription;
+        private System.IDisposable desktopPetSelectionSubscription;
+        private System.IDisposable desktopPetCancelSubscription;
+        private int[] pendingDesktopPetSlotIndices = System.Array.Empty<int>();
 
         [Inject]
         public TitlePresenter(
@@ -36,6 +44,9 @@ namespace Scene.TitleScene.Presenter
             IPvpLobby pvpLobby,
             ITitleView titleView,
             ITitleMessageWindowView messageWindowView,
+            ITitleConfirmWindowView confirmWindowView,
+            ITitleDesktopPetSlotSelectView desktopPetSlotSelectView,
+            IDesktopPetLauncher desktopPetLauncher,
             IOptionPresenter optionPresenter,
             ISkillTreePresenter skillTreePresenter,
             IModelGalleryPresenter modelGalleryPresenter)
@@ -46,6 +57,9 @@ namespace Scene.TitleScene.Presenter
             this.pvpLobby = pvpLobby;
             this.titleView = titleView;
             this.messageWindowView = messageWindowView;
+            this.confirmWindowView = confirmWindowView;
+            this.desktopPetSlotSelectView = desktopPetSlotSelectView;
+            this.desktopPetLauncher = desktopPetLauncher;
             this.optionPresenter = optionPresenter;
             this.skillTreePresenter = skillTreePresenter;
             this.modelGalleryPresenter = modelGalleryPresenter;
@@ -60,10 +74,20 @@ namespace Scene.TitleScene.Presenter
             titleView.SubscribeSkillTreeButtonClick(OnClickSkillTreeButton);
             titleView.SubscribeModelGalleryButtonClick(OnClickModelGalleryButton);
             titleView.SubscribeOptionButtonClick(OnClickOptionButton);
+            titleView.SubscribeDesktopPetButtonClick(OnClickDesktopPetButton);
             titleView.SubscribeQuitGameButtonClick(OnClickQuitGameButton);
             messageWindowView.SubscribeOkButtonClick(OnClickMessageWindowOk);
+            confirmWindowView.SubscribeYesButtonClick(OnClickDesktopPetConfirmYes);
+            confirmWindowView.SubscribeNoButtonClick(OnClickDesktopPetConfirmNo);
             skillTreePresenter.Setup();
             modelGalleryPresenter.Setup();
+
+            desktopPetSelectionSubscription?.Dispose();
+            desktopPetSelectionSubscription = desktopPetSlotSelectView.OnSelectionConfirmed
+                .Subscribe(OnDesktopPetSelectionConfirmed);
+            desktopPetCancelSubscription?.Dispose();
+            desktopPetCancelSubscription = desktopPetSlotSelectView.OnCancelled
+                .Subscribe(_ => OnDesktopPetSlotSelectCancelled());
 
             pointsSubscription?.Dispose();
             pointsSubscription = pointsService.PointsObservable
@@ -82,6 +106,9 @@ namespace Scene.TitleScene.Presenter
         void ITitlePresenter.OnLeave()
         {
             messageWindowView.Hide();
+            confirmWindowView.Hide();
+            desktopPetSlotSelectView.Hide();
+            pendingDesktopPetSlotIndices = System.Array.Empty<int>();
             optionPresenter.Hide();
             skillTreePresenter.Hide();
             modelGalleryPresenter.Hide();
@@ -167,6 +194,79 @@ namespace Scene.TitleScene.Presenter
         private void OnClickOptionButton()
         {
             optionPresenter.Show();
+        }
+
+        private void OnClickDesktopPetButton()
+        {
+            if (sceneManager.IsTransition)
+            {
+                return;
+            }
+
+            messageWindowView.Hide();
+            confirmWindowView.Hide();
+            pendingDesktopPetSlotIndices = System.Array.Empty<int>();
+
+            if (!saveService.HasAnySavedModel(ModelSavePool.Player))
+            {
+                messageWindowView.ShowLocalized(
+                    GameTextKeys.TitleNoUntrainedModel,
+                    "モンスターを作成してください");
+                return;
+            }
+
+            desktopPetSlotSelectView.Show();
+        }
+
+        private void OnDesktopPetSelectionConfirmed(IReadOnlyList<int> slotIndices)
+        {
+            if (slotIndices == null || slotIndices.Count == 0)
+            {
+                return;
+            }
+
+            pendingDesktopPetSlotIndices = new int[slotIndices.Count];
+            for (int i = 0; i < slotIndices.Count; i++)
+            {
+                pendingDesktopPetSlotIndices[i] = slotIndices[i];
+            }
+
+            desktopPetSlotSelectView.Hide();
+            confirmWindowView.ShowLocalized(
+                GameTextKeys.TitleDesktopPetConfirm,
+                "ゲームを閉じてモンスターをデスクトップに表示しますか？");
+        }
+
+        private void OnDesktopPetSlotSelectCancelled()
+        {
+            pendingDesktopPetSlotIndices = System.Array.Empty<int>();
+            desktopPetSlotSelectView.Hide();
+            confirmWindowView.Hide();
+        }
+
+        private void OnClickDesktopPetConfirmYes()
+        {
+            if (pendingDesktopPetSlotIndices == null || pendingDesktopPetSlotIndices.Length == 0)
+            {
+                confirmWindowView.Hide();
+                return;
+            }
+
+            int[] slotIndices = pendingDesktopPetSlotIndices;
+            pendingDesktopPetSlotIndices = System.Array.Empty<int>();
+            confirmWindowView.Hide();
+            desktopPetSlotSelectView.Hide();
+            optionPresenter.Hide();
+            skillTreePresenter.Hide();
+            modelGalleryPresenter.Hide();
+            desktopPetLauncher.Launch(slotIndices);
+        }
+
+        private void OnClickDesktopPetConfirmNo()
+        {
+            confirmWindowView.Hide();
+            pendingDesktopPetSlotIndices = System.Array.Empty<int>();
+            desktopPetSlotSelectView.Show();
         }
 
         private void OnClickQuitGameButton()

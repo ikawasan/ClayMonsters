@@ -41,6 +41,11 @@ namespace Scene.TitleScene.Interface
         IDisposable SubscribeOptionButtonClick(UnityAction action);
 
         /// <summary>
+        /// デスクトップペットボタン押下を購読する
+        /// </summary>
+        IDisposable SubscribeDesktopPetButtonClick(UnityAction action);
+
+        /// <summary>
         /// ゲーム終了ボタン押下を購読する
         /// </summary>
         IDisposable SubscribeQuitGameButtonClick(UnityAction action);

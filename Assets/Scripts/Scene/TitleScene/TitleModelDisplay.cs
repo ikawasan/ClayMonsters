@@ -32,6 +32,11 @@ namespace Scene.TitleScene
         private readonly List<GameObject> loadedModels = new List<GameObject>();
 
         /// <summary>
+        /// ロードモデルへモーションを付与する設定
+        /// </summary>
+        public LoadedModelConfigurator Configurator => configurator;
+
+        /// <summary>
         /// モデル未表示時の注視点
         /// </summary>
         public Vector3 DefaultFocusCenter =>
