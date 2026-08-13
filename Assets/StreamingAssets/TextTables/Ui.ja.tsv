@@ -23,6 +23,7 @@ Title.Training	育成
 Title.SkillTree	スキルツリー
 Title.ModelGallery	展示室
 Title.Option	オプション
+Title.DesktopPet	デスクトップペット
 Title.Quit	ゲームをやめる
 Battle.Draw	引き分け
 Battle.Victory	{winnerName} の勝利！
@@ -463,6 +464,7 @@ Save.TrainedPool	育成済み
 Save.UntrainedPool	未育成
 Save.EnemyPool	敵
 Save.Complete	セーブが完了しました
+Save.Saving	セーブ中…
 Save.UnnamedModel	名称未設定
 Save.Summary.Params	【パラメータ】
 Save.Summary.Attacks	【攻撃】
@@ -540,6 +542,8 @@ LoadSlot.PlayerInstruction	あなたのモンスターを選択してくださ�
 LoadSlot.EnemyInstruction	敵のモンスターを選択してください
 Title.NoTrainedModel	育成済みのモンスターがありません
 Title.NoUntrainedModel	モンスターを作成してください
+Title.DesktopPetConfirm	ゲームを閉じてモンスターをデスクトップに表示しますか？
+Title.DesktopPetSelectInstruction	最大{0}体まで選択してください（{1}/{0}）
 Common.Save	保存
 Common.Decide	決定
 Training.ModeSelectBody	じっくり育成は1〜6時間目の行動を自分で選びます\n昼休みは売店放課後は戦闘です\n自動育成は{days}日間を自動で進行します
@@ -657,3 +661,6 @@ Training.Status.Desc.Attack	攻撃\n与えるダメージに影響する
 Training.Status.Desc.Defense	防御\n受けるダメージを軽減する
 Training.Status.Desc.Speed	速度\n移動と技のリキャスト時間と回避率に影響する
 Training.Status.Desc.Hit	命中\n技の命中率に影響する
+DesktopPet.QuitMenu	デスクトップペットを終了
+DesktopPet.LaunchGameMenu	ClayMonstersを起動
+DesktopPet.CacheNotFound	デスクトップペットのキャッシュが見つかりません。

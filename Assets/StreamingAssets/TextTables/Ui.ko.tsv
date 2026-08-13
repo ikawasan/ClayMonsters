@@ -23,6 +23,7 @@ Title.Training	육성
 Title.SkillTree	스킬
 Title.ModelGallery	전시
 Title.Option	설정
+Title.DesktopPet	데스크톱 펫
 Title.Quit	종료
 Battle.Draw	무승부
 Battle.Victory	{winnerName} 승리!
@@ -463,6 +464,7 @@ Save.TrainedPool	육성 완료
 Save.UntrainedPool	미육성
 Save.EnemyPool	적
 Save.Complete	저장 완료
+Save.Saving	저장 중…
 Save.UnnamedModel	이름 없음
 Save.Summary.Params	[파라미터]
 Save.Summary.Attacks	[기술]
@@ -540,6 +542,8 @@ LoadSlot.PlayerInstruction	몬스터를 선택하세요
 LoadSlot.EnemyInstruction	적 몬스터를 선택하세요
 Title.NoTrainedModel	육성 완료 몬스터가 없습니다
 Title.NoUntrainedModel	몬스터를 먼저 만들어 주세요
+Title.DesktopPetConfirm	게임을 종료하고 몬스터를 데스크톱에 표시할까요?
+Title.DesktopPetSelectInstruction	최대 {0}마리까지 선택해 주세요（{1}/{0}）
 Common.Save	저장
 Common.Decide	결정
 Training.ModeSelectBody	느긋한 육성: 1~6교시 행동을 직접 고릅니다.\n점심에는 상점, 방과 후에는 전투입니다.\n자동 육성은 {days}일을 자동으로 진행합니다.
@@ -657,3 +661,6 @@ Training.Status.Desc.Attack	공격\n주는 피해에 영향을 준다
 Training.Status.Desc.Defense	방어\n받는 피해를 줄인다
 Training.Status.Desc.Speed	속도\n이동과 기술 재사용 시간, 회피율에 영향을 준다
 Training.Status.Desc.Hit	명중\n기술의 명중률에 영향을 준다
+DesktopPet.QuitMenu	데스크톱 펫 종료
+DesktopPet.LaunchGameMenu	ClayMonsters 실행
+DesktopPet.CacheNotFound	데스크톱 펫 캐시를 찾을 수 없습니다.

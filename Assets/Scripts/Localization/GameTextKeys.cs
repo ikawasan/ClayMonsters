@@ -23,9 +23,15 @@ namespace Localization
         public const string TitleSkillTree = "Title.SkillTree";
         public const string TitleModelGallery = "Title.ModelGallery";
         public const string TitleOption = "Title.Option";
+        public const string TitleDesktopPet = "Title.DesktopPet";
         public const string TitleQuit = "Title.Quit";
         public const string TitleNoTrainedModel = "Title.NoTrainedModel";
         public const string TitleNoUntrainedModel = "Title.NoUntrainedModel";
+        public const string TitleDesktopPetConfirm = "Title.DesktopPetConfirm";
+        public const string TitleDesktopPetSelectInstruction = "Title.DesktopPetSelectInstruction";
+        public const string DesktopPetQuitMenu = "DesktopPet.QuitMenu";
+        public const string DesktopPetLaunchGameMenu = "DesktopPet.LaunchGameMenu";
+        public const string DesktopPetCacheNotFound = "DesktopPet.CacheNotFound";
 
         public const string CommonReturn = "Common.Return";
         public const string CommonOk = "Common.Ok";
@@ -439,6 +445,7 @@ namespace Localization
         public const string SaveUntrainedPool = "Save.UntrainedPool";
         public const string SaveEnemyPool = "Save.EnemyPool";
         public const string SaveComplete = "Save.Complete";
+        public const string SaveSaving = "Save.Saving";
         public const string SaveUnnamedModel = "Save.UnnamedModel";
         public const string SaveSummaryParams = "Save.Summary.Params";
         public const string SaveSummaryAttacks = "Save.Summary.Attacks";

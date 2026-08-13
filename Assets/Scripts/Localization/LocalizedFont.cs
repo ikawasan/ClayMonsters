@@ -251,6 +251,8 @@ namespace Localization
 
             if (!fontAlreadyCurrent)
             {
+                // 英字フォントへ替える前に旧CJKサブメッシュを捨てる
+                StripFallbackSubMeshes(text);
                 text.font = fontAsset;
             }
 
@@ -269,10 +271,7 @@ namespace Localization
             RestoreStyle(text, styleMaterial, styleToApply);
             text.color = preservedVertexColor;
 
-            if (text.isActiveAndEnabled)
-            {
-                text.ForceMeshUpdate(true);
-            }
+            RebuildMesh(text);
         }
 
         /// <summary>
@@ -289,6 +288,87 @@ namespace Localization
 
             text.text = value ?? string.Empty;
             Apply(text);
+            RebuildMesh(text);
+        }
+
+        /// <summary>
+        /// 言語切替後に旧フォントのサブメッシュが残らないよう全TMPを再構築する
+        /// </summary>
+        public static void RebuildAllLoadedMeshes()
+        {
+            RefreshLoadedTextsCache(true);
+            for (int i = 0; i < LoadedTextsCache.Count; i++)
+            {
+                TMP_Text text = LoadedTextsCache[i];
+                if (text == null)
+                {
+                    continue;
+                }
+
+                RebuildMesh(text);
+            }
+        }
+
+        /// <summary>
+        /// 旧言語のフォールバックサブメッシュを捨てて現在文言だけで描画し直す
+        /// </summary>
+        public static void RebuildMesh(TMP_Text text)
+        {
+            if (!CanRebuildMesh(text))
+            {
+                return;
+            }
+
+            StripFallbackSubMeshes(text);
+            if (!CanRebuildMesh(text))
+            {
+                return;
+            }
+
+            text.ClearMesh();
+            text.ForceMeshUpdate(true, true);
+        }
+
+        private static bool CanRebuildMesh(TMP_Text text)
+        {
+            if (text == null)
+            {
+                return false;
+            }
+
+            if (text.gameObject.scene.IsValid() == false)
+            {
+                return false;
+            }
+
+            // 未Awakeや破棄途中のUGUIはCanvasRendererが無くClearMeshが落ちる
+            if (text is TextMeshProUGUI ugui && ugui.canvasRenderer == null)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private static void StripFallbackSubMeshes(TMP_Text text)
+        {
+            Transform root = text.transform;
+            for (int i = root.childCount - 1; i >= 0; i--)
+            {
+                Transform child = root.GetChild(i);
+                if (child == null)
+                {
+                    continue;
+                }
+
+                if (child.GetComponent<TMP_SubMeshUI>() == null
+                    && child.GetComponent<TMP_SubMesh>() == null)
+                {
+                    continue;
+                }
+
+                UnityEngine.Object.DestroyImmediate(child.gameObject);
+            }
         }
 
         private static void WarmupCharactersOnFont(TMP_FontAsset fontAsset, string text)

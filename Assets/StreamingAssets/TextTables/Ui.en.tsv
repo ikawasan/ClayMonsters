@@ -23,6 +23,7 @@ Title.Training	Train
 Title.SkillTree	Skills
 Title.ModelGallery	Gallery
 Title.Option	Options
+Title.DesktopPet	Desktop Pet
 Title.Quit	Quit
 Battle.Draw	Draw
 Battle.Victory	{winnerName} wins!
@@ -89,10 +90,10 @@ Training.AmbushEnemyDefault	Foe
 Training.AmbushMessage	{name} attacks!\nFight or flee?
 Training.Complete	Training Complete
 Training.Motivation	Motivation 
-Training.LearnedHeader	▼ New Move
-Training.SwapHeader	▼ Slot to Replace
-Training.AttackComposition	▼ Moves
-Training.AttackCompositionNone	▼ Moves\nNone
+Training.LearnedHeader	笆ｼ New Move
+Training.SwapHeader	笆ｼ Slot to Replace
+Training.AttackComposition	笆ｼ Moves
+Training.AttackCompositionNone	笆ｼ Moves\nNone
 Training.Inheritance	Inheritance
 Training.SaveOverwrite	Overwrite trained slot {slot}?
 Training.SaveTo	Save to trained slot {slot}
@@ -120,7 +121,7 @@ SkillTree.StatStartMoney	Starting Money
 SkillTree.StatTrainMoney	Training Money
 SkillTree.StatPoints	Battle Points
 SkillTree.StatInherit	Inheritance Boost
-SkillTree.StatNone	─
+SkillTree.StatNone	笏
 SkillTree.Node.Center.Name	Base HP I
 SkillTree.Node.Center.Desc	Training starts with +{0} HP
 SkillTree.Node.StartingHp.Name	Base HP II
@@ -366,7 +367,7 @@ Training.Log.MotivationDown	Motivation decreased
 Training.Log.MotivationUp	Motivation increased
 Training.Log.RestGreat	Great rest
 Training.Log.RestOk	Rest
-Training.Log.RestRecover	{title}: stamina {before}→{after}
+Training.Log.RestRecover	{title}: stamina {before}竊畜after}
 Training.Log.GreatSuccess	Great Success
 Training.Log.Success	Success
 Training.Log.FoundItem	Lucky find: {name}
@@ -463,6 +464,7 @@ Save.TrainedPool	Trained
 Save.UntrainedPool	Untrained
 Save.EnemyPool	Enemy
 Save.Complete	Save complete
+Save.Saving	Saving…
 Save.UnnamedModel	Unnamed
 Save.Summary.Params	[Params]
 Save.Summary.Attacks	[Moves]
@@ -540,6 +542,8 @@ LoadSlot.PlayerInstruction	Select your monster
 LoadSlot.EnemyInstruction	Select an enemy monster
 Title.NoTrainedModel	You have no trained monsters
 Title.NoUntrainedModel	Create a monster first
+Title.DesktopPetConfirm	Close the game and show the monster on the desktop?
+Title.DesktopPetSelectInstruction	Please select up to {0} ({1}/{0})
 Common.Save	Save
 Common.Decide	OK
 Training.ModeSelectBody	Manual training: choose actions for periods 1-6 yourself.\nLunch: shop. After school: battle.\nAuto training runs all {days} days automatically.
@@ -563,10 +567,10 @@ BattlePvp.RandomMatch	Random
 BattlePvp.CreateRoom	Create
 BattlePvp.JoinRoom	Join
 BattlePvp.StartMatch	Match
-BattlePvp.Matching	Matchmaking…
+BattlePvp.Matching	Matchmaking窶ｦ
 BattlePvp.CopyCode	Copy
 BattlePvp.JoinCodePlaceholder	Enter join code
-BattlePvp.OpponentWaiting	Waiting for opponent…
+BattlePvp.OpponentWaiting	Waiting for opponent窶ｦ
 Battle.Rematch	Again
 Battle.Start	Fight
 Battle.VictoryShort	Victory!
@@ -657,3 +661,6 @@ Training.Status.Desc.Attack	Attack\nAffects damage you deal
 Training.Status.Desc.Defense	Defense\nReduces damage you take
 Training.Status.Desc.Speed	Speed\nAffects movement, move recast time, and evasion
 Training.Status.Desc.Hit	Accuracy\nAffects attack hit rate
+DesktopPet.QuitMenu	Quit Desktop Pet
+DesktopPet.LaunchGameMenu	Launch ClayMonsters
+DesktopPet.CacheNotFound	Desktop Pet cache was not found.

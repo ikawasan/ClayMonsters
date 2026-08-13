@@ -23,6 +23,7 @@ Title.Training	Entrenar
 Title.SkillTree	Skills
 Title.ModelGallery	Galeria
 Title.Option	Opciones
+Title.DesktopPet	Mascota de escritorio
 Title.Quit	Salir
 Battle.Draw	Empate
 Battle.Victory	¡Gana {winnerName}!
@@ -463,6 +464,7 @@ Save.TrainedPool	Entrenado
 Save.UntrainedPool	Sin entrenar
 Save.EnemyPool	Enemigo
 Save.Complete	Guardado
+Save.Saving	Guardando…
 Save.UnnamedModel	Sin nombre
 Save.Summary.Params	[Parametros]
 Save.Summary.Attacks	[Ataques]
@@ -540,6 +542,8 @@ LoadSlot.PlayerInstruction	Selecciona tu monstruo
 LoadSlot.EnemyInstruction	Selecciona un monstruo enemigo
 Title.NoTrainedModel	No tienes monstruos entrenados
 Title.NoUntrainedModel	Crea un monstruo primero
+Title.DesktopPetConfirm	¿Cerrar el juego y mostrar el monstruo en el escritorio?
+Title.DesktopPetSelectInstruction	Selecciona hasta {0}（{1}/{0}）
 Common.Save	Guardar
 Common.Decide	OK
 Training.ModeSelectBody	Entrenamiento manual: elige acciones en los periodos 1-6.\nAlmuerzo: tienda. Después: combate.\nAuto: avanza {days} días solo.
@@ -657,3 +661,6 @@ Training.Status.Desc.Attack	Ataque\nAfecta el dano que infliges
 Training.Status.Desc.Defense	Defensa\nReduce el dano que recibes
 Training.Status.Desc.Speed	Velocidad\nAfecta movimiento, reutilizacion de tecnicas y evasion
 Training.Status.Desc.Hit	Precision\nAfecta la tasa de acierto de los ataques
+DesktopPet.QuitMenu	Cerrar mascota de escritorio
+DesktopPet.LaunchGameMenu	Iniciar ClayMonsters
+DesktopPet.CacheNotFound	No se encontró la caché de la mascota de escritorio.

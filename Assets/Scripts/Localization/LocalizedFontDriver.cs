@@ -108,6 +108,7 @@ namespace Localization
 
         private void OnSceneUnloaded(Scene scene)
         {
+            CancelReapply();
             LocalizedFont.NotifySceneHierarchyChanged();
             LanguageAwareUi.NotifyHierarchyChanged();
             nextScanTime = 0f;
@@ -165,6 +166,7 @@ namespace Localization
             }
 
             LocalizedFont.ApplyToAllLoaded(forceRefreshCache: false);
+            LocalizedFont.RebuildAllLoadedMeshes();
 
             await UniTask.DelayFrame(2, cancellationToken: cancellationToken);
             if (cancellationToken.IsCancellationRequested || currentFont == null)
@@ -173,6 +175,7 @@ namespace Localization
             }
 
             LocalizedFont.ApplyToAllLoaded(forceRefreshCache: false);
+            LocalizedFont.RebuildAllLoadedMeshes();
         }
     }
 }

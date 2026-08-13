@@ -23,6 +23,7 @@ Title.Training	育成
 Title.SkillTree	技能
 Title.ModelGallery	展厅
 Title.Option	设置
+Title.DesktopPet	桌面宠物
 Title.Quit	退出
 Battle.Draw	平局
 Battle.Victory	{winnerName} 获胜！
@@ -463,6 +464,7 @@ Save.TrainedPool	已育成
 Save.UntrainedPool	未育成
 Save.EnemyPool	敌人
 Save.Complete	保存完成
+Save.Saving	保存中…
 Save.UnnamedModel	未命名
 Save.Summary.Params	【参数】
 Save.Summary.Attacks	【攻击】
@@ -540,6 +542,8 @@ LoadSlot.PlayerInstruction	选择你的怪物
 LoadSlot.EnemyInstruction	选择敌方怪物
 Title.NoTrainedModel	没有已育成的怪物
 Title.NoUntrainedModel	请先创建一个怪物
+Title.DesktopPetConfirm	关闭游戏并把怪物显示在桌面上吗？
+Title.DesktopPetSelectInstruction	请最多选择{0}只（{1}/{0}）
 Common.Save	保存
 Common.Decide	决定
 Training.ModeSelectBody	细致育成：1〜6节课由你选择行动。\n午休可商店，放学后是战斗。\n自动育成会自动推进{days}天。
@@ -657,3 +661,6 @@ Training.Status.Desc.Attack	攻击\n影响造成的伤害
 Training.Status.Desc.Defense	防御\n减轻受到的伤害
 Training.Status.Desc.Speed	速度\n影响移动、技能冷却与回避率
 Training.Status.Desc.Hit	命中\n影响技能的命中率
+DesktopPet.QuitMenu	退出桌面宠物
+DesktopPet.LaunchGameMenu	启动 ClayMonsters
+DesktopPet.CacheNotFound	未找到桌面宠物缓存。

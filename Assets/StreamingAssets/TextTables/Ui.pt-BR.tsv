@@ -23,6 +23,7 @@ Title.Training	Treino
 Title.SkillTree	Skills
 Title.ModelGallery	Galeria
 Title.Option	Opcoes
+Title.DesktopPet	Pet da área de trabalho
 Title.Quit	Sair
 Battle.Draw	Empate
 Battle.Victory	{winnerName} venceu!
@@ -463,6 +464,7 @@ Save.TrainedPool	Treinado
 Save.UntrainedPool	Nao treinado
 Save.EnemyPool	Inimigo
 Save.Complete	Salvo
+Save.Saving	Salvando…
 Save.UnnamedModel	Sem nome
 Save.Summary.Params	[Parametros]
 Save.Summary.Attacks	[Ataques]
@@ -540,6 +542,8 @@ LoadSlot.PlayerInstruction	Selecione seu monstro
 LoadSlot.EnemyInstruction	Selecione um monstro inimigo
 Title.NoTrainedModel	Você não tem monstros treinados
 Title.NoUntrainedModel	Crie um monstro primeiro
+Title.DesktopPetConfirm	Fechar o jogo e mostrar o monstro na área de trabalho?
+Title.DesktopPetSelectInstruction	Selecione até {0}（{1}/{0}）
 Common.Save	Salvar
 Common.Decide	OK
 Training.ModeSelectBody	Treino manual: escolha ações nos períodos 1-6.\nAlmoço: loja. Depois: batalha.\nAutomático avança {days} dias.
@@ -657,3 +661,6 @@ Training.Status.Desc.Attack	Ataque\nAfeta o dano que voce causa
 Training.Status.Desc.Defense	Defesa\nReduz o dano que voce recebe
 Training.Status.Desc.Speed	Velocidade\nAfeta movimento, recarga de tecnicas e evasao
 Training.Status.Desc.Hit	Precisao\nAfeta a taxa de acerto dos ataques
+DesktopPet.QuitMenu	Encerrar pet da área de trabalho
+DesktopPet.LaunchGameMenu	Iniciar ClayMonsters
+DesktopPet.CacheNotFound	Cache do pet da área de trabalho não encontrado.

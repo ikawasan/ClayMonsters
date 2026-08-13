@@ -23,6 +23,7 @@ Title.Training	Training
 Title.SkillTree	Skills
 Title.ModelGallery	Galerie
 Title.Option	Optionen
+Title.DesktopPet	Desktop-Pet
 Title.Quit	Ende
 Battle.Draw	Unentschieden
 Battle.Victory	{winnerName} siegt!
@@ -463,6 +464,7 @@ Save.TrainedPool	Trainiert
 Save.UntrainedPool	Untrainiert
 Save.EnemyPool	Gegner
 Save.Complete	Gespeichert
+Save.Saving	Speichern…
 Save.UnnamedModel	Unbenannt
 Save.Summary.Params	[Werte]
 Save.Summary.Attacks	[Angriffe]
@@ -540,6 +542,8 @@ LoadSlot.PlayerInstruction	Waehle dein Monster
 LoadSlot.EnemyInstruction	Waehle ein Gegner-Monster
 Title.NoTrainedModel	Keine trainierten Monster vorhanden
 Title.NoUntrainedModel	Erstelle zuerst ein Monster
+Title.DesktopPetConfirm	Spiel schließen und das Monster auf dem Desktop anzeigen?
+Title.DesktopPetSelectInstruction	Bitte bis zu {0} auswählen（{1}/{0}）
 Common.Save	Save
 Common.Decide	OK
 Training.ModeSelectBody	Manuelles Training: Wähle Aktionen in Periode 1-6 selbst.\nMittag: Shop. Nach der Schule: Kampf.\nAuto-Training läuft {days} Tage automatisch.
@@ -657,3 +661,6 @@ Training.Status.Desc.Attack	Angriff\nBeeinflusst den Schaden, den du verursachst
 Training.Status.Desc.Defense	Verteidigung\nReduziert den erlittenen Schaden
 Training.Status.Desc.Speed	Tempo\nBeeinflusst Bewegung, Abklingzeit der Techniken und Ausweichen
 Training.Status.Desc.Hit	Treffer\nBeeinflusst die Trefferquote von Angriffen
+DesktopPet.QuitMenu	Desktop-Pet beenden
+DesktopPet.LaunchGameMenu	ClayMonsters starten
+DesktopPet.CacheNotFound	Desktop-Pet-Cache wurde nicht gefunden.

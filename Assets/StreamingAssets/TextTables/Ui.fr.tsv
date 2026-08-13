@@ -23,6 +23,7 @@ Title.Training	Entrain.
 Title.SkillTree	Skills
 Title.ModelGallery	Galerie
 Title.Option	Options
+Title.DesktopPet	Mascotte bureau
 Title.Quit	Quitter
 Battle.Draw	Match nul
 Battle.Victory	{winnerName} gagne !
@@ -463,6 +464,7 @@ Save.TrainedPool	Entrainee
 Save.UntrainedPool	Non entrainee
 Save.EnemyPool	Ennemi
 Save.Complete	Sauvegarde terminee
+Save.Saving	Sauvegarde…
 Save.UnnamedModel	Sans nom
 Save.Summary.Params	[Parametres]
 Save.Summary.Attacks	[Attaques]
@@ -540,6 +542,8 @@ LoadSlot.PlayerInstruction	Choisis ton monstre
 LoadSlot.EnemyInstruction	Choisis un monstre ennemi
 Title.NoTrainedModel	Aucun monstre entraîné
 Title.NoUntrainedModel	Créez d'abord un monstre
+Title.DesktopPetConfirm	Fermer le jeu et afficher le monstre sur le bureau ?
+Title.DesktopPetSelectInstruction	Veuillez sélectionner jusqu'à {0}（{1}/{0}）
 Common.Save	Sauver
 Common.Decide	OK
 Training.ModeSelectBody	Entraînement manuel : choisissez les actions des périodes 1 à 6.\nPause déjeuner : boutique. Après l'école : combat.\nAuto : {days} jours automatiques.
@@ -657,3 +661,6 @@ Training.Status.Desc.Attack	Attaque\nInfluence les degats infliges
 Training.Status.Desc.Defense	Defense\nReduit les degats subis
 Training.Status.Desc.Speed	Vitesse\nInfluence deplacement, temps de reutilisation et esquive
 Training.Status.Desc.Hit	Precision\nInfluence le taux de reussite des techniques
+DesktopPet.QuitMenu	Quitter la mascotte bureau
+DesktopPet.LaunchGameMenu	Lancer ClayMonsters
+DesktopPet.CacheNotFound	Cache de la mascotte bureau introuvable.

@@ -99,10 +99,13 @@ namespace Localization
             await languageService.SetLanguage(languageCode, cancellationToken);
             currentLanguageCode = languageCode;
             LocalizedText.NotifyLanguageCode(languageCode);
-            LocalizedFont.ApplyToAllLoaded();
+            // 先に文言を差し替え英字フォント差替で旧言語サブメッシュが残らないようにする
             LanguageAwareUi.RefreshAllLoaded();
+            LocalizedFont.ApplyToAllLoaded(forceRefreshCache: true);
+            LocalizedFont.RebuildAllLoadedMeshes();
             // 文言再適用やLHTextMeshProのfont差替直後に輪郭Faceが消えた分を戻す
-            LocalizedFont.ApplyToAllLoaded();
+            LocalizedFont.ApplyToAllLoaded(forceRefreshCache: false);
+            LocalizedFont.RebuildAllLoadedMeshes();
         }
     }
 }
