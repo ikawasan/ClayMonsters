@@ -1875,7 +1875,10 @@ namespace Scene.DesktopPet
                         2 => "♩",
                         _ => "♬"
                     };
-                    actor.Zzz.color = new Color(1f, 0.45f, 0.75f, 1f);
+                    actor.Zzz.color = Color.HSVToRGB(
+                        Mathf.Repeat((Time.unscaledTime * 0.45f) + (i * 0.19f) + (phase * 0.13f), 1f),
+                        0.85f,
+                        1f);
                     actor.Zzz.gameObject.SetActive(true);
                 }
 
@@ -1916,7 +1919,7 @@ namespace Scene.DesktopPet
                 if (enabled)
                 {
                     actor.Zzz.text = "♪";
-                    actor.Zzz.color = new Color(1f, 0.45f, 0.75f, 1f);
+                    actor.Zzz.color = Color.HSVToRGB(UnityEngine.Random.value, 0.85f, 1f);
                 }
             }
         }
@@ -2087,7 +2090,12 @@ namespace Scene.DesktopPet
                 MeshRenderer meshRenderer = dot.GetComponent<MeshRenderer>();
                 if (meshRenderer != null)
                 {
-                    meshRenderer.material.color = new Color(1f, UnityEngine.Random.Range(0.5f, 1f), 0.2f);
+                    meshRenderer.material.color = UnityEngine.Random.Range(0, 3) switch
+                    {
+                        0 => Color.white,
+                        1 => new Color(1f, 0.96f, 0.35f),
+                        _ => new Color(1f, 0.78f, 0.2f)
+                    };
                 }
             }
 

@@ -1,4 +1,5 @@
 using System.Drawing.Drawing2D;
+using System.Drawing.Text;
 using System.Runtime.InteropServices;
 
 namespace ClayMonstersPet;
@@ -955,15 +956,43 @@ internal sealed class PetForm : Form
 
     private void DrawNotes(Graphics graphics)
     {
+        graphics.SmoothingMode = SmoothingMode.None;
+        graphics.TextRenderingHint = TextRenderingHint.SingleBitPerPixelGridFit;
+        graphics.CompositingMode = CompositingMode.SourceOver;
         for (int i = 0; i < notes.Count; i++)
         {
             NoteParticle note = notes[i];
             float t = Math.Clamp(note.Life / note.MaxLife, 0f, 1f);
-            int alpha = (int)(230 * t);
-            using SolidBrush brush = new(Color.FromArgb(alpha, note.Color));
+            if (t <= 0.08f)
+            {
+                continue;
+            }
+
             float size = note.Size * (0.85f + (1f - t) * 0.4f);
             using Font font = new(noteFont.FontFamily, size, FontStyle.Bold);
-            graphics.DrawString(note.Glyph, font, brush, note.X, note.Y);
+            Color fill = Color.FromArgb(255, note.Color);
+            Color outline = DarkenColor(fill, 0.72f);
+            using SolidBrush outlineBrush = new(outline);
+            using SolidBrush fillBrush = new(fill);
+            for (int offsetX = -1; offsetX <= 1; offsetX++)
+            {
+                for (int offsetY = -1; offsetY <= 1; offsetY++)
+                {
+                    if (offsetX == 0 && offsetY == 0)
+                    {
+                        continue;
+                    }
+
+                    graphics.DrawString(
+                        note.Glyph,
+                        font,
+                        outlineBrush,
+                        note.X + offsetX,
+                        note.Y + offsetY);
+                }
+            }
+
+            graphics.DrawString(note.Glyph, font, fillBrush, note.X, note.Y);
         }
     }
 
@@ -980,13 +1009,10 @@ internal sealed class PetForm : Form
             MaxLife = 1.6f,
             Size = 14f + (float)random.NextDouble() * 10f,
             Glyph = glyphs[random.Next(glyphs.Length)],
-            Color = random.Next(0, 4) switch
-            {
-                0 => Color.FromArgb(255, 255, 105, 180),
-                1 => Color.FromArgb(255, 120, 200, 255),
-                2 => Color.FromArgb(255, 255, 215, 80),
-                _ => Color.FromArgb(255, 180, 255, 140)
-            }
+            Color = ColorFromHsv(
+                random.NextDouble() * 360.0,
+                0.78 + (random.NextDouble() * 0.22),
+                0.95 + (random.NextDouble() * 0.05))
         });
     }
 
@@ -1123,6 +1149,41 @@ internal sealed class PetForm : Form
     }
 
     private static float Lerp(float a, float b, float t) => a + (b - a) * t;
+
+    private static Color DarkenColor(Color color, float scale)
+    {
+        float safe = Math.Clamp(scale, 0f, 1f);
+        return Color.FromArgb(
+            255,
+            (int)Math.Clamp(color.R * safe, 0f, 255f),
+            (int)Math.Clamp(color.G * safe, 0f, 255f),
+            (int)Math.Clamp(color.B * safe, 0f, 255f));
+    }
+
+    private static Color ColorFromHsv(double hue, double saturation, double value)
+    {
+        double wrapped = hue % 360.0;
+        if (wrapped < 0.0)
+        {
+            wrapped += 360.0;
+        }
+
+        int hi = (int)Math.Floor(wrapped / 60.0) % 6;
+        double f = (wrapped / 60.0) - Math.Floor(wrapped / 60.0);
+        int v = (int)Math.Clamp(value * 255.0, 0.0, 255.0);
+        int p = (int)Math.Clamp(value * (1.0 - saturation) * 255.0, 0.0, 255.0);
+        int q = (int)Math.Clamp(value * (1.0 - (f * saturation)) * 255.0, 0.0, 255.0);
+        int t = (int)Math.Clamp(value * (1.0 - ((1.0 - f) * saturation)) * 255.0, 0.0, 255.0);
+        return hi switch
+        {
+            0 => Color.FromArgb(255, v, t, p),
+            1 => Color.FromArgb(255, q, v, p),
+            2 => Color.FromArgb(255, p, v, t),
+            3 => Color.FromArgb(255, p, q, v),
+            4 => Color.FromArgb(255, t, p, v),
+            _ => Color.FromArgb(255, v, p, q)
+        };
+    }
 
     [DllImport("user32.dll")]
     private static extern int GetWindowLong(IntPtr hWnd, int nIndex);

@@ -58,11 +58,12 @@ internal sealed class PetSparkForm : Form
                 Life = 0.28f + (float)random.NextDouble() * 0.35f,
                 MaxLife = 0.65f,
                 Size = 3.5f + (float)random.NextDouble() * 5f,
-                Color = random.Next(0, 3) switch
+                Color = random.Next(0, 4) switch
                 {
-                    0 => Color.FromArgb(255, 255, 220, 60),
-                    1 => Color.FromArgb(255, 255, 140, 40),
-                    _ => Color.FromArgb(255, 255, 255, 200)
+                    0 => Color.FromArgb(255, 255, 255, 255),
+                    1 => Color.FromArgb(255, 255, 245, 90),
+                    2 => Color.FromArgb(255, 255, 200, 70),
+                    _ => Color.FromArgb(255, 255, 160, 40)
                 }
             });
         }
@@ -139,9 +140,13 @@ internal sealed class PetSparkForm : Form
         {
             SparkParticle spark = sparks[i];
             float t = Math.Clamp(spark.Life / spark.MaxLife, 0f, 1f);
-            int alpha = (int)(spark.Color.A * t);
-            using SolidBrush brush = new(Color.FromArgb(alpha, spark.Color));
-            float size = spark.Size * (0.6f + t);
+            if (t <= 0.1f)
+            {
+                continue;
+            }
+
+            using SolidBrush brush = new(Color.FromArgb(255, spark.Color));
+            float size = spark.Size * (0.75f + t);
             e.Graphics.FillRectangle(
                 brush,
                 spark.X - (size * 0.5f),
