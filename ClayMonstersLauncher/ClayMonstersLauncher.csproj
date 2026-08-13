@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>ClayMonstersLauncher</RootNamespace>
+    <AssemblyName>ClayMonstersLauncher</AssemblyName>
+    <Product>ClayMonstersLauncher</Product>
+    <AssemblyTitle>ClayMonstersLauncher</AssemblyTitle>
+    <Description>Steam playtime keeper for ClayMonsters</Description>
+  </PropertyGroup>
+</Project>
