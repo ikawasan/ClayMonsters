@@ -102,9 +102,13 @@ namespace Scene.DesktopPet
         private void CreateBall(Transform reference)
         {
             GameObject ballObject = new GameObject("DesktopPetBall");
-            if (reference != null && reference.parent != null)
+            if (reference != null)
             {
-                ballObject.transform.SetParent(reference.parent, false);
+                ballObject.layer = reference.gameObject.layer;
+                if (reference.parent != null)
+                {
+                    ballObject.transform.SetParent(reference.parent, false);
+                }
             }
 
             ballObject.transform.localPosition = Vector3.forward;

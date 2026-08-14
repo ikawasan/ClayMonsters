@@ -97,6 +97,9 @@ namespace Scene.DesktopPet
         /// </summary>
         public static bool TryStart(IReadOnlyList<string> cacheDirectories)
         {
+#if !UNITY_STANDALONE_WIN || UNITY_EDITOR
+            return false;
+#else
             if (cacheDirectories == null || cacheDirectories.Count == 0)
             {
                 return false;
@@ -153,6 +156,7 @@ namespace Scene.DesktopPet
                     "[DesktopPetExternalProcess] 外部ビューア起動失敗: " + exception.Message);
                 return false;
             }
+#endif
         }
 
         private static string BuildArguments(

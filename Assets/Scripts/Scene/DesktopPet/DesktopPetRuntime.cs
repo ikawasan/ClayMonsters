@@ -2,11 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Audio.Interface;
-using ClayEditor.Rigging;
 using Cysharp.Threading.Tasks;
 using Extensions;
 using SaveData;
 using SaveData.Interface;
+using Scene.DesktopPet.Interface;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -14,7 +14,7 @@ namespace Scene.DesktopPet
 {
     /// <summary>
     /// デスクトップペットの実行時ホスト
-    /// キャッシュ優先でスプライトを用意し低FPS再生と窓移動を行う
+    /// セーブ時キャッシュを読み低FPS再生と窓移動を行う
     /// </summary>
     public sealed class DesktopPetRuntime : MonoBehaviour
     {
@@ -24,13 +24,11 @@ namespace Scene.DesktopPet
         private const int PetVisualLayer = 30;
 
         private IClayModelSaveService saveService;
-        private IClayModelImporter importer;
-        private LoadedModelConfigurator configurator;
         private IBgmService bgmService;
         private Action onStopped;
         private readonly List<int> slotIndices = new List<int>(MaxPetCount);
         private readonly List<PetActor> actors = new List<PetActor>(MaxPetCount);
-        private WindowsDesktopPetWindow window;
+        private IDesktopPetWindow window;
         private DesktopPetContextMenu contextMenu;
         private DesktopPetRandomMover mover;
         private CancellationTokenSource loopCts;
@@ -50,8 +48,6 @@ namespace Scene.DesktopPet
         public void Begin(
             IReadOnlyList<int> playerSlotIndices,
             IClayModelSaveService clayModelSaveService,
-            IClayModelImporter clayModelImporter,
-            LoadedModelConfigurator loadedModelConfigurator,
             IBgmService clayBgmService,
             Action stoppedCallback)
         {
@@ -69,14 +65,12 @@ namespace Scene.DesktopPet
             }
 
             saveService = clayModelSaveService;
-            importer = clayModelImporter;
-            configurator = loadedModelConfigurator;
             bgmService = clayBgmService;
             onStopped = stoppedCallback;
-            BeginAsync(this.GetCancellationTokenOnDestroy()).Forget();
+            StartFromSaveCache(this.GetCancellationTokenOnDestroy());
         }
 
-        private async UniTaskVoid BeginAsync(CancellationToken cancellationToken)
+        private void StartFromSaveCache(CancellationToken cancellationToken)
         {
             if (slotIndices.Count == 0)
             {
@@ -85,8 +79,7 @@ namespace Scene.DesktopPet
                 return;
             }
 
-#if !UNITY_EDITOR
-            // キャッシュ済みなら焼き出し前に外部へ即引き継ぎ終了する
+#if UNITY_STANDALONE_WIN && !UNITY_EDITOR
             if (TryCollectReadyCacheDirectories(out List<string> readyDirectories)
                 && readyDirectories.Count == slotIndices.Count
                 && DesktopPetExternalProcess.TryStart(readyDirectories))
@@ -100,126 +93,17 @@ namespace Scene.DesktopPet
 #endif
 
             PrepareEnvironment();
-
-            DesktopPetSpriteBaker baker = new DesktopPetSpriteBaker(importer, saveService, configurator);
             List<string> cacheDirectories = new List<string>(slotIndices.Count);
-
             for (int i = 0; i < slotIndices.Count; i++)
             {
                 int slotIndex = slotIndices[i];
-                ModelSaveSlot slot = saveService != null
-                    ? saveService.GetSlot(ModelSavePool.Player, slotIndex)
-                    : null;
-                string glbFileName = slot != null ? slot.glbFileName : null;
-
-                // 既にディスクが有効なら読み込み焼き出しをスキップしパスだけ使う
-                if (!string.IsNullOrEmpty(glbFileName)
-                    && DesktopPetSpriteCache.IsReady(slotIndex, glbFileName))
-                {
-                    cacheDirectories.Add(DesktopPetSpriteCache.GetSlotDirectory(slotIndex));
-#if UNITY_EDITOR
-                    if (DesktopPetSpriteCache.TryLoad(slotIndex, glbFileName, out DesktopPetSpriteSheet cached)
-                        && cached != null)
-                    {
-                        actors.Add(new PetActor(slotIndex, cached));
-                    }
-                    else
-                    {
-                        actors.Add(new PetActor(slotIndex, CreateThumbnailFallbackSheet(slotIndex)));
-                    }
-#endif
-                    continue;
-                }
-
-                DesktopPetSpriteSheet sheet = await baker.LoadOrBakeAsync(slotIndex, cancellationToken);
-                if (cancellationToken.IsCancellationRequested)
-                {
-                    return;
-                }
-
-                if (sheet == null
-                    || sheet.GetFrameCount(DesktopPetFacing.AnglePos45, DesktopPetAction.Idle) <= 0
-                    || sheet.GetFrameCount(DesktopPetFacing.Front, DesktopPetAction.Idle) <= 0
-                    || sheet.GetFrameCount(DesktopPetFacing.Front, DesktopPetAction.Walk) <= 0
-                    || !DesktopPetSpriteBaker.HasVisibleContent(sheet))
-                {
-                    Debug.LogWarning(
-                        "[DesktopPetRuntime] 焼き出し不足のためサムネへフォールバックします slot=" + slotIndex);
-                    sheet?.Dispose();
-                    sheet = CreateThumbnailFallbackSheet(slotIndex);
-                }
-
-                if (!TryPersistSheetCache(slotIndex, sheet))
-                {
-                    Debug.LogError(
-                        "[DesktopPetRuntime] キャッシュ保存に失敗したため外部引き継ぎできません slot="
-                        + slotIndex);
-#if UNITY_EDITOR
-                    actors.Add(new PetActor(slotIndex, sheet));
-#else
-                    sheet.Dispose();
-#endif
-                    continue;
-                }
-
-                cacheDirectories.Add(DesktopPetSpriteCache.GetSlotDirectory(slotIndex));
-#if UNITY_EDITOR
+                ModelSaveSlot slot = saveService.GetSlot(ModelSavePool.Player, slotIndex);
+                DesktopPetSpriteCache.TryLoad(slotIndex, slot.glbFileName, out DesktopPetSpriteSheet sheet);
                 actors.Add(new PetActor(slotIndex, sheet));
-#else
-                // 外部引き継ぎ成功時はメモリ上のシートは不要
-                sheet.Dispose();
-#endif
+                cacheDirectories.Add(DesktopPetSpriteCache.GetSlotDirectory(slotIndex));
             }
 
-            if (cacheDirectories.Count == 0)
-            {
-                Debug.LogError("[DesktopPetRuntime] 有効なキャッシュが無いため同一プロセス表示になります");
-            }
-            else
-            {
-                DesktopPetSpriteCache.WriteActiveMarker(cacheDirectories);
-            }
-
-#if !UNITY_EDITOR
-            if (cacheDirectories.Count == slotIndices.Count
-                && DesktopPetExternalProcess.TryStart(cacheDirectories))
-            {
-                Debug.Log("[DesktopPetRuntime] 軽量外部ビューアへ引き継ぎます count=" + cacheDirectories.Count);
-                ShutdownInternal(quitApplication: true, restoreTitle: false, immediate: true);
-                return;
-            }
-
-            Debug.LogWarning(
-                "[DesktopPetRuntime] 外部ビューア起動に失敗したため同一プロセス表示へフォールバックします");
-            // 同一プロセス表示用にディスクから読み直す
-            actors.Clear();
-            for (int i = 0; i < slotIndices.Count; i++)
-            {
-                int slotIndex = slotIndices[i];
-                ModelSaveSlot slot = saveService != null
-                    ? saveService.GetSlot(ModelSavePool.Player, slotIndex)
-                    : null;
-                string glbFileName = slot != null ? slot.glbFileName : null;
-                if (!string.IsNullOrEmpty(glbFileName)
-                    && DesktopPetSpriteCache.TryLoad(slotIndex, glbFileName, out DesktopPetSpriteSheet loaded)
-                    && loaded != null)
-                {
-                    actors.Add(new PetActor(slotIndex, loaded));
-                }
-                else
-                {
-                    actors.Add(new PetActor(slotIndex, CreateThumbnailFallbackSheet(slotIndex)));
-                }
-            }
-#endif
-
-            if (actors.Count == 0)
-            {
-                Debug.LogError("[DesktopPetRuntime] 表示用シートを用意できませんでした");
-                ShutdownInternal(quitApplication: false, restoreTitle: true);
-                return;
-            }
-
+            DesktopPetSpriteCache.WriteActiveMarker(cacheDirectories);
             EnterInProcessPetMode(cancellationToken);
         }
 
@@ -249,43 +133,44 @@ namespace Scene.DesktopPet
             return cacheDirectories.Count > 0;
         }
 
-        private bool TryPersistSheetCache(int slotIndex, DesktopPetSpriteSheet sheet)
-        {
-            if (sheet == null || saveService == null)
-            {
-                return false;
-            }
-
-            ModelSaveSlot slot = saveService.GetSlot(ModelSavePool.Player, slotIndex);
-            string glbFileName = slot != null ? slot.glbFileName : null;
-            if (string.IsNullOrEmpty(glbFileName))
-            {
-                glbFileName = "fallback_slot_" + slotIndex;
-            }
-
-            return DesktopPetSpriteCache.TrySave(slotIndex, glbFileName, sheet);
-        }
-
         private void EnterInProcessPetMode(CancellationToken cancellationToken)
         {
             HideSceneCamerasAndListeners();
             ApplyRestQuality();
             BuildPetVisual();
-            window = new WindowsDesktopPetWindow();
+            window = DesktopPetWindowFactory.Create();
             contextMenu = new DesktopPetContextMenu();
             window.EnterPetMode(PetWindowSize, PetWindowSize);
             if (petCamera != null)
             {
 #if UNITY_EDITOR
-                // Editorではクロマキー透明化が効かないため暗背景にする
                 petCamera.backgroundColor = new Color(0.12f, 0.12f, 0.14f, 1f);
 #else
                 petCamera.backgroundColor = window.ChromaKeyColor;
 #endif
+                petCamera.allowHDR = false;
+                petCamera.allowMSAA = false;
             }
 
             loopCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            ApplyNativeChromeWhenReadyAsync(loopCts.Token).Forget();
             StartInProcessFlock(loopCts.Token);
+        }
+
+        private async UniTaskVoid ApplyNativeChromeWhenReadyAsync(CancellationToken cancellationToken)
+        {
+            for (int i = 0; i < 12; i++)
+            {
+                await UniTask.DelayFrame(1, cancellationToken: cancellationToken);
+                window?.ApplyNativeChrome();
+                if (Screen.width == PetWindowSize && Screen.height == PetWindowSize)
+                {
+                    break;
+                }
+            }
+
+            await UniTask.DelayFrame(1, cancellationToken: cancellationToken);
+            window?.ApplyNativeChrome();
         }
 
         private void StartInProcessFlock(CancellationToken cancellationToken)
@@ -383,16 +268,13 @@ namespace Scene.DesktopPet
             {
                 HandleContextMenu();
             }
+        }
 
-            if (mouse != null
-                && mouse.leftButton.wasPressedThisFrame
-                && window != null
-                && !window.ClickThrough
-                && actors.Count == 1)
+        private void OnApplicationFocus(bool hasFocus)
+        {
+            if (hasFocus)
             {
-                // 単体時の左クリックはドラッグ開始ではなくメニュー表示とする
-                // 移動は外部ビューア側のドラッグに任せる
-                HandleContextMenu();
+                window?.ApplyNativeChrome();
             }
         }
 
@@ -666,9 +548,13 @@ namespace Scene.DesktopPet
             petCamera.clearFlags = CameraClearFlags.SolidColor;
 #if UNITY_EDITOR
             petCamera.backgroundColor = new Color(0.12f, 0.12f, 0.14f, 1f);
+#elif UNITY_STANDALONE_OSX
+            petCamera.backgroundColor = Color.clear;
 #else
             petCamera.backgroundColor = Color.magenta;
 #endif
+            petCamera.allowHDR = false;
+            petCamera.allowMSAA = false;
             petCamera.orthographic = true;
             petCamera.orthographicSize = 1f;
             petCamera.nearClipPlane = 0.1f;
@@ -721,34 +607,6 @@ namespace Scene.DesktopPet
             return textMesh;
         }
 
-        private DesktopPetSpriteSheet CreateThumbnailFallbackSheet(int slotIndex)
-        {
-            DesktopPetSpriteSheet sheet = new DesktopPetSpriteSheet();
-            Texture2D texture = saveService != null
-                ? saveService.LoadThumbnail(ModelSavePool.Player, slotIndex)
-                : null;
-            if (texture == null)
-            {
-                texture = CreateFallbackTexture();
-            }
-
-            Sprite sprite = Sprite.Create(
-                texture,
-                new Rect(0f, 0f, texture.width, texture.height),
-                new Vector2(0.5f, 0.5f),
-                100f);
-            Sprite[] single = { sprite };
-            sheet.SetClip(DesktopPetFacing.AnglePos45, DesktopPetAction.Idle, single);
-            sheet.SetClip(DesktopPetFacing.AnglePos45, DesktopPetAction.Walk, single);
-            sheet.SetClip(DesktopPetFacing.AnglePos45, DesktopPetAction.Attack, single);
-            sheet.SetClip(DesktopPetFacing.AngleNeg45, DesktopPetAction.Idle, single);
-            sheet.SetClip(DesktopPetFacing.AngleNeg45, DesktopPetAction.Walk, single);
-            sheet.SetClip(DesktopPetFacing.AngleNeg45, DesktopPetAction.Attack, single);
-            sheet.SetClip(DesktopPetFacing.Front, DesktopPetAction.Idle, single);
-            sheet.SetClip(DesktopPetFacing.Front, DesktopPetAction.Walk, single);
-            return sheet;
-        }
-
         private static void FitSpriteToView(SpriteRenderer renderer, UnityEngine.Camera camera, int petCount)
         {
             if (renderer == null || renderer.sprite == null || camera == null)
@@ -763,20 +621,6 @@ namespace Scene.DesktopPet
             float scale = targetSize / Mathf.Max(spriteWidth, spriteHeight);
             renderer.transform.localScale = Vector3.one * scale;
             camera.orthographicSize = targetSize * 0.55f + (petCount > 1 ? 0.35f : 0f);
-        }
-
-        private static Texture2D CreateFallbackTexture()
-        {
-            Texture2D texture = new Texture2D(64, 64, TextureFormat.RGBA32, false);
-            Color[] pixels = new Color[64 * 64];
-            for (int i = 0; i < pixels.Length; i++)
-            {
-                pixels[i] = new Color(0.85f, 0.55f, 0.35f, 1f);
-            }
-
-            texture.SetPixels(pixels);
-            texture.Apply(false, false);
-            return texture;
         }
 
         private void ReturnToTitle()

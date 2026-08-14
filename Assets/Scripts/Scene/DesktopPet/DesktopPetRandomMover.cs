@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Scene.DesktopPet.Interface;
 using UnityEngine;
 
 namespace Scene.DesktopPet
@@ -10,7 +11,7 @@ namespace Scene.DesktopPet
     /// </summary>
     public sealed class DesktopPetRandomMover
     {
-        private readonly WindowsDesktopPetWindow window;
+        private readonly IDesktopPetWindow window;
         private readonly int windowWidth;
         private readonly int windowHeight;
         private readonly float minIdleSeconds;
@@ -23,7 +24,7 @@ namespace Scene.DesktopPet
         /// 移動制御を生成する
         /// </summary>
         public DesktopPetRandomMover(
-            WindowsDesktopPetWindow window,
+            IDesktopPetWindow window,
             int windowWidth,
             int windowHeight,
             Action<Vector2> onMoveDirection,

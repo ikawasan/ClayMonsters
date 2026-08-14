@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Audio.Interface;
-using ClayEditor.Rigging;
 using Extensions;
 using SaveData;
 using SaveData.Interface;
@@ -20,8 +19,6 @@ namespace Scene.DesktopPet
 
         private readonly IBgmService bgmService;
         private readonly IClayModelSaveService saveService;
-        private readonly IClayModelImporter importer;
-        private readonly LoadedModelConfigurator configurator;
         private DesktopPetRuntime activeRuntime;
 
         /// <summary>
@@ -30,14 +27,10 @@ namespace Scene.DesktopPet
         [Inject]
         public DesktopPetLauncher(
             IBgmService bgmService,
-            IClayModelSaveService saveService,
-            IClayModelImporter importer,
-            LoadedModelConfigurator configurator)
+            IClayModelSaveService saveService)
         {
             this.bgmService = bgmService;
             this.saveService = saveService;
-            this.importer = importer;
-            this.configurator = configurator;
         }
 
         /// <inheritdoc/>
@@ -76,19 +69,12 @@ namespace Scene.DesktopPet
             // ペット移行直後からタイトルBGMが残らないよう即時停止する
             bgmService?.Stop();
 
-#if !UNITY_EDITOR
+#if UNITY_STANDALONE_WIN && !UNITY_EDITOR
             if (TryHandoffReadyCacheAndQuit(validSlots))
             {
                 return;
             }
 #endif
-
-            if (configurator == null)
-            {
-                Debug.LogError(
-                    "[DesktopPetLauncher] LoadedModelConfiguratorが未配線ですTitleModelDisplayを確認してください");
-                return;
-            }
 
             DesktopPetLaunchRequest.SetPending(validSlots);
 
@@ -98,8 +84,6 @@ namespace Scene.DesktopPet
             activeRuntime.Begin(
                 validSlots,
                 saveService,
-                importer,
-                configurator,
                 bgmService,
                 OnRuntimeStopped);
             DesktopPetLaunchRequest.Clear();

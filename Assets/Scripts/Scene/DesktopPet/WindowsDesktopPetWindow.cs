@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using Scene.DesktopPet.Interface;
 using UnityEngine;
 
 namespace Scene.DesktopPet
@@ -7,7 +8,7 @@ namespace Scene.DesktopPet
     /// <summary>
     /// Windows向けに枠なし透明最前面の小窓を制御する
     /// </summary>
-    public sealed class WindowsDesktopPetWindow
+    public sealed class WindowsDesktopPetWindow : IDesktopPetWindow
     {
         private const int GwlExstyle = -20;
         private const int GwlStyle = -16;
@@ -35,35 +36,24 @@ namespace Scene.DesktopPet
         private int savedHeight;
         private Color32 chromaKey = new Color32(255, 0, 255, 255);
 
-        /// <summary>
-        /// ウィンドウハンドル
-        /// </summary>
+        /// <inheritdoc/>
         public IntPtr Handle => hwnd;
 
-        /// <summary>
-        /// クリック透過中か
-        /// </summary>
+        /// <inheritdoc/>
         public bool ClickThrough => clickThrough;
 
-        /// <summary>
-        /// クロマキー色(完全一致ピクセルが透明になる)
-        /// </summary>
+        /// <inheritdoc/>
         public Color ChromaKeyColor => new Color(chromaKey.r / 255f, chromaKey.g / 255f, chromaKey.b / 255f, 1f);
 
-        /// <summary>
-        /// ペット表示用の小窓モードへ入る
-        /// </summary>
-        /// <param name="width">窓幅</param>
-        /// <param name="height">窓高</param>
+        /// <inheritdoc/>
         public void EnterPetMode(int width, int height)
         {
 #if UNITY_EDITOR
-            // Editorでは透明小窓も解像度変更もしない(Gameビューのレターボックス白帯を避ける)
             Debug.LogWarning(
                 "[WindowsDesktopPetWindow] Editorでは透明小窓を適用せずGameビュー内表示のみ行います");
             isPetMode = true;
             return;
-#else
+#elif UNITY_STANDALONE_WIN
             savedFullScreenMode = Screen.fullScreenMode;
             savedWidth = Screen.width;
             savedHeight = Screen.height;
@@ -91,16 +81,16 @@ namespace Scene.DesktopPet
                 height,
                 SwpNoactivate | SwpShowwindow);
             isPetMode = true;
+#else
+            Debug.LogError("[WindowsDesktopPetWindow] Windows以外では使えません");
+            isPetMode = true;
 #endif
         }
 
-        /// <summary>
-        /// クリック透過を切り替える
-        /// </summary>
-        public void SetClickThrough(bool enabled)
+        /// <inheritdoc/>
+        public void ApplyNativeChrome()
         {
-            clickThrough = enabled;
-#if !UNITY_EDITOR
+#if UNITY_STANDALONE_WIN && !UNITY_EDITOR
             if (!isPetMode || hwnd == IntPtr.Zero)
             {
                 return;
@@ -110,19 +100,27 @@ namespace Scene.DesktopPet
 #endif
         }
 
-        /// <summary>
-        /// クリック透過をトグルする
-        /// </summary>
+        /// <inheritdoc/>
+        public void SetClickThrough(bool enabled)
+        {
+            clickThrough = enabled;
+#if UNITY_STANDALONE_WIN && !UNITY_EDITOR
+            if (!isPetMode || hwnd == IntPtr.Zero)
+            {
+                return;
+            }
+
+            ApplyPetExStyle();
+#endif
+        }
+
+        /// <inheritdoc/>
         public void ToggleClickThrough()
         {
             SetClickThrough(!clickThrough);
         }
 
-        /// <summary>
-        /// 画面座標へ窓を移動する
-        /// </summary>
-        /// <param name="screenX">左上X</param>
-        /// <param name="screenY">左上Y</param>
+        /// <inheritdoc/>
         public void SetScreenPosition(int screenX, int screenY)
         {
             if (!isPetMode)
@@ -130,9 +128,7 @@ namespace Scene.DesktopPet
                 return;
             }
 
-#if UNITY_EDITOR
-            return;
-#else
+#if UNITY_STANDALONE_WIN && !UNITY_EDITOR
             if (hwnd == IntPtr.Zero)
             {
                 hwnd = GetActiveWindow();
@@ -154,14 +150,10 @@ namespace Scene.DesktopPet
 #endif
         }
 
-        /// <summary>
-        /// 枠なし窓をタイトルバー相当のドラッグで移動する
-        /// </summary>
+        /// <inheritdoc/>
         public void BeginDragMove()
         {
-#if UNITY_EDITOR
-            return;
-#else
+#if UNITY_STANDALONE_WIN && !UNITY_EDITOR
             if (!isPetMode || clickThrough)
             {
                 return;
@@ -182,9 +174,7 @@ namespace Scene.DesktopPet
 #endif
         }
 
-        /// <summary>
-        /// 通常ウィンドウへ戻す
-        /// </summary>
+        /// <inheritdoc/>
         public void Restore()
         {
             if (!isPetMode)
@@ -194,9 +184,7 @@ namespace Scene.DesktopPet
 
             isPetMode = false;
             clickThrough = false;
-#if UNITY_EDITOR
-            return;
-#else
+#if UNITY_STANDALONE_WIN && !UNITY_EDITOR
             if (hwnd == IntPtr.Zero)
             {
                 return;
@@ -222,6 +210,7 @@ namespace Scene.DesktopPet
 
         private void ApplyPetExStyle()
         {
+#if UNITY_STANDALONE_WIN && !UNITY_EDITOR
             int exStyle = WsExLayered | WsExTopmost | WsExToolwindow | WsExNoactivate;
             if (clickThrough)
             {
@@ -230,6 +219,7 @@ namespace Scene.DesktopPet
 
             SetWindowLong(hwnd, GwlExstyle, exStyle);
             SetLayeredWindowAttributes(hwnd, ColorToColorRef(chromaKey), 0, LwaColorkey);
+#endif
         }
 
         private static uint ColorToColorRef(Color32 color)
