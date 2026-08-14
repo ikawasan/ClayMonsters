@@ -297,6 +297,31 @@ namespace Scene.TrainingScene.Domain
         public const int AmbushVictoryReward = 200;
 
         /// <summary>
+        /// 放課後戦闘勝利時のHP上昇
+        /// </summary>
+        public const int AfterSchoolVictoryHpGain = 24;
+
+        /// <summary>
+        /// 放課後戦闘勝利時の攻撃上昇
+        /// </summary>
+        public const int AfterSchoolVictoryAttackGain = 16;
+
+        /// <summary>
+        /// 放課後戦闘勝利時の防御上昇
+        /// </summary>
+        public const int AfterSchoolVictoryDefenseGain = 16;
+
+        /// <summary>
+        /// 放課後戦闘勝利時の速度上昇
+        /// </summary>
+        public const int AfterSchoolVictorySpeedGain = 10;
+
+        /// <summary>
+        /// 放課後戦闘勝利時の命中上昇
+        /// </summary>
+        public const int AfterSchoolVictoryHitGain = 10;
+
+        /// <summary>
         /// 強敵急襲勝利時のHP上昇
         /// </summary>
         public const int AmbushVictoryHpGain = 24;

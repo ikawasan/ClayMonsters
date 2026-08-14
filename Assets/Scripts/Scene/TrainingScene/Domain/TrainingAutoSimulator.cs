@@ -159,6 +159,7 @@ namespace Scene.TrainingScene.Domain
             if (playerWon)
             {
                 session.ApplyAfterSchoolVictoryRecovery();
+                session.ApplyEventStatGain(TrainingEventResolver.CreateAfterSchoolVictoryGain());
                 int reward = TrainingShopResolver.ResolveTournamentReward((int)session.CurrentDay);
                 if (reward > 0)
                 {

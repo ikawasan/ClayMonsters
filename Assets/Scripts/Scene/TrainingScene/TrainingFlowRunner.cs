@@ -2044,7 +2044,9 @@ namespace Scene.TrainingScene
             if (battleResult.PlayerWon)
             {
                 int reward = TrainingShopResolver.ResolveTournamentReward((int)session.CurrentDay);
+                TrainingStatGain victoryGain = TrainingEventResolver.CreateAfterSchoolVictoryGain();
                 session.ApplyAfterSchoolVictoryRecovery();
+                session.ApplyEventStatGain(victoryGain);
                 if (reward > 0)
                 {
                     session.AddMoney(reward);
@@ -2062,9 +2064,16 @@ namespace Scene.TrainingScene
                 hudView.SetLogMessage(
                     LocalizedText.GetOrFallback(
                         GameTextKeys.TrainingLogAfterSchoolWin,
-                        "放課後の戦闘に勝利した\n体力+{stamina}",
-                        "stamina",
-                        TrainingSettings.AfterSchoolVictoryStaminaRecovery)
+                        "放課後の戦闘に勝利した\n体力+{stamina}\nHP+{hp} 攻撃+{atk} 防御+{def} 速度+{spd} 命中+{hit}",
+                        new Dictionary<string, object>
+                        {
+                            { "stamina", TrainingSettings.AfterSchoolVictoryStaminaRecovery },
+                            { "hp", victoryGain.Hp },
+                            { "atk", victoryGain.Attack },
+                            { "def", victoryGain.Defense },
+                            { "spd", victoryGain.Speed },
+                            { "hit", victoryGain.Hit },
+                        })
                     + rewardText);
             }
             else

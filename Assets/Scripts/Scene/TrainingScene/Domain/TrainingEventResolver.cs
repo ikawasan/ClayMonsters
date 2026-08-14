@@ -112,6 +112,19 @@ namespace Scene.TrainingScene.Domain
         }
 
         /// <summary>
+        /// 放課後戦闘勝利時のステータス上昇を返す
+        /// </summary>
+        public static TrainingStatGain CreateAfterSchoolVictoryGain()
+        {
+            return new TrainingStatGain(
+                TrainingSettings.AfterSchoolVictoryHpGain,
+                TrainingSettings.AfterSchoolVictoryAttackGain,
+                TrainingSettings.AfterSchoolVictoryDefenseGain,
+                TrainingSettings.AfterSchoolVictorySpeedGain,
+                TrainingSettings.AfterSchoolVictoryHitGain);
+        }
+
+        /// <summary>
         /// 強敵急襲勝利時のステータス上昇を返す
         /// </summary>
         public static TrainingStatGain CreateAmbushVictoryGain()
