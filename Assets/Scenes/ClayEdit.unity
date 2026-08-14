@@ -155,7 +155,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 40}
+  m_AnchoredPosition: {x: 0, y: 5}
   m_SizeDelta: {x: 440, y: 72}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1405116
@@ -2111,7 +2111,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 140, y: -315}
+  m_AnchoredPosition: {x: -140, y: -315}
   m_SizeDelta: {x: 200, y: 52}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &234744365
@@ -2232,7 +2232,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -56}
+  m_AnchoredPosition: {x: 0, y: -91}
   m_SizeDelta: {x: 440, y: 72}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &238395391
@@ -2677,7 +2677,7 @@ Canvas:
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 0
-  m_AdditionalShaderChannelsFlag: 0
+  m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
   m_SortingOrder: 120
@@ -41743,7 +41743,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -60}
+  m_AnchoredPosition: {x: 0, y: -91}
   m_SizeDelta: {x: 420, y: 88}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &770100914
@@ -43393,7 +43393,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -140, y: -315}
+  m_AnchoredPosition: {x: 140, y: -315}
   m_SizeDelta: {x: 200, y: 52}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &966181574
@@ -50360,7 +50360,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 60}
+  m_AnchoredPosition: {x: 0, y: 5}
   m_SizeDelta: {x: 420, y: 88}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1500467300
@@ -51148,7 +51148,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 132}
+  m_AnchoredPosition: {x: 0, y: 109}
   m_SizeDelta: {x: 480, y: 56}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1614991999
@@ -96780,6 +96780,7 @@ MonoBehaviour:
   keepSpawnedMeshPreview: 0
   spawnEulerAngles: {x: 0, y: 0, z: 0}
   applyAutoOrientation: 0
+  importScale: 1
 --- !u!1 &2888800400
 GameObject:
   m_ObjectHideFlags: 0
