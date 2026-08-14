@@ -673,6 +673,7 @@ namespace UI.ClayEditor.View
                 allowEmptySlotSelection: false,
                 TrainedSaveSlotListPresentation.ResolveContentMode(savePool));
             slotScrollList.RefreshHostLayout();
+            slotScrollList.EnsureClickBinding();
             MarkSelectionContentsPrepared();
         }
 

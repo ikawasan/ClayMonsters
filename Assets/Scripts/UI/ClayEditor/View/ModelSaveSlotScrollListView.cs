@@ -183,7 +183,6 @@ namespace UI.ClayEditor.View
         public void RefreshHostLayout()
         {
             EnsureBuilt();
-            ResolveSerializedReferencesFromHierarchy();
             FixZeroScaleAncestors(transform as RectTransform);
             Canvas.ForceUpdateCanvases();
         }

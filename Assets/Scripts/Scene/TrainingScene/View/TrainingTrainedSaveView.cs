@@ -854,10 +854,7 @@ namespace Scene.TrainingScene.View
 
         private void EnsureRootCanvasEnabled()
         {
-            if (rootCanvas != null && !rootCanvas.enabled)
-            {
-                rootCanvas.enabled = true;
-            }
+            CanvasVisibilityUtility.SetCanvasEnabled(rootCanvas, true);
         }
 
         private void ClearRuntimeThumbnails()
