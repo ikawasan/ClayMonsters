@@ -354,7 +354,9 @@ Training.Log.ReturnToTitle	Titel
 Training.Log.AfterSchoolNoOpponent	Kein Nachmittagsgegner
 Training.Log.AfterSchoolStart	Nachmittagskampf\nKampf gegen {name}
 Training.Log.AfterSchoolStartFailed	Nachmittagskampf Start fehlgeschlagen
-Training.Log.AfterSchoolWin	Nachmittagskampf gewonnen\nAusdauer+{stamina}
+Training.Log.AfterSchoolWin	Nachmittagskampf gewonnen
+Ausdauer+{stamina}
+KP+{hp} ANG+{atk} VER+{def} TEMP+{spd} TREFF+{hit}
 Training.Log.RewardMoney	 Preisgeld+{reward}G
 Training.Log.NoNewMove	Begegnung ohne neue Technik
 Training.Log.MeetTitle	Begegnung

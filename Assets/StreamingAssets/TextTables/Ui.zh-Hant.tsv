@@ -354,7 +354,9 @@ Training.Log.ReturnToTitle	標題
 Training.Log.AfterSchoolNoOpponent	未找到放學後對手
 Training.Log.AfterSchoolStart	放學後戰鬥\n與{name}開戰
 Training.Log.AfterSchoolStartFailed	無法開始放學後戰鬥
-Training.Log.AfterSchoolWin	放學後戰鬥勝利\n體力+{stamina}
+Training.Log.AfterSchoolWin	放學後戰鬥勝利
+體力+{stamina}
+HP+{hp} 攻擊+{atk} 防禦+{def} 速度+{spd} 命中+{hit}
 Training.Log.RewardMoney	 賞金+{reward}G
 Training.Log.NoNewMove	有邂逅但沒有新招式
 Training.Log.MeetTitle	邂逅

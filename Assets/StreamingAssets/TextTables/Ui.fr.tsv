@@ -354,7 +354,9 @@ Training.Log.ReturnToTitle	Titre
 Training.Log.AfterSchoolNoOpponent	Aucun adversaire trouve
 Training.Log.AfterSchoolStart	Combat d'apres-cours\nContre {name}
 Training.Log.AfterSchoolStartFailed	Impossible de lancer le combat
-Training.Log.AfterSchoolWin	Victoire d'apres-cours\nEndurance+{stamina}
+Training.Log.AfterSchoolWin	Victoire d'apres-cours
+Endurance+{stamina}
+PV+{hp} ATT+{atk} DEF+{def} VIT+{spd} PRE+{hit}
 Training.Log.RewardMoney	 Prime+{reward}G
 Training.Log.NoNewMove	Rencontre sans nouvelle technique
 Training.Log.MeetTitle	Rencontre

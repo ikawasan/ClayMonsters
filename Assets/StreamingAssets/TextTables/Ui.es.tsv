@@ -354,7 +354,9 @@ Training.Log.ReturnToTitle	Titulo
 Training.Log.AfterSchoolNoOpponent	Sin rival para despues de clase
 Training.Log.AfterSchoolStart	Combate despues de clase\nContra {name}
 Training.Log.AfterSchoolStartFailed	No se pudo iniciar el combate
-Training.Log.AfterSchoolWin	Victoria despues de clase\nEnergia+{stamina}
+Training.Log.AfterSchoolWin	Victoria despues de clase
+Energia+{stamina}
+PV+{hp} ATQ+{atk} DEF+{def} VEL+{spd} PRE+{hit}
 Training.Log.RewardMoney	 Premio+{reward}G
 Training.Log.NoNewMove	Encuentro sin tecnica nueva
 Training.Log.MeetTitle	Encuentro

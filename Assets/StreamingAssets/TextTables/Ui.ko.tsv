@@ -354,7 +354,9 @@ Training.Log.ReturnToTitle	타이틀
 Training.Log.AfterSchoolNoOpponent	방과 후 상대를 찾지 못했습니다
 Training.Log.AfterSchoolStart	방과 후 전투\n{name}과 대전 시작
 Training.Log.AfterSchoolStartFailed	방과 후 전투를 시작할 수 없습니다
-Training.Log.AfterSchoolWin	방과 후 전투 승리\n체력+{stamina}
+Training.Log.AfterSchoolWin	방과 후 전투 승리
+체력+{stamina}
+HP+{hp} 공격+{atk} 방어+{def} 속도+{spd} 명중+{hit}
 Training.Log.RewardMoney	 상금+{reward}G
 Training.Log.NoNewMove	만남이 있었지만 新技术 기술은 없었다
 Training.Log.MeetTitle	만남

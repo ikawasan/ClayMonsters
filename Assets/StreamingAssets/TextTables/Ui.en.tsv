@@ -354,7 +354,9 @@ Training.Log.ReturnToTitle	Title
 Training.Log.AfterSchoolNoOpponent	No after-school opponent found
 Training.Log.AfterSchoolStart	After-school battle\nFighting {name}
 Training.Log.AfterSchoolStartFailed	Could not start after-school battle
-Training.Log.AfterSchoolWin	Won the after-school battle\nStamina+{stamina}
+Training.Log.AfterSchoolWin	Won the after-school battle
+Stamina+{stamina}
+HP+{hp} ATK+{atk} DEF+{def} SPD+{spd} HIT+{hit}
 Training.Log.RewardMoney	 Reward+{reward}G
 Training.Log.NoNewMove	Met someone but no new move
 Training.Log.MeetTitle	Encounter

@@ -354,7 +354,9 @@ Training.Log.ReturnToTitle	Titulo
 Training.Log.AfterSchoolNoOpponent	Sem oponente apos a escola
 Training.Log.AfterSchoolStart	Batalha apos a escola\nContra {name}
 Training.Log.AfterSchoolStartFailed	Nao foi possivel iniciar a batalha
-Training.Log.AfterSchoolWin	Vitoria apos a escola\nVigor+{stamina}
+Training.Log.AfterSchoolWin	Vitoria apos a escola
+Vigor+{stamina}
+PV+{hp} ATQ+{atk} DEF+{def} VEL+{spd} PRE+{hit}
 Training.Log.RewardMoney	 Premio+{reward}G
 Training.Log.NoNewMove	Encontro sem tecnico nova
 Training.Log.MeetTitle	Encontro

@@ -354,7 +354,9 @@ Training.Log.ReturnToTitle	タイトル
 Training.Log.AfterSchoolNoOpponent	放課後の対戦相手が見つかりませんでした
 Training.Log.AfterSchoolStart	放課後の戦闘\n{name}との対戦が始まります
 Training.Log.AfterSchoolStartFailed	放課後の戦闘を開始できませんでした
-Training.Log.AfterSchoolWin	放課後の戦闘に勝利した\n体力+{stamina}
+Training.Log.AfterSchoolWin	放課後の戦闘に勝利した
+体力+{stamina}
+HP+{hp} 攻撃+{atk} 防御+{def} 速度+{spd} 命中+{hit}
 Training.Log.RewardMoney	 賞金+{reward}G
 Training.Log.NoNewMove	出会いがあったが新しい技はなかった
 Training.Log.MeetTitle	出会い
