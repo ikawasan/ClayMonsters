@@ -26,6 +26,7 @@ namespace Scene.TitleScene
         [SerializeField] TitleMessageWindowView messageWindowView;
         [SerializeField] TitleConfirmWindowView confirmWindowView;
         [SerializeField] TitleDesktopPetSlotSelectView desktopPetSlotSelectView;
+        [SerializeField] TitleNpcBattleMenuView npcBattleMenuView;
         [SerializeField] SkillTreeView skillTreeView;
         [SerializeField] ModelGalleryView modelGalleryView;
 
@@ -83,6 +84,20 @@ namespace Scene.TitleScene
             else
             {
                 builder.RegisterComponent(desktopPetSlotSelectView).AsImplementedInterfaces();
+            }
+
+            if (npcBattleMenuView == null)
+            {
+                Debug.LogError(
+                    "[TitleLifetimeScope] TitleNpcBattleMenuViewが未配線です"
+                    + "モード選択と難易度選択Canvasを配置し接続してください",
+                    this);
+                builder.Register<NullTitleNpcBattleMenuView>(Lifetime.Singleton)
+                    .As<ITitleNpcBattleMenuView>();
+            }
+            else
+            {
+                builder.RegisterComponent(npcBattleMenuView).AsImplementedInterfaces();
             }
 
             if (skillTreeView == null)

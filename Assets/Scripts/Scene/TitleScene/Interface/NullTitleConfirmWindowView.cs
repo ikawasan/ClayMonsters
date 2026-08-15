@@ -14,6 +14,22 @@ namespace Scene.TitleScene.Interface
         }
 
         /// <inheritdoc/>
+        public void ShowLocalized(string key, string fallback, string paramName, object paramValue)
+        {
+        }
+
+        /// <inheritdoc/>
+        public void ShowLocalizedChoice(
+            string messageKey,
+            string messageFallback,
+            string yesKey,
+            string yesFallback,
+            string noKey,
+            string noFallback)
+        {
+        }
+
+        /// <inheritdoc/>
         public void Hide()
         {
         }

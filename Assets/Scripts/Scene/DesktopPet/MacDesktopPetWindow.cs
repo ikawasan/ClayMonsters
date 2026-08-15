@@ -17,6 +17,16 @@ namespace Scene.DesktopPet
         private int savedWidth;
         private int savedHeight;
         private bool nativeReady;
+        private readonly bool stayOnTop;
+
+        /// <summary>
+        /// 重ね順を指定して生成する
+        /// </summary>
+        /// <param name="stayOnTop">最前面ならtrue最背面ならfalse</param>
+        public MacDesktopPetWindow(bool stayOnTop)
+        {
+            this.stayOnTop = stayOnTop;
+        }
 
         /// <inheritdoc/>
         public IntPtr Handle => IntPtr.Zero;
@@ -58,7 +68,10 @@ namespace Scene.DesktopPet
 
             try
             {
-                nativeReady = DesktopPetMacNative.CMPet_ConfigurePetWindow(windowWidth, windowHeight) != 0;
+                nativeReady = DesktopPetMacNative.CMPet_ConfigurePetWindow(
+                    windowWidth,
+                    windowHeight,
+                    stayOnTop ? 1 : 0) != 0;
                 if (nativeReady)
                 {
                     DesktopPetMacNative.CMPet_SetClickThrough(clickThrough ? 1 : 0);

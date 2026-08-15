@@ -23,9 +23,16 @@ namespace Scene.TitleScene.View
         private bool isShowing;
         private string messageKey = string.Empty;
         private string messageFallback = string.Empty;
+        private string messageParamName = string.Empty;
+        private object messageParamValue;
+        private bool hasMessageParam;
         private string yesOriginal = "はい";
         private string noOriginal = "いいえ";
         private bool labelOriginalsCaptured;
+        private string yesLabelKey = GameTextKeys.CommonYes;
+        private string yesLabelFallback = "はい";
+        private string noLabelKey = GameTextKeys.CommonNo;
+        private string noLabelFallback = "いいえ";
 
         private void Awake()
         {
@@ -37,6 +44,44 @@ namespace Scene.TitleScene.View
 
         /// <inheritdoc/>
         public void ShowLocalized(string key, string fallback)
+        {
+            hasMessageParam = false;
+            messageParamName = string.Empty;
+            messageParamValue = null;
+            ResetChoiceLabels();
+            ShowInternal(key, fallback);
+        }
+
+        /// <inheritdoc/>
+        public void ShowLocalized(string key, string fallback, string paramName, object paramValue)
+        {
+            hasMessageParam = !string.IsNullOrEmpty(paramName);
+            messageParamName = paramName ?? string.Empty;
+            messageParamValue = paramValue;
+            ResetChoiceLabels();
+            ShowInternal(key, fallback);
+        }
+
+        /// <inheritdoc/>
+        public void ShowLocalizedChoice(
+            string messageKey,
+            string messageFallback,
+            string yesKey,
+            string yesFallback,
+            string noKey,
+            string noFallback)
+        {
+            hasMessageParam = false;
+            messageParamName = string.Empty;
+            messageParamValue = null;
+            yesLabelKey = yesKey ?? GameTextKeys.CommonYes;
+            yesLabelFallback = yesFallback ?? "はい";
+            noLabelKey = noKey ?? GameTextKeys.CommonNo;
+            noLabelFallback = noFallback ?? "いいえ";
+            ShowInternal(messageKey, messageFallback);
+        }
+
+        private void ShowInternal(string key, string fallback)
         {
             isShowing = true;
             messageKey = key ?? string.Empty;
@@ -54,10 +99,19 @@ namespace Scene.TitleScene.View
         public void Hide()
         {
             isShowing = false;
+            ResetChoiceLabels();
             if (canvas != null)
             {
                 canvas.enabled = false;
             }
+        }
+
+        private void ResetChoiceLabels()
+        {
+            yesLabelKey = GameTextKeys.CommonYes;
+            yesLabelFallback = yesOriginal;
+            noLabelKey = GameTextKeys.CommonNo;
+            noLabelFallback = noOriginal;
         }
 
         /// <inheritdoc/>
@@ -99,10 +153,10 @@ namespace Scene.TitleScene.View
             CaptureLabelOriginalsIfNeeded();
             LhButtonLabelUtility.SetLabel(
                 yesButton,
-                SceneLocalizedLabel.Resolve(GameTextKeys.CommonYes, yesOriginal));
+                SceneLocalizedLabel.Resolve(yesLabelKey, yesLabelFallback));
             LhButtonLabelUtility.SetLabel(
                 noButton,
-                SceneLocalizedLabel.Resolve(GameTextKeys.CommonNo, noOriginal));
+                SceneLocalizedLabel.Resolve(noLabelKey, noLabelFallback));
         }
 
         private void CaptureLabelOriginalsIfNeeded()
@@ -121,6 +175,16 @@ namespace Scene.TitleScene.View
         {
             if (messageText == null)
             {
+                return;
+            }
+
+            if (hasMessageParam)
+            {
+                messageText.text = LocalizedText.GetOrFallback(
+                    messageKey,
+                    messageFallback,
+                    messageParamName,
+                    messageParamValue);
                 return;
             }
 

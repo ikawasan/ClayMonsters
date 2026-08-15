@@ -95,7 +95,7 @@ namespace Scene.DesktopPet
         /// <summary>
         /// 外部ビューアを起動できたらtrue
         /// </summary>
-        public static bool TryStart(IReadOnlyList<string> cacheDirectories)
+        public static bool TryStart(IReadOnlyList<string> cacheDirectories, bool stayOnTop)
         {
 #if !UNITY_STANDALONE_WIN || UNITY_EDITOR
             return false;
@@ -134,7 +134,12 @@ namespace Scene.DesktopPet
                 ProcessStartInfo startInfo = new ProcessStartInfo
                 {
                     FileName = viewerPath,
-                    Arguments = BuildArguments(valid, gameExe, languageCode, textTablesDirectory),
+                    Arguments = BuildArguments(
+                        valid,
+                        gameExe,
+                        languageCode,
+                        textTablesDirectory,
+                        stayOnTop),
                     UseShellExecute = false,
                     WorkingDirectory = Path.GetDirectoryName(viewerPath) ?? string.Empty
                 };
@@ -144,7 +149,6 @@ namespace Scene.DesktopPet
                     return false;
                 }
 
-                // Steam極小ランチャーがペット稼働中も生存し続けるためのマーカー
                 DesktopPetSpriteCache.WriteLauncherKeepAliveMarker();
                 DesktopPetSpriteCache.WriteActiveMarker(valid);
                 DesktopPetSpriteCache.WriteLanguageMarker(languageCode);
@@ -163,7 +167,8 @@ namespace Scene.DesktopPet
             IReadOnlyList<string> cacheDirectories,
             string gameExe,
             string languageCode,
-            string textTablesDirectory)
+            string textTablesDirectory,
+            bool stayOnTop)
         {
             StringBuilder args = new StringBuilder(256);
             for (int i = 0; i < cacheDirectories.Count; i++)
@@ -191,6 +196,7 @@ namespace Scene.DesktopPet
                 args.Append(" --text-dir \"").Append(textTablesDirectory).Append('"');
             }
 
+            args.Append(" --topmost ").Append(stayOnTop ? "1" : "0");
             return args.ToString();
         }
 

@@ -1,4 +1,5 @@
 #import <AppKit/AppKit.h>
+#import <CoreGraphics/CoreGraphics.h>
 #import <QuartzCore/QuartzCore.h>
 
 static uint64_t gSavedStyleMask;
@@ -88,7 +89,7 @@ static void SaveWindowState(NSWindow *window)
     gConfigured = YES;
 }
 
-static void ApplyChrome(NSWindow *window)
+static void ApplyChrome(NSWindow *window, int stayOnTop)
 {
     window.styleMask = NSWindowStyleMaskBorderless;
     window.opaque = NO;
@@ -96,15 +97,30 @@ static void ApplyChrome(NSWindow *window)
     window.hasShadow = NO;
     window.hidesOnDeactivate = NO;
     window.ignoresMouseEvents = NO;
-    window.level = NSStatusWindowLevel;
+    if (stayOnTop)
+    {
+        window.level = NSStatusWindowLevel;
+    }
+    else
+    {
+        window.level = kCGDesktopWindowLevel;
+    }
+
     window.collectionBehavior = NSWindowCollectionBehaviorCanJoinAllSpaces
         | NSWindowCollectionBehaviorFullScreenAuxiliary
         | NSWindowCollectionBehaviorIgnoresCycle;
     MakeViewTreeTransparent(window.contentView);
-    [window orderFrontRegardless];
+    if (stayOnTop)
+    {
+        [window orderFrontRegardless];
+    }
+    else
+    {
+        [window orderBack:nil];
+    }
 }
 
-extern "C" int CMPet_ConfigurePetWindow(int width, int height)
+extern "C" int CMPet_ConfigurePetWindow(int width, int height, int stayOnTop)
 {
     (void)width;
     (void)height;
@@ -115,7 +131,7 @@ extern "C" int CMPet_ConfigurePetWindow(int width, int height)
     }
 
     SaveWindowState(window);
-    ApplyChrome(window);
+    ApplyChrome(window, stayOnTop);
     if (!gDidPlace)
     {
         NSScreen *screen = window.screen ?: [NSScreen mainScreen];

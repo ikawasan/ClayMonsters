@@ -25,16 +25,27 @@ namespace Scene.DesktopPet
         private const uint SwpShowwindow = 0x0040;
         private static readonly IntPtr HwndTopmost = new IntPtr(-1);
         private static readonly IntPtr HwndNotopmost = new IntPtr(-2);
+        private static readonly IntPtr HwndBottom = new IntPtr(1);
 
         private IntPtr hwnd;
         private bool isPetMode;
         private bool clickThrough;
+        private readonly bool stayOnTop;
         private int savedStyle;
         private int savedExStyle;
         private FullScreenMode savedFullScreenMode;
         private int savedWidth;
         private int savedHeight;
         private Color32 chromaKey = new Color32(255, 0, 255, 255);
+
+        /// <summary>
+        /// 重ね順を指定して生成する
+        /// </summary>
+        /// <param name="stayOnTop">最前面ならtrue最背面ならfalse</param>
+        public WindowsDesktopPetWindow(bool stayOnTop)
+        {
+            this.stayOnTop = stayOnTop;
+        }
 
         /// <inheritdoc/>
         public IntPtr Handle => hwnd;
@@ -74,7 +85,7 @@ namespace Scene.DesktopPet
             SetLayeredWindowAttributes(hwnd, ColorToColorRef(chromaKey), 0, LwaColorkey);
             SetWindowPos(
                 hwnd,
-                HwndTopmost,
+                stayOnTop ? HwndTopmost : HwndBottom,
                 0,
                 0,
                 width,
@@ -141,7 +152,7 @@ namespace Scene.DesktopPet
 
             SetWindowPos(
                 hwnd,
-                HwndTopmost,
+                stayOnTop ? HwndTopmost : HwndBottom,
                 screenX,
                 screenY,
                 0,
@@ -211,7 +222,12 @@ namespace Scene.DesktopPet
         private void ApplyPetExStyle()
         {
 #if UNITY_STANDALONE_WIN && !UNITY_EDITOR
-            int exStyle = WsExLayered | WsExTopmost | WsExToolwindow | WsExNoactivate;
+            int exStyle = WsExLayered | WsExToolwindow | WsExNoactivate;
+            if (stayOnTop)
+            {
+                exStyle |= WsExTopmost;
+            }
+
             if (clickThrough)
             {
                 exStyle |= WsExTransparent;
@@ -219,6 +235,14 @@ namespace Scene.DesktopPet
 
             SetWindowLong(hwnd, GwlExstyle, exStyle);
             SetLayeredWindowAttributes(hwnd, ColorToColorRef(chromaKey), 0, LwaColorkey);
+            SetWindowPos(
+                hwnd,
+                stayOnTop ? HwndTopmost : HwndBottom,
+                0,
+                0,
+                0,
+                0,
+                SwpNosize | SwpNoactivate | SwpShowwindow);
 #endif
         }
 

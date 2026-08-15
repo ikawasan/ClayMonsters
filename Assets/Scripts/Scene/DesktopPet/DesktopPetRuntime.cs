@@ -38,6 +38,7 @@ namespace Scene.DesktopPet
         private int previousQualityLevel;
         private int previousVSyncCount;
         private bool isShuttingDown;
+        private bool stayOnTop = true;
         private readonly List<UnityEngine.Camera> disabledCameras = new List<UnityEngine.Camera>();
         private readonly List<AudioListener> disabledListeners = new List<AudioListener>();
         private readonly List<Canvas> disabledCanvases = new List<Canvas>();
@@ -49,6 +50,7 @@ namespace Scene.DesktopPet
             IReadOnlyList<int> playerSlotIndices,
             IClayModelSaveService clayModelSaveService,
             IBgmService clayBgmService,
+            bool stayOnTop,
             Action stoppedCallback)
         {
             slotIndices.Clear();
@@ -66,6 +68,7 @@ namespace Scene.DesktopPet
 
             saveService = clayModelSaveService;
             bgmService = clayBgmService;
+            this.stayOnTop = stayOnTop;
             onStopped = stoppedCallback;
             StartFromSaveCache(this.GetCancellationTokenOnDestroy());
         }
@@ -82,7 +85,7 @@ namespace Scene.DesktopPet
 #if UNITY_STANDALONE_WIN && !UNITY_EDITOR
             if (TryCollectReadyCacheDirectories(out List<string> readyDirectories)
                 && readyDirectories.Count == slotIndices.Count
-                && DesktopPetExternalProcess.TryStart(readyDirectories))
+                && DesktopPetExternalProcess.TryStart(readyDirectories, stayOnTop))
             {
                 Debug.Log(
                     "[DesktopPetRuntime] キャッシュ済みのため即外部ビューアへ引き継ぎます count="
@@ -138,7 +141,7 @@ namespace Scene.DesktopPet
             HideSceneCamerasAndListeners();
             ApplyRestQuality();
             BuildPetVisual();
-            window = DesktopPetWindowFactory.Create();
+            window = DesktopPetWindowFactory.Create(stayOnTop);
             contextMenu = new DesktopPetContextMenu();
             window.EnterPetMode(PetWindowSize, PetWindowSize);
             if (petCamera != null)

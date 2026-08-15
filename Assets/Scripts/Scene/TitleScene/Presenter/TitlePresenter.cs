@@ -18,14 +18,25 @@ namespace Scene.TitleScene.Presenter
 {
     public class TitlePresenter : ITitlePresenter
     {
+        private enum ConfirmIntent
+        {
+            None = 0,
+            DesktopPet = 1,
+            DesktopPetZOrder = 2,
+            NpcTournament = 3,
+            NpcTournamentContinue = 4,
+        }
+
         private readonly IClayMonsterSceneManager sceneManager;
         private readonly IClayModelSaveService saveService;
         private readonly IPointsService pointsService;
+        private readonly INpcTournamentProgressService tournamentProgress;
         private readonly IPvpLobby pvpLobby;
         private readonly ITitleView titleView;
         private readonly ITitleMessageWindowView messageWindowView;
         private readonly ITitleConfirmWindowView confirmWindowView;
         private readonly ITitleDesktopPetSlotSelectView desktopPetSlotSelectView;
+        private readonly ITitleNpcBattleMenuView npcBattleMenuView;
         private readonly IDesktopPetLauncher desktopPetLauncher;
         private readonly IOptionPresenter optionPresenter;
         private readonly ISkillTreePresenter skillTreePresenter;
@@ -35,17 +46,21 @@ namespace Scene.TitleScene.Presenter
         private System.IDisposable desktopPetSelectionSubscription;
         private System.IDisposable desktopPetCancelSubscription;
         private int[] pendingDesktopPetSlotIndices = System.Array.Empty<int>();
+        private ConfirmIntent confirmIntent = ConfirmIntent.None;
+        private NpcTournamentDifficulty pendingTournamentDifficulty = NpcTournamentDifficulty.Normal;
 
         [Inject]
         public TitlePresenter(
             IClayMonsterSceneManager sceneManager,
             IClayModelSaveService saveService,
             IPointsService pointsService,
+            INpcTournamentProgressService tournamentProgress,
             IPvpLobby pvpLobby,
             ITitleView titleView,
             ITitleMessageWindowView messageWindowView,
             ITitleConfirmWindowView confirmWindowView,
             ITitleDesktopPetSlotSelectView desktopPetSlotSelectView,
+            ITitleNpcBattleMenuView npcBattleMenuView,
             IDesktopPetLauncher desktopPetLauncher,
             IOptionPresenter optionPresenter,
             ISkillTreePresenter skillTreePresenter,
@@ -54,11 +69,13 @@ namespace Scene.TitleScene.Presenter
             this.sceneManager = sceneManager;
             this.saveService = saveService;
             this.pointsService = pointsService;
+            this.tournamentProgress = tournamentProgress;
             this.pvpLobby = pvpLobby;
             this.titleView = titleView;
             this.messageWindowView = messageWindowView;
             this.confirmWindowView = confirmWindowView;
             this.desktopPetSlotSelectView = desktopPetSlotSelectView;
+            this.npcBattleMenuView = npcBattleMenuView;
             this.desktopPetLauncher = desktopPetLauncher;
             this.optionPresenter = optionPresenter;
             this.skillTreePresenter = skillTreePresenter;
@@ -77,8 +94,17 @@ namespace Scene.TitleScene.Presenter
             titleView.SubscribeDesktopPetButtonClick(OnClickDesktopPetButton);
             titleView.SubscribeQuitGameButtonClick(OnClickQuitGameButton);
             messageWindowView.SubscribeOkButtonClick(OnClickMessageWindowOk);
-            confirmWindowView.SubscribeYesButtonClick(OnClickDesktopPetConfirmYes);
-            confirmWindowView.SubscribeNoButtonClick(OnClickDesktopPetConfirmNo);
+            confirmWindowView.SubscribeYesButtonClick(OnClickConfirmYes);
+            confirmWindowView.SubscribeNoButtonClick(OnClickConfirmNo);
+            npcBattleMenuView.SubscribeTournamentButtonClick(OnClickNpcTournament);
+            npcBattleMenuView.SubscribeFreeBattleButtonClick(OnClickNpcFreeBattle);
+            npcBattleMenuView.SubscribeModeBackButtonClick(OnClickNpcModeBack);
+            npcBattleMenuView.SubscribeEasyButtonClick(() => OnClickNpcDifficulty(NpcTournamentDifficulty.Easy));
+            npcBattleMenuView.SubscribeNormalButtonClick(() => OnClickNpcDifficulty(NpcTournamentDifficulty.Normal));
+            npcBattleMenuView.SubscribeHardButtonClick(() => OnClickNpcDifficulty(NpcTournamentDifficulty.Hard));
+            npcBattleMenuView.SubscribeVeryHardButtonClick(
+                () => OnClickNpcDifficulty(NpcTournamentDifficulty.VeryHard));
+            npcBattleMenuView.SubscribeDifficultyBackButtonClick(OnClickNpcDifficultyBack);
             skillTreePresenter.Setup();
             modelGalleryPresenter.Setup();
 
@@ -108,7 +134,9 @@ namespace Scene.TitleScene.Presenter
             messageWindowView.Hide();
             confirmWindowView.Hide();
             desktopPetSlotSelectView.Hide();
+            npcBattleMenuView.Hide();
             pendingDesktopPetSlotIndices = System.Array.Empty<int>();
+            confirmIntent = ConfirmIntent.None;
             optionPresenter.Hide();
             skillTreePresenter.Hide();
             modelGalleryPresenter.Hide();
@@ -131,8 +159,136 @@ namespace Scene.TitleScene.Presenter
                 return;
             }
 
-            TryTransitionToBattle(() =>
-                sceneManager.TransitionScene(new BattleNpcScene.BattleNpcScene.BattleNpcTransitionData()).Forget());
+            TryTransitionToBattle(OpenNpcBattleMenuOrFreeBattle);
+        }
+
+        private void OpenNpcBattleMenuOrFreeBattle()
+        {
+            messageWindowView.Hide();
+            confirmWindowView.Hide();
+            confirmIntent = ConfirmIntent.None;
+            desktopPetSlotSelectView.Hide();
+
+            if (!npcBattleMenuView.IsConfigured)
+            {
+                TransitionToFreeBattle();
+                return;
+            }
+
+            npcBattleMenuView.ShowModeSelect();
+        }
+
+        private void OnClickNpcTournament()
+        {
+            if (sceneManager.IsTransition)
+            {
+                return;
+            }
+
+            tournamentProgress?.Reload();
+            if (tournamentProgress != null && tournamentProgress.HasProgress)
+            {
+                NpcTournamentProgressSaveData progress = tournamentProgress.GetProgressOrNull();
+                if (progress != null)
+                {
+                    pendingTournamentDifficulty = (NpcTournamentDifficulty)progress.difficulty;
+                    confirmIntent = ConfirmIntent.NpcTournamentContinue;
+                    npcBattleMenuView.Hide();
+                    confirmWindowView.ShowLocalized(
+                        GameTextKeys.TitleNpcTournamentContinueConfirm,
+                        "中断したトーナメントの続きから行いますか？");
+                    return;
+                }
+            }
+
+            confirmWindowView.Hide();
+            confirmIntent = ConfirmIntent.None;
+            npcBattleMenuView.ShowDifficultySelect();
+        }
+
+        private void OnClickNpcFreeBattle()
+        {
+            if (sceneManager.IsTransition)
+            {
+                return;
+            }
+
+            npcBattleMenuView.Hide();
+            confirmWindowView.Hide();
+            confirmIntent = ConfirmIntent.None;
+            TransitionToFreeBattle();
+        }
+
+        private void OnClickNpcModeBack()
+        {
+            confirmWindowView.Hide();
+            confirmIntent = ConfirmIntent.None;
+            npcBattleMenuView.Hide();
+        }
+
+        private void OnClickNpcDifficulty(NpcTournamentDifficulty difficulty)
+        {
+            if (sceneManager.IsTransition)
+            {
+                return;
+            }
+
+            pendingTournamentDifficulty = difficulty;
+            confirmIntent = ConfirmIntent.NpcTournament;
+            npcBattleMenuView.Hide();
+            confirmWindowView.ShowLocalized(
+                GameTextKeys.TitleNpcTournamentConfirm,
+                "難易度「{difficulty}」でトーナメントを開始して良いですか？",
+                "difficulty",
+                ResolveDifficultyLabel(difficulty));
+        }
+
+        private void OnClickNpcDifficultyBack()
+        {
+            confirmWindowView.Hide();
+            confirmIntent = ConfirmIntent.None;
+            npcBattleMenuView.ShowModeSelect();
+        }
+
+        private void TransitionToFreeBattle()
+        {
+            sceneManager.TransitionScene(
+                new BattleNpcScene.BattleNpcScene.BattleNpcTransitionData()).Forget();
+        }
+
+        private void TransitionToTournament(NpcTournamentDifficulty difficulty, bool resume = false)
+        {
+            sceneManager.TransitionScene(
+                new BattleNpcScene.BattleNpcScene.BattleNpcTransitionData
+                {
+                    IsTournament = true,
+                    TournamentDifficulty = difficulty,
+                    ResumeTournament = resume,
+                }).Forget();
+        }
+
+        private static string ResolveDifficultyLabel(NpcTournamentDifficulty difficulty)
+        {
+            switch (difficulty)
+            {
+                case NpcTournamentDifficulty.Easy:
+                    return LocalizedText.GetOrFallback(
+                        GameTextKeys.TitleNpcTournamentEasy,
+                        "イージー");
+                case NpcTournamentDifficulty.Hard:
+                    return LocalizedText.GetOrFallback(
+                        GameTextKeys.TitleNpcTournamentHard,
+                        "ハード");
+                case NpcTournamentDifficulty.VeryHard:
+                    return LocalizedText.GetOrFallback(
+                        GameTextKeys.TitleNpcTournamentVeryHard,
+                        "ベリーハード");
+                case NpcTournamentDifficulty.Normal:
+                default:
+                    return LocalizedText.GetOrFallback(
+                        GameTextKeys.TitleNpcTournamentNormal,
+                        "ノーマル");
+            }
         }
 
         private void OnClickBattlePvpButton()
@@ -205,7 +361,9 @@ namespace Scene.TitleScene.Presenter
 
             messageWindowView.Hide();
             confirmWindowView.Hide();
+            confirmIntent = ConfirmIntent.None;
             pendingDesktopPetSlotIndices = System.Array.Empty<int>();
+            npcBattleMenuView.Hide();
 
             if (!saveService.HasAnySavedModel(ModelSavePool.Player))
             {
@@ -232,6 +390,7 @@ namespace Scene.TitleScene.Presenter
             }
 
             desktopPetSlotSelectView.Hide();
+            confirmIntent = ConfirmIntent.DesktopPet;
             confirmWindowView.ShowLocalized(
                 GameTextKeys.TitleDesktopPetConfirm,
                 "ゲームを閉じてモンスターをデスクトップに表示しますか？");
@@ -242,31 +401,131 @@ namespace Scene.TitleScene.Presenter
             pendingDesktopPetSlotIndices = System.Array.Empty<int>();
             desktopPetSlotSelectView.Hide();
             confirmWindowView.Hide();
+            confirmIntent = ConfirmIntent.None;
         }
 
-        private void OnClickDesktopPetConfirmYes()
+        private void OnClickConfirmYes()
+        {
+            switch (confirmIntent)
+            {
+                case ConfirmIntent.DesktopPet:
+                    OnDesktopPetConfirmYes();
+                    break;
+                case ConfirmIntent.DesktopPetZOrder:
+                    LaunchDesktopPet(stayOnTop: true);
+                    break;
+                case ConfirmIntent.NpcTournament:
+                    OnNpcTournamentConfirmYes();
+                    break;
+                case ConfirmIntent.NpcTournamentContinue:
+                    OnNpcTournamentContinueConfirmYes();
+                    break;
+                default:
+                    confirmWindowView.Hide();
+                    break;
+            }
+        }
+
+        private void OnClickConfirmNo()
+        {
+            switch (confirmIntent)
+            {
+                case ConfirmIntent.DesktopPet:
+                    OnDesktopPetConfirmNo();
+                    break;
+                case ConfirmIntent.DesktopPetZOrder:
+                    LaunchDesktopPet(stayOnTop: false);
+                    break;
+                case ConfirmIntent.NpcTournament:
+                    OnNpcTournamentConfirmNo();
+                    break;
+                case ConfirmIntent.NpcTournamentContinue:
+                    OnNpcTournamentContinueConfirmNo();
+                    break;
+                default:
+                    confirmWindowView.Hide();
+                    break;
+            }
+        }
+
+        private void OnDesktopPetConfirmYes()
         {
             if (pendingDesktopPetSlotIndices == null || pendingDesktopPetSlotIndices.Length == 0)
             {
                 confirmWindowView.Hide();
+                confirmIntent = ConfirmIntent.None;
+                return;
+            }
+
+            confirmIntent = ConfirmIntent.DesktopPetZOrder;
+            confirmWindowView.ShowLocalizedChoice(
+                GameTextKeys.TitleDesktopPetZOrderChoice,
+                "表示の重ね順を選んでください",
+                GameTextKeys.TitleDesktopPetTopmost,
+                "最前面表示",
+                GameTextKeys.TitleDesktopPetBottommost,
+                "最背面表示");
+        }
+
+        private void OnDesktopPetConfirmNo()
+        {
+            confirmWindowView.Hide();
+            confirmIntent = ConfirmIntent.None;
+            pendingDesktopPetSlotIndices = System.Array.Empty<int>();
+            desktopPetSlotSelectView.Show();
+        }
+
+        private void LaunchDesktopPet(bool stayOnTop)
+        {
+            if (pendingDesktopPetSlotIndices == null || pendingDesktopPetSlotIndices.Length == 0)
+            {
+                confirmWindowView.Hide();
+                confirmIntent = ConfirmIntent.None;
                 return;
             }
 
             int[] slotIndices = pendingDesktopPetSlotIndices;
             pendingDesktopPetSlotIndices = System.Array.Empty<int>();
+            confirmIntent = ConfirmIntent.None;
             confirmWindowView.Hide();
             desktopPetSlotSelectView.Hide();
             optionPresenter.Hide();
             skillTreePresenter.Hide();
             modelGalleryPresenter.Hide();
-            desktopPetLauncher.Launch(slotIndices);
+            desktopPetLauncher.Launch(slotIndices, stayOnTop);
         }
 
-        private void OnClickDesktopPetConfirmNo()
+        private void OnNpcTournamentConfirmYes()
         {
+            NpcTournamentDifficulty difficulty = pendingTournamentDifficulty;
+            confirmIntent = ConfirmIntent.None;
             confirmWindowView.Hide();
-            pendingDesktopPetSlotIndices = System.Array.Empty<int>();
-            desktopPetSlotSelectView.Show();
+            npcBattleMenuView.Hide();
+            tournamentProgress?.ClearProgress();
+            TransitionToTournament(difficulty, resume: false);
+        }
+
+        private void OnNpcTournamentConfirmNo()
+        {
+            confirmIntent = ConfirmIntent.None;
+            confirmWindowView.Hide();
+            npcBattleMenuView.ShowDifficultySelect();
+        }
+
+        private void OnNpcTournamentContinueConfirmYes()
+        {
+            NpcTournamentDifficulty difficulty = pendingTournamentDifficulty;
+            confirmIntent = ConfirmIntent.None;
+            confirmWindowView.Hide();
+            npcBattleMenuView.Hide();
+            TransitionToTournament(difficulty, resume: true);
+        }
+
+        private void OnNpcTournamentContinueConfirmNo()
+        {
+            confirmIntent = ConfirmIntent.None;
+            confirmWindowView.Hide();
+            npcBattleMenuView.ShowDifficultySelect();
         }
 
         private void OnClickQuitGameButton()

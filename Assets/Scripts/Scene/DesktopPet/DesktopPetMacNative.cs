@@ -11,10 +11,10 @@ namespace Scene.DesktopPet
     internal static class DesktopPetMacNative
     {
         [DllImport("DesktopPetMacWindow", EntryPoint = "CMPet_ConfigurePetWindow", CallingConvention = CallingConvention.Cdecl)]
-        private static extern int ConfigureBundle(int width, int height);
+        private static extern int ConfigureBundle(int width, int height, int stayOnTop);
 
         [DllImport("__Internal", EntryPoint = "CMPet_ConfigurePetWindow", CallingConvention = CallingConvention.Cdecl)]
-        private static extern int ConfigureInternal(int width, int height);
+        private static extern int ConfigureInternal(int width, int height, int stayOnTop);
 
         [DllImport("DesktopPetMacWindow", EntryPoint = "CMPet_SetScreenPosition", CallingConvention = CallingConvention.Cdecl)]
         private static extern void SetPositionBundle(int x, int y, int width, int height);
@@ -45,11 +45,11 @@ namespace Scene.DesktopPet
         /// <summary>
         /// 枠なし透明最前面を適用する
         /// </summary>
-        public static int CMPet_ConfigurePetWindow(int width, int height)
+        public static int CMPet_ConfigurePetWindow(int width, int height, int stayOnTop)
         {
             return Invoke(
-                () => ConfigureBundle(width, height),
-                () => ConfigureInternal(width, height));
+                () => ConfigureBundle(width, height, stayOnTop),
+                () => ConfigureInternal(width, height, stayOnTop));
         }
 
         /// <summary>

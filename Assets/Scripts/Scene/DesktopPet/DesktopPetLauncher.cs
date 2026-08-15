@@ -34,7 +34,7 @@ namespace Scene.DesktopPet
         }
 
         /// <inheritdoc/>
-        public void Launch(IReadOnlyList<int> playerSlotIndices)
+        public void Launch(IReadOnlyList<int> playerSlotIndices, bool stayOnTop)
         {
             if (playerSlotIndices == null || playerSlotIndices.Count == 0)
             {
@@ -66,11 +66,10 @@ namespace Scene.DesktopPet
                 return;
             }
 
-            // ペット移行直後からタイトルBGMが残らないよう即時停止する
             bgmService?.Stop();
 
 #if UNITY_STANDALONE_WIN && !UNITY_EDITOR
-            if (TryHandoffReadyCacheAndQuit(validSlots))
+            if (TryHandoffReadyCacheAndQuit(validSlots, stayOnTop))
             {
                 return;
             }
@@ -85,11 +84,12 @@ namespace Scene.DesktopPet
                 validSlots,
                 saveService,
                 bgmService,
+                stayOnTop,
                 OnRuntimeStopped);
             DesktopPetLaunchRequest.Clear();
         }
 
-        private bool TryHandoffReadyCacheAndQuit(List<int> validSlots)
+        private bool TryHandoffReadyCacheAndQuit(List<int> validSlots, bool stayOnTop)
         {
             List<string> directories = new List<string>(validSlots.Count);
             for (int i = 0; i < validSlots.Count; i++)
@@ -108,7 +108,7 @@ namespace Scene.DesktopPet
                 directories.Add(DesktopPetSpriteCache.GetSlotDirectory(slotIndex));
             }
 
-            if (directories.Count == 0 || !DesktopPetExternalProcess.TryStart(directories))
+            if (directories.Count == 0 || !DesktopPetExternalProcess.TryStart(directories, stayOnTop))
             {
                 return false;
             }

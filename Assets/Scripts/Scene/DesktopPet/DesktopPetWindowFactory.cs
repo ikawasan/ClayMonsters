@@ -10,12 +10,13 @@ namespace Scene.DesktopPet
         /// <summary>
         /// プラットフォームに合わせた窓制御を生成する
         /// </summary>
-        public static IDesktopPetWindow Create()
+        /// <param name="stayOnTop">最前面ならtrue最背面ならfalse</param>
+        public static IDesktopPetWindow Create(bool stayOnTop)
         {
 #if UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX
-            return new MacDesktopPetWindow();
+            return new MacDesktopPetWindow(stayOnTop);
 #else
-            return new WindowsDesktopPetWindow();
+            return new WindowsDesktopPetWindow(stayOnTop);
 #endif
         }
     }
