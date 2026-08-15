@@ -467,6 +467,7 @@ namespace ClayEditor.Rigging
 
         /// <summary>
         /// ModelPartLossのリム定義から使用可能部位を集める
+        /// 欠損中のリムは含めない
         /// </summary>
         /// <param name="partLoss">部位欠損コントローラ</param>
         /// <returns>使用可能な部位</returns>
@@ -480,6 +481,11 @@ namespace ClayEditor.Rigging
 
             for (int i = 0; i < partLoss.Limbs.Count; i++)
             {
+                if (partLoss.IsLimbRemoved(i))
+                {
+                    continue;
+                }
+
                 BonePart part = partLoss.Limbs[i].Part;
                 if (part != BonePart.Body)
                 {

@@ -965,8 +965,18 @@ namespace ClayEditor.Rigging
                 gradualRestoreBaseLocalRotation * Quaternion.Euler(rotX, rotY, rotZ);
         }
 
-        private bool IsLimbRemoved(int limbIndex)
+        /// <summary>
+        /// 指定リムが欠損中か
+        /// </summary>
+        /// <param name="limbIndex">リム番号</param>
+        /// <returns>欠損中ならtrue</returns>
+        public bool IsLimbRemoved(int limbIndex)
         {
+            if (limbIndex < 0 || limbIndex >= limbBoneIndices.Count)
+            {
+                return false;
+            }
+
             foreach (int boneIndex in limbBoneIndices[limbIndex])
             {
                 if (removedBoneIndices.Contains(boneIndex))

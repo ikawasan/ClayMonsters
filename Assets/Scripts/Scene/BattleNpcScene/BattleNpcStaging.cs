@@ -303,6 +303,8 @@ namespace Scene.BattleNpcScene
                     await overlayView.PlayVictoryPresentationAsync(label, cancellationToken);
                 }
 
+                ApplyVictoryReturnPresentation(context, winner);
+
                 IBattleDualVictoryReturnView dualReturnView = context?.VictoryDualReturnView;
                 if (dualReturnView != null)
                 {
@@ -339,6 +341,27 @@ namespace Scene.BattleNpcScene
 
                 overlayView?.EndVictoryPresentation();
             }
+        }
+
+        private static void ApplyVictoryReturnPresentation(
+            BattleStagingContext context,
+            BattleUnit winner)
+        {
+            if (context?.VictoryDualReturnView is not IBattleVictoryReturnPresentationView presentationView)
+            {
+                return;
+            }
+
+            BattleVictoryReturnPresentation presentation = BattleVictoryReturnPresentation.TitleAndRematch;
+            if (context.UseTournamentVictoryButtons)
+            {
+                bool playerWon = winner != null && winner == context.Player;
+                presentation = playerWon
+                    ? BattleVictoryReturnPresentation.ContinueAndAbort
+                    : BattleVictoryReturnPresentation.TitleOnly;
+            }
+
+            presentationView.SetPresentation(presentation);
         }
 
         private void ApplyVictoryCamera(BattleStagingContext context, BattleUnit winner)

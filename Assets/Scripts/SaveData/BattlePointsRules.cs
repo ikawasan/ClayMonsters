@@ -41,6 +41,26 @@ namespace SaveData
         public const int PvpRandomDefeatPoints = 25;
 
         /// <summary>
+        /// トーナメント優勝(イージー)のポイント
+        /// </summary>
+        public const int TournamentChampionEasyPoints = 100;
+
+        /// <summary>
+        /// トーナメント優勝(ノーマル)のポイント
+        /// </summary>
+        public const int TournamentChampionNormalPoints = 150;
+
+        /// <summary>
+        /// トーナメント優勝(ハード)のポイント
+        /// </summary>
+        public const int TournamentChampionHardPoints = 200;
+
+        /// <summary>
+        /// トーナメント優勝(ベリーハード)のポイント
+        /// </summary>
+        public const int TournamentChampionVeryHardPoints = 300;
+
+        /// <summary>
         /// NPC勝利時の獲得ポイントを返す
         /// </summary>
         /// <param name="tier">倒した敵の強さ</param>
@@ -53,6 +73,25 @@ namespace SaveData
             }
 
             return NpcWeakVictoryPoints + (tierIndex * NpcVictoryPointsPerTier);
+        }
+
+        /// <summary>
+        /// トーナメント優勝時の獲得ポイントを返す
+        /// </summary>
+        /// <param name="difficulty">NpcTournamentDifficultyの数値</param>
+        public static int ResolveTournamentChampionPoints(int difficulty)
+        {
+            switch (difficulty)
+            {
+                case 0:
+                    return TournamentChampionEasyPoints;
+                case 1:
+                    return TournamentChampionNormalPoints;
+                case 2:
+                    return TournamentChampionHardPoints;
+                default:
+                    return TournamentChampionVeryHardPoints;
+            }
         }
 
         /// <summary>

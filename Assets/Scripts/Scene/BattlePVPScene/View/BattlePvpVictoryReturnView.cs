@@ -4,15 +4,22 @@ using Cysharp.Threading.Tasks;
 using Extensions;
 using LighthouseExtends.UIComponent.Button;
 using Localization;
+using System.Collections.Generic;
 using System.Threading;
+using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Scene.BattlePVPScene.View
 {
     /// <summary>
     /// 通信対戦勝利後のタイトル戻りと再戦ボタンUI
     /// </summary>
-    public sealed class BattlePvpVictoryReturnView : MonoBehaviour, IBattleDualVictoryReturnView, ILanguageAwareUi
+    public sealed class BattlePvpVictoryReturnView
+        : MonoBehaviour,
+            IBattleDualVictoryReturnView,
+            IBattleVictoryReturnPresentationView,
+            ILanguageAwareUi
     {
         private const int VisibleSortingOrder = 1100;
 
@@ -25,6 +32,12 @@ namespace Scene.BattlePVPScene.View
 
         private int cachedSortingOrder = 320;
         private bool hasCachedSortingOrder;
+        private BattleVictoryReturnPresentation presentation = BattleVictoryReturnPresentation.TitleAndRematch;
+        private bool rematchVisualCaptured;
+        private readonly List<Graphic> rematchGraphics = new List<Graphic>();
+        private readonly List<float> rematchGraphicAlphas = new List<float>();
+        private readonly List<TMP_Text> rematchTexts = new List<TMP_Text>();
+        private readonly List<float> rematchTextAlphas = new List<float>();
 
         private void Awake()
         {
@@ -32,10 +45,19 @@ namespace Scene.BattlePVPScene.View
             rematchButton?.EnsureUiSoundFeedback();
             titleReturnButton?.EnsureUiSoundFeedback();
             CacheSortingOrderIfNeeded();
+            CaptureRematchVisualsIfNeeded();
             ApplyLocalizedLabels();
 
             // GOを落とさずCanvasのみオフ(初回表示でAwake再入して消えるのを防ぐ)
             CanvasVisibilityUtility.SetCanvasEnabled(rootCanvas, false);
+        }
+
+        /// <inheritdoc/>
+        public void SetPresentation(BattleVictoryReturnPresentation presentation)
+        {
+            this.presentation = presentation;
+            ApplyLocalizedLabels();
+            ApplyRematchVisualState(rootCanvas != null && rootCanvas.enabled);
         }
 
         /// <inheritdoc/>
@@ -62,7 +84,9 @@ namespace Scene.BattlePVPScene.View
 
             CanvasVisibilityUtility.SetCanvasEnabled(rootCanvas, visible);
             EnsureButtonReady(titleReturnButton, visible);
-            EnsureButtonReady(rematchButton, visible);
+            bool showRematch = visible && presentation != BattleVictoryReturnPresentation.TitleOnly;
+            EnsureButtonReady(rematchButton, showRematch);
+            ApplyRematchVisualState(showRematch);
         }
 
 
@@ -79,12 +103,40 @@ namespace Scene.BattlePVPScene.View
         private void ApplyLocalizedLabels()
         {
             CaptureLabelOriginalsIfNeeded();
-            LhButtonLabelUtility.SetLabel(
-                titleReturnButton,
-                SceneLocalizedLabel.Resolve(GameTextKeys.TrainingHudBackToTitle, titleReturnOriginal));
-            LhButtonLabelUtility.SetLabel(
-                rematchButton,
-                SceneLocalizedLabel.Resolve(GameTextKeys.BattleRematch, rematchOriginal));
+            ResolveLabels(out string titleLabel, out string rematchLabel);
+            LhButtonLabelUtility.SetLabel(titleReturnButton, titleLabel);
+            LhButtonLabelUtility.SetLabel(rematchButton, rematchLabel);
+        }
+
+        private void ResolveLabels(out string titleLabel, out string rematchLabel)
+        {
+            switch (presentation)
+            {
+                case BattleVictoryReturnPresentation.ContinueAndAbort:
+                    titleLabel = SceneLocalizedLabel.Resolve(
+                        GameTextKeys.NpcTournamentAbort,
+                        "中断");
+                    rematchLabel = SceneLocalizedLabel.Resolve(
+                        GameTextKeys.NpcTournamentContinue,
+                        "続ける");
+                    return;
+                case BattleVictoryReturnPresentation.TitleOnly:
+                    titleLabel = SceneLocalizedLabel.Resolve(
+                        GameTextKeys.TrainingHudBackToTitle,
+                        titleReturnOriginal);
+                    rematchLabel = SceneLocalizedLabel.Resolve(
+                        GameTextKeys.BattleRematch,
+                        rematchOriginal);
+                    return;
+                default:
+                    titleLabel = SceneLocalizedLabel.Resolve(
+                        GameTextKeys.TrainingHudBackToTitle,
+                        titleReturnOriginal);
+                    rematchLabel = SceneLocalizedLabel.Resolve(
+                        GameTextKeys.BattleRematch,
+                        rematchOriginal);
+                    return;
+            }
         }
 
         private void CaptureLabelOriginalsIfNeeded()
@@ -128,6 +180,7 @@ namespace Scene.BattlePVPScene.View
 
             BattleVictoryReturnChoice choice = BattleVictoryReturnChoice.Title;
             bool decided = false;
+            bool allowRematch = presentation != BattleVictoryReturnPresentation.TitleOnly;
 
             void OnTitleClick()
             {
@@ -146,7 +199,7 @@ namespace Scene.BattlePVPScene.View
                 titleReturnButton.onClick.AddListener(OnTitleClick);
             }
 
-            if (rematchButton != null)
+            if (allowRematch && rematchButton != null)
             {
                 rematchButton.onClick.AddListener(OnRematchClick);
             }
@@ -167,6 +220,77 @@ namespace Scene.BattlePVPScene.View
                 {
                     rematchButton.onClick.RemoveListener(OnRematchClick);
                 }
+            }
+        }
+
+        private void CaptureRematchVisualsIfNeeded()
+        {
+            if (rematchVisualCaptured || rematchButton == null)
+            {
+                return;
+            }
+
+            rematchGraphics.Clear();
+            rematchGraphicAlphas.Clear();
+            rematchTexts.Clear();
+            rematchTextAlphas.Clear();
+
+            Graphic[] graphics = rematchButton.GetComponentsInChildren<Graphic>(true);
+            for (int i = 0; i < graphics.Length; i++)
+            {
+                Graphic graphic = graphics[i];
+                if (graphic == null)
+                {
+                    continue;
+                }
+
+                rematchGraphics.Add(graphic);
+                rematchGraphicAlphas.Add(graphic.color.a);
+            }
+
+            TMP_Text[] texts = rematchButton.GetComponentsInChildren<TMP_Text>(true);
+            for (int i = 0; i < texts.Length; i++)
+            {
+                TMP_Text text = texts[i];
+                if (text == null)
+                {
+                    continue;
+                }
+
+                rematchTexts.Add(text);
+                rematchTextAlphas.Add(text.alpha);
+            }
+
+            rematchVisualCaptured = true;
+        }
+
+        private void ApplyRematchVisualState(bool visible)
+        {
+            CaptureRematchVisualsIfNeeded();
+            for (int i = 0; i < rematchGraphics.Count; i++)
+            {
+                Graphic graphic = rematchGraphics[i];
+                if (graphic == null)
+                {
+                    continue;
+                }
+
+                Color color = graphic.color;
+                color.a = visible ? rematchGraphicAlphas[i] : 0f;
+                graphic.color = color;
+                graphic.raycastTarget = visible;
+            }
+
+            for (int i = 0; i < rematchTexts.Count; i++)
+            {
+                TMP_Text text = rematchTexts[i];
+                if (text == null)
+                {
+                    continue;
+                }
+
+                text.alpha = visible ? rematchTextAlphas[i] : 0f;
+                text.raycastTarget = visible;
             }
         }
 

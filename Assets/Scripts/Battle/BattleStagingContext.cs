@@ -73,6 +73,11 @@ namespace Battle
         public BattleVictoryReturnChoice VictoryReturnChoice { get; set; } = BattleVictoryReturnChoice.Title;
 
         /// <summary>
+        /// トーナメント向けの勝利戻りボタンを使うか
+        /// </summary>
+        public bool UseTournamentVictoryButtons { get; set; }
+
+        /// <summary>
         /// 両者の対戦開始ボタン押下完了を待つ
         /// </summary>
         public System.Func<CancellationToken, UniTask> WaitForMatchupStartAsync { get; set; }

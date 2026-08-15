@@ -348,11 +348,24 @@ namespace Battle
 
         private LoadedModelConfigurator.Result ResolveTrainingModelConfiguration(GameObject model)
         {
+            return ResolveReusableOrConfigure(model);
+        }
+
+        /// <summary>
+        /// 再利用モデルは再Initializeしない
+        /// 再Initializeすると現在ポーズが基準回転になり見た目が崩れる
+        /// </summary>
+        /// <param name="model">対象モデル</param>
+        private LoadedModelConfigurator.Result ResolveReusableOrConfigure(GameObject model)
+        {
             ProceduralMotionCharacter existingMotion = model.GetComponent<ProceduralMotionCharacter>();
             if (existingMotion != null && existingMotion.IsReady)
             {
                 ModelPartLossController existingPartLoss = model.GetComponent<ModelPartLossController>();
                 existingPartLoss?.RestoreAll();
+                existingMotion.ResetForTrainingDisplay();
+                existingMotion.ClearBattlePositionConstraint();
+                existingMotion.SetRootTranslationEnabled(false);
                 return new LoadedModelConfigurator.Result
                 {
                     Renderer = model.GetComponentInChildren<SkinnedMeshRenderer>(true),
@@ -462,7 +475,7 @@ namespace Battle
             int slotIndex,
             ModelSavePool pool)
         {
-            LoadedModelConfigurator.Result cfg = configurator.Configure(model);
+            LoadedModelConfigurator.Result cfg = ResolveReusableOrConfigure(model);
 
             string displayName = ResolveDisplayName(pool, slotIndex, slot);
 
@@ -472,6 +485,8 @@ namespace Battle
             }
             else
             {
+                cfg.Motion.ClearBattlePositionConstraint();
+                cfg.Motion.SetRootTranslationEnabled(false);
                 cfg.Motion.Play(MotionType.Idle);
             }
 
@@ -521,11 +536,11 @@ namespace Battle
             EnemyStrengthTier? strengthTier,
             int slotIndex)
         {
-            List<MotionType> usableAttacks = CollectUsableAttacks(model);
             HashSet<BonePart> availableParts = ModelAttackMotionUtility.CollectAvailableParts(partLoss);
 
             if (strengthTier.HasValue)
             {
+                List<MotionType> usableAttacks = CollectUsableAttacks(model);
                 int seedSlot = slotIndex >= 0 ? slotIndex : 0;
                 IReadOnlyList<MotionType> pool = usableAttacks.Count > 0
                     ? usableAttacks
@@ -549,14 +564,9 @@ namespace Battle
             IReadOnlyList<MotionType> source = slot.attackMotions != null && slot.attackMotions.Count > 0
                 ? slot.attackMotions
                 : DefaultAttackMotions;
-            if (usableAttacks.Count > 0)
-            {
-                return ModelAttackMotionUtility.SanitizeForUsableAttacks(
-                    source,
-                    usableAttacks,
-                    ModelAttackMotionUtility.SlotCount);
-            }
 
+            // プレイヤーは保存技を部位欠損状態で絞る
+            // 試合後ボーン縮尺が残った骨格再判定だと技数が減ることがある
             return ModelAttackMotionUtility.SanitizeForAvailableParts(
                 source,
                 availableParts,

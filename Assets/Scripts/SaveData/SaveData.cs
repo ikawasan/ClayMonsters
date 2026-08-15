@@ -34,6 +34,11 @@ namespace SaveData
         public NpcBattleProgressSaveData NpcBattleProgress = new NpcBattleProgressSaveData();
 
         /// <summary>
+        /// 中断したNPCトーナメントの再開進捗
+        /// </summary>
+        public NpcTournamentProgressSaveData NpcTournamentProgress = new NpcTournamentProgressSaveData();
+
+        /// <summary>
         /// 育成ゴールドとは別のゲーム内ポイント
         /// </summary>
         public int Points;

@@ -12,8 +12,10 @@ using LighthouseExtends.UIComponent.Button;
 using SaveData;
 using SaveData.Interface;
 using Scene.BattleNpcScene.Interface;
+using Scene.BattleNpcScene.Tournament;
 using Scene.Core;
 using Scene.Core.Interface;
+using Scene.TitleScene;
 using System.Threading;
 using UI.Battle.View;
 using UnityEngine;
@@ -62,6 +64,9 @@ namespace Scene.BattleNpcScene
         private IBattleDualVictoryReturnView victoryDualReturnView;
         private IClayMonsterSceneManager sceneManager;
         private IMonsterSelectionSession selectionSession;
+        private INpcTournamentEntryState tournamentEntryState;
+        private INpcTournamentBracketView tournamentBracketView;
+        private INpcTournamentProgressService tournamentProgress;
 
         private CancellationTokenSource flowCts;
         private bool isRunning;
@@ -118,7 +123,10 @@ namespace Scene.BattleNpcScene
             ISeService seService,
             IBattleDualVictoryReturnView victoryDualReturnView,
             IClayMonsterSceneManager sceneManager,
-            IMonsterSelectionSession selectionSession)
+            IMonsterSelectionSession selectionSession,
+            INpcTournamentEntryState tournamentEntryState,
+            INpcTournamentBracketView tournamentBracketView,
+            INpcTournamentProgressService tournamentProgress)
         {
             this.importer = importer;
             this.saveService = saveService;
@@ -131,6 +139,9 @@ namespace Scene.BattleNpcScene
             this.victoryDualReturnView = victoryDualReturnView;
             this.sceneManager = sceneManager;
             this.selectionSession = selectionSession;
+            this.tournamentEntryState = tournamentEntryState;
+            this.tournamentBracketView = tournamentBracketView;
+            this.tournamentProgress = tournamentProgress;
 
             titleReturnSubscription?.Dispose();
             languageSubscription?.Dispose();
@@ -190,6 +201,42 @@ namespace Scene.BattleNpcScene
             try
             {
                 var loader = new BattleParticipantLoader(importer, saveService, configurator);
+                if (tournamentEntryState != null && tournamentEntryState.IsTournament)
+                {
+                    NpcTournamentDifficulty difficulty = tournamentEntryState.Difficulty;
+                    bool resume = tournamentEntryState.IsResume;
+                    tournamentEntryState.Clear();
+                    var tournamentFlow = new NpcTournamentFlow(
+                        selectionSession,
+                        tournamentBracketView,
+                        saveService,
+                        loader,
+                        () =>
+                        {
+                            BattleFlow.Context boutContext = BattleFlowContextBuilder.Build(
+                                this,
+                                saveService,
+                                presentationTransition,
+                                enemySlotIndex);
+                            boutContext.RegisterSpawnedParticipants = RegisterSpawnedParticipants;
+                            return boutContext;
+                        },
+                        battleView,
+                        staging,
+                        presentationTransition,
+                        bgmService,
+                        seService,
+                        RegisterSpawnedParticipants,
+                        OnNpcBattleSettled,
+                        pointsService,
+                        skillTreeService,
+                        tournamentProgress);
+
+                    await tournamentFlow.RunAsync(difficulty, resume, cancellationToken);
+                    await ReturnToTitleAsync(cancellationToken);
+                    return;
+                }
+
                 BattleFlow.Context context = BattleFlowContextBuilder.Build(
                     this,
                     saveService,
@@ -232,6 +279,7 @@ namespace Scene.BattleNpcScene
             }
             finally
             {
+                tournamentBracketView?.HideImmediate();
                 isRunning = false;
             }
         }
@@ -254,6 +302,7 @@ namespace Scene.BattleNpcScene
             CanvasVisibilityUtility.SetCanvasEnabled(battleUiCanvas, false);
             VictoryDualReturnView?.SetDualButtonsVisible(false);
             ResolveTipsView()?.HideAll();
+            tournamentBracketView?.HideImmediate();
             staging?.PrepareSelectionEntry();
             presentationTransition?.ReleasePresentationInput();
         }

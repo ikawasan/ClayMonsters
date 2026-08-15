@@ -5,6 +5,7 @@ using Camera.View;
 using SaveData;
 using SaveData.Interface;
 using SaveData.Service;
+using Scene.BattleNpcScene.Tournament;
 using Scene.BattleNpcScene.View;
 using Scene.BattlePVPScene.View;
 using UI.ClayEditor.View;
@@ -33,6 +34,7 @@ namespace Scene.BattleNpcScene
 
         [Header("UI Views")]
         [SerializeField] LoadSlotView loadSlotView;
+        [SerializeField] NpcTournamentBracketView tournamentBracketView;
 
         protected override void Configure(IContainerBuilder builder)
         {
@@ -48,6 +50,21 @@ namespace Scene.BattleNpcScene
             builder.RegisterComponent(victoryDualReturnView).AsImplementedInterfaces();
             builder.Register<BattleNpcSceneCoordinator>(Lifetime.Singleton).AsImplementedInterfaces();
             builder.Register<MonsterSelectionSession>(Lifetime.Singleton).AsImplementedInterfaces();
+            builder.Register<NpcTournamentEntryState>(Lifetime.Singleton).As<INpcTournamentEntryState>();
+
+            if (tournamentBracketView == null)
+            {
+                Debug.LogError(
+                    "[BattleNpcLifetimeScope] tournamentBracketViewが未配線です"
+                    + "トーナメントUIを配置し接続してください",
+                    this);
+                builder.Register<NullNpcTournamentBracketView>(Lifetime.Singleton)
+                    .As<INpcTournamentBracketView>();
+            }
+            else
+            {
+                builder.RegisterComponent(tournamentBracketView).AsImplementedInterfaces();
+            }
 
             builder.RegisterComponent(cameraView).AsImplementedInterfaces();
             builder.Register<ClayEditCameraPresenter>(Lifetime.Singleton).AsImplementedInterfaces();

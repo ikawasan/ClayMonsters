@@ -116,6 +116,11 @@ namespace Battle
             public bool AutoStartMatchup;
 
             /// <summary>
+            /// トーナメント向けの勝利戻りボタンを使うか
+            /// </summary>
+            public bool UseTournamentVictoryButtons;
+
+            /// <summary>
             /// CPU戦のVS待ちで敵強さ選択UIを出すか
             /// </summary>
             public bool EnableEnemyStrengthSelect;
@@ -446,6 +451,7 @@ namespace Battle
                     ScreenFade = context.PresentationTransition,
                     VictoryReturnView = context.VictoryReturnView,
                     VictoryDualReturnView = context.VictoryDualReturnView,
+                    UseTournamentVictoryButtons = context.UseTournamentVictoryButtons,
                     InitialBattleDistance = battleSettings.MaxDistance,
                     MaxBattleDistance = battleSettings.MaxDistance,
                     WaitForMatchupStartAsync = context.WaitForMatchupStartAsync,
