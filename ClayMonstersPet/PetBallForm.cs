@@ -29,7 +29,6 @@ internal sealed class PetBallForm : Form
     {
         FormBorderStyle = FormBorderStyle.None;
         ShowInTaskbar = false;
-        TopMost = true;
         StartPosition = FormStartPosition.Manual;
         Size = new Size(BallSize, BallSize);
         BackColor = Color.Magenta;
@@ -37,6 +36,7 @@ internal sealed class PetBallForm : Form
         DoubleBuffered = true;
         Text = "ClayMonstersPetBall";
         Cursor = Cursors.Hand;
+        PetWindowOrder.Apply(this);
         ballImage = LoadBallImage();
 
         Rectangle work = Screen.PrimaryScreen?.WorkingArea ?? new Rectangle(0, 0, 1280, 720);

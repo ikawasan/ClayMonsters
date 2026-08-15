@@ -54,12 +54,12 @@ internal sealed class PetForm : Form
         FormBorderStyle = FormBorderStyle.None;
         ShowInTaskbar = false;
         Text = "ClayMonstersPet";
-        TopMost = true;
         StartPosition = FormStartPosition.Manual;
         Size = new Size(WindowSize, WindowSize);
         BackColor = Color.Magenta;
         TransparencyKey = Color.Magenta;
         DoubleBuffered = true;
+        PetWindowOrder.Apply(this);
 
         Rectangle work = Screen.PrimaryScreen?.WorkingArea ?? new Rectangle(0, 0, 1280, 720);
         currentPos = new PointF(

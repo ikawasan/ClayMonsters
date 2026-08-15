@@ -545,7 +545,22 @@ LoadSlot.EnemyInstruction	Selecione um monstro inimigo
 Title.NoTrainedModel	Você não tem monstros treinados
 Title.NoUntrainedModel	Crie um monstro primeiro
 Title.DesktopPetConfirm	Fechar o jogo e mostrar o monstro na área de trabalho?
+Title.DesktopPetZOrderChoice	Escolha a ordem de exibição
+Title.DesktopPetTopmost	Sempre na frente
+Title.DesktopPetBottommost	Sempre atrás
 Title.DesktopPetSelectInstruction	Selecione até {0}（{1}/{0}）
+Title.NpcModeTournament	Torneio
+Title.NpcModeFreeBattle	Batalha livre
+Title.NpcTournamentEasy	Fácil
+Title.NpcTournamentNormal	Normal
+Title.NpcTournamentHard	Difícil
+Title.NpcTournamentVeryHard	Muito difícil
+Title.NpcTournamentConfirm	Iniciar o torneio na dificuldade "{difficulty}"?
+Title.NpcTournamentContinueConfirm	Continuar o torneio interrompido?
+NpcTournament.AbortConfirm	Interromper e voltar para o titulo?
+NpcTournament.ChampionReward	Parabens pela vitoria!\nVoce recebeu {points} pontos.
+NpcTournament.Continue	Continuar
+NpcTournament.Abort	Interromper
 Common.Save	Salvar
 Common.Decide	OK
 Training.ModeSelectBody	Treino manual: escolha ações nos períodos 1-6.\nAlmoço: loja. Depois: batalha.\nAutomático avança {days} dias.

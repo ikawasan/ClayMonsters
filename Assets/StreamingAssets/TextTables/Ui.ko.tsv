@@ -545,7 +545,22 @@ LoadSlot.EnemyInstruction	적 몬스터를 선택하세요
 Title.NoTrainedModel	육성 완료 몬스터가 없습니다
 Title.NoUntrainedModel	몬스터를 먼저 만들어 주세요
 Title.DesktopPetConfirm	게임을 종료하고 몬스터를 데스크톱에 표시할까요?
+Title.DesktopPetZOrderChoice	표시 순서를 선택하세요
+Title.DesktopPetTopmost	최상단 표시
+Title.DesktopPetBottommost	최하단 표시
 Title.DesktopPetSelectInstruction	최대 {0}마리까지 선택해 주세요（{1}/{0}）
+Title.NpcModeTournament	토너먼트
+Title.NpcModeFreeBattle	자유 대전
+Title.NpcTournamentEasy	이지
+Title.NpcTournamentNormal	노멀
+Title.NpcTournamentHard	하드
+Title.NpcTournamentVeryHard	베리 하드
+Title.NpcTournamentConfirm	난이도 "{difficulty}"(으)로 토너먼트를 시작할까요?
+Title.NpcTournamentContinueConfirm	중단한 토너먼트를 이어서 진행할까요?
+NpcTournament.AbortConfirm	중단하고 타이틀로 돌아갈까요?
+NpcTournament.ChampionReward	우승을 축하합니다.\n{points}포인트를 획득했습니다.
+NpcTournament.Continue	계속
+NpcTournament.Abort	중단
 Common.Save	저장
 Common.Decide	결정
 Training.ModeSelectBody	느긋한 육성: 1~6교시 행동을 직접 고릅니다.\n점심에는 상점, 방과 후에는 전투입니다.\n자동 육성은 {days}일을 자동으로 진행합니다.

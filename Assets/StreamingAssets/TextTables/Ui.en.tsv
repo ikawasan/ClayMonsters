@@ -545,7 +545,22 @@ LoadSlot.EnemyInstruction	Select an enemy monster
 Title.NoTrainedModel	You have no trained monsters
 Title.NoUntrainedModel	Create a monster first
 Title.DesktopPetConfirm	Close the game and show the monster on the desktop?
+Title.DesktopPetZOrderChoice	Choose whether to show in front or behind other windows
+Title.DesktopPetTopmost	Always on top
+Title.DesktopPetBottommost	Always behind
 Title.DesktopPetSelectInstruction	Please select up to {0} ({1}/{0})
+Title.NpcModeTournament	Tournament
+Title.NpcModeFreeBattle	Free Battle
+Title.NpcTournamentEasy	Easy
+Title.NpcTournamentNormal	Normal
+Title.NpcTournamentHard	Hard
+Title.NpcTournamentVeryHard	Very Hard
+Title.NpcTournamentConfirm	Start the tournament on "{difficulty}" difficulty?
+Title.NpcTournamentContinueConfirm	Continue the interrupted tournament?
+NpcTournament.AbortConfirm	Abort and return to the title screen?
+NpcTournament.ChampionReward	Congratulations on your victory!\nYou received {points} points.
+NpcTournament.Continue	Continue
+NpcTournament.Abort	Abort
 Common.Save	Save
 Common.Decide	OK
 Training.ModeSelectBody	Manual training: choose actions for periods 1-6 yourself.\nLunch: shop. After school: battle.\nAuto training runs all {days} days automatically.

@@ -12,6 +12,7 @@ internal static class Program
         string? gameExe = null;
         string? language = null;
         string? textTablesDirectory = null;
+        bool stayOnTop = true;
         for (int i = 0; i < args.Length; i++)
         {
             if (args[i] == "--cache" && i + 1 < args.Length)
@@ -34,7 +35,13 @@ internal static class Program
             {
                 textTablesDirectory = args[++i].Trim('"');
             }
+            else if (args[i] == "--topmost" && i + 1 < args.Length)
+            {
+                stayOnTop = args[++i].Trim('"') != "0";
+            }
         }
+
+        PetWindowOrder.StayOnTop = stayOnTop;
 
         if (string.IsNullOrWhiteSpace(language))
         {

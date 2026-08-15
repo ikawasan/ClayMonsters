@@ -545,7 +545,22 @@ LoadSlot.EnemyInstruction	Waehle ein Gegner-Monster
 Title.NoTrainedModel	Keine trainierten Monster vorhanden
 Title.NoUntrainedModel	Erstelle zuerst ein Monster
 Title.DesktopPetConfirm	Spiel schließen und das Monster auf dem Desktop anzeigen?
+Title.DesktopPetZOrderChoice	Wähle die Anzeigereihenfolge
+Title.DesktopPetTopmost	Immer im Vordergrund
+Title.DesktopPetBottommost	Immer im Hintergrund
 Title.DesktopPetSelectInstruction	Bitte bis zu {0} auswählen（{1}/{0}）
+Title.NpcModeTournament	Turnier
+Title.NpcModeFreeBattle	Freies Duell
+Title.NpcTournamentEasy	Leicht
+Title.NpcTournamentNormal	Normal
+Title.NpcTournamentHard	Schwer
+Title.NpcTournamentVeryHard	Sehr schwer
+Title.NpcTournamentConfirm	Turnier auf Schwierigkeit "{difficulty}" starten?
+Title.NpcTournamentContinueConfirm	Unterbrochenes Turnier fortsetzen?
+NpcTournament.AbortConfirm	Abbrechen und zum Titel zuruckkehren?
+NpcTournament.ChampionReward	Herzlichen Gluckwunsch zum Sieg!\nDu hast {points} Punkte erhalten.
+NpcTournament.Continue	Weiter
+NpcTournament.Abort	Abbruch
 Common.Save	Save
 Common.Decide	OK
 Training.ModeSelectBody	Manuelles Training: Wähle Aktionen in Periode 1-6 selbst.\nMittag: Shop. Nach der Schule: Kampf.\nAuto-Training läuft {days} Tage automatisch.

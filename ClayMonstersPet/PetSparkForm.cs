@@ -16,7 +16,6 @@ internal sealed class PetSparkForm : Form
     {
         FormBorderStyle = FormBorderStyle.None;
         ShowInTaskbar = false;
-        TopMost = true;
         StartPosition = FormStartPosition.Manual;
         Size = new Size(OverlaySize, OverlaySize);
         BackColor = Color.Magenta;
@@ -25,6 +24,7 @@ internal sealed class PetSparkForm : Form
         Text = "ClayMonstersPetSpark";
         Enabled = false;
         Location = new Point(-OverlaySize, -OverlaySize);
+        PetWindowOrder.Apply(this);
     }
 
     /// <summary>
