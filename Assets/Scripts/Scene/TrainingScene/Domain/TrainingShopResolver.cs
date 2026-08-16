@@ -1,4 +1,5 @@
 using Localization;
+using System;
 using System.Collections.Generic;
 
 namespace Scene.TrainingScene.Domain
@@ -69,6 +70,31 @@ namespace Scene.TrainingScene.Domain
         /// 対象商品
         /// </summary>
         public TrainingShopItem Item { get; }
+    }
+
+    /// <summary>
+    /// 売店陳列入れ替えの解決結果
+    /// </summary>
+    public readonly struct TrainingShopRefreshResult
+    {
+        /// <summary>
+        /// 入れ替え結果を生成する
+        /// </summary>
+        public TrainingShopRefreshResult(bool succeeded, string message)
+        {
+            Succeeded = succeeded;
+            Message = message ?? string.Empty;
+        }
+
+        /// <summary>
+        /// 入れ替えできたか
+        /// </summary>
+        public bool Succeeded { get; }
+
+        /// <summary>
+        /// 結果メッセージ
+        /// </summary>
+        public string Message { get; }
     }
 
     /// <summary>
@@ -145,6 +171,63 @@ namespace Scene.TrainingScene.Domain
                         { "money", session.Money },
                     }),
                 item);
+        }
+
+        /// <summary>
+        /// 所持金を払って売店陳列を入れ替える
+        /// </summary>
+        /// <param name="session">育成セッション</param>
+        /// <param name="random">乱数</param>
+        public static TrainingShopRefreshResult TryRefreshOffer(
+            TrainingSession session,
+            Random random)
+        {
+            if (session == null)
+            {
+                return new TrainingShopRefreshResult(
+                    false,
+                    LocalizedText.GetOrFallback(GameTextKeys.TrainingShopNoSession, "セッションがありません"));
+            }
+
+            int price = TrainingSettings.ShopRefreshPrice;
+            if (session.Money < price)
+            {
+                return new TrainingShopRefreshResult(
+                    false,
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingShopNotEnoughMoney,
+                        "所持金が足りない({have}G/{price}G)",
+                        new Dictionary<string, object>
+                        {
+                            { "have", session.Money },
+                            { "price", price },
+                        }));
+            }
+
+            if (!session.TrySpendMoney(price))
+            {
+                return new TrainingShopRefreshResult(
+                    false,
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.TrainingShopNotEnoughMoney,
+                        "所持金が足りない({have}G/{price}G)",
+                        new Dictionary<string, object>
+                        {
+                            { "have", session.Money },
+                            { "price", price },
+                        }));
+            }
+
+            session.RefreshShopOffer(random);
+            return new TrainingShopRefreshResult(
+                true,
+                LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingShopRefreshed,
+                    "商品を更新した\n残り{money}G",
+                    new Dictionary<string, object>
+                    {
+                        { "money", session.Money },
+                    }));
         }
 
         /// <summary>

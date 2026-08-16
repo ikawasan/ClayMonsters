@@ -19,5 +19,10 @@ namespace Scene.TrainingScene.Domain
         /// 所持アイテムウィンドウを開く
         /// </summary>
         public const int OpenInventory = -3;
+
+        /// <summary>
+        /// 売店の陳列を入れ替える
+        /// </summary>
+        public const int RefreshOffer = -4;
     }
 }

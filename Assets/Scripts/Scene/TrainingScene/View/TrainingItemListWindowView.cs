@@ -3,6 +3,7 @@ using Extensions;
 using LighthouseExtends.UIComponent.Button;
 using Localization;
 using Scene.TrainingScene.Domain;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using TMPro;
@@ -43,6 +44,10 @@ namespace Scene.TrainingScene.View
         [SerializeField] private LHButton openInventoryButton;
         [SerializeField] private TMP_Text openInventoryButtonLabel;
 
+        [Header("Refresh Confirm")]
+        [Tooltip("商品更新確認テキストウィンドウ")]
+        [SerializeField] private TrainingConfirmWindowView refreshConfirmWindow;
+
         private bool hasChoice;
         private int pendingChoice;
         private bool uiBound;
@@ -60,6 +65,7 @@ namespace Scene.TrainingScene.View
         private bool cachedHasNextPage;
         private bool cachedShowOpenInventory;
         private bool listChromeOriginalsCaptured;
+        private CancellationTokenSource refreshConfirmCts;
         private string shopTitleOriginal = "売店";
         private string inventoryTitleOriginal = "所持アイテム";
         private string closeOriginal = "戻る";
@@ -123,9 +129,10 @@ namespace Scene.TrainingScene.View
             BindShopSlots(items);
             ConfigureCloseButton(
                 SceneLocalizedLabel.Resolve(GameTextKeys.CommonReturn, closeOriginal));
-            ConfigureNextPageButton(hasNextPage);
+            ConfigureRefreshButton();
             ConfigureOpenInventoryButton(showOpenInventory);
             hasChoice = false;
+            HideRefreshConfirm();
             SetWindowVisible(true);
         }
 
@@ -158,12 +165,19 @@ namespace Scene.TrainingScene.View
             ConfigureNextPageButton(hasNextPage);
             ConfigureOpenInventoryButton(false);
             hasChoice = false;
+            HideRefreshConfirm();
             SetWindowVisible(true);
         }
 
         /// <inheritdoc/>
         public void RefreshLocalizedUi()
         {
+            refreshConfirmWindow?.RefreshLocalizedUi();
+            if (refreshConfirmCts != null)
+            {
+                return;
+            }
+
             if (listMode == ListMode.Shop)
             {
                 ShowShop(
@@ -184,6 +198,7 @@ namespace Scene.TrainingScene.View
         public void Hide()
         {
             hasChoice = false;
+            HideRefreshConfirm();
             listMode = ListMode.None;
             ClearSlots();
             SetWindowVisible(false);
@@ -239,7 +254,15 @@ namespace Scene.TrainingScene.View
         private void BindActionButtons()
         {
             BindButton(closeButton, TrainingShopChoiceCodes.Back);
-            BindButton(nextPageButton, TrainingShopChoiceCodes.NextPage);
+            if (listMode == ListMode.Shop)
+            {
+                BindRefreshButton();
+            }
+            else
+            {
+                BindButton(nextPageButton, TrainingShopChoiceCodes.NextPage);
+            }
+
             BindButton(openInventoryButton, TrainingShopChoiceCodes.OpenInventory);
         }
 
@@ -253,6 +276,65 @@ namespace Scene.TrainingScene.View
             button.EnsureUiSoundFeedback();
             button.onClick.RemoveAllListeners();
             button.onClick.AddListener(() => CompleteChoice(choice));
+        }
+
+        private void BindRefreshButton()
+        {
+            if (nextPageButton == null)
+            {
+                return;
+            }
+
+            nextPageButton.EnsureUiSoundFeedback();
+            nextPageButton.onClick.RemoveAllListeners();
+            nextPageButton.onClick.AddListener(() => ShowRefreshConfirmAsync().Forget());
+        }
+
+        private async UniTaskVoid ShowRefreshConfirmAsync()
+        {
+            if (refreshConfirmWindow == null)
+            {
+                Debug.LogError(
+                    "[TrainingItemListWindowView] refreshConfirmWindowが未配線ですHierarchyで接続してください",
+                    this);
+                return;
+            }
+
+            CancelRefreshConfirmWait();
+            refreshConfirmCts = new CancellationTokenSource();
+            bool accepted = await refreshConfirmWindow.WaitLocalizedYesNoAsync(
+                GameTextKeys.TrainingShopRefreshConfirm,
+                "{price}Gで商品を更新しますか？",
+                "price",
+                TrainingSettings.ShopRefreshPrice,
+                refreshConfirmCts.Token);
+            if (accepted)
+            {
+                CompleteChoice(TrainingShopChoiceCodes.RefreshOffer);
+            }
+        }
+
+        private void HideRefreshConfirm()
+        {
+            CancelRefreshConfirmWait();
+            refreshConfirmWindow?.Hide();
+        }
+
+        private void CancelRefreshConfirmWait()
+        {
+            if (refreshConfirmCts == null)
+            {
+                return;
+            }
+
+            refreshConfirmCts.Cancel();
+            refreshConfirmCts.Dispose();
+            refreshConfirmCts = null;
+        }
+
+        private void OnDestroy()
+        {
+            CancelRefreshConfirmWait();
         }
 
         private void BindShopSlots(IReadOnlyList<TrainingShopItem> items)
@@ -387,6 +469,21 @@ namespace Scene.TrainingScene.View
                     nextPageButtonLabel,
                     SceneLocalizedLabel.Resolve(GameTextKeys.TrainingShopNextPage, nextPageOriginal));
             }
+        }
+
+        private void ConfigureRefreshButton()
+        {
+            if (nextPageButton == null)
+            {
+                return;
+            }
+
+            nextPageButton.gameObject.SetActive(true);
+            nextPageButton.interactable = true;
+            CaptureListChromeOriginalsIfNeeded();
+            LhButtonLabelUtility.SetLabel(
+                nextPageButtonLabel,
+                SceneLocalizedLabel.Resolve(GameTextKeys.TrainingShopRefresh, "更新"));
         }
 
         private void ConfigureOpenInventoryButton(bool visible)

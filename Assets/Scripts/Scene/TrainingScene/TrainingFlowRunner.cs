@@ -1575,6 +1575,23 @@ namespace Scene.TrainingScene
                     continue;
                 }
 
+                if (choice == TrainingShopChoiceCodes.RefreshOffer)
+                {
+                    TrainingShopRefreshResult refresh =
+                        TrainingShopResolver.TryRefreshOffer(session, random);
+                    CheckpointSave(session);
+                    hudView.BindSession(session);
+                    offerItems = session.GetShopOfferItems();
+                    hudView.ShowShopChoices(
+                        offerItems,
+                        hasNextPage: false,
+                        session.Money,
+                        showOpenInventory: true);
+                    hudView.SetLogMessage(refresh.Message);
+                    await hudView.WaitContinueAsync(cancellationToken);
+                    continue;
+                }
+
                 // 次ページは陳列入れ替えに使わない
                 if (choice == TrainingShopChoiceCodes.NextPage)
                 {

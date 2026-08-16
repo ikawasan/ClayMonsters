@@ -428,12 +428,16 @@ namespace Localization
         public const string TrainingInventoryTitle = "Training.Inventory.Title";
         public const string TrainingShopNextPage = "Training.Shop.NextPage";
         public const string TrainingShopOpenInventory = "Training.Shop.OpenInventory";
+        public const string TrainingShopRefresh = "Training.Shop.Refresh";
+        public const string TrainingShopRefreshConfirm = "Training.Shop.RefreshConfirm";
+        public const string TrainingShopRefreshed = "Training.Shop.Refreshed";
         public const string TrainingDebugNoSession = "Training.Debug.NoSession";
         public const string TrainingDebugUnknownItem = "Training.Debug.UnknownItem";
         public const string TrainingDebugItemAdded = "Training.Debug.ItemAdded";
 
         public const string TrainingHoverShopLeave = "Training.Hover.ShopLeave";
         public const string TrainingHoverShopNextPage = "Training.Hover.ShopNextPage";
+        public const string TrainingHoverShopRefresh = "Training.Hover.ShopRefresh";
         public const string TrainingHoverOpenInventory = "Training.Hover.OpenInventory";
         public const string TrainingHoverCloseInventory = "Training.Hover.CloseInventory";
         public const string TrainingHoverInventoryNextPage = "Training.Hover.InventoryNextPage";

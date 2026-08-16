@@ -120,7 +120,7 @@ namespace Scene.TrainingScene.Interface
         /// <summary>
         /// 売店の選択が終わるまで待機する
         /// </summary>
-        /// <returns>商品index / NextPage / OpenInventory / Back</returns>
+        /// <returns>商品index / NextPage / OpenInventory / RefreshOffer / Back</returns>
         UniTask<int> WaitShopChoiceAsync(CancellationToken cancellationToken);
 
         /// <summary>

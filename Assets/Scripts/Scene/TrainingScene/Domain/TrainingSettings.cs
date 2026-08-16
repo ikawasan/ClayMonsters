@@ -160,6 +160,11 @@ namespace Scene.TrainingScene.Domain
         public const int ShopPageSize = 3;
 
         /// <summary>
+        /// 売店商品入れ替えの価格
+        /// </summary>
+        public const int ShopRefreshPrice = 50;
+
+        /// <summary>
         /// 栄養ドリンク価格
         /// </summary>
         public const int ShopStaminaDrinkPrice = 80;
