@@ -453,6 +453,10 @@ Training.Shop.Title	Boutique
 Training.Inventory.Title	Objets
 Training.Shop.NextPage	Suiv.
 Training.Shop.OpenInventory	Items
+Training.Shop.Refresh	Maj
+Training.Shop.RefreshConfirm	Actualiser pour {price}G ?
+Training.Shop.LeaveConfirm	Fermer la boutique et faire passer le temps ?
+Training.Shop.Refreshed	Articles actualises\nReste {money}G
 Battle.PartLocked	Partie detruite
 Battle.RoleRequired	Req
 Battle.RoleTarget	Cib
@@ -523,6 +527,7 @@ Save.Summary.AttackMeta	({part}/{range}/Pui{power}/Cout{cost})
 ModelGallery.EmptySlot	Emplacement vide
 Training.Hover.ShopLeave	Quitter la boutique
 Training.Hover.ShopNextPage	Page suivante
+Training.Hover.ShopRefresh	Changer les articles
 Training.Hover.OpenInventory	Utiliser objets
 Training.Hover.CloseInventory	Fermer inventaire
 Training.Hover.InventoryNextPage	Page inventaire suivante

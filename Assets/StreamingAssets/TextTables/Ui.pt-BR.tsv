@@ -453,6 +453,10 @@ Training.Shop.Title	Loja
 Training.Inventory.Title	Itens
 Training.Shop.NextPage	Prox.
 Training.Shop.OpenInventory	Itens
+Training.Shop.Refresh	Novo
+Training.Shop.RefreshConfirm	Atualizar itens por {price}G?
+Training.Shop.LeaveConfirm	Fechar a loja e deixar o tempo passar?
+Training.Shop.Refreshed	Itens atualizados\nResta {money}G
 Battle.PartLocked	Parte destruida
 Battle.RoleRequired	Req
 Battle.RoleTarget	Que
@@ -523,6 +527,7 @@ Save.Summary.AttackMeta	({part}/{range}/Pod{power}/Cus{cost})
 ModelGallery.EmptySlot	Slot vazio
 Training.Hover.ShopLeave	Sair da loja
 Training.Hover.ShopNextPage	Proxima pagina
+Training.Hover.ShopRefresh	Trocar itens
 Training.Hover.OpenInventory	Usar itens
 Training.Hover.CloseInventory	Fechar inventario
 Training.Hover.InventoryNextPage	Proxima pagina inventario

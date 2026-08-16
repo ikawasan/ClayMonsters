@@ -41,6 +41,26 @@ namespace Scene.TrainingScene.View
         }
 
         /// <summary>
+        /// 確認を表示してはいいいえを待つ
+        /// </summary>
+        /// <param name="key">文言キー</param>
+        /// <param name="fallback">フォールバック</param>
+        /// <param name="cancellationToken">キャンセルトークン</param>
+        /// <returns>はいならtrue</returns>
+        public UniTask<bool> WaitLocalizedYesNoAsync(
+            string key,
+            string fallback,
+            CancellationToken cancellationToken)
+        {
+            return WaitLocalizedYesNoAsync(
+                key,
+                fallback,
+                paramName: null,
+                paramValue: null,
+                cancellationToken);
+        }
+
+        /// <summary>
         /// パラメータ付き確認を表示してはいいいえを待つ
         /// </summary>
         /// <param name="key">文言キー</param>
@@ -84,7 +104,6 @@ namespace Scene.TrainingScene.View
         public void Hide()
         {
             isShowing = false;
-            hasChoice = false;
             if (canvas != null)
             {
                 CanvasVisibilityUtility.SetCanvasEnabled(canvas, false);

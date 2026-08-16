@@ -453,6 +453,10 @@ Training.Shop.Title	Shop
 Training.Inventory.Title	Items
 Training.Shop.NextPage	Next
 Training.Shop.OpenInventory	Items
+Training.Shop.Refresh	Refresh
+Training.Shop.RefreshConfirm	Refresh items for {price}G?
+Training.Shop.LeaveConfirm	Close the shop and let time pass?
+Training.Shop.Refreshed	Refreshed items\nLeft {money}G
 Battle.PartLocked	Part is broken
 Battle.RoleRequired	Req
 Battle.RoleTarget	Brk
@@ -523,6 +527,7 @@ Save.Summary.AttackMeta	({part}/{range}/Pwr{power}/Cost{cost})
 ModelGallery.EmptySlot	Empty slot
 Training.Hover.ShopLeave	Leave shop
 Training.Hover.ShopNextPage	Show next items
+Training.Hover.ShopRefresh	Reroll shop items
 Training.Hover.OpenInventory	Use items
 Training.Hover.CloseInventory	Close inventory
 Training.Hover.InventoryNextPage	Next inventory page

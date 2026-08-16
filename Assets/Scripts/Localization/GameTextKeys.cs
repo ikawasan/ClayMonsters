@@ -430,6 +430,7 @@ namespace Localization
         public const string TrainingShopOpenInventory = "Training.Shop.OpenInventory";
         public const string TrainingShopRefresh = "Training.Shop.Refresh";
         public const string TrainingShopRefreshConfirm = "Training.Shop.RefreshConfirm";
+        public const string TrainingShopLeaveConfirm = "Training.Shop.LeaveConfirm";
         public const string TrainingShopRefreshed = "Training.Shop.Refreshed";
         public const string TrainingDebugNoSession = "Training.Debug.NoSession";
         public const string TrainingDebugUnknownItem = "Training.Debug.UnknownItem";

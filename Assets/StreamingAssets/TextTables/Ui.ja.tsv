@@ -453,6 +453,10 @@ Training.Shop.Title	売店
 Training.Inventory.Title	所持アイテム
 Training.Shop.NextPage	次のページ
 Training.Shop.OpenInventory	所持
+Training.Shop.Refresh	更新
+Training.Shop.RefreshConfirm	{price}Gで商品を更新しますか？
+Training.Shop.LeaveConfirm	ショップを閉じて時間が経過しますが良いですか？
+Training.Shop.Refreshed	商品を更新した\n残り{money}G
 Battle.PartLocked	部位が破壊されています
 Battle.RoleRequired	要
 Battle.RoleTarget	破
@@ -523,6 +527,7 @@ Save.Summary.AttackMeta	({part}/{range}/威力{power}/コスト{cost})
 ModelGallery.EmptySlot	空きスロット
 Training.Hover.ShopLeave	売店を離れる
 Training.Hover.ShopNextPage	次の商品ページを表示する
+Training.Hover.ShopRefresh	商品を入れ替える
 Training.Hover.OpenInventory	所持アイテムを使う
 Training.Hover.CloseInventory	所持一覧を閉じる
 Training.Hover.InventoryNextPage	次の所持ページを表示する

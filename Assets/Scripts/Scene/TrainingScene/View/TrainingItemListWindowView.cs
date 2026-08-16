@@ -253,13 +253,14 @@ namespace Scene.TrainingScene.View
 
         private void BindActionButtons()
         {
-            BindButton(closeButton, TrainingShopChoiceCodes.Back);
             if (listMode == ListMode.Shop)
             {
+                BindLeaveConfirmButton();
                 BindRefreshButton();
             }
             else
             {
+                BindButton(closeButton, TrainingShopChoiceCodes.Back);
                 BindButton(nextPageButton, TrainingShopChoiceCodes.NextPage);
             }
 
@@ -287,37 +288,145 @@ namespace Scene.TrainingScene.View
 
             nextPageButton.EnsureUiSoundFeedback();
             nextPageButton.onClick.RemoveAllListeners();
-            nextPageButton.onClick.AddListener(() => ShowRefreshConfirmAsync().Forget());
+            nextPageButton.onClick.AddListener(() =>
+            {
+                if (IsConfirmWaiting())
+                {
+                    return;
+                }
+
+                ShowRefreshConfirmAsync().Forget();
+            });
+        }
+
+        private void BindLeaveConfirmButton()
+        {
+            if (closeButton == null)
+            {
+                return;
+            }
+
+            closeButton.EnsureUiSoundFeedback();
+            closeButton.onClick.RemoveAllListeners();
+            closeButton.onClick.AddListener(() =>
+            {
+                if (IsConfirmWaiting())
+                {
+                    return;
+                }
+
+                ShowLeaveConfirmAsync().Forget();
+            });
+        }
+
+        private async UniTaskVoid ShowLeaveConfirmAsync()
+        {
+            bool accepted = await WaitConfirmAsync(
+                GameTextKeys.TrainingShopLeaveConfirm,
+                "ショップを閉じて時間が経過しますが良いですか？");
+            if (accepted)
+            {
+                CompleteChoice(TrainingShopChoiceCodes.Back);
+            }
         }
 
         private async UniTaskVoid ShowRefreshConfirmAsync()
         {
-            if (refreshConfirmWindow == null)
-            {
-                Debug.LogError(
-                    "[TrainingItemListWindowView] refreshConfirmWindowが未配線ですHierarchyで接続してください",
-                    this);
-                return;
-            }
-
-            CancelRefreshConfirmWait();
-            refreshConfirmCts = new CancellationTokenSource();
-            bool accepted = await refreshConfirmWindow.WaitLocalizedYesNoAsync(
+            bool accepted = await WaitConfirmAsync(
                 GameTextKeys.TrainingShopRefreshConfirm,
                 "{price}Gで商品を更新しますか？",
                 "price",
-                TrainingSettings.ShopRefreshPrice,
-                refreshConfirmCts.Token);
+                TrainingSettings.ShopRefreshPrice);
             if (accepted)
             {
                 CompleteChoice(TrainingShopChoiceCodes.RefreshOffer);
             }
         }
 
+        private async UniTask<bool> WaitConfirmAsync(
+            string key,
+            string fallback)
+        {
+            return await WaitConfirmAsync(key, fallback, paramName: null, paramValue: null);
+        }
+
+        private async UniTask<bool> WaitConfirmAsync(
+            string key,
+            string fallback,
+            string paramName,
+            object paramValue)
+        {
+            if (refreshConfirmWindow == null)
+            {
+                Debug.LogError(
+                    "[TrainingItemListWindowView] refreshConfirmWindowが未配線ですHierarchyで接続してください",
+                    this);
+                return false;
+            }
+
+            if (IsConfirmWaiting())
+            {
+                return false;
+            }
+
+            refreshConfirmCts = new CancellationTokenSource();
+            CancellationTokenSource linkedCts = refreshConfirmCts;
+            SetShopRaycastEnabled(false);
+            try
+            {
+                return await refreshConfirmWindow.WaitLocalizedYesNoAsync(
+                    key,
+                    fallback,
+                    paramName,
+                    paramValue,
+                    linkedCts.Token);
+            }
+            finally
+            {
+                if (ReferenceEquals(refreshConfirmCts, linkedCts))
+                {
+                    refreshConfirmCts = null;
+                }
+
+                linkedCts.Dispose();
+                SetShopRaycastEnabled(true);
+            }
+        }
+
+        private bool IsConfirmWaiting()
+        {
+            return refreshConfirmCts != null;
+        }
+
+        private void SetShopRaycastEnabled(bool enabled)
+        {
+            GameObject root = windowRoot != null ? windowRoot : gameObject;
+            Canvas shopCanvas = root.GetComponent<Canvas>();
+            if (shopCanvas == null)
+            {
+                return;
+            }
+
+            // 非表示中はCanvas側の有効状態に合わせる
+            if (enabled && !shopCanvas.enabled)
+            {
+                return;
+            }
+
+            GraphicRaycaster raycaster = shopCanvas.GetComponent<GraphicRaycaster>();
+            if (raycaster == null)
+            {
+                return;
+            }
+
+            raycaster.enabled = enabled;
+        }
+
         private void HideRefreshConfirm()
         {
             CancelRefreshConfirmWait();
             refreshConfirmWindow?.Hide();
+            SetShopRaycastEnabled(true);
         }
 
         private void CancelRefreshConfirmWait()
@@ -327,9 +436,10 @@ namespace Scene.TrainingScene.View
                 return;
             }
 
-            refreshConfirmCts.Cancel();
-            refreshConfirmCts.Dispose();
+            CancellationTokenSource cts = refreshConfirmCts;
             refreshConfirmCts = null;
+            cts.Cancel();
+            cts.Dispose();
         }
 
         private void OnDestroy()

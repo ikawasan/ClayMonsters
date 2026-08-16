@@ -453,6 +453,10 @@ Training.Shop.Title	商店
 Training.Inventory.Title	持有道具
 Training.Shop.NextPage	下頁
 Training.Shop.OpenInventory	持有
+Training.Shop.Refresh	更新
+Training.Shop.RefreshConfirm	花費{price}G更新商品嗎？
+Training.Shop.LeaveConfirm	關閉商店後時間將會流逝，可以嗎？
+Training.Shop.Refreshed	已更新商品\n剩餘{money}G
 Battle.PartLocked	部位已破壞
 Battle.RoleRequired	需
 Battle.RoleTarget	破
@@ -523,6 +527,7 @@ Save.Summary.AttackMeta	({part}/{range}/威力{power}/消耗{cost})
 ModelGallery.EmptySlot	空槽位
 Training.Hover.ShopLeave	離開商店
 Training.Hover.ShopNextPage	顯示下一頁商品
+Training.Hover.ShopRefresh	更換店內商品
 Training.Hover.OpenInventory	使用持有道具
 Training.Hover.CloseInventory	關閉持有一覽
 Training.Hover.InventoryNextPage	下一持有頁

@@ -453,6 +453,10 @@ Training.Shop.Title	매점
 Training.Inventory.Title	소지 아이템
 Training.Shop.NextPage	다음
 Training.Shop.OpenInventory	소지
+Training.Shop.Refresh	갱신
+Training.Shop.RefreshConfirm	{price}G로 상품을 갱신할까요?
+Training.Shop.LeaveConfirm	상점을 닫으면 시간이 경과합니다. 진행할까요?
+Training.Shop.Refreshed	상품을 갱신했다\n잔액 {money}G
 Battle.PartLocked	부위가 파괴됨
 Battle.RoleRequired	필요
 Battle.RoleTarget	파괴
@@ -523,6 +527,7 @@ Save.Summary.AttackMeta	({part}/{range}/위력{power}/비용{cost})
 ModelGallery.EmptySlot	빈 슬롯
 Training.Hover.ShopLeave	매점 나가기
 Training.Hover.ShopNextPage	다음 상품 페이지
+Training.Hover.ShopRefresh	상품을 교체한다
 Training.Hover.OpenInventory	소지 아이템 사용
 Training.Hover.CloseInventory	소지 목록 닫기
 Training.Hover.InventoryNextPage	다음 소지 페이지

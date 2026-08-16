@@ -453,6 +453,10 @@ Training.Shop.Title	Tienda
 Training.Inventory.Title	Objetos
 Training.Shop.NextPage	Sig.
 Training.Shop.OpenInventory	Items
+Training.Shop.Refresh	Nuevo
+Training.Shop.RefreshConfirm	Actualizar articulos por {price}G?
+Training.Shop.LeaveConfirm	Cerrar la tienda y dejar pasar el tiempo?
+Training.Shop.Refreshed	Articulos actualizados\nQuedan {money}G
 Battle.PartLocked	Parte destruida
 Battle.RoleRequired	Req
 Battle.RoleTarget	Rom
@@ -523,6 +527,7 @@ Save.Summary.AttackMeta	({part}/{range}/Pod{power}/Cos{cost})
 ModelGallery.EmptySlot	Ranura vacia
 Training.Hover.ShopLeave	Salir de la tienda
 Training.Hover.ShopNextPage	Pagina siguiente
+Training.Hover.ShopRefresh	Cambiar articulos
 Training.Hover.OpenInventory	Usar objetos
 Training.Hover.CloseInventory	Cerrar inventario
 Training.Hover.InventoryNextPage	Siguiente inventario

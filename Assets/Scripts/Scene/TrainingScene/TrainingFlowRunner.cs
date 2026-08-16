@@ -1581,12 +1581,6 @@ namespace Scene.TrainingScene
                         TrainingShopResolver.TryRefreshOffer(session, random);
                     CheckpointSave(session);
                     hudView.BindSession(session);
-                    offerItems = session.GetShopOfferItems();
-                    hudView.ShowShopChoices(
-                        offerItems,
-                        hasNextPage: false,
-                        session.Money,
-                        showOpenInventory: true);
                     hudView.SetLogMessage(refresh.Message);
                     await hudView.WaitContinueAsync(cancellationToken);
                     continue;

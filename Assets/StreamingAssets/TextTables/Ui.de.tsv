@@ -453,6 +453,10 @@ Training.Shop.Title	Laden
 Training.Inventory.Title	Gegenstaende
 Training.Shop.NextPage	Weiter
 Training.Shop.OpenInventory	Items
+Training.Shop.Refresh	Neu
+Training.Shop.RefreshConfirm	Artikel fuer {price}G aktualisieren?
+Training.Shop.LeaveConfirm	Shop schliessen und Zeit vergehen lassen?
+Training.Shop.Refreshed	Artikel aktualisiert\nRest {money}G
 Battle.PartLocked	Teil zerstoert
 Battle.RoleRequired	Notw
 Battle.RoleTarget	Zer
@@ -523,6 +527,7 @@ Save.Summary.AttackMeta	({part}/{range}/Pow{power}/Kos{cost})
 ModelGallery.EmptySlot	Leerer Slot
 Training.Hover.ShopLeave	Laden verlassen
 Training.Hover.ShopNextPage	Naechste Seite
+Training.Hover.ShopRefresh	Artikel austauschen
 Training.Hover.OpenInventory	Items nutzen
 Training.Hover.CloseInventory	Inventar schliessen
 Training.Hover.InventoryNextPage	Naechste Inventarseite
