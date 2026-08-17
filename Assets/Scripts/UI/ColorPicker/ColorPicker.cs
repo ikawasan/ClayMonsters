@@ -1,8 +1,11 @@
+using Audio;
+using Audio.Interface;
 using R3;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using VContainer;
 
 namespace UI.ColorPicker
 {
@@ -33,6 +36,8 @@ namespace UI.ColorPicker
 
         // 過去に使用した色(先頭が最新)
         private readonly List<Color> colorHistory = new List<Color>();
+        private ISeService seService;
+        private SliderMoveSeBinder sliderSeBinder;
 
         /// <summary>
         /// 過去に使用した色の履歴(新しい順)
@@ -41,6 +46,12 @@ namespace UI.ColorPicker
 
         // 動的生成した背景テクスチャ
         private Texture2D hueTex, satTex, valTex;
+
+        [Inject]
+        public void Construct(ISeService seService)
+        {
+            this.seService = seService;
+        }
 
         private void Start()
         {
@@ -79,6 +90,8 @@ namespace UI.ColorPicker
             .Subscribe(_ => OnSliderValueChanged())
             .AddTo(this);
 
+            BindSliderMoveSe();
+
             OnSliderValueChanged();
 
             // 履歴ボタンが押されたときの処理を登録する
@@ -103,6 +116,20 @@ namespace UI.ColorPicker
             // 初期表示
             UpdateButtons(colorHistory);
             ApplyVisualStyles();
+        }
+
+        private void BindSliderMoveSe()
+        {
+            if (seService == null)
+            {
+                Debug.LogError("[ColorPicker] ISeServiceが注入されていません", this);
+                return;
+            }
+
+            sliderSeBinder = new SliderMoveSeBinder(seService, SeTrackId.ClayEditSlider);
+            sliderSeBinder.Attach(hueSlider);
+            sliderSeBinder.Attach(saturationSlider);
+            sliderSeBinder.Attach(valueSlider);
         }
 
         private void ApplyVisualStyles()
@@ -499,6 +526,11 @@ namespace UI.ColorPicker
             onColorSelected.OnNext(color);
         }
 
+        private void OnDisable()
+        {
+            sliderSeBinder?.Stop();
+        }
+
         private void OnDestroy()
         {
             // メモリリークを防ぐため 動的に生成したテクスチャを破棄
@@ -520,6 +552,9 @@ namespace UI.ColorPicker
 
             onHistoryChanged.OnCompleted();
             onHistoryChanged.Dispose();
+
+            sliderSeBinder?.Dispose();
+            sliderSeBinder = null;
         }
     }
 }

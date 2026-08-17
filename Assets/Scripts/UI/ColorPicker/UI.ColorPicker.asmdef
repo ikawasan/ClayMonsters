@@ -2,7 +2,9 @@
     "name": "UI.ColorPicker",
     "rootNamespace": "UI.ColorPicker",
     "references": [
-        "GUID:77221876cc6b8244180b96e320b1bcd4"
+        "GUID:77221876cc6b8244180b96e320b1bcd4",
+        "GUID:b0214a6008ed146ff8f122a6a9c2f6cc",
+        "GUID:8f4e2c1a9b3d5e7f6a8c0d2e4f6a8b0c"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

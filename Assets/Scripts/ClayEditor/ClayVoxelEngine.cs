@@ -102,6 +102,16 @@ namespace ClayEditor
         public int CachedTriangleCount => cachedTotalTriangleCount;
 
         /// <summary>
+        /// 表示中チャンクの概算頂点数
+        /// </summary>
+        public int CachedVertexCount => cachedTotalTriangleCount * 3;
+
+        /// <summary>
+        /// 成形をdense扱いする頂点しきい値
+        /// </summary>
+        public int DenseSculptVertexThreshold => Mathf.Max(1, denseSculptTriangleThreshold * 3);
+
+        /// <summary>
         /// 既存メッシュが厚く成形中更新間隔をdense用にするべきか
         /// </summary>
         public bool IsDenseSculptMesh => cachedTotalTriangleCount >= denseSculptTriangleThreshold;

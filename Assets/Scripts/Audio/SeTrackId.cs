@@ -88,6 +88,16 @@ namespace Audio
         /// <summary>
         /// スキルツリーでスキル解放
         /// </summary>
-        GetSkill
+        GetSkill,
+
+        /// <summary>
+        /// ClayEditでメッシュを盛るまたは削る
+        /// </summary>
+        ClayEditGenerate,
+
+        /// <summary>
+        /// ClayEditのスライダー操作
+        /// </summary>
+        ClayEditSlider
     }
 }

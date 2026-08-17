@@ -1,7 +1,7 @@
 namespace Audio.Interface
 {
     /// <summary>
-    /// 戦闘SE再生を提供する
+    /// 効果音再生を提供する
     /// </summary>
     public interface ISeService
     {
@@ -10,6 +10,13 @@ namespace Audio.Interface
         /// </summary>
         /// <param name="trackId">SEトラック</param>
         void Play(SeTrackId trackId);
+
+        /// <summary>
+        /// 指定SEをループ再生する
+        /// </summary>
+        /// <param name="trackId">SEトラック</param>
+        /// <param name="pitch">再生速度</param>
+        void PlayLoop(SeTrackId trackId, float pitch = 1f);
 
         /// <summary>
         /// 指定SEを目標尺に合わせてピッチ調整して再生する

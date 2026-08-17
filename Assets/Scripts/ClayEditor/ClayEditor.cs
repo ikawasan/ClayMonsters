@@ -37,6 +37,16 @@ namespace ClayEditor
         public float BrushRadius => brushRadius;
 
         /// <summary>
+        /// 表示中造形メッシュの頂点数
+        /// </summary>
+        public int CachedVertexCount => engine.CachedVertexCount;
+
+        /// <summary>
+        /// 成形をdense扱いする頂点しきい値
+        /// </summary>
+        public int DenseSculptVertexThreshold => engine.DenseSculptVertexThreshold;
+
+        /// <summary>
         /// レイキャスト深度と対象メッシュの基準Transform
         /// </summary>
         public Transform RaycastAnchor => engine.ClayModelTransform;

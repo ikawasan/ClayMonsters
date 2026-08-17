@@ -1,3 +1,5 @@
+using Audio;
+using Audio.Interface;
 using ClayEditor.Input.Interface;
 using ClayEditor.Interface;
 using GameData;
@@ -13,6 +15,7 @@ namespace ClayEditor
         [Inject] private readonly ClayEditor editor;
         [Inject] private readonly IClayInputProvider input;
         [Inject] private readonly IClaySceneContext sceneContext;
+        [Inject] private readonly ISeService seService;
 
         [SerializeField] private GameObject cursorObject;
         [SerializeField] private MeshRenderer cursorMeshRenderer;
@@ -23,9 +26,12 @@ namespace ClayEditor
         private UnityEngine.Camera mainCamera;
         private readonly CursorRaycaster raycaster = new();
         private float cursorMeshDiameter = 1f;
+        private const float MinSculptSePitch = 0.05f;
+        private const float MaxSculptSePitch = 0.5f;
 
-        // 直前フレームに造形していたか（ストローク終了の検知に使う）
+        // 直前フレームに造形していたか(ストローク終了の検知に使う)
         private bool wasModifying;
+        private SeTrackId? playingSculptSe;
 
         void Awake()
         {
@@ -105,6 +111,11 @@ namespace ClayEditor
             .AddTo(this);
         }
 
+        void OnDisable()
+        {
+            StopSculptSe();
+        }
+
         /// <inheritdoc />
         public void Tick()
         {
@@ -124,6 +135,7 @@ namespace ClayEditor
 
             if (mainCamera == null)
             {
+                FlushIfStrokeEnded();
                 return;
             }
 
@@ -159,22 +171,27 @@ namespace ClayEditor
 
             bool isModifying = input.IsPrimaryHeld || input.IsSecondaryHeld;
 
-            // 左ドラッグ：Ctrlで削り、それ以外は盛る
+            // 左ドラッグ:Ctrlで削りそれ以外は盛る
             if (input.IsPrimaryHeld)
             {
                 editor.ModifyAtWorldPosition(worldPos, input.IsCtrlPressed);
             }
 
-            // 右ドラッグ：常に削る
+            // 右ドラッグ:常に削る
             if (input.IsSecondaryHeld)
             {
                 editor.ModifyAtWorldPosition(worldPos, true);
             }
 
-            // 造形をやめた瞬間に 間引きで未反映の最終形状を反映する
+            // 造形をやめた瞬間に間引きで未反映の最終形状を反映する
             if (wasModifying && !isModifying)
             {
                 editor.FlushShape();
+                StopSculptSe();
+            }
+            else
+            {
+                SyncSculptSe(isModifying);
             }
 
             wasModifying = isModifying;
@@ -188,6 +205,38 @@ namespace ClayEditor
                 editor.FlushShape();
                 wasModifying = false;
             }
+
+            StopSculptSe();
+        }
+
+        private void SyncSculptSe(bool isSculpting)
+        {
+            if (!isSculpting || seService == null)
+            {
+                StopSculptSe();
+                return;
+            }
+
+            seService.PlayLoop(SeTrackId.ClayEditGenerate, ResolveSculptSePitch());
+            playingSculptSe = SeTrackId.ClayEditGenerate;
+        }
+
+        private float ResolveSculptSePitch()
+        {
+            int maxVertices = Mathf.Max(1, editor.DenseSculptVertexThreshold);
+            float t = Mathf.Clamp01(editor.CachedVertexCount / (float)maxVertices);
+            return Mathf.Lerp(MinSculptSePitch, MaxSculptSePitch, t);
+        }
+
+        private void StopSculptSe()
+        {
+            if (!playingSculptSe.HasValue)
+            {
+                return;
+            }
+
+            seService?.Stop(playingSculptSe.Value);
+            playingSculptSe = null;
         }
 
         private void TrySaveStateOnPress()

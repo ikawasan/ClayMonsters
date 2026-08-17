@@ -1,3 +1,5 @@
+using Audio;
+using Audio.Interface;
 using ClayEditor.Input.Interface;
 using Localization;
 using R3;
@@ -26,7 +28,9 @@ namespace Scene.ClayEditScene.View
 
         private IClayEditPostProcess clayEditPostProcess;
         private IClayInputProvider clayInputProvider;
+        private ISeService seService;
         private LocalizedBakedTextApplier bakedLabelApplier;
+        private SliderMoveSeBinder sliderSeBinder;
         private bool isCapturingPointer;
         private Texture2D gaugeTexture;
         private Sprite gaugeSprite;
@@ -34,10 +38,12 @@ namespace Scene.ClayEditScene.View
         [Inject]
         public void Construct(
             IClayEditPostProcess clayEditPostProcess,
-            IClayInputProvider clayInputProvider)
+            IClayInputProvider clayInputProvider,
+            ISeService seService)
         {
             this.clayEditPostProcess = clayEditPostProcess;
             this.clayInputProvider = clayInputProvider;
+            this.seService = seService;
         }
 
         private void Start()
@@ -76,6 +82,7 @@ namespace Scene.ClayEditScene.View
             ClayEditUiVisualUtility.ApplySlider(backgroundColorSlider);
             ClayEditUiVisualUtility.EnsureRoundedMask(gaugeBackground);
             BindSliderInputBlock();
+            BindSliderMoveSe();
 
             backgroundColorSlider.onValueChanged.AsObservable()
                 .Subscribe(ApplySliderValue)
@@ -109,11 +116,14 @@ namespace Scene.ClayEditScene.View
         private void OnDisable()
         {
             EndPointerCapture();
+            sliderSeBinder?.Stop();
         }
 
         private void OnDestroy()
         {
             EndPointerCapture();
+            sliderSeBinder?.Dispose();
+            sliderSeBinder = null;
             if (gaugeSprite != null)
             {
                 Destroy(gaugeSprite);
@@ -156,6 +166,18 @@ namespace Scene.ClayEditScene.View
             AddTrigger(trigger, EventTriggerType.PointerUp, EndPointerCapture);
             AddTrigger(trigger, EventTriggerType.EndDrag, EndPointerCapture);
             AddTrigger(trigger, EventTriggerType.Cancel, EndPointerCapture);
+        }
+
+        private void BindSliderMoveSe()
+        {
+            if (seService == null)
+            {
+                Debug.LogError("[ClayEditBackgroundColorView] ISeServiceが注入されていません", this);
+                return;
+            }
+
+            sliderSeBinder = new SliderMoveSeBinder(seService, SeTrackId.ClayEditSlider);
+            sliderSeBinder.Attach(backgroundColorSlider);
         }
 
         private static void AddTrigger(EventTrigger trigger, EventTriggerType type, UnityAction action)
