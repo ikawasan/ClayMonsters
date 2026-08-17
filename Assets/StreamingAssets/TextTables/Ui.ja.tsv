@@ -355,9 +355,7 @@ Training.Log.ReturnToTitle	タイトル
 Training.Log.AfterSchoolNoOpponent	放課後の対戦相手が見つかりませんでした
 Training.Log.AfterSchoolStart	放課後の戦闘\n{name}との対戦が始まります
 Training.Log.AfterSchoolStartFailed	放課後の戦闘を開始できませんでした
-Training.Log.AfterSchoolWin	放課後の戦闘に勝利した
-体力+{stamina}
-HP+{hp} 攻撃+{atk} 防御+{def} 速度+{spd} 命中+{hit}
+Training.Log.AfterSchoolWin	放課後の戦闘に勝利した\n体力+{stamina}\nHP+{hp} 攻撃+{atk} 防御+{def} 速度+{spd} 命中+{hit}
 Training.Log.RewardMoney	 賞金+{reward}G
 Training.Log.NoNewMove	出会いがあったが新しい技はなかった
 Training.Log.MeetTitle	出会い
@@ -434,13 +432,13 @@ Training.Shop.stat_speed.Desc	速度+24
 Training.Shop.stat_hit.Desc	命中+24
 Training.Shop.train_boost.Desc	大成功率+{percent}%を{turns}ターン
 Training.Shop.stat_defense.Desc	防御+24
-Training.Shop.motivation_boost.Desc	やる気が上がる
+Training.Shop.motivation_boost.Desc	やる気が{steps}段階上がる
 Training.Shop.stat_hp.Desc	HP+32
 Training.Shop.stat_attack.Desc	攻撃+24
 Training.Shop.train_boost_strong.Desc	大成功率+{percent}%を{turns}ターン
 Training.Status.GreatSuccessBoostActive	大成功率アップ中 残り{turns}ターン
-Training.Shop.stamina_drink.Desc	体力+25
-Training.Shop.motivation_tennis.Desc	やる気が上がる
+Training.Shop.stamina_drink.Desc	体力+{amount}
+Training.Shop.motivation_tennis.Desc	やる気が{steps}段階上がる
 Training.Shop.stamina_full.Desc	体力を全回復
 Training.Motivation.VeryLow	絶不調
 Training.Motivation.Low	不調

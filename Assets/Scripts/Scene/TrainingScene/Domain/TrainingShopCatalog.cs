@@ -147,21 +147,17 @@ namespace Scene.TrainingScene.Domain
         /// <param name="item">商品</param>
         public static string GetLocalizedDescription(TrainingShopItem item)
         {
-            if (item.GreatSuccessBonusPercent > 0f && item.GreatSuccessBonusWeeks > 0)
+            var parameters = new Dictionary<string, object>
             {
-                return LocalizedText.GetOrFallback(
-                    GameTextKeys.TrainingShopDesc(item.Id),
-                    item.Description,
-                    new System.Collections.Generic.Dictionary<string, object>
-                    {
-                        { "percent", Mathf.RoundToInt(item.GreatSuccessBonusPercent) },
-                        { "turns", item.GreatSuccessBonusWeeks },
-                    });
-            }
-
+                { "percent", Mathf.RoundToInt(item.GreatSuccessBonusPercent) },
+                { "turns", item.GreatSuccessBonusWeeks },
+                { "amount", item.StaminaRecover },
+                { "steps", item.MotivationGain },
+            };
             return LocalizedText.GetOrFallback(
                 GameTextKeys.TrainingShopDesc(item.Id),
-                item.Description);
+                item.Description,
+                parameters);
         }
 
         /// <summary>

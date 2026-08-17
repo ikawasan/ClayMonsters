@@ -8,8 +8,9 @@ namespace Localization
     /// <summary>
     /// 現在言語のTMPFontAssetをプレーンTMPへ適用する
     /// LHTextMeshPro以外はFontServiceを購読しないためここで補う
-    /// 輪郭と色とBoldなど見た目のスタイルはフォント差替時に必ず引き継ぐ
-    /// LHTextMeshProの素のfont代入で材質が消えた場合も定期適用で復旧する
+    /// 太字はコンポーネント設定を保持し輪郭は固有材質があるときだけ戻す
+    /// フォント既定材質のFaceDilateは言語間でコピーしない
+    /// LHTextMeshProの素のfont代入で太字が消えた場合も復旧する
     /// </summary>
     public static class LocalizedFont
     {
@@ -24,6 +25,7 @@ namespace Localization
         // 実体ごとのデザイン時スタイル(輪郭Face等)
         // LHTextMeshProが後からfontを当てて潰してもここから復旧する
         private static readonly Dictionary<int, StyleSnapshot> DesignStyles = new();
+        private static readonly Dictionary<int, FontMaterialDefaults> FontDefaults = new();
         private static readonly List<int> DesignStylePruneScratch = new List<int>(256);
         private static readonly List<TMP_Text> LoadedTextsCache = new List<TMP_Text>(256);
         private static bool loadedTextsCacheDirty = true;
@@ -42,6 +44,43 @@ namespace Localization
                 }
 
                 return service.CurrentFont.CurrentValue;
+            }
+        }
+
+        /// <summary>
+        /// 言語フォントの既定材質を汚染前に記録する
+        /// LHTextMeshProがFaceDilateを共有材質へ書く前に呼ぶ
+        /// </summary>
+        /// <param name="fontService">言語フォントの取得元</param>
+        public static void SnapshotLanguageFonts(IFontService fontService)
+        {
+            if (fontService == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < GameLanguageCodes.All.Length; i++)
+            {
+                SnapshotFontDefaultsIfNeeded(fontService.GetFont(GameLanguageCodes.All[i]));
+            }
+        }
+
+        /// <summary>
+        /// フォント差替前の輪郭プリセットと太字を記録する
+        /// LHTextMeshProが材質を潰す前に呼ぶ
+        /// </summary>
+        public static void CaptureDesignsOfAllLoaded()
+        {
+            RefreshLoadedTextsCache(true);
+            for (int i = 0; i < LoadedTextsCache.Count; i++)
+            {
+                TMP_Text text = LoadedTextsCache[i];
+                if (text == null || text.gameObject.scene.IsValid() == false)
+                {
+                    continue;
+                }
+
+                RememberDesign(text.GetInstanceID(), CaptureStyle(text));
             }
         }
 
@@ -137,6 +176,7 @@ namespace Localization
                 return;
             }
 
+            RestoreFontAssetDefaults(font);
             RefreshLoadedTextsCache(forceRefreshCache);
 
             int nullCount = 0;
@@ -183,7 +223,8 @@ namespace Localization
 
         /// <summary>
         /// 指定フォントをTMPへ適用する
-        /// アトラス差し替え後も輪郭幅やFace色はデザイン時から保持する
+        /// 太字はコンポーネント設定を保持し輪郭は固有材質があるときだけ戻す
+        /// フォント既定材質のFaceDilateは言語間でコピーしない
         /// </summary>
         /// <param name="text">対象TMP</param>
         /// <param name="fontAsset">適用フォント</param>
@@ -200,78 +241,60 @@ namespace Localization
                 return;
             }
 
+            RestoreFontAssetDefaults(fontAsset);
+
             int instanceId = text.GetInstanceID();
+            StyleSnapshot sample = CaptureStyle(text);
+            RememberDesign(instanceId, sample);
+            DesignStyles.TryGetValue(instanceId, out StyleSnapshot design);
+            design = ResolveUniquePreset(instanceId, design, fontAsset);
+
             bool fontAlreadyCurrent = text.font == fontAsset;
             bool atlasAlreadyCorrect = UsesFontAtlas(text.fontSharedMaterial, fontAsset);
-
-            // 既に正しいフォントアトラスかつデザイン一致なら材質読取を省略する
-            if (fontAlreadyCurrent
-                && atlasAlreadyCorrect
-                && DesignStyles.TryGetValue(instanceId, out StyleSnapshot cachedDesign)
-                && StyleMatches(text, cachedDesign))
+            if (fontAlreadyCurrent && atlasAlreadyCorrect && StyleMatches(text, design))
             {
-                return;
-            }
-
-            // font代入前の現状を保持する(動的なBold切替も尊重する)
-            StyleSnapshot sampleBeforeFont = CaptureStyle(text);
-            UpgradeDesign(instanceId, sampleBeforeFont);
-            DesignStyles.TryGetValue(instanceId, out StyleSnapshot design);
-
-            bool styleMatchesDesign = StyleMatches(text, design);
-
-            // 定期スキャンでインスタンス材質を壊さないが潰されていれば復旧する
-            // FontStyleは動的切替を尊重し差替前サンプルを優先する
-            if (fontAlreadyCurrent && atlasAlreadyCorrect)
-            {
-                if (!styleMatchesDesign && design.HasMaterial)
+                if (!design.HasUniqueEffects)
                 {
-                    Color vertexColor = text.color;
-                    EnsureStyleMaterial(text, fontAsset);
-                    StyleSnapshot restore = design;
-                    restore.FontStyle = sampleBeforeFont.FontStyle;
-                    restore.FontWeight = sampleBeforeFont.FontWeight;
-                    RestoreStyle(text, text.fontSharedMaterial, restore);
-                    text.color = vertexColor;
-                    if (text.isActiveAndEnabled)
-                    {
-                        text.ForceMeshUpdate(true);
-                    }
+                    ResetToFontDefaultMaterial(text, fontAsset);
                 }
 
                 return;
             }
 
             Color preservedVertexColor = text.color;
-            StyleSnapshot styleToApply = MergeStyleForApply(design, sampleBeforeFont);
-            // font差替で落ちる対策は差替前の現状のみを戻す
-            // 設計Boldを常ORするとタブ非選択時のNormalも潰す
-            styleToApply.FontStyle = sampleBeforeFont.FontStyle;
-            styleToApply.FontWeight = sampleBeforeFont.FontWeight;
-
             if (!fontAlreadyCurrent)
             {
-                // 英字フォントへ替える前に旧CJKサブメッシュを捨てる
                 StripFallbackSubMeshes(text);
                 text.font = fontAsset;
             }
 
-            Material fontBase = fontAsset.material;
-            if (fontBase == null)
+            RestoreFontStylePreservingRicher(text, design, sample);
+
+            if (design.HasUniqueEffects)
             {
-                // 材質が無くてもBoldなどTMP側スタイルは復元する
-                RestoreFontStyle(text, styleToApply);
-                text.color = preservedVertexColor;
-                return;
+                if (CanAssignUniquePreset(fontAsset, design))
+                {
+                    if (text.fontSharedMaterial != design.UniquePresetMaterial)
+                    {
+                        text.fontSharedMaterial = design.UniquePresetMaterial;
+                    }
+                }
+                else
+                {
+                    Material styleMaterial = EnsureCleanInstanceMaterial(text, fontAsset);
+                    RestoreUniqueEffects(text, styleMaterial, design);
+                }
+            }
+            else
+            {
+                ResetToFontDefaultMaterial(text, fontAsset);
             }
 
-            text.fontSharedMaterial = fontBase;
-            Material styleMaterial = text.fontMaterial;
-            text.fontSharedMaterial = styleMaterial;
-            RestoreStyle(text, styleMaterial, styleToApply);
             text.color = preservedVertexColor;
-
-            RebuildMesh(text);
+            if (!fontAlreadyCurrent || !atlasAlreadyCorrect)
+            {
+                RebuildMesh(text);
+            }
         }
 
         /// <summary>
@@ -392,24 +415,66 @@ namespace Localization
             }
         }
 
-        private static void EnsureStyleMaterial(TMP_Text text, TMP_FontAsset fontAsset)
+        private static bool IsUniqueStyleMaterial(TMP_Text text, Material material)
         {
-            Material shared = text.fontSharedMaterial;
-            Material fontBase = fontAsset.material;
+            if (text == null || material == null || text.font == null)
+            {
+                return false;
+            }
+
+            Material fontBase = text.font.material;
+            return fontBase == null || material != fontBase;
+        }
+
+        private static Material EnsureCleanInstanceMaterial(TMP_Text text, TMP_FontAsset fontAsset)
+        {
+            Material fontBase = fontAsset != null ? fontAsset.material : null;
             if (fontBase == null)
+            {
+                return text.fontSharedMaterial;
+            }
+
+            // 旧フォントからコピーされたFaceDilateが残るインスタンスは使わない
+            text.fontSharedMaterial = fontBase;
+            Material instance = text.fontMaterial;
+            if (!IsWritableInstance(instance) || instance == fontBase)
+            {
+                instance = new Material(fontBase)
+                {
+                    name = fontBase.name + " (Instance)",
+                };
+            }
+
+            text.fontSharedMaterial = instance;
+            return instance;
+        }
+
+        private static void ResetToFontDefaultMaterial(TMP_Text text, TMP_FontAsset fontAsset)
+        {
+            Material fontBase = fontAsset != null ? fontAsset.material : null;
+            if (text == null || fontBase == null)
             {
                 return;
             }
 
-            // 共有アセットを汚さないように常にインスタンスへ寄せる
-            if (shared == null || shared == fontBase || !shared.name.Contains("(Instance)"))
+            if (text.fontSharedMaterial != fontBase)
             {
                 text.fontSharedMaterial = fontBase;
-                text.fontSharedMaterial = text.fontMaterial;
             }
         }
 
-        private static void UpgradeDesign(int instanceId, StyleSnapshot sample)
+        private static bool IsWritableInstance(Material material)
+        {
+            if (material == null)
+            {
+                return false;
+            }
+
+            string materialName = material.name;
+            return materialName.IndexOf("(Instance)", System.StringComparison.Ordinal) >= 0;
+        }
+
+        private static void RememberDesign(int instanceId, StyleSnapshot sample)
         {
             if (!DesignStyles.TryGetValue(instanceId, out StyleSnapshot design))
             {
@@ -417,38 +482,29 @@ namespace Localization
                 return;
             }
 
-            DesignStyles[instanceId] = PreferRicher(design, sample);
-        }
-
-        private static StyleSnapshot PreferRicher(StyleSnapshot design, StyleSnapshot sample)
-        {
-            if (!design.HasMaterial && sample.HasMaterial)
+            if (design.UniquePresetMaterial == null && sample.UniquePresetMaterial != null)
             {
-                // 材質はsample優先だが初回FontStyleはdesign側を維持
-                FontStyles designFontStyle = design.FontStyle;
-                FontWeight designFontWeight = design.FontWeight;
-                sample.FontStyle = designFontStyle != FontStyles.Normal
-                    ? designFontStyle
-                    : sample.FontStyle;
-                if (designFontWeight > sample.FontWeight)
-                {
-                    sample.FontWeight = designFontWeight;
-                }
-
-                if (design.OutlineWidth > sample.OutlineWidth + 0.0001f)
-                {
-                    sample.OutlineWidth = design.OutlineWidth;
-                    sample.OutlineColor = design.OutlineColor;
-                    sample.OutlineSoftness = design.OutlineSoftness;
-                }
-
-                return sample;
+                design.UniquePresetMaterial = sample.UniquePresetMaterial;
             }
 
-            if (!sample.HasMaterial)
+            if (sample.FontWeight > design.FontWeight)
             {
-                return design;
+                design.FontWeight = sample.FontWeight;
             }
+
+            // 初回のFontStyleを正とする後からの共有材質汚染は取り込まない
+            if (!sample.HasUniqueEffects)
+            {
+                DesignStyles[instanceId] = design;
+                return;
+            }
+
+            if (!design.HasUniqueEffects)
+            {
+                design.FaceDilate = sample.FaceDilate;
+            }
+
+            design.HasUniqueEffects = true;
 
             if (sample.OutlineWidth > design.OutlineWidth + 0.0001f)
             {
@@ -457,112 +513,87 @@ namespace Localization
                 design.OutlineSoftness = sample.OutlineSoftness;
             }
 
-            if (IsNearWhite(design.FaceColor) && !IsNearWhite(sample.FaceColor))
-            {
-                design.FaceColor = sample.FaceColor;
-            }
-
-            if (sample.FaceDilate > design.FaceDilate)
-            {
-                design.FaceDilate = sample.FaceDilate;
-            }
-
-            if (sample.UnderlayDilate > design.UnderlayDilate
-                || sample.UnderlaySoftness > design.UnderlaySoftness
-                || sample.UnderlayColor.a > design.UnderlayColor.a)
+            if ((sample.EnabledKeywordsMask & (1 << 1)) != 0
+                && (sample.UnderlayDilate > design.UnderlayDilate
+                    || sample.UnderlayColor.a > design.UnderlayColor.a))
             {
                 design.UnderlayColor = sample.UnderlayColor;
                 design.UnderlayOffsetX = sample.UnderlayOffsetX;
                 design.UnderlayOffsetY = sample.UnderlayOffsetY;
                 design.UnderlayDilate = sample.UnderlayDilate;
                 design.UnderlaySoftness = sample.UnderlaySoftness;
+                design.HasUniqueEffects = true;
             }
-
-            if (sample.GlowOuter > design.GlowOuter || sample.GlowColor.a > design.GlowColor.a)
-            {
-                design.GlowColor = sample.GlowColor;
-                design.GlowOffset = sample.GlowOffset;
-                design.GlowPower = sample.GlowPower;
-                design.GlowOuter = sample.GlowOuter;
-                design.GlowInner = sample.GlowInner;
-            }
-
-            // FontStyleは初回キャプチャを正とする
-            // PreferRicherで強くORするとタブ選択など動的Boldを固定してしまう
 
             design.EnabledKeywordsMask |= sample.EnabledKeywordsMask;
-            // 輪郭幅があるならOutlineキーワードを立てる(材質にKWが無くても可)
-            if (design.OutlineWidth > 0.0001f)
-            {
-                design.EnabledKeywordsMask |= 1 << 0;
-            }
-
-            if (design.UnderlayDilate > 0.0001f
-                || design.UnderlayOffsetX != 0f
-                || design.UnderlayOffsetY != 0f
-                || design.UnderlayColor.a > 0.001f)
-            {
-                design.EnabledKeywordsMask |= 1 << 1;
-            }
-
-            design.HasMaterial = true;
-            return design;
-        }
-
-        private static StyleSnapshot MergeStyleForApply(StyleSnapshot design, StyleSnapshot sample)
-        {
-            if (!design.HasMaterial && !HasFontStyle(design) && design.FontWeight <= FontWeight.Regular)
-            {
-                return sample;
-            }
-
-            if (!sample.HasMaterial && !HasFontStyle(sample) && sample.FontWeight <= FontWeight.Regular)
-            {
-                return design;
-            }
-
-            return PreferRicher(design, sample);
-        }
-
-        private static bool HasFontStyle(StyleSnapshot snapshot)
-        {
-            return snapshot.FontStyle != FontStyles.Normal;
+            DesignStyles[instanceId] = design;
         }
 
         private static bool StyleMatches(TMP_Text text, StyleSnapshot design)
         {
-            // FontStyleは動的切替のため定期比較しない(差替時のsample保持で担保)
-
-            if (!design.HasMaterial)
+            if (text.fontStyle != design.FontStyle)
             {
-                return true;
+                // 動的Boldは一致扱いフォント差替で消えたNormalだけ後で戻す
+                if (design.FontStyle == FontStyles.Normal || text.fontStyle != FontStyles.Normal)
+                {
+                    return !design.HasUniqueEffects || UniqueEffectsMatch(text, design);
+                }
+
+                return false;
             }
 
+            return !design.HasUniqueEffects || UniqueEffectsMatch(text, design);
+        }
+
+        private static bool UniqueEffectsMatch(TMP_Text text, StyleSnapshot design)
+        {
             Material material = text.fontSharedMaterial;
             if (material == null)
             {
                 return false;
             }
 
-            float outlineWidth = ReadFloat(material, ShaderUtilities.ID_OutlineWidth);
-            if (design.OutlineWidth > 0.0001f && outlineWidth + 0.0001f < design.OutlineWidth)
+            if (design.UniquePresetMaterial != null && material == design.UniquePresetMaterial)
+            {
+                return true;
+            }
+
+            if (!IsUniqueStyleMaterial(text, material))
             {
                 return false;
             }
 
-            if (!IsNearWhite(design.FaceColor))
+            if (design.OutlineWidth > 0.0001f)
             {
-                Color face = ReadColor(material, ShaderUtilities.ID_FaceColor);
-                if (!ColorsNearlyEqual(face, design.FaceColor))
+                float outlineWidth = ReadFloat(material, ShaderUtilities.ID_OutlineWidth);
+                if (outlineWidth + 0.0001f < design.OutlineWidth)
                 {
                     return false;
                 }
             }
 
-            if (design.UnderlayDilate > 0.0001f || design.UnderlayColor.a > 0.001f)
+            float faceDilate = ReadFloat(material, ShaderUtilities.ID_FaceDilate);
+            if (Mathf.Abs(faceDilate - design.FaceDilate) > 0.0001f)
             {
-                float underlayDilate = ReadFloat(material, ShaderUtilities.ID_UnderlayDilate);
-                if (underlayDilate + 0.0001f < design.UnderlayDilate)
+                return false;
+            }
+
+            bool requireInstanceKeywords = IsWritableInstance(material);
+            for (int i = 0; i < VisualKeywords.Length; i++)
+            {
+                if ((design.EnabledKeywordsMask & (1 << i)) == 0)
+                {
+                    continue;
+                }
+
+                // 幅だけ持つOutlineプリセットはOUTLINE_ONが無いのでインスタンスだけ要求する
+                if (i == 0 && !requireInstanceKeywords)
+                {
+                    continue;
+                }
+
+                string keyword = VisualKeywords[i];
+                if (!string.IsNullOrEmpty(keyword) && !material.IsKeywordEnabled(keyword))
                 {
                     return false;
                 }
@@ -573,50 +604,21 @@ namespace Localization
 
         private static StyleSnapshot CaptureStyle(TMP_Text text)
         {
-            Material material = text.fontSharedMaterial;
-            float outlineWidth = text.outlineWidth;
-            Color32 outlineColor = text.outlineColor;
-            Color32 faceColor = text.faceColor;
-
-            // TMPプロパティが0でも材質側に輪郭がある場合がある
-            if (material != null && material.HasProperty(ShaderUtilities.ID_OutlineWidth))
-            {
-                float materialOutline = material.GetFloat(ShaderUtilities.ID_OutlineWidth);
-                if (materialOutline > outlineWidth + 0.0001f)
-                {
-                    outlineWidth = materialOutline;
-                    if (material.HasProperty(ShaderUtilities.ID_OutlineColor))
-                    {
-                        outlineColor = material.GetColor(ShaderUtilities.ID_OutlineColor);
-                    }
-                }
-            }
-
-            // faceColorは材質Faceが非白ならそちらを使う
-            if (material != null && material.HasProperty(ShaderUtilities.ID_FaceColor))
-            {
-                Color materialFace = material.GetColor(ShaderUtilities.ID_FaceColor);
-                if (!IsNearWhite(materialFace))
-                {
-                    faceColor = materialFace;
-                }
-            }
-
             var snapshot = new StyleSnapshot
             {
-                FaceColor = faceColor,
-                OutlineWidth = outlineWidth,
-                OutlineColor = outlineColor,
                 FontStyle = text.fontStyle,
                 FontWeight = text.fontWeight,
-                HasMaterial = material != null,
             };
 
-            if (material == null)
+            Material material = text.fontSharedMaterial;
+            if (!IsUniqueStyleMaterial(text, material))
             {
                 return snapshot;
             }
 
+            snapshot.HasUniqueEffects = true;
+            snapshot.OutlineWidth = ReadFloat(material, ShaderUtilities.ID_OutlineWidth);
+            snapshot.OutlineColor = ReadColor(material, ShaderUtilities.ID_OutlineColor);
             snapshot.FaceDilate = ReadFloat(material, ShaderUtilities.ID_FaceDilate);
             snapshot.OutlineSoftness = ReadFloat(material, ShaderUtilities.ID_OutlineSoftness);
             snapshot.UnderlayColor = ReadColor(material, ShaderUtilities.ID_UnderlayColor);
@@ -644,79 +646,170 @@ namespace Localization
                 snapshot.EnabledKeywordsMask |= 1 << 0;
             }
 
+            bool hasOutline = snapshot.OutlineWidth > 0.0001f
+                || (snapshot.EnabledKeywordsMask & 1) != 0;
+            bool hasUnderlayKeyword = (snapshot.EnabledKeywordsMask & (1 << 1)) != 0;
+            bool hasGlowKeyword = (snapshot.EnabledKeywordsMask & (1 << 2)) != 0;
+            bool hasBevelKeyword = (snapshot.EnabledKeywordsMask & (1 << 3)) != 0;
+            snapshot.HasUniqueEffects = hasOutline
+                || hasUnderlayKeyword
+                || hasGlowKeyword
+                || hasBevelKeyword;
+
+            if (snapshot.HasUniqueEffects && !IsWritableInstance(material))
+            {
+                snapshot.UniquePresetMaterial = material;
+            }
+
             return snapshot;
         }
 
-        private static void RestoreStyle(TMP_Text text, Material styleMaterial, StyleSnapshot snapshot)
+        private static bool CanAssignUniquePreset(TMP_FontAsset fontAsset, StyleSnapshot design)
         {
-            if (styleMaterial == null)
+            Material preset = design.UniquePresetMaterial;
+            if (preset == null || IsWritableInstance(preset))
             {
-                text.faceColor = snapshot.FaceColor;
-                text.outlineWidth = snapshot.OutlineWidth;
-                text.outlineColor = snapshot.OutlineColor;
-                RestoreFontStyle(text, snapshot);
-                return;
+                return false;
             }
 
-            WriteColor(styleMaterial, ShaderUtilities.ID_FaceColor, snapshot.FaceColor);
-            WriteFloat(styleMaterial, ShaderUtilities.ID_FaceDilate, snapshot.FaceDilate);
-            WriteColor(styleMaterial, ShaderUtilities.ID_OutlineColor, snapshot.OutlineColor);
-            WriteFloat(styleMaterial, ShaderUtilities.ID_OutlineWidth, snapshot.OutlineWidth);
-            WriteFloat(styleMaterial, ShaderUtilities.ID_OutlineSoftness, snapshot.OutlineSoftness);
-            WriteColor(styleMaterial, ShaderUtilities.ID_UnderlayColor, snapshot.UnderlayColor);
-            WriteFloat(styleMaterial, ShaderUtilities.ID_UnderlayOffsetX, snapshot.UnderlayOffsetX);
-            WriteFloat(styleMaterial, ShaderUtilities.ID_UnderlayOffsetY, snapshot.UnderlayOffsetY);
-            WriteFloat(styleMaterial, ShaderUtilities.ID_UnderlayDilate, snapshot.UnderlayDilate);
-            WriteFloat(styleMaterial, ShaderUtilities.ID_UnderlaySoftness, snapshot.UnderlaySoftness);
-            WriteColor(styleMaterial, ShaderUtilities.ID_GlowColor, snapshot.GlowColor);
-            WriteFloat(styleMaterial, ShaderUtilities.ID_GlowOffset, snapshot.GlowOffset);
-            WriteFloat(styleMaterial, ShaderUtilities.ID_GlowPower, snapshot.GlowPower);
-            WriteFloat(styleMaterial, ShaderUtilities.ID_GlowOuter, snapshot.GlowOuter);
-            WriteFloat(styleMaterial, ShaderUtilities.ID_GlowInner, snapshot.GlowInner);
+            return UsesFontAtlas(preset, fontAsset);
+        }
 
-            for (int i = 0; i < VisualKeywords.Length; i++)
+        private static StyleSnapshot ResolveUniquePreset(
+            int instanceId,
+            StyleSnapshot design,
+            TMP_FontAsset fontAsset)
+        {
+            if (!design.HasUniqueEffects)
             {
-                string keyword = VisualKeywords[i];
-                if (string.IsNullOrEmpty(keyword))
+                return design;
+            }
+
+            if (CanAssignUniquePreset(fontAsset, design))
+            {
+                return design;
+            }
+
+            Material found = FindCompatibleUniquePreset(design, fontAsset);
+            if (found == null)
+            {
+                return design;
+            }
+
+            design.UniquePresetMaterial = found;
+            DesignStyles[instanceId] = design;
+            return design;
+        }
+
+        private static Material FindCompatibleUniquePreset(StyleSnapshot design, TMP_FontAsset fontAsset)
+        {
+            if (design.OutlineWidth <= 0.0001f)
+            {
+                return null;
+            }
+
+            foreach (KeyValuePair<int, StyleSnapshot> pair in DesignStyles)
+            {
+                Material preset = pair.Value.UniquePresetMaterial;
+                if (preset == null || IsWritableInstance(preset))
                 {
                     continue;
                 }
 
-                if ((snapshot.EnabledKeywordsMask & (1 << i)) != 0)
+                if (!UsesFontAtlas(preset, fontAsset))
                 {
-                    styleMaterial.EnableKeyword(keyword);
+                    continue;
                 }
-                else
+
+                if (Mathf.Abs(ReadFloat(preset, ShaderUtilities.ID_OutlineWidth) - design.OutlineWidth) > 0.0001f)
                 {
-                    styleMaterial.DisableKeyword(keyword);
+                    continue;
                 }
+
+                if (Mathf.Abs(ReadFloat(preset, ShaderUtilities.ID_FaceDilate) - design.FaceDilate) > 0.0001f)
+                {
+                    continue;
+                }
+
+                return preset;
             }
 
-            // TMPプロパティ側も同期し後続の読み取りで0に戻らないようにする
-            text.faceColor = snapshot.FaceColor;
-            text.outlineWidth = snapshot.OutlineWidth;
-            text.outlineColor = snapshot.OutlineColor;
-            RestoreFontStyle(text, snapshot);
+            return null;
         }
 
-        private static void RestoreFontStyle(TMP_Text text, StyleSnapshot snapshot)
+        private static void RestoreUniqueEffects(
+            TMP_Text text,
+            Material styleMaterial,
+            StyleSnapshot snapshot)
+        {
+            if (styleMaterial == null)
+            {
+                return;
+            }
+
+            WriteFloat(styleMaterial, ShaderUtilities.ID_FaceDilate, snapshot.FaceDilate);
+            WriteColor(styleMaterial, ShaderUtilities.ID_OutlineColor, snapshot.OutlineColor);
+            WriteFloat(styleMaterial, ShaderUtilities.ID_OutlineWidth, snapshot.OutlineWidth);
+            WriteFloat(styleMaterial, ShaderUtilities.ID_OutlineSoftness, snapshot.OutlineSoftness);
+            if (snapshot.OutlineWidth > 0.0001f || (snapshot.EnabledKeywordsMask & 1) != 0)
+            {
+                styleMaterial.EnableKeyword(ShaderUtilities.Keyword_Outline);
+            }
+
+            // プリセット材質の未使用Glow/Underlay既定値は新しいフォントへコピーしない
+            if ((snapshot.EnabledKeywordsMask & (1 << 1)) != 0)
+            {
+                styleMaterial.EnableKeyword(ShaderUtilities.Keyword_Underlay);
+                WriteColor(styleMaterial, ShaderUtilities.ID_UnderlayColor, snapshot.UnderlayColor);
+                WriteFloat(styleMaterial, ShaderUtilities.ID_UnderlayOffsetX, snapshot.UnderlayOffsetX);
+                WriteFloat(styleMaterial, ShaderUtilities.ID_UnderlayOffsetY, snapshot.UnderlayOffsetY);
+                WriteFloat(styleMaterial, ShaderUtilities.ID_UnderlayDilate, snapshot.UnderlayDilate);
+                WriteFloat(styleMaterial, ShaderUtilities.ID_UnderlaySoftness, snapshot.UnderlaySoftness);
+            }
+
+            if ((snapshot.EnabledKeywordsMask & (1 << 2)) != 0)
+            {
+                styleMaterial.EnableKeyword(ShaderUtilities.Keyword_Glow);
+                WriteColor(styleMaterial, ShaderUtilities.ID_GlowColor, snapshot.GlowColor);
+                WriteFloat(styleMaterial, ShaderUtilities.ID_GlowOffset, snapshot.GlowOffset);
+                WriteFloat(styleMaterial, ShaderUtilities.ID_GlowPower, snapshot.GlowPower);
+                WriteFloat(styleMaterial, ShaderUtilities.ID_GlowOuter, snapshot.GlowOuter);
+                WriteFloat(styleMaterial, ShaderUtilities.ID_GlowInner, snapshot.GlowInner);
+            }
+
+            if ((snapshot.EnabledKeywordsMask & (1 << 3)) != 0)
+            {
+                styleMaterial.EnableKeyword(ShaderUtilities.Keyword_Bevel);
+            }
+        }
+
+        private static void RestoreFontStylePreservingRicher(
+            TMP_Text text,
+            StyleSnapshot design,
+            StyleSnapshot sample)
         {
             if (text == null)
             {
                 return;
             }
 
-            // font代入や材質差し替えでBoldが消えることがあるので復元する
-            if (text.fontStyle != snapshot.FontStyle)
+            FontStyles desired = design.FontStyle | sample.FontStyle;
+            FontStyles current = text.fontStyle;
+            FontStyles merged = current | desired;
+            if (merged != current)
             {
-                text.fontStyle = snapshot.FontStyle;
+                text.fontStyle = merged;
             }
 
-            // Regular未満は既定値扱いだがSemiBold/Bold等は明示復元する
-            if (snapshot.FontWeight > FontWeight.Regular
-                && text.fontWeight != snapshot.FontWeight)
+            FontWeight weight = design.FontWeight;
+            if (sample.FontWeight > weight)
             {
-                text.fontWeight = snapshot.FontWeight;
+                weight = sample.FontWeight;
+            }
+
+            if (weight != 0 && text.fontWeight < weight)
+            {
+                text.fontWeight = weight;
             }
         }
 
@@ -732,6 +825,49 @@ namespace Localization
             return fontTex != null && materialTex == fontTex;
         }
 
+        private static void SnapshotFontDefaultsIfNeeded(TMP_FontAsset fontAsset)
+        {
+            if (fontAsset == null || fontAsset.material == null)
+            {
+                return;
+            }
+
+            int fontId = fontAsset.GetInstanceID();
+            if (FontDefaults.ContainsKey(fontId))
+            {
+                return;
+            }
+
+            Material material = fontAsset.material;
+            FontDefaults[fontId] = new FontMaterialDefaults
+            {
+                FaceDilate = ReadFloat(material, ShaderUtilities.ID_FaceDilate),
+                OutlineWidth = ReadFloat(material, ShaderUtilities.ID_OutlineWidth),
+                OutlineSoftness = ReadFloat(material, ShaderUtilities.ID_OutlineSoftness),
+                FaceColor = ReadColor(material, ShaderUtilities.ID_FaceColor),
+            };
+        }
+
+        private static void RestoreFontAssetDefaults(TMP_FontAsset fontAsset)
+        {
+            if (fontAsset == null || fontAsset.material == null)
+            {
+                return;
+            }
+
+            int fontId = fontAsset.GetInstanceID();
+            if (!FontDefaults.TryGetValue(fontId, out FontMaterialDefaults defaults))
+            {
+                return;
+            }
+
+            Material material = fontAsset.material;
+            WriteFloatIfChanged(material, ShaderUtilities.ID_FaceDilate, defaults.FaceDilate);
+            WriteFloatIfChanged(material, ShaderUtilities.ID_OutlineWidth, defaults.OutlineWidth);
+            WriteFloatIfChanged(material, ShaderUtilities.ID_OutlineSoftness, defaults.OutlineSoftness);
+            WriteColorIfChanged(material, ShaderUtilities.ID_FaceColor, defaults.FaceColor);
+        }
+
         private static Texture GetMainTexture(Material material)
         {
             if (material == null || !material.HasProperty(ShaderUtilities.ID_MainTex))
@@ -740,22 +876,6 @@ namespace Localization
             }
 
             return material.GetTexture(ShaderUtilities.ID_MainTex);
-        }
-
-        private static bool IsNearWhite(Color color)
-        {
-            return color.r > 0.99f
-                && color.g > 0.99f
-                && color.b > 0.99f
-                && color.a > 0.99f;
-        }
-
-        private static bool ColorsNearlyEqual(Color a, Color b)
-        {
-            return Mathf.Abs(a.r - b.r) < 0.02f
-                && Mathf.Abs(a.g - b.g) < 0.02f
-                && Mathf.Abs(a.b - b.b) < 0.02f
-                && Mathf.Abs(a.a - b.a) < 0.02f;
         }
 
         private static float ReadFloat(Material material, int propertyId)
@@ -788,6 +908,16 @@ namespace Localization
             material.SetFloat(propertyId, value);
         }
 
+        private static void WriteFloatIfChanged(Material material, int propertyId, float value)
+        {
+            if (Mathf.Abs(ReadFloat(material, propertyId) - value) <= 0.0001f)
+            {
+                return;
+            }
+
+            WriteFloat(material, propertyId, value);
+        }
+
         private static void WriteColor(Material material, int propertyId, Color value)
         {
             if (propertyId == 0 || !material.HasProperty(propertyId))
@@ -798,12 +928,33 @@ namespace Localization
             material.SetColor(propertyId, value);
         }
 
+        private static void WriteColorIfChanged(Material material, int propertyId, Color value)
+        {
+            Color current = ReadColor(material, propertyId);
+            if (Mathf.Abs(current.r - value.r) <= 0.001f
+                && Mathf.Abs(current.g - value.g) <= 0.001f
+                && Mathf.Abs(current.b - value.b) <= 0.001f
+                && Mathf.Abs(current.a - value.a) <= 0.001f)
+            {
+                return;
+            }
+
+            WriteColor(material, propertyId, value);
+        }
+
+        private struct FontMaterialDefaults
+        {
+            public float FaceDilate;
+            public float OutlineWidth;
+            public float OutlineSoftness;
+            public Color FaceColor;
+        }
+
         private struct StyleSnapshot
         {
-            public Color32 FaceColor;
+            public float FaceDilate;
             public float OutlineWidth;
             public Color32 OutlineColor;
-            public float FaceDilate;
             public float OutlineSoftness;
             public Color UnderlayColor;
             public float UnderlayOffsetX;
@@ -818,7 +969,8 @@ namespace Localization
             public FontStyles FontStyle;
             public FontWeight FontWeight;
             public int EnabledKeywordsMask;
-            public bool HasMaterial;
+            public bool HasUniqueEffects;
+            public Material UniquePresetMaterial;
         }
     }
 }

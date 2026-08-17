@@ -52,12 +52,12 @@ Battle.PartBack	Arrière
 Battle.PartBody	Aucun
 Battle.Leave	Retour
 Motion.LowSweep	Balayage
-Motion.Kick	Kick
+Motion.Kick	Coup de pied
 Motion.ShoulderRam	Épaule
-Motion.HipCheck	Hanche
-Motion.Stomp	Stomp
-Motion.Punch	Punch
-Motion.Elbow	Elbow
+Motion.HipCheck	Coup de hanche
+Motion.Stomp	Piétinement
+Motion.Punch	Direct
+Motion.Elbow	Coup de coude
 Motion.BellyFlop	Écrasement
 Motion.Headbutt	Coup de tête
 Motion.Fireball	Boule de feu
@@ -87,7 +87,7 @@ Training.ModeSelectTitle	Choisissez une méthode
 Training.ResumeTitle	Entraînement en cours trouvé
 Training.AmbushTitle	Embuscade !
 Training.AmbushTitleBang	Embuscade !
-Training.AmbushEnemyDefault	Adversaire
+Training.AmbushEnemyDefault	Adversaire fort
 Training.AmbushMessage	{name} attaque !\nCombattre ou fuir ?
 Training.Complete	Entraînement terminé
 Training.Motivation	Motivation 
@@ -117,7 +117,7 @@ SkillTree.StatStartDef	Défense de départ
 SkillTree.StatStartSpd	Vitesse de départ
 SkillTree.StatStartHit	Précision de départ
 SkillTree.StatStartAll	Toutes stats départ
-SkillTree.StatGreatSuccess	Grand succès
+SkillTree.StatGreatSuccess	Taux grand succes
 SkillTree.StatStartMoney	Argent de départ
 SkillTree.StatTrainMoney	Argent d'entraînement
 SkillTree.StatPoints	Points de combat
@@ -355,9 +355,7 @@ Training.Log.ReturnToTitle	Titre
 Training.Log.AfterSchoolNoOpponent	Aucun adversaire trouve
 Training.Log.AfterSchoolStart	Combat d'apres-cours\nContre {name}
 Training.Log.AfterSchoolStartFailed	Impossible de lancer le combat
-Training.Log.AfterSchoolWin	Victoire d'apres-cours
-Endurance+{stamina}
-PV+{hp} ATT+{atk} DEF+{def} VIT+{spd} PRE+{hit}
+Training.Log.AfterSchoolWin	Victoire d'apres-cours\nEndurance+{stamina}\nPV+{hp} ATT+{atk} DEF+{def} VIT+{spd} PRE+{hit}
 Training.Log.RewardMoney	 Prime+{reward}G
 Training.Log.NoNewMove	Rencontre sans nouvelle technique
 Training.Log.MeetTitle	Rencontre
@@ -395,14 +393,14 @@ Training.Shop.stat_attack.Name	Boost att.
 Training.Shop.stat_defense.Name	Boost def.
 Training.Shop.stat_speed.Name	Boost vit.
 Training.Shop.stat_hit.Name	Boost precis.
-Training.Shop.train_boost.Name	Boost chance
-Training.Shop.train_boost_strong.Name	Boost chance+
+Training.Shop.train_boost.Name	Boost proba
+Training.Shop.train_boost_strong.Name	Boost proba+
 Training.Shop.motivation_tennis.Name	Balle de tennis
 Training.Shop.motivation_boost.Name	Ballon de foot
 Training.Attack.Power	Puissance
 Training.Attack.Cost	Cout
 Training.Attack.Hit	Precis.
-Training.Attack.Recovery	Recuperation
+Training.Attack.Recovery	Raideur
 Training.Attack.WindUp	Charge
 Training.Attack.Seconds	s
 Training.Attack.Destroy	Destruction
@@ -429,31 +427,31 @@ Training.Preview.StatDef	DEF
 Training.Preview.StatSpd	VIT
 Training.Preview.StatHit	PRE
 Common.Empty	Vide
-ClayEdit.ClayGuideIcons	【Modelage】\n{I:MouseLeft} drag : ajouter\n{W:KeyCtrl}+{I:MouseLeft} drag : sculpter\n{I:MouseRight} drag : sculpter\n{I:MouseWheel} : taille pinceau\n{W:KeyShift}+drag : profondeur fixe\n{W:KeyAlt}+drag : camera\n{W:KeyCtrl}+{I:KeyZ} : annuler\n{W:KeyCtrl}+{I:KeyY} : refaire\n{W:KeyDel} : tout effacer
+ClayEdit.ClayGuideIcons	【Modelage】\n{I:MouseLeft} glisser : ajouter\n{W:KeyCtrl}+{I:MouseLeft} glisser : sculpter\n{I:MouseRight} glisser : sculpter\n{I:MouseWheel} : taille pinceau\n{W:KeyShift}+glisser : profondeur fixe\n{W:KeyAlt}+glisser : camera\n{W:KeyCtrl}+{I:KeyZ} : annuler\n{W:KeyCtrl}+{I:KeyY} : refaire\n{W:KeyDel} : tout effacer
 Training.Shop.stat_speed.Desc	VIT+24
 Training.Shop.stat_hit.Desc	PRE+24
 Training.Shop.train_boost.Desc	Taux super reussite +{percent}% ({turns} tours)
 Training.Shop.stat_defense.Desc	DEF+24
-Training.Shop.motivation_boost.Desc	Motivation+
+Training.Shop.motivation_boost.Desc	Motivation +{steps} niv.
 Training.Shop.stat_hp.Desc	PV+32
 Training.Shop.stat_attack.Desc	ATT+24
 Training.Shop.train_boost_strong.Desc	Taux super reussite +{percent}% ({turns} tours)
-Training.Status.GreatSuccessBoostActive	Super reussite renforcee ({turns} tours)
-Training.Shop.stamina_drink.Desc	Endurance+25
-Training.Shop.motivation_tennis.Desc	Motivation+
+Training.Status.GreatSuccessBoostActive	Taux grand succes hausse ({turns} tours)
+Training.Shop.stamina_drink.Desc	Endurance+{amount}
+Training.Shop.motivation_tennis.Desc	Motivation +{steps} niv.
 Training.Shop.stamina_full.Desc	Endurance max
-Training.Motivation.VeryLow	Très bas
-Training.Motivation.Low	Bas
+Training.Motivation.VeryLow	Terrible
+Training.Motivation.Low	Mauvais
 Training.Motivation.Normal	Normal
 Training.Motivation.High	Excellent
-Training.Event.LearnTitle	Evenement technique
+Training.Event.LearnTitle	Apprendre une technique
 Training.Event.LearnMessage	Chance d'apprendre "{name}"\nChoisis un emplacement
 Training.Event.StatTitle	Entrainement special
 Training.Event.StatMessage	PV+{hp} ATT+{atk} DEF+{def} VIT+{spd} PRE+{hit}
 Training.Shop.Title	Boutique
 Training.Inventory.Title	Objets
 Training.Shop.NextPage	Suiv.
-Training.Shop.OpenInventory	Items
+Training.Shop.OpenInventory	Objets
 Training.Shop.Refresh	Maj
 Training.Shop.RefreshConfirm	Actualiser pour {price}G ?
 Training.Shop.LeaveConfirm	Fermer la boutique et faire passer le temps ?
@@ -490,17 +488,17 @@ BattlePvp.ModelTimeout	Timeout modele adverse ({seconds}s)
 BattlePvp.ModelTooLarge	Modele trop volumineux ({sizeMb}MB / max {maxMb}MB)
 BattlePvp.SlotTimeout	Timeout selection emplacement ({seconds}s)
 BattlePvp.MatchupTimeout	Timeout pret combat ({seconds}s)
-BattlePvp.StagingTimeout	Opponent matchup prep timed out ({seconds}s)
-BattlePvp.SessionAborted	Opponent aborted match preparation
-BattlePvp.NetworkLost	Match aborted due to network disconnect
-BattlePvp.TransferAckTimeout	Opponent model receive ack timed out ({seconds}s)
-BattlePvp.RematchTimeout	Opponent rematch prep timed out ({seconds}s)
+BattlePvp.StagingTimeout	Timeout preparation presentation ({seconds}s)
+BattlePvp.SessionAborted	L'adversaire a interrompu la préparation
+BattlePvp.NetworkLost	Combat interrompu suite à une coupure réseau
+BattlePvp.TransferAckTimeout	Timeout accuse de reception modele ({seconds}s)
+BattlePvp.RematchTimeout	Timeout preparation revanche ({seconds}s)
 Training.Debug.NoSession	Pas de session
 Training.Debug.UnknownItem	ID objet inconnu: {id}
 Training.Debug.ItemAdded	Ajoute {count} x {name}
 Training.Motivation.LabelWithGlyph	Motivation  {glyph}
-ClayEdit.PaintGuideIcons	[Peinture]\n{I:MouseLeft} drag : peindre\n{I:MouseWheel} : pinceau\n{W:KeyShift}+drag : profondeur\n{W:KeyAlt}+drag : camera\n{W:KeyCtrl}+{I:KeyZ} : annuler\n{W:KeyCtrl}+{I:KeyY} : refaire\nCouleur : picker
-Battle.TipsBodyIcons	[Commandes]\n{I:KeyA} / {I:KeyLeft} : reculer\n{I:KeyD} / {I:KeyRight} : avancer\n{W:KeyShift}+{I:KeyA}/{I:KeyD} : pas\n{I:Key1}-{I:Key4} : attaque\n{I:KeySpace} : repousser\n{I:MouseRight} maintien : reparer\n\n[Bases]\nAccumulez du cout puis attaquez.\nPortee et puissance varient.\nMeme bouton pour contrer.\nDetruire des parties affaiblit l'adversaire.
+ClayEdit.PaintGuideIcons	[Peinture]\n{I:MouseLeft} glisser : peindre\n{I:MouseWheel} : pinceau\n{W:KeyShift}+glisser : profondeur\n{W:KeyAlt}+glisser : camera\n{W:KeyCtrl}+{I:KeyZ} : annuler\n{W:KeyCtrl}+{I:KeyY} : refaire\nCouleur : selecteur
+Battle.TipsBodyIcons	[Commandes]\n{I:KeyA} / {I:KeyLeft} : reculer\n{I:KeyD} / {I:KeyRight} : avancer\n{W:KeyShift}+{I:KeyA}/{I:KeyD} : pas\n{I:Key1}-{I:Key4} : attaque\n{I:KeySpace} : repousser\n{I:MouseRight} maintien : reparer\n\n[Bases]\nAccumulez du cout puis attaquez.\nPortee et puissance varient.\nMeme bouton pour contrer.\nDetruire des parties affaiblit l'adversaire et bloque les techniques de ces parties.
 Battle.TipsEscHintIcons	{E:KeyEsc} tutoriel
 Battle.HintPartRepairIcons	Maintenir {I:MouseRight}: reparer
 Battle.HintKnockbackReadyIcons	Repousser pret {I:KeySpace}
@@ -542,7 +540,7 @@ Training.Hover.Tournament	Victoire: prix et endurance
 Training.Hover.FailRate	Echec {value}%
 Training.Hover.StaminaCost	Endurance -{value}
 Training.Hover.FailRateLine	\nEchec {value}%
-Training.Hud.Continue	Suite
+Training.Hud.Continue	Continuer
 Training.Hud.BackToTitle	Titre
 ModelGallery.OverwriteConfirm	Ecraser la sauvegarde ?
 ModelGallery.SaveToSlotConfirm	Enregistrer ici ?
@@ -585,12 +583,12 @@ Training.Resume.StaminaLabel	, Endurance {stamina} / {max}
 Training.Resume.Stats	PV {hp}\nAtt {atk}\nDéf {def}\nVit {spd}\nPré {hit}
 Training.Resume.SummaryBody	{schedule}, Argent {money}G\nMotivation{glyph} Endurance{stamina}/{max}\nPV {hp} Att {atk} Déf {def} Vit {spd} Pré {hit}
 BattlePvp.LobbyTitle	Combat en ligne
-BattlePvp.DirectMatch	Direct
+BattlePvp.DirectMatch	Privé
 BattlePvp.RandomMatch	Aleat.
 BattlePvp.CreateRoom	Creer
 BattlePvp.JoinRoom	Joindre
 BattlePvp.StartMatch	Match
-BattlePvp.Matching	Matchmaking…
+BattlePvp.Matching	Recherche…
 BattlePvp.CopyCode	Copier
 BattlePvp.JoinCodePlaceholder	Saisir le code
 BattlePvp.OpponentWaiting	En attente de l'adversaire…
@@ -606,24 +604,24 @@ Battle.TipsTitle	Tutoriel de combat
 Training.ModeManual	Manuel
 Training.ModeAuto	Auto
 Training.ResumeRestart	Reprise
-Training.ResumeContinue	Suite
+Training.ResumeContinue	Reprendre
 Training.AmbushFight	Combat
 Training.AmbushFlee	Fuir
 ClayEdit.NewCreate	Nouveau
 ClayEdit.Remake	Refaire
 ClayEdit.RemakeLong	Refaire le monstre
 ClayEdit.Save	Sauver
-ClayEdit.SaveAsEnemy	Ennemi
+ClayEdit.SaveAsEnemy	Comme ennemi
 ClayEdit.OverwriteSave	Ecraser
 ClayEdit.Delete	Suppr.
 ClayEdit.DeleteConfirm	Suppr.
 ClayEdit.SaveConfirm	Enregistrer ?
 ClayEdit.LeaveWithoutSave	Quitter sans enregistrer ?
-ClayEdit.LeaveWithoutSaveButton	Jeter
+ClayEdit.LeaveWithoutSaveButton	Sans sauver
 ClayEdit.NamePrompt	Entrez un nom
 ClayEdit.SculptMode	Sculpter
 ClayEdit.ShowGuide	Aide
-ClayEdit.Idle	Repos
+ClayEdit.Idle	Attente
 ClayEdit.Run	Courir
 ClayEdit.Attack	Attaque
 LoadSlot.Load	Valider
@@ -652,8 +650,8 @@ ClayEdit.PaintMode	Peindre
 ClayEdit.AnimationMode	Bouger
 ClayEdit.BackgroundColor	Arrière-plan
 Battle.MatchupStatus	Stats
-Training.SwapSkip	Skip
-Training.Hud.Interrupt	Pause
+Training.SwapSkip	Garder
+Training.Hud.Interrupt	Sauver et quitter
 Enemy.Name.0	Clemon
 Enemy.Name.1	Slime monoculaire
 Enemy.Name.2	Hakobuta
@@ -665,7 +663,7 @@ Enemy.Name.7	Mogyura
 Enemy.Name.8	Araignée
 Enemy.Name.9	Chevalier des ténèbres
 Enemy.Name.10	Chauve-souris
-Enemy.Name.11	Myraman
+Enemy.Name.11	Homme-momie
 Enemy.Name.12	Golem
 Enemy.Name.13	Lézard jaune
 Enemy.Name.14	Lézard bleu

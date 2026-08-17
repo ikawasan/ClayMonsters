@@ -34,11 +34,14 @@ namespace Localization
         public LocalizedFontDriver(IFontService fontService)
         {
             this.fontService = fontService;
+            LocalizedFont.SnapshotLanguageFonts(fontService);
         }
 
         /// <inheritdoc/>
         public void Start()
         {
+            LocalizedFont.SnapshotLanguageFonts(fontService);
+            LocalizedFont.CaptureDesignsOfAllLoaded();
             subscription = fontService.CurrentFont.Subscribe(OnFontChanged);
             SceneManager.sceneLoaded += OnSceneLoaded;
             SceneManager.sceneUnloaded += OnSceneUnloaded;
@@ -94,6 +97,7 @@ namespace Localization
                 return;
             }
 
+            LocalizedFont.SnapshotLanguageFonts(fontService);
             TMP_Settings.defaultFontAsset = fontAsset;
             LocalizedFont.NotifySceneHierarchyChanged();
             ApplyCurrentFont(forceRefreshCache: true);
@@ -103,6 +107,7 @@ namespace Localization
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             LocalizedFont.NotifySceneHierarchyChanged();
+            LocalizedFont.CaptureDesignsOfAllLoaded();
             ApplyCurrentFont(forceRefreshCache: true);
         }
 

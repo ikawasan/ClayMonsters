@@ -33,7 +33,7 @@ Battle.Distance	距離 {distance}
 Battle.TipsBody	【操作】\n後退/接近移動\n用技能按鈕攻擊\n使用反擊與部位破壞
 Battle.TipsEscHint	按 Esc 顯示教學
 Battle.HintPartRepair	按住右鍵恢復部位
-Battle.HintKnockbackReady	可使用擊退
+Battle.HintKnockbackReady	可使用擊飛
 Battle.HintCounter	反擊！用{part}技能迎擊
 Battle.HintAttackLockout	攻擊冷卻中
 Battle.HintChain	連擊 x{count}
@@ -56,7 +56,7 @@ Motion.Kick	踢擊
 Motion.ShoulderRam	肩撞
 Motion.HipCheck	胯撞
 Motion.Stomp	踩踏
-Motion.Punch	拳擊
+Motion.Punch	直拳
 Motion.Elbow	肘擊
 Motion.BellyFlop	壓倒
 Motion.Headbutt	頭槌
@@ -83,29 +83,29 @@ Enemy.Normal	普通
 Enemy.Strong	強
 Enemy.VeryStrong	超強
 Enemy.Strongest	最強
-Training.ModeSelectTitle	請選擇培養方式
-Training.ResumeTitle	發現進行中的培養資料
+Training.ModeSelectTitle	請選擇育成方式
+Training.ResumeTitle	發現進行中的育成資料
 Training.AmbushTitle	強敵突襲
 Training.AmbushTitleBang	強敵突襲！
 Training.AmbushEnemyDefault	強敵
 Training.AmbushMessage	{name}襲來！\n選擇戰鬥或逃走
-Training.Complete	培養完成
+Training.Complete	育成完成
 Training.Motivation	幹勁 
 Training.LearnedHeader	▼習得技能
 Training.SwapHeader	▼替換槽位
 Training.AttackComposition	▼技能構成
 Training.AttackCompositionNone	▼技能構成\n無
 Training.Inheritance	繼承
-Training.SaveOverwrite	將覆蓋已培養槽位{slot}的資料
-Training.SaveTo	儲存到已培養槽位{slot}
+Training.SaveOverwrite	將覆蓋已育成槽位{slot}的資料
+Training.SaveTo	儲存到已育成槽位{slot}
 Training.SaveDestNotSelected	未選擇儲存槽位
-Training.SaveFailed	儲存培養資料失敗\n未培養資料已保留
+Training.SaveFailed	儲存育成資料失敗\n未育成資料已保留
 Training.AmbushStartFailed	無法開始強敵突襲戰鬥
 Training.SwapSlotResult	已替換槽位{slot}
 Training.ChooseSave	存檔
 Training.DeleteConfirm	要刪除槽位{slot}「{name}」嗎？
 Training.ModelNamePlaceholder	輸入模型名稱
-Training.TrainedSlot	已培養槽位{index}
+Training.TrainedSlot	已育成槽位{index}
 SkillTree.SelectNode	請選擇節點
 SkillTree.Unlock	解鎖
 SkillTree.Unlocked	已解鎖
@@ -119,7 +119,7 @@ SkillTree.StatStartHit	初始命中
 SkillTree.StatStartAll	初始全屬性
 SkillTree.StatGreatSuccess	大成功率
 SkillTree.StatStartMoney	初始金錢
-SkillTree.StatTrainMoney	培養獲得金
+SkillTree.StatTrainMoney	育成獲得金
 SkillTree.StatPoints	對戰點數
 SkillTree.StatInherit	繼承提升
 SkillTree.StatNone	─
@@ -172,13 +172,13 @@ SkillTree.Node.GreatSuccess4.Desc	訓練大成功率+{0}%
 SkillTree.Node.GreatSuccess5.Name	達人之境
 SkillTree.Node.GreatSuccess5.Desc	訓練大成功率+{0}%
 SkillTree.Node.StartingMoney1.Name	零用錢I
-SkillTree.Node.StartingMoney1.Desc	育成開始時所持金+{0}G
+SkillTree.Node.StartingMoney1.Desc	育成開始時資金+{0}G
 SkillTree.Node.StartingMoney2.Name	零用錢II
-SkillTree.Node.StartingMoney2.Desc	育成開始時所持金+{0}G
+SkillTree.Node.StartingMoney2.Desc	育成開始時資金+{0}G
 SkillTree.Node.StartingMoney3.Name	存錢高手I
-SkillTree.Node.StartingMoney3.Desc	育成開始時所持金+{0}G
+SkillTree.Node.StartingMoney3.Desc	育成開始時資金+{0}G
 SkillTree.Node.StartingMoney4.Name	存錢高手II
-SkillTree.Node.StartingMoney4.Desc	育成開始時所持金+{0}G
+SkillTree.Node.StartingMoney4.Desc	育成開始時資金+{0}G
 SkillTree.Node.TrainingMoney1.Name	賞金獵人I
 SkillTree.Node.TrainingMoney1.Desc	育成中獲得金錢+{0}%
 SkillTree.Node.TrainingMoney2.Name	賞金獵人II
@@ -256,13 +256,13 @@ SkillTree.Node.GreatSuccess9.Desc	訓練大成功率+{0}%
 SkillTree.Node.GreatSuccess10.Name	極意II
 SkillTree.Node.GreatSuccess10.Desc	訓練大成功率+{0}%
 SkillTree.Node.StartingMoney5.Name	存錢高手III
-SkillTree.Node.StartingMoney5.Desc	育成開始時所持金+{0}G
+SkillTree.Node.StartingMoney5.Desc	育成開始時資金+{0}G
 SkillTree.Node.StartingMoney6.Name	財力I
-SkillTree.Node.StartingMoney6.Desc	育成開始時所持金+{0}G
+SkillTree.Node.StartingMoney6.Desc	育成開始時資金+{0}G
 SkillTree.Node.StartingMoney7.Name	財力II
-SkillTree.Node.StartingMoney7.Desc	育成開始時所持金+{0}G
+SkillTree.Node.StartingMoney7.Desc	育成開始時資金+{0}G
 SkillTree.Node.StartingMoney8.Name	財力III
-SkillTree.Node.StartingMoney8.Desc	育成開始時所持金+{0}G
+SkillTree.Node.StartingMoney8.Desc	育成開始時資金+{0}G
 SkillTree.Node.TrainingMoney6.Name	大宗交易III
 SkillTree.Node.TrainingMoney6.Desc	育成中獲得金錢+{0}%
 SkillTree.Node.TrainingMoney7.Name	經商能手I
@@ -341,8 +341,8 @@ Training.Prompt.Shop	請選擇要購買的商品
 Training.Prompt.Inventory	請選擇要使用的道具
 Training.Prompt.Location	請選擇目的地
 Training.Hud.Stamina	體力 {current} / {max}
-Training.Hud.MoneyShop	所持金 {money}G
-Training.Hud.MoneyLabel	所持金
+Training.Hud.MoneyShop	資金 {money}G
+Training.Hud.MoneyLabel	資金
 Training.Hud.Price	價格 {price}G
 Training.Hud.DayStarted	{day}開始了
 Training.Log.ModelLoadFailed	模型載入失敗
@@ -351,13 +351,11 @@ Training.Log.LunchEnd	午休結束了
 Training.Log.ShopOnlyLunch	商店僅在午休開放
 Training.Log.BallThrowHint	長按球後鬆手投擲
 Training.Log.AutoTraining	正在自動育成...
-Training.Log.ReturnToTitle	標題
+Training.Log.ReturnToTitle	標題畫面
 Training.Log.AfterSchoolNoOpponent	未找到放學後對手
 Training.Log.AfterSchoolStart	放學後戰鬥\n與{name}開戰
 Training.Log.AfterSchoolStartFailed	無法開始放學後戰鬥
-Training.Log.AfterSchoolWin	放學後戰鬥勝利
-體力+{stamina}
-HP+{hp} 攻擊+{atk} 防禦+{def} 速度+{spd} 命中+{hit}
+Training.Log.AfterSchoolWin	放學後戰鬥勝利\n體力+{stamina}\nHP+{hp} 攻擊+{atk} 防禦+{def} 速度+{spd} 命中+{hit}
 Training.Log.RewardMoney	 賞金+{reward}G
 Training.Log.NoNewMove	有邂逅但沒有新招式
 Training.Log.MeetTitle	邂逅
@@ -395,8 +393,8 @@ Training.Shop.stat_attack.Name	攻擊強化劑
 Training.Shop.stat_defense.Name	防禦強化劑
 Training.Shop.stat_speed.Name	速度強化劑
 Training.Shop.stat_hit.Name	命中強化劑
-Training.Shop.train_boost.Name	成功率提升劑
-Training.Shop.train_boost_strong.Name	成功率提升劑+
+Training.Shop.train_boost.Name	大成功率提升劑
+Training.Shop.train_boost_strong.Name	大成功率提升劑+
 Training.Shop.motivation_tennis.Name	網球
 Training.Shop.motivation_boost.Name	足球
 Training.Attack.Power	威力
@@ -434,19 +432,19 @@ Training.Shop.stat_speed.Desc	速度+24
 Training.Shop.stat_hit.Desc	命中+24
 Training.Shop.train_boost.Desc	大成功率+{percent}%持續{turns}回合
 Training.Shop.stat_defense.Desc	防禦+24
-Training.Shop.motivation_boost.Desc	提升幹勁
+Training.Shop.motivation_boost.Desc	提升幹勁{steps}階段
 Training.Shop.stat_hp.Desc	HP+32
 Training.Shop.stat_attack.Desc	攻擊+24
 Training.Shop.train_boost_strong.Desc	大成功率+{percent}%持續{turns}回合
 Training.Status.GreatSuccessBoostActive	大成功率提升中 剩餘{turns}回合
-Training.Shop.stamina_drink.Desc	體力+25
-Training.Shop.motivation_tennis.Desc	提升幹勁
+Training.Shop.stamina_drink.Desc	體力+{amount}
+Training.Shop.motivation_tennis.Desc	提升幹勁{steps}階段
 Training.Shop.stamina_full.Desc	體力全恢復
 Training.Motivation.VeryLow	極差
 Training.Motivation.Low	不佳
 Training.Motivation.Normal	普通
 Training.Motivation.High	極佳
-Training.Event.LearnTitle	招式事件
+Training.Event.LearnTitle	習得招式
 Training.Event.LearnMessage	有機會學會「{name}」\n請選擇替換槽位
 Training.Event.StatTitle	特訓事件
 Training.Event.StatMessage	HP+{hp} 攻擊+{atk} 防禦+{def} 速度+{spd} 命中+{hit}
@@ -490,17 +488,17 @@ BattlePvp.ModelTimeout	對方模型接收逾時({seconds}秒)
 BattlePvp.ModelTooLarge	模型過大無法傳送 ({sizeMb}MB / 上限{maxMb}MB)
 BattlePvp.SlotTimeout	對方選槽等待逾時({seconds}秒)
 BattlePvp.MatchupTimeout	開戰準備等待逾時({seconds}秒)
-BattlePvp.StagingTimeout	Opponent matchup prep timed out ({seconds}s)
-BattlePvp.SessionAborted	Opponent aborted match preparation
-BattlePvp.NetworkLost	Match aborted due to network disconnect
-BattlePvp.TransferAckTimeout	Opponent model receive ack timed out ({seconds}s)
-BattlePvp.RematchTimeout	Opponent rematch prep timed out ({seconds}s)
+BattlePvp.StagingTimeout	對方展示準備等待逾時({seconds}秒)
+BattlePvp.SessionAborted	對手中斷了對戰準備
+BattlePvp.NetworkLost	因網路中斷而中止對戰
+BattlePvp.TransferAckTimeout	對方模型接收確認逾時({seconds}秒)
+BattlePvp.RematchTimeout	對方再戰準備等待逾時({seconds}秒)
 Training.Debug.NoSession	沒有進行中的育成
 Training.Debug.UnknownItem	未知道具ID: {id}
 Training.Debug.ItemAdded	已新增{name} x{count}
 Training.Motivation.LabelWithGlyph	幹勁　{glyph}
 ClayEdit.PaintGuideIcons	[噴漆]\n{I:MouseLeft} 拖曳 : 上色\n{I:MouseWheel} : 筆刷大小\n{W:KeyShift}+拖曳 : 鎖定深度\n{W:KeyAlt}+拖曳 : 相機\n{W:KeyCtrl}+{I:KeyZ} : 復原\n{W:KeyCtrl}+{I:KeyY} : 重做\n顏色 : 取色器
-Battle.TipsBodyIcons	[操作]\n{I:KeyA} / {I:KeyLeft} : 後退\n{I:KeyD} / {I:KeyRight} : 接近\n{W:KeyShift}+{I:KeyA}/{I:KeyD} : 步進\n{I:Key1}-{I:Key4} : 出招\n{I:KeySpace} : 擊飛\n{I:MouseRight} 長按 : 部位修復\n\n[戰鬥基礎]\n積攢消耗後使用招式。\n每招距離與威力不同。\n同鍵可反擊。\n破壞部位會削弱對手。
+Battle.TipsBodyIcons	[操作]\n{I:KeyA} / {I:KeyLeft} : 後退\n{I:KeyD} / {I:KeyRight} : 接近\n{W:KeyShift}+{I:KeyA}/{I:KeyD} : 側步\n{I:Key1}-{I:Key4} : 出招\n{I:KeySpace} : 擊飛\n{I:MouseRight} 長按 : 部位修復\n\n[戰鬥基礎]\n積攢消耗後使用招式。\n每招距離與威力不同。\n同鍵可反擊。\n破壞部位會削弱對手，並使該部位的招式無法使用。
 Battle.TipsEscHintIcons	{E:KeyEsc} 查看教學
 Battle.HintPartRepairIcons	長按{I:MouseRight}修復部位
 Battle.HintKnockbackReadyIcons	可擊飛 {I:KeySpace}
@@ -543,7 +541,7 @@ Training.Hover.FailRate	失敗率 {value}%
 Training.Hover.StaminaCost	體力-{value}
 Training.Hover.FailRateLine	\n失敗率 {value}%
 Training.Hud.Continue	繼續
-Training.Hud.BackToTitle	標題
+Training.Hud.BackToTitle	返回標題
 ModelGallery.OverwriteConfirm	是否覆蓋既有存檔？
 ModelGallery.SaveToSlotConfirm	儲存到此槽位？
 LoadSlot.PlayerInstruction	選擇你的怪物
@@ -579,11 +577,11 @@ Training.Inheritance.ParentPreview	{name}\n繼承提升 HP+{hp} 攻擊+{atk} 防
 Training.Inheritance.PickHeader1	請選擇2隻已育成怪物作為繼承(第1隻)
 Training.Inheritance.PickHeader2	請選擇2隻已育成怪物作為繼承(第2隻)
 Training.Inheritance.ConfirmPick	繼承源第{pickNumber}隻\n請確認狀態後決定
-Training.Resume.ScheduleWithMoney	{schedule}，所持金 {money}G
+Training.Resume.ScheduleWithMoney	{schedule}，資金 {money}G
 Training.Resume.MotivationLabel	幹勁 
 Training.Resume.StaminaLabel	，體力 {stamina} / {max}
 Training.Resume.Stats	HP {hp}\n攻擊 {atk}\n防禦 {def}\n速度 {spd}\n命中 {hit}
-Training.Resume.SummaryBody	{schedule}，所持金 {money}G\n幹勁{glyph} 體力{stamina}/{max}\nHP {hp} 攻擊 {atk} 防禦 {def} 速度 {spd} 命中 {hit}
+Training.Resume.SummaryBody	{schedule}，資金 {money}G\n幹勁{glyph} 體力{stamina}/{max}\nHP {hp} 攻擊 {atk} 防禦 {def} 速度 {spd} 命中 {hit}
 BattlePvp.LobbyTitle	連線對戰
 BattlePvp.DirectMatch	指定
 BattlePvp.RandomMatch	隨機
@@ -610,10 +608,10 @@ Training.ResumeContinue	繼續
 Training.AmbushFight	戰鬥
 Training.AmbushFlee	逃走
 ClayEdit.NewCreate	新建
-ClayEdit.Remake	重做
+ClayEdit.Remake	重製
 ClayEdit.RemakeLong	重做怪物
 ClayEdit.Save	儲存
-ClayEdit.SaveAsEnemy	存為敵
+ClayEdit.SaveAsEnemy	存為敵人
 ClayEdit.OverwriteSave	覆蓋
 ClayEdit.Delete	刪除
 ClayEdit.DeleteConfirm	刪除
@@ -652,8 +650,8 @@ ClayEdit.PaintMode	上色
 ClayEdit.AnimationMode	動作
 ClayEdit.BackgroundColor	背景色
 Battle.MatchupStatus	能力
-Training.SwapSkip	跳過
-Training.Hud.Interrupt	中斷
+Training.SwapSkip	不替換
+Training.Hud.Interrupt	中斷並儲存
 Enemy.Name.0	克雷蒙
 Enemy.Name.1	獨眼史萊姆
 Enemy.Name.2	哈科豬
@@ -665,7 +663,7 @@ Enemy.Name.7	莫古拉
 Enemy.Name.8	蜘蛛
 Enemy.Name.9	闇騎士
 Enemy.Name.10	蝙蝠
-Enemy.Name.11	麥拉男
+Enemy.Name.11	木乃伊男
 Enemy.Name.12	石魔像
 Enemy.Name.13	黃蜥蜴
 Enemy.Name.14	藍蜥蜴

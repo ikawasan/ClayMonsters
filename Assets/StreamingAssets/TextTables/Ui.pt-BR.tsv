@@ -54,7 +54,7 @@ Battle.Leave	Voltar
 Motion.LowSweep	Rasteira
 Motion.Kick	Chute
 Motion.ShoulderRam	Ombro
-Motion.HipCheck	Quadril
+Motion.HipCheck	Check de quadril
 Motion.Stomp	Pisada
 Motion.Punch	Soco
 Motion.Elbow	Cotovelada
@@ -69,7 +69,7 @@ Motion.SpinTackle	Investida giratória
 Motion.Uppercut	Upper
 Motion.WindSlasher	Lâmina de vento
 Motion.BodySlam	Body Slam
-Motion.Knee	Joelho
+Motion.Knee	Joelhada
 Motion.GroundPound	Batida no chão
 Motion.Slap	Tapa
 Motion.Tackle	Investida
@@ -87,7 +87,7 @@ Training.ModeSelectTitle	Escolha um método
 Training.ResumeTitle	Treinamento em andamento
 Training.AmbushTitle	Emboscada!
 Training.AmbushTitleBang	Emboscada!
-Training.AmbushEnemyDefault	Inimigo
+Training.AmbushEnemyDefault	Inimigo forte
 Training.AmbushMessage	{name} ataca!\nLutar ou fugir?
 Training.Complete	Treinamento concluído
 Training.Motivation	Motivação 
@@ -117,7 +117,7 @@ SkillTree.StatStartDef	Defesa inicial
 SkillTree.StatStartSpd	Velocidade inicial
 SkillTree.StatStartHit	Acerto inicial
 SkillTree.StatStartAll	Todos atributos iniciais
-SkillTree.StatGreatSuccess	Grande sucesso
+SkillTree.StatGreatSuccess	Taxa de grande sucesso
 SkillTree.StatStartMoney	Dinheiro inicial
 SkillTree.StatTrainMoney	Dinheiro de treino
 SkillTree.StatPoints	Pontos de batalha
@@ -337,8 +337,8 @@ Training.Focus.Speed	Treino velocidade
 Training.Focus.Hit	Treino precisao
 Training.Prompt.Command	Escolha uma acao
 Training.Prompt.Focus	Escolha um atributo
-Training.Prompt.Shop	Escolha um item
-Training.Prompt.Inventory	Escolha um item
+Training.Prompt.Shop	Escolha o que comprar
+Training.Prompt.Inventory	Escolha o que usar
 Training.Prompt.Location	Escolha um destino
 Training.Hud.Stamina	Vigor {current} / {max}
 Training.Hud.MoneyShop	Dinheiro {money}G
@@ -355,11 +355,9 @@ Training.Log.ReturnToTitle	Titulo
 Training.Log.AfterSchoolNoOpponent	Sem oponente apos a escola
 Training.Log.AfterSchoolStart	Batalha apos a escola\nContra {name}
 Training.Log.AfterSchoolStartFailed	Nao foi possivel iniciar a batalha
-Training.Log.AfterSchoolWin	Vitoria apos a escola
-Vigor+{stamina}
-PV+{hp} ATQ+{atk} DEF+{def} VEL+{spd} PRE+{hit}
+Training.Log.AfterSchoolWin	Vitoria apos a escola\nVigor+{stamina}\nPV+{hp} ATQ+{atk} DEF+{def} VEL+{spd} PRE+{hit}
 Training.Log.RewardMoney	 Premio+{reward}G
-Training.Log.NoNewMove	Encontro sem tecnico nova
+Training.Log.NoNewMove	Encontro sem técnica nova
 Training.Log.MeetTitle	Encontro
 Training.Log.MeetLearnChance	Chance de aprender "{name}"
 Training.Log.AmbushWinTail	\nPremio+{reward}G\nPV+{hp} ATQ+{atk} DEF+{def} VEL+{spd} PRE+{hit}
@@ -395,14 +393,14 @@ Training.Shop.stat_attack.Name	Booster de ataque
 Training.Shop.stat_defense.Name	Booster de defesa
 Training.Shop.stat_speed.Name	Booster de velocidade
 Training.Shop.stat_hit.Name	Booster de precisao
-Training.Shop.train_boost.Name	Impulso sorte
-Training.Shop.train_boost_strong.Name	Impulso sorte+
+Training.Shop.train_boost.Name	Impulso probabilidade
+Training.Shop.train_boost_strong.Name	Impulso probabilidade+
 Training.Shop.motivation_tennis.Name	Bola de tenis
 Training.Shop.motivation_boost.Name	Bola de futebol
 Training.Attack.Power	Poder
 Training.Attack.Cost	Custo
 Training.Attack.Hit	Precisao
-Training.Attack.Recovery	Recuperacao
+Training.Attack.Recovery	Rigidez
 Training.Attack.WindUp	Carga
 Training.Attack.Seconds	s
 Training.Attack.Destroy	Destruicao
@@ -434,19 +432,19 @@ Training.Shop.stat_speed.Desc	VEL+24
 Training.Shop.stat_hit.Desc	PRE+24
 Training.Shop.train_boost.Desc	Taxa de grande sucesso +{percent}% por {turns} turnos
 Training.Shop.stat_defense.Desc	DEF+24
-Training.Shop.motivation_boost.Desc	Motivacao+
+Training.Shop.motivation_boost.Desc	Motivacao +{steps} niv.
 Training.Shop.stat_hp.Desc	PV+32
 Training.Shop.stat_attack.Desc	ATQ+24
 Training.Shop.train_boost_strong.Desc	Taxa de grande sucesso +{percent}% por {turns} turnos
-Training.Status.GreatSuccessBoostActive	Grande sucesso ativo ({turns} turnos)
-Training.Shop.stamina_drink.Desc	Vigor+25
-Training.Shop.motivation_tennis.Desc	Motivacao+
+Training.Status.GreatSuccessBoostActive	Taxa de grande sucesso ativa ({turns} turnos)
+Training.Shop.stamina_drink.Desc	Vigor+{amount}
+Training.Shop.motivation_tennis.Desc	Motivacao +{steps} niv.
 Training.Shop.stamina_full.Desc	Vigor total
-Training.Motivation.VeryLow	Muito baixo
-Training.Motivation.Low	Baixo
+Training.Motivation.VeryLow	Pessimo
+Training.Motivation.Low	Ruim
 Training.Motivation.Normal	Normal
-Training.Motivation.High	Muito alto
-Training.Event.LearnTitle	Evento de tecnica
+Training.Motivation.High	Otimo
+Training.Event.LearnTitle	Aprender tecnica
 Training.Event.LearnMessage	Chance de aprender "{name}"\nEscolha um espaco
 Training.Event.StatTitle	Treino especial
 Training.Event.StatMessage	PV+{hp} ATQ+{atk} DEF+{def} VEL+{spd} PRE+{hit}
@@ -454,7 +452,7 @@ Training.Shop.Title	Loja
 Training.Inventory.Title	Itens
 Training.Shop.NextPage	Prox.
 Training.Shop.OpenInventory	Itens
-Training.Shop.Refresh	Novo
+Training.Shop.Refresh	Atualizar
 Training.Shop.RefreshConfirm	Atualizar itens por {price}G?
 Training.Shop.LeaveConfirm	Fechar a loja e deixar o tempo passar?
 Training.Shop.Refreshed	Itens atualizados\nResta {money}G
@@ -490,20 +488,20 @@ BattlePvp.ModelTimeout	Timeout modelo oponente ({seconds}s)
 BattlePvp.ModelTooLarge	Modelo muito grande ({sizeMb}MB / max {maxMb}MB)
 BattlePvp.SlotTimeout	Timeout escolha de slot ({seconds}s)
 BattlePvp.MatchupTimeout	Timeout pronto para luta ({seconds}s)
-BattlePvp.StagingTimeout	Opponent matchup prep timed out ({seconds}s)
-BattlePvp.SessionAborted	Opponent aborted match preparation
-BattlePvp.NetworkLost	Match aborted due to network disconnect
-BattlePvp.TransferAckTimeout	Opponent model receive ack timed out ({seconds}s)
-BattlePvp.RematchTimeout	Opponent rematch prep timed out ({seconds}s)
+BattlePvp.StagingTimeout	Timeout preparacao da apresentacao ({seconds}s)
+BattlePvp.SessionAborted	O oponente interrompeu a preparação
+BattlePvp.NetworkLost	Combate interrompido por queda de rede
+BattlePvp.TransferAckTimeout	Timeout confirmacao do modelo ({seconds}s)
+BattlePvp.RematchTimeout	Timeout preparacao da revancha ({seconds}s)
 Training.Debug.NoSession	Sem sessao
 Training.Debug.UnknownItem	ID item desconhecido: {id}
 Training.Debug.ItemAdded	Adicionado {count} x {name}
 Training.Motivation.LabelWithGlyph	Motivacao  {glyph}
-ClayEdit.PaintGuideIcons	[Pintura]\n{I:MouseLeft} arrastar : pintar\n{I:MouseWheel} : pincel\n{W:KeyShift}+arrastar : profundidade\n{W:KeyAlt}+arrastar : camera\n{W:KeyCtrl}+{I:KeyZ} : desfazer\n{W:KeyCtrl}+{I:KeyY} : refazer\nCor : picker
-Battle.TipsBodyIcons	[Controles]\n{I:KeyA} / {I:KeyLeft} : recuar\n{I:KeyD} / {I:KeyRight} : avancar\n{W:KeyShift}+{I:KeyA}/{I:KeyD} : passo\n{I:Key1}-{I:Key4} : ataque\n{I:KeySpace} : empurrar\n{I:MouseRight} segurar : reparar\n\n[Basico]\nAcumule custo e ataque.\nAlcance e poder variam.\nMesmo botao para contra-atacar.\nPartes quebradas enfraquecem o rival.
+ClayEdit.PaintGuideIcons	[Pintura]\n{I:MouseLeft} arrastar : pintar\n{I:MouseWheel} : pincel\n{W:KeyShift}+arrastar : profundidade\n{W:KeyAlt}+arrastar : camera\n{W:KeyCtrl}+{I:KeyZ} : desfazer\n{W:KeyCtrl}+{I:KeyY} : refazer\nCor : seletor
+Battle.TipsBodyIcons	[Controles]\n{I:KeyA} / {I:KeyLeft} : recuar\n{I:KeyD} / {I:KeyRight} : avancar\n{W:KeyShift}+{I:KeyA}/{I:KeyD} : passo\n{I:Key1}-{I:Key4} : ataque\n{I:KeySpace} : empurrar\n{I:MouseRight} segurar : reparar\n\n[Basico]\nAcumule custo e ataque.\nAlcance e poder variam.\nMesmo botao para contra-atacar.\nPartes quebradas enfraquecem o rival e bloqueiam tecnicas dessa parte.
 Battle.TipsEscHintIcons	{E:KeyEsc} tutorial
 Battle.HintPartRepairIcons	Segurar {I:MouseRight}: reparar
-Battle.HintKnockbackReadyIcons	Empurro pronto {I:KeySpace}
+Battle.HintKnockbackReadyIcons	Empurrão pronto {I:KeySpace}
 BattlePvp.JoinCodeLabel	Codigo: {code}
 BattlePvp.CreatingRoom	Criando sala...
 BattlePvp.ShareJoinCode	Codigo: {code}\nCompartilhe este codigo
@@ -535,12 +533,12 @@ Training.Hover.InventoryNextPage	Proxima pagina inventario
 Training.Hover.BackToCommand	Voltar as acoes
 Training.Hover.Train	Custo varia. Sucesso sobe stats
 Training.Hover.SpecialTrain	Custo e grandes ganhos
-Training.Hover.Rest	Energia +{base} (grande +{great}, motivacao +{mot})
+Training.Hover.Rest	Vigor +{base} (grande +{great}, motivacao +{mot})
 Training.Hover.Shop	Loja so no almoco
 Training.Hover.UseItem	Usar (sem tempo)
-Training.Hover.Tournament	Vitoria: premio e energia
+Training.Hover.Tournament	Vitoria: premio e vigor
 Training.Hover.FailRate	Falha {value}%
-Training.Hover.StaminaCost	Energia -{value}
+Training.Hover.StaminaCost	Vigor -{value}
 Training.Hover.FailRateLine	\nFalha {value}%
 Training.Hud.Continue	Continuar
 Training.Hud.BackToTitle	Titulo
@@ -581,16 +579,16 @@ Training.Inheritance.PickHeader2	Escolha 2 monstros treinados para herdar (2º)
 Training.Inheritance.ConfirmPick	Progenitor {pickNumber}\nConfira os status e confirme
 Training.Resume.ScheduleWithMoney	{schedule}, Dinheiro {money}G
 Training.Resume.MotivationLabel	Motivação 
-Training.Resume.StaminaLabel	, Resistência {stamina} / {max}
+Training.Resume.StaminaLabel	, Vigor {stamina} / {max}
 Training.Resume.Stats	PV {hp}\nAtq {atk}\nDef {def}\nVel {spd}\nPre {hit}
-Training.Resume.SummaryBody	{schedule}, Dinheiro {money}G\nMotivação{glyph} Resistência{stamina}/{max}\nPV {hp} Atq {atk} Def {def} Vel {spd} Pre {hit}
+Training.Resume.SummaryBody	{schedule}, Dinheiro {money}G\nMotivação{glyph} Vigor{stamina}/{max}\nPV {hp} Atq {atk} Def {def} Vel {spd} Pre {hit}
 BattlePvp.LobbyTitle	Batalha online
 BattlePvp.DirectMatch	Direto
 BattlePvp.RandomMatch	Aleat.
 BattlePvp.CreateRoom	Criar
 BattlePvp.JoinRoom	Entrar
 BattlePvp.StartMatch	Match
-BattlePvp.Matching	Matchmaking…
+BattlePvp.Matching	Buscando…
 BattlePvp.CopyCode	Copiar
 BattlePvp.JoinCodePlaceholder	Digite o código
 BattlePvp.OpponentWaiting	Aguardando oponente…
@@ -613,7 +611,7 @@ ClayEdit.NewCreate	Novo
 ClayEdit.Remake	Refazer
 ClayEdit.RemakeLong	Refazer monstro
 ClayEdit.Save	Salvar
-ClayEdit.SaveAsEnemy	Inimigo
+ClayEdit.SaveAsEnemy	Como inimigo
 ClayEdit.OverwriteSave	Sobrescr.
 ClayEdit.Delete	Excluir
 ClayEdit.DeleteConfirm	Excluir
@@ -634,7 +632,7 @@ ModelGallery.SortRandom	Aleat.
 ModelGallery.SortMonthly	Mes
 ModelGallery.SortOverall	Geral
 ModelGallery.Refresh	Atual.
-ModelGallery.Publish	Post
+ModelGallery.Publish	Publicar
 ModelGallery.Download	Baixar
 ModelGallery.Prev	Ant.
 ModelGallery.Next	Prox.
@@ -652,8 +650,8 @@ ClayEdit.PaintMode	Pintar
 ClayEdit.AnimationMode	Mover
 ClayEdit.BackgroundColor	Fundo
 Battle.MatchupStatus	Status
-Training.SwapSkip	Skip
-Training.Hud.Interrupt	Pausa
+Training.SwapSkip	Manter
+Training.Hud.Interrupt	Salvar e sair
 Enemy.Name.0	Clemon
 Enemy.Name.1	Limo mono-olho
 Enemy.Name.2	Hakobuta
@@ -665,7 +663,7 @@ Enemy.Name.7	Mogyura
 Enemy.Name.8	Aranha
 Enemy.Name.9	Cavaleiro sombrio
 Enemy.Name.10	Morcego
-Enemy.Name.11	Myraman
+Enemy.Name.11	Homem-múmia
 Enemy.Name.12	Golem
 Enemy.Name.13	Lagarto amarelo
 Enemy.Name.14	Lagarto azul

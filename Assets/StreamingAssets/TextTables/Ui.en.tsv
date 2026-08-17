@@ -38,7 +38,7 @@ Battle.HintCounter	Counter! Intercept with {part} move
 Battle.HintAttackLockout	Attack cooldown
 Battle.HintChain	Chain x{count}
 Battle.Miss	Miss
-Battle.BandClose	Close
+Battle.BandClose	Near
 Battle.BandMid	Mid
 Battle.BandFar	Far
 Battle.HitHigh	High
@@ -87,14 +87,14 @@ Training.ModeSelectTitle	Choose a training method
 Training.ResumeTitle	Training in progress found
 Training.AmbushTitle	Ambush!
 Training.AmbushTitleBang	Ambush!
-Training.AmbushEnemyDefault	Foe
+Training.AmbushEnemyDefault	Strong Foe
 Training.AmbushMessage	{name} attacks!\nFight or flee?
 Training.Complete	Training Complete
 Training.Motivation	Motivation 
-Training.LearnedHeader	笆ｼ New Move
-Training.SwapHeader	笆ｼ Slot to Replace
-Training.AttackComposition	笆ｼ Moves
-Training.AttackCompositionNone	笆ｼ Moves\nNone
+Training.LearnedHeader	▼ New Move
+Training.SwapHeader	▼ Slot to Replace
+Training.AttackComposition	▼ Moves
+Training.AttackCompositionNone	▼ Moves\nNone
 Training.Inheritance	Inheritance
 Training.SaveOverwrite	Overwrite trained slot {slot}?
 Training.SaveTo	Save to trained slot {slot}
@@ -102,7 +102,7 @@ Training.SaveDestNotSelected	No save slot selected
 Training.SaveFailed	Failed to save trained data\nUntrained data kept
 Training.AmbushStartFailed	Could not start ambush battle
 Training.SwapSlotResult	Replaced slot {slot}
-Training.ChooseSave	Slot
+Training.ChooseSave	Save To
 Training.DeleteConfirm	Delete slot {slot} "{name}"?
 Training.ModelNamePlaceholder	Enter model name
 Training.TrainedSlot	Trained Slot {index}
@@ -122,7 +122,7 @@ SkillTree.StatStartMoney	Starting Money
 SkillTree.StatTrainMoney	Training Money
 SkillTree.StatPoints	Battle Points
 SkillTree.StatInherit	Inheritance Boost
-SkillTree.StatNone	笏
+SkillTree.StatNone	─
 SkillTree.Node.Center.Name	Base HP I
 SkillTree.Node.Center.Desc	Training starts with +{0} HP
 SkillTree.Node.StartingHp.Name	Base HP II
@@ -355,9 +355,7 @@ Training.Log.ReturnToTitle	Title
 Training.Log.AfterSchoolNoOpponent	No after-school opponent found
 Training.Log.AfterSchoolStart	After-school battle\nFighting {name}
 Training.Log.AfterSchoolStartFailed	Could not start after-school battle
-Training.Log.AfterSchoolWin	Won the after-school battle
-Stamina+{stamina}
-HP+{hp} ATK+{atk} DEF+{def} SPD+{spd} HIT+{hit}
+Training.Log.AfterSchoolWin	Won the after-school battle\nStamina+{stamina}\nHP+{hp} ATK+{atk} DEF+{def} SPD+{spd} HIT+{hit}
 Training.Log.RewardMoney	 Reward+{reward}G
 Training.Log.NoNewMove	Met someone but no new move
 Training.Log.MeetTitle	Encounter
@@ -370,7 +368,7 @@ Training.Log.MotivationDown	Motivation decreased
 Training.Log.MotivationUp	Motivation increased
 Training.Log.RestGreat	Great rest
 Training.Log.RestOk	Rest
-Training.Log.RestRecover	{title}: stamina {before}竊畜after}
+Training.Log.RestRecover	{title}: stamina {before}→{after}
 Training.Log.GreatSuccess	Great Success
 Training.Log.Success	Success
 Training.Log.FoundItem	Lucky find: {name}
@@ -395,8 +393,8 @@ Training.Shop.stat_attack.Name	Attack Booster
 Training.Shop.stat_defense.Name	Defense Booster
 Training.Shop.stat_speed.Name	Speed Booster
 Training.Shop.stat_hit.Name	Accuracy Booster
-Training.Shop.train_boost.Name	Luck Boost
-Training.Shop.train_boost_strong.Name	Luck Boost+
+Training.Shop.train_boost.Name	Odds Boost
+Training.Shop.train_boost_strong.Name	Odds Boost+
 Training.Shop.motivation_tennis.Name	Tennis Ball
 Training.Shop.motivation_boost.Name	Soccer Ball
 Training.Attack.Power	Power
@@ -408,7 +406,7 @@ Training.Attack.Seconds	s
 Training.Attack.Destroy	Destroy
 Training.Attack.Current	Current
 Training.Attack.Learn	Learn
-Training.Attack.NameLabel	Move
+Training.Attack.NameLabel	Move Name
 Training.Attack.ReqPart	Required
 Training.Attack.DestroyPart	Breaks
 Training.Attack.Damage	Damage
@@ -434,19 +432,19 @@ Training.Shop.stat_speed.Desc	SPD+24
 Training.Shop.stat_hit.Desc	HIT+24
 Training.Shop.train_boost.Desc	Great-success rate +{percent}% for {turns} turns
 Training.Shop.stat_defense.Desc	DEF+24
-Training.Shop.motivation_boost.Desc	Raises motivation
+Training.Shop.motivation_boost.Desc	Motivation +{steps} stages
 Training.Shop.stat_hp.Desc	HP+32
 Training.Shop.stat_attack.Desc	ATK+24
 Training.Shop.train_boost_strong.Desc	Great-success rate +{percent}% for {turns} turns
 Training.Status.GreatSuccessBoostActive	Great-success rate up ({turns} turns left)
-Training.Shop.stamina_drink.Desc	Stamina+25
-Training.Shop.motivation_tennis.Desc	Raises motivation
+Training.Shop.stamina_drink.Desc	Stamina+{amount}
+Training.Shop.motivation_tennis.Desc	Motivation +{steps} stages
 Training.Shop.stamina_full.Desc	Fully restore stamina
-Training.Motivation.VeryLow	Very Low
-Training.Motivation.Low	Low
+Training.Motivation.VeryLow	Awful
+Training.Motivation.Low	Poor
 Training.Motivation.Normal	Normal
-Training.Motivation.High	High
-Training.Event.LearnTitle	Move Event
+Training.Motivation.High	Great
+Training.Event.LearnTitle	Learn Move
 Training.Event.LearnMessage	Chance to learn "{name}"\nChoose a slot to replace
 Training.Event.StatTitle	Special Training
 Training.Event.StatMessage	HP+{hp} ATK+{atk} DEF+{def} SPD+{spd} HIT+{hit}
@@ -500,7 +498,7 @@ Training.Debug.UnknownItem	Unknown item id: {id}
 Training.Debug.ItemAdded	Added {count} x {name}
 Training.Motivation.LabelWithGlyph	Motivation  {glyph}
 ClayEdit.PaintGuideIcons	[Paint]\n{I:MouseLeft} drag : paint\n{I:MouseWheel} : brush size\n{W:KeyShift}+drag : lock depth\n{W:KeyAlt}+drag : camera\n{W:KeyCtrl}+{I:KeyZ} : undo\n{W:KeyCtrl}+{I:KeyY} : redo\nColor : picker
-Battle.TipsBodyIcons	[Controls]\n{I:KeyA} / {I:KeyLeft} : retreat\n{I:KeyD} / {I:KeyRight} : advance\n{W:KeyShift}+{I:KeyA}/{I:KeyD} : step\n{I:Key1}-{I:Key4} : attack\n{I:KeySpace} : knockback\n{I:MouseRight} hold : repair part\n\n[Basics]\nBuild cost then use moves.\nRange and power differ per move.\nSame move button counters.\nBreaking parts weakens the foe and disables their moves.
+Battle.TipsBodyIcons	[Controls]\n{I:KeyA} / {I:KeyLeft} : retreat\n{I:KeyD} / {I:KeyRight} : advance\n{W:KeyShift}+{I:KeyA}/{I:KeyD} : step\n{I:Key1}-{I:Key4} : attack\n{I:KeySpace} : knockback\n{I:MouseRight} hold : repair part\n\n[Basics]\nBuild cost then use moves.\nRange and power differ per move.\nSame move button counters.\nBreaking parts weakens the foe and disables moves that use the broken part.
 Battle.TipsEscHintIcons	{E:KeyEsc} for tutorial
 Battle.HintPartRepairIcons	Hold {I:MouseRight} to repair
 Battle.HintKnockbackReadyIcons	Knockback ready {I:KeySpace}
@@ -542,7 +540,7 @@ Training.Hover.Tournament	Win for prize and stamina
 Training.Hover.FailRate	Fail rate {value}%
 Training.Hover.StaminaCost	Stamina -{value}
 Training.Hover.FailRateLine	\nFail rate {value}%
-Training.Hud.Continue	Next
+Training.Hud.Continue	Continue
 Training.Hud.BackToTitle	Title
 ModelGallery.OverwriteConfirm	Overwrite existing save data?
 ModelGallery.SaveToSlotConfirm	Save to this slot?
@@ -590,11 +588,11 @@ BattlePvp.RandomMatch	Random
 BattlePvp.CreateRoom	Create
 BattlePvp.JoinRoom	Join
 BattlePvp.StartMatch	Match
-BattlePvp.Matching	Matchmaking窶ｦ
+BattlePvp.Matching	Matchmaking…
 BattlePvp.CopyCode	Copy
 BattlePvp.JoinCodePlaceholder	Enter join code
-BattlePvp.OpponentWaiting	Waiting for opponent窶ｦ
-Battle.Rematch	Again
+BattlePvp.OpponentWaiting	Waiting for opponent…
+Battle.Rematch	Rematch
 Battle.Start	Fight
 Battle.VictoryShort	Victory!
 Battle.Vs	VS
@@ -613,7 +611,7 @@ ClayEdit.NewCreate	New
 ClayEdit.Remake	Remake
 ClayEdit.RemakeLong	Remake Monster
 ClayEdit.Save	Save
-ClayEdit.SaveAsEnemy	Enemy
+ClayEdit.SaveAsEnemy	As Enemy
 ClayEdit.OverwriteSave	Overwrite
 ClayEdit.Delete	Delete
 ClayEdit.DeleteConfirm	Delete
@@ -652,8 +650,8 @@ ClayEdit.PaintMode	Paint
 ClayEdit.AnimationMode	Move
 ClayEdit.BackgroundColor	Background
 Battle.MatchupStatus	Stats
-Training.SwapSkip	Skip
-Training.Hud.Interrupt	Pause
+Training.SwapSkip	Keep
+Training.Hud.Interrupt	Save & Quit
 Enemy.Name.0	Clemon
 Enemy.Name.1	One-Eyed Slime
 Enemy.Name.2	Hakobuta
@@ -665,7 +663,7 @@ Enemy.Name.7	Mogyura
 Enemy.Name.8	Spider
 Enemy.Name.9	Dark Knight
 Enemy.Name.10	Bat
-Enemy.Name.11	Myraman
+Enemy.Name.11	Mummy Man
 Enemy.Name.12	Golem
 Enemy.Name.13	Yellow Lizard
 Enemy.Name.14	Blue Lizard

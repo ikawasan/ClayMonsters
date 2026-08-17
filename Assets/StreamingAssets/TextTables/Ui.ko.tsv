@@ -189,15 +189,15 @@ SkillTree.Node.TrainingMoney4.Name	대형 거래 II
 SkillTree.Node.TrainingMoney4.Desc	육성 중 획득 금 +{0}%
 SkillTree.Node.TrainingMoney5.Name	장사의 극치
 SkillTree.Node.TrainingMoney5.Desc	육성 중 획득 금 +{0}%
-SkillTree.Node.PointsGain1.Name	전과 지혜 I
+SkillTree.Node.PointsGain1.Name	전공의 지혜 I
 SkillTree.Node.PointsGain1.Desc	대전으로 얻는 포인트 +{0}%
-SkillTree.Node.PointsGain2.Name	전과 지혜 II
+SkillTree.Node.PointsGain2.Name	전공의 지혜 II
 SkillTree.Node.PointsGain2.Desc	대전으로 얻는 포인트 +{0}%
-SkillTree.Node.PointsGain3.Name	전과 극치 I
+SkillTree.Node.PointsGain3.Name	전공의 극치 I
 SkillTree.Node.PointsGain3.Desc	대전으로 얻는 포인트 +{0}%
-SkillTree.Node.PointsGain4.Name	전과 극치 II
+SkillTree.Node.PointsGain4.Name	전공의 극치 II
 SkillTree.Node.PointsGain4.Desc	대전으로 얻는 포인트 +{0}%
-SkillTree.Node.PointsGain5.Name	전과 패자
+SkillTree.Node.PointsGain5.Name	전공의 패왕
 SkillTree.Node.PointsGain5.Desc	대전으로 얻는 포인트 +{0}%
 SkillTree.Node.Inheritance1.Name	혈맥의 힘 I
 SkillTree.Node.Inheritance1.Desc	상속 스탯 상승률 +{0}%
@@ -273,15 +273,15 @@ SkillTree.Node.TrainingMoney9.Name	장사 능수 III
 SkillTree.Node.TrainingMoney9.Desc	육성 중 획득 금 +{0}%
 SkillTree.Node.TrainingMoney10.Name	장사의 정수
 SkillTree.Node.TrainingMoney10.Desc	육성 중 획득 금 +{0}%
-SkillTree.Node.PointsGain6.Name	전과 패자 II
+SkillTree.Node.PointsGain6.Name	전공의 패왕 II
 SkillTree.Node.PointsGain6.Desc	대전으로 얻는 포인트 +{0}%
-SkillTree.Node.PointsGain7.Name	전과 패자 III
+SkillTree.Node.PointsGain7.Name	전공의 패왕 III
 SkillTree.Node.PointsGain7.Desc	대전으로 얻는 포인트 +{0}%
-SkillTree.Node.PointsGain8.Name	전과 전설 I
+SkillTree.Node.PointsGain8.Name	전공의 전설 I
 SkillTree.Node.PointsGain8.Desc	대전으로 얻는 포인트 +{0}%
-SkillTree.Node.PointsGain9.Name	전과 전설 II
+SkillTree.Node.PointsGain9.Name	전공의 전설 II
 SkillTree.Node.PointsGain9.Desc	대전으로 얻는 포인트 +{0}%
-SkillTree.Node.PointsGain10.Name	전과 전설 III
+SkillTree.Node.PointsGain10.Name	전공의 전설 III
 SkillTree.Node.PointsGain10.Desc	대전으로 얻는 포인트 +{0}%
 SkillTree.Node.Inheritance6.Name	혈맥의 극치 II
 SkillTree.Node.Inheritance6.Desc	상속 스탯 상승률 +{0}%
@@ -305,7 +305,7 @@ Training.LoseAmbush	【강적 습격】\n{name}에게 패배\n의욕 하락
 Training.LoseAfterSchool	방과 후 전투에서 패배했다\n의욕이 떨어졌다
 Training.Location.ScienceLab	이과 교실
 Training.Location.HomeEcRoom	가정실
-Training.Location.CraftRoom	도공실
+Training.Location.CraftRoom	미술실
 Training.Location.Library	도서실
 Training.Location.MusicRoom	음악실
 Training.Location.Gymnasium	체육관
@@ -355,11 +355,9 @@ Training.Log.ReturnToTitle	타이틀
 Training.Log.AfterSchoolNoOpponent	방과 후 상대를 찾지 못했습니다
 Training.Log.AfterSchoolStart	방과 후 전투\n{name}과 대전 시작
 Training.Log.AfterSchoolStartFailed	방과 후 전투를 시작할 수 없습니다
-Training.Log.AfterSchoolWin	방과 후 전투 승리
-체력+{stamina}
-HP+{hp} 공격+{atk} 방어+{def} 속도+{spd} 명중+{hit}
+Training.Log.AfterSchoolWin	방과 후 전투 승리\n체력+{stamina}\nHP+{hp} 공격+{atk} 방어+{def} 속도+{spd} 명중+{hit}
 Training.Log.RewardMoney	 상금+{reward}G
-Training.Log.NoNewMove	만남이 있었지만 新技术 기술은 없었다
+Training.Log.NoNewMove	만남이 있었지만 새 기술은 없었다
 Training.Log.MeetTitle	만남
 Training.Log.MeetLearnChance	"{name}"를 배울 기회입니다
 Training.Log.AmbushWinTail	\n상금+{reward}G\nHP+{hp} 공격+{atk} 방어+{def} 속도+{spd} 명중+{hit}
@@ -403,7 +401,7 @@ Training.Attack.Power	위력
 Training.Attack.Cost	비용
 Training.Attack.Hit	명중
 Training.Attack.Recovery	경직
-Training.Attack.WindUp	준비
+Training.Attack.WindUp	모으기
 Training.Attack.Seconds	초
 Training.Attack.Destroy	파괴
 Training.Attack.Current	현재
@@ -434,18 +432,18 @@ Training.Shop.stat_speed.Desc	속도+24
 Training.Shop.stat_hit.Desc	명중+24
 Training.Shop.train_boost.Desc	대성공률 +{percent}% {turns}턴
 Training.Shop.stat_defense.Desc	방어+24
-Training.Shop.motivation_boost.Desc	의욕 상승
+Training.Shop.motivation_boost.Desc	의욕 {steps}단계 상승
 Training.Shop.stat_hp.Desc	HP+32
 Training.Shop.stat_attack.Desc	공격+24
 Training.Shop.train_boost_strong.Desc	대성공률 +{percent}% {turns}턴
 Training.Status.GreatSuccessBoostActive	대성공률 상승 중 남은 {turns}턴
-Training.Shop.stamina_drink.Desc	체력+25
-Training.Shop.motivation_tennis.Desc	의욕 상승
+Training.Shop.stamina_drink.Desc	체력+{amount}
+Training.Shop.motivation_tennis.Desc	의욕 {steps}단계 상승
 Training.Shop.stamina_full.Desc	체력 전체 회복
-Training.Motivation.VeryLow	최저
-Training.Motivation.Low	낮음
+Training.Motivation.VeryLow	최저조
+Training.Motivation.Low	부진
 Training.Motivation.Normal	보통
-Training.Motivation.High	최고
+Training.Motivation.High	최고조
 Training.Event.LearnTitle	기술 습득
 Training.Event.LearnMessage	"{name}"를 배울 기회입니다\n교체할 슬롯을 선택
 Training.Event.StatTitle	특훈 이벤트
@@ -490,20 +488,20 @@ BattlePvp.ModelTimeout	상대 모델 수신 시간 초과 ({seconds}초)
 BattlePvp.ModelTooLarge	모델이 너무 커서 전송할 수 없습니다 ({sizeMb}MB / 상한 {maxMb}MB)
 BattlePvp.SlotTimeout	상대 슬롯 선택 대기 시간 초과 ({seconds}초)
 BattlePvp.MatchupTimeout	대전 시작 준비 대기 시간 초과 ({seconds}초)
-BattlePvp.StagingTimeout	Opponent matchup prep timed out ({seconds}s)
-BattlePvp.SessionAborted	Opponent aborted match preparation
-BattlePvp.NetworkLost	Match aborted due to network disconnect
-BattlePvp.TransferAckTimeout	Opponent model receive ack timed out ({seconds}s)
-BattlePvp.RematchTimeout	Opponent rematch prep timed out ({seconds}s)
+BattlePvp.StagingTimeout	상대 공개 준비 대기 시간 초과 ({seconds}초)
+BattlePvp.SessionAborted	상대가 대전 준비를 중단했습니다
+BattlePvp.NetworkLost	통신이 끊겨 대전을 중단했습니다
+BattlePvp.TransferAckTimeout	상대 모델 수신 확인 시간 초과 ({seconds}초)
+BattlePvp.RematchTimeout	상대 재전 준비 대기 시간 초과 ({seconds}초)
 Training.Debug.NoSession	진행 중 세션 없음
 Training.Debug.UnknownItem	알 수 없는 아이템 ID: {id}
 Training.Debug.ItemAdded	{name} {count}개 추가
 Training.Motivation.LabelWithGlyph	의욕　{glyph}
 ClayEdit.PaintGuideIcons	[페인트]\n{I:MouseLeft} 드래그 : 칠하기\n{I:MouseWheel} : 브러시 크기\n{W:KeyShift}+드래그 : 깊이 고정\n{W:KeyAlt}+드래그 : 카메라\n{W:KeyCtrl}+{I:KeyZ} : 실행 취소\n{W:KeyCtrl}+{I:KeyY} : 다시 실행\n색 : 피커
-Battle.TipsBodyIcons	[조작]\n{I:KeyA} / {I:KeyLeft} : 후퇴\n{I:KeyD} / {I:KeyRight} : 접근\n{W:KeyShift}+{I:KeyA}/{I:KeyD} : 스텝\n{I:Key1}-{I:Key4} : 기술\n{I:KeySpace} : 넉백\n{I:MouseRight} 길게 : 부위 복구\n\n[전투 기본]\n코스트를 모아 기술을 쓰세요.\n기술마다 거리와 위력이 다릅니다.\n같은 버튼으로 카운터.\n부위 파괴 시 상대가 약해집니다.
+Battle.TipsBodyIcons	[조작]\n{I:KeyA} / {I:KeyLeft} : 후퇴\n{I:KeyD} / {I:KeyRight} : 접근\n{W:KeyShift}+{I:KeyA}/{I:KeyD} : 스텝\n{I:Key1}-{I:Key4} : 기술\n{I:KeySpace} : 넉백\n{I:MouseRight} 길게 : 부위 복구\n\n[전투 기본]\n코스트를 모아 기술을 쓰세요.\n기술마다 거리와 위력이 다릅니다.\n같은 버튼으로 카운터.\n부위 파괴 시 상대가 약해지고 그 부위의 기술을 쓸 수 없습니다.
 Battle.TipsEscHintIcons	{E:KeyEsc} 튜토리얼
 Battle.HintPartRepairIcons	{I:MouseRight} 길게: 부위 복구
-Battle.HintKnockbackReadyIcons	넉백 가능 {I:KeySpace}
+Battle.HintKnockbackReadyIcons	날리기 가능 {I:KeySpace}
 BattlePvp.JoinCodeLabel	참가 코드: {code}
 BattlePvp.CreatingRoom	룸 생성 중…
 BattlePvp.ShareJoinCode	참가 코드: {code}\n상대에게 코드를 알려주세요
@@ -610,10 +608,10 @@ Training.ResumeContinue	이어서
 Training.AmbushFight	싸운다
 Training.AmbushFlee	도망
 ClayEdit.NewCreate	신규
-ClayEdit.Remake	다시
+ClayEdit.Remake	다시 만들기
 ClayEdit.RemakeLong	몬스터 다시 만들기
 ClayEdit.Save	저장
-ClayEdit.SaveAsEnemy	적저장
+ClayEdit.SaveAsEnemy	적으로 저장
 ClayEdit.OverwriteSave	덮어쓰기
 ClayEdit.Delete	삭제
 ClayEdit.DeleteConfirm	삭제
@@ -652,8 +650,8 @@ ClayEdit.PaintMode	칠하기
 ClayEdit.AnimationMode	동작
 ClayEdit.BackgroundColor	배경색
 Battle.MatchupStatus	능력
-Training.SwapSkip	스킵
-Training.Hud.Interrupt	중단
+Training.SwapSkip	유지
+Training.Hud.Interrupt	중단하고 저장
 Enemy.Name.0	쿠레몬
 Enemy.Name.1	외눈 슬라임
 Enemy.Name.2	하코부타
@@ -664,14 +662,14 @@ Enemy.Name.6	교교교
 Enemy.Name.7	모규라
 Enemy.Name.8	스파이더
 Enemy.Name.9	암흑 기사
-Enemy.Name.10	뱃
-Enemy.Name.11	마이라맨
+Enemy.Name.10	박쥐
+Enemy.Name.11	미라맨
 Enemy.Name.12	골렘
 Enemy.Name.13	옐로우 리자드
 Enemy.Name.14	블루 리자드
 Enemy.Name.15	Jammo
 Enemy.Name.16	선인장맨
-Enemy.Name.17	마사이
+Enemy.Name.17	마뿔소
 Enemy.Name.18	그린 리자드
 Enemy.Name.19	레드 리자드
 Enemy.Name.20	머시

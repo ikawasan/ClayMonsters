@@ -33,7 +33,7 @@ Battle.Distance	距离 {distance}
 Battle.TipsBody	【操作】\n后退/接近移动\n用技能按钮攻击\n使用反击与部位破坏
 Battle.TipsEscHint	按 Esc 显示教程
 Battle.HintPartRepair	按住右键恢复部位
-Battle.HintKnockbackReady	可使用击退
+Battle.HintKnockbackReady	可使用击飞
 Battle.HintCounter	反击！用{part}技能迎击
 Battle.HintAttackLockout	攻击冷却中
 Battle.HintChain	连击 x{count}
@@ -56,7 +56,7 @@ Motion.Kick	踢击
 Motion.ShoulderRam	肩撞
 Motion.HipCheck	胯撞
 Motion.Stomp	踩踏
-Motion.Punch	拳击
+Motion.Punch	直拳
 Motion.Elbow	肘击
 Motion.BellyFlop	压倒
 Motion.Headbutt	头槌
@@ -83,29 +83,29 @@ Enemy.Normal	普通
 Enemy.Strong	强
 Enemy.VeryStrong	超强
 Enemy.Strongest	最强
-Training.ModeSelectTitle	请选择培养方式
-Training.ResumeTitle	发现进行中的培养数据
+Training.ModeSelectTitle	请选择育成方式
+Training.ResumeTitle	发现进行中的育成数据
 Training.AmbushTitle	强敌突袭
 Training.AmbushTitleBang	强敌突袭！
 Training.AmbushEnemyDefault	强敌
 Training.AmbushMessage	{name}袭来！\n选择战斗或逃跑
-Training.Complete	培养完成
+Training.Complete	育成完成
 Training.Motivation	干劲 
 Training.LearnedHeader	▼掌握的技能
 Training.SwapHeader	▼替换槽位
 Training.AttackComposition	▼技能构成
 Training.AttackCompositionNone	▼技能构成\n无
 Training.Inheritance	继承
-Training.SaveOverwrite	将覆盖已培养槽位{slot}的数据
-Training.SaveTo	保存到已培养槽位{slot}
+Training.SaveOverwrite	将覆盖已育成槽位{slot}的数据
+Training.SaveTo	保存到已育成槽位{slot}
 Training.SaveDestNotSelected	未选择保存槽位
-Training.SaveFailed	保存培养数据失败\n未培养数据已保留
+Training.SaveFailed	保存育成数据失败\n未育成数据已保留
 Training.AmbushStartFailed	无法开始强敌突袭战斗
 Training.SwapSlotResult	已替换槽位{slot}
 Training.ChooseSave	存档
 Training.DeleteConfirm	要删除槽位{slot}「{name}」吗？
 Training.ModelNamePlaceholder	输入模型名称
-Training.TrainedSlot	已培养槽位{index}
+Training.TrainedSlot	已育成槽位{index}
 SkillTree.SelectNode	请选择节点
 SkillTree.Unlock	解锁
 SkillTree.Unlocked	已解锁
@@ -119,7 +119,7 @@ SkillTree.StatStartHit	初始命中
 SkillTree.StatStartAll	初始全属性
 SkillTree.StatGreatSuccess	大成功率
 SkillTree.StatStartMoney	初始金钱
-SkillTree.StatTrainMoney	培养获得金
+SkillTree.StatTrainMoney	育成获得金
 SkillTree.StatPoints	对战点数
 SkillTree.StatInherit	继承提升
 SkillTree.StatNone	─
@@ -172,13 +172,13 @@ SkillTree.Node.GreatSuccess4.Desc	训练大成功率+{0}%
 SkillTree.Node.GreatSuccess5.Name	达人之境
 SkillTree.Node.GreatSuccess5.Desc	训练大成功率+{0}%
 SkillTree.Node.StartingMoney1.Name	零花钱I
-SkillTree.Node.StartingMoney1.Desc	育成开始时所持金+{0}G
+SkillTree.Node.StartingMoney1.Desc	育成开始时资金+{0}G
 SkillTree.Node.StartingMoney2.Name	零花钱II
-SkillTree.Node.StartingMoney2.Desc	育成开始时所持金+{0}G
+SkillTree.Node.StartingMoney2.Desc	育成开始时资金+{0}G
 SkillTree.Node.StartingMoney3.Name	存钱高手I
-SkillTree.Node.StartingMoney3.Desc	育成开始时所持金+{0}G
+SkillTree.Node.StartingMoney3.Desc	育成开始时资金+{0}G
 SkillTree.Node.StartingMoney4.Name	存钱高手II
-SkillTree.Node.StartingMoney4.Desc	育成开始时所持金+{0}G
+SkillTree.Node.StartingMoney4.Desc	育成开始时资金+{0}G
 SkillTree.Node.TrainingMoney1.Name	赏金猎人I
 SkillTree.Node.TrainingMoney1.Desc	育成中获得金钱+{0}%
 SkillTree.Node.TrainingMoney2.Name	赏金猎人II
@@ -256,13 +256,13 @@ SkillTree.Node.GreatSuccess9.Desc	训练大成功率+{0}%
 SkillTree.Node.GreatSuccess10.Name	极意II
 SkillTree.Node.GreatSuccess10.Desc	训练大成功率+{0}%
 SkillTree.Node.StartingMoney5.Name	存钱高手III
-SkillTree.Node.StartingMoney5.Desc	育成开始时所持金+{0}G
+SkillTree.Node.StartingMoney5.Desc	育成开始时资金+{0}G
 SkillTree.Node.StartingMoney6.Name	财力I
-SkillTree.Node.StartingMoney6.Desc	育成开始时所持金+{0}G
+SkillTree.Node.StartingMoney6.Desc	育成开始时资金+{0}G
 SkillTree.Node.StartingMoney7.Name	财力II
-SkillTree.Node.StartingMoney7.Desc	育成开始时所持金+{0}G
+SkillTree.Node.StartingMoney7.Desc	育成开始时资金+{0}G
 SkillTree.Node.StartingMoney8.Name	财力III
-SkillTree.Node.StartingMoney8.Desc	育成开始时所持金+{0}G
+SkillTree.Node.StartingMoney8.Desc	育成开始时资金+{0}G
 SkillTree.Node.TrainingMoney6.Name	大宗交易III
 SkillTree.Node.TrainingMoney6.Desc	育成中获得金钱+{0}%
 SkillTree.Node.TrainingMoney7.Name	经商能手I
@@ -341,8 +341,8 @@ Training.Prompt.Shop	请选择要购买的商品
 Training.Prompt.Inventory	请选择要使用的道具
 Training.Prompt.Location	请选择目的地
 Training.Hud.Stamina	体力 {current} / {max}
-Training.Hud.MoneyShop	所持金 {money}G
-Training.Hud.MoneyLabel	所持金
+Training.Hud.MoneyShop	资金 {money}G
+Training.Hud.MoneyLabel	资金
 Training.Hud.Price	价格 {price}G
 Training.Hud.DayStarted	{day}开始了
 Training.Log.ModelLoadFailed	模型加载失败
@@ -351,13 +351,11 @@ Training.Log.LunchEnd	午休结束了
 Training.Log.ShopOnlyLunch	商店仅在午休开放
 Training.Log.BallThrowHint	长按球后松手投掷
 Training.Log.AutoTraining	正在自动育成...
-Training.Log.ReturnToTitle	标题
+Training.Log.ReturnToTitle	标题画面
 Training.Log.AfterSchoolNoOpponent	未找到放学后对手
 Training.Log.AfterSchoolStart	放学后战斗\n与{name}开战
 Training.Log.AfterSchoolStartFailed	无法开始放学后战斗
-Training.Log.AfterSchoolWin	放学后战斗胜利
-体力+{stamina}
-HP+{hp} 攻击+{atk} 防御+{def} 速度+{spd} 命中+{hit}
+Training.Log.AfterSchoolWin	放学后战斗胜利\n体力+{stamina}\nHP+{hp} 攻击+{atk} 防御+{def} 速度+{spd} 命中+{hit}
 Training.Log.RewardMoney	 赏金+{reward}G
 Training.Log.NoNewMove	有邂逅但没有新招式
 Training.Log.MeetTitle	邂逅
@@ -395,8 +393,8 @@ Training.Shop.stat_attack.Name	攻击强化剂
 Training.Shop.stat_defense.Name	防御强化剂
 Training.Shop.stat_speed.Name	速度强化剂
 Training.Shop.stat_hit.Name	命中强化剂
-Training.Shop.train_boost.Name	成功率提升剂
-Training.Shop.train_boost_strong.Name	成功率提升剂+
+Training.Shop.train_boost.Name	大成功率提升剂
+Training.Shop.train_boost_strong.Name	大成功率提升剂+
 Training.Shop.motivation_tennis.Name	网球
 Training.Shop.motivation_boost.Name	足球
 Training.Attack.Power	威力
@@ -434,19 +432,19 @@ Training.Shop.stat_speed.Desc	速度+24
 Training.Shop.stat_hit.Desc	命中+24
 Training.Shop.train_boost.Desc	大成功率+{percent}%持续{turns}回合
 Training.Shop.stat_defense.Desc	防御+24
-Training.Shop.motivation_boost.Desc	提升干劲
+Training.Shop.motivation_boost.Desc	提升干劲{steps}阶段
 Training.Shop.stat_hp.Desc	HP+32
 Training.Shop.stat_attack.Desc	攻击+24
 Training.Shop.train_boost_strong.Desc	大成功率+{percent}%持续{turns}回合
 Training.Status.GreatSuccessBoostActive	大成功率提升中 剩余{turns}回合
-Training.Shop.stamina_drink.Desc	体力+25
-Training.Shop.motivation_tennis.Desc	提升干劲
+Training.Shop.stamina_drink.Desc	体力+{amount}
+Training.Shop.motivation_tennis.Desc	提升干劲{steps}阶段
 Training.Shop.stamina_full.Desc	体力全恢复
 Training.Motivation.VeryLow	极差
 Training.Motivation.Low	不佳
 Training.Motivation.Normal	普通
 Training.Motivation.High	极佳
-Training.Event.LearnTitle	招式事件
+Training.Event.LearnTitle	习得招式
 Training.Event.LearnMessage	有机会学会“{name}”\n请选择替换槽位
 Training.Event.StatTitle	特训事件
 Training.Event.StatMessage	HP+{hp} 攻击+{atk} 防御+{def} 速度+{spd} 命中+{hit}
@@ -490,17 +488,17 @@ BattlePvp.ModelTimeout	对方模型接收超时({seconds}秒)
 BattlePvp.ModelTooLarge	模型过大无法发送 ({sizeMb}MB / 上限{maxMb}MB)
 BattlePvp.SlotTimeout	对方选槽等待超时({seconds}秒)
 BattlePvp.MatchupTimeout	开战准备等待超时({seconds}秒)
-BattlePvp.StagingTimeout	Opponent matchup prep timed out ({seconds}s)
-BattlePvp.SessionAborted	Opponent aborted match preparation
-BattlePvp.NetworkLost	Match aborted due to network disconnect
-BattlePvp.TransferAckTimeout	Opponent model receive ack timed out ({seconds}s)
-BattlePvp.RematchTimeout	Opponent rematch prep timed out ({seconds}s)
+BattlePvp.StagingTimeout	对方展示准备等待超时({seconds}秒)
+BattlePvp.SessionAborted	对手中断了对战准备
+BattlePvp.NetworkLost	因网络断开而中断对战
+BattlePvp.TransferAckTimeout	对方模型接收确认超时({seconds}秒)
+BattlePvp.RematchTimeout	对方再战准备等待超时({seconds}秒)
 Training.Debug.NoSession	没有进行中的育成
 Training.Debug.UnknownItem	未知道具ID: {id}
 Training.Debug.ItemAdded	已添加{name} x{count}
 Training.Motivation.LabelWithGlyph	干劲　{glyph}
 ClayEdit.PaintGuideIcons	[喷漆]\n{I:MouseLeft} 拖动 : 上色\n{I:MouseWheel} : 笔刷大小\n{W:KeyShift}+拖动 : 锁定深度\n{W:KeyAlt}+拖动 : 相机\n{W:KeyCtrl}+{I:KeyZ} : 撤销\n{W:KeyCtrl}+{I:KeyY} : 重做\n颜色 : 取色器
-Battle.TipsBodyIcons	[操作]\n{I:KeyA} / {I:KeyLeft} : 后退\n{I:KeyD} / {I:KeyRight} : 接近\n{W:KeyShift}+{I:KeyA}/{I:KeyD} : 步进\n{I:Key1}-{I:Key4} : 出招\n{I:KeySpace} : 击飞\n{I:MouseRight} 长按 : 部位修复\n\n[战斗基础]\n积攒消耗后使用招式。\n每招距离与威力不同。\n同键可反击。\n破坏部位会削弱对手。
+Battle.TipsBodyIcons	[操作]\n{I:KeyA} / {I:KeyLeft} : 后退\n{I:KeyD} / {I:KeyRight} : 接近\n{W:KeyShift}+{I:KeyA}/{I:KeyD} : 侧步\n{I:Key1}-{I:Key4} : 出招\n{I:KeySpace} : 击飞\n{I:MouseRight} 长按 : 部位修复\n\n[战斗基础]\n积攒消耗后使用招式。\n每招距离与威力不同。\n同键可反击。\n破坏部位会削弱对手，并使该部位的招式无法使用。
 Battle.TipsEscHintIcons	{E:KeyEsc} 查看教程
 Battle.HintPartRepairIcons	长按{I:MouseRight}修复部位
 Battle.HintKnockbackReadyIcons	可击飞 {I:KeySpace}
@@ -543,7 +541,7 @@ Training.Hover.FailRate	失败率 {value}%
 Training.Hover.StaminaCost	体力-{value}
 Training.Hover.FailRateLine	\n失败率 {value}%
 Training.Hud.Continue	继续
-Training.Hud.BackToTitle	标题
+Training.Hud.BackToTitle	返回标题
 ModelGallery.OverwriteConfirm	是否覆盖现有存档？
 ModelGallery.SaveToSlotConfirm	保存到此槽位？
 LoadSlot.PlayerInstruction	选择你的怪物
@@ -579,11 +577,11 @@ Training.Inheritance.ParentPreview	{name}\n继承提升 HP+{hp} 攻击+{atk} 防
 Training.Inheritance.PickHeader1	请选择2只已育成怪物作为继承(第1只)
 Training.Inheritance.PickHeader2	请选择2只已育成怪物作为继承(第2只)
 Training.Inheritance.ConfirmPick	继承源第{pickNumber}只\n请确认状态后确定
-Training.Resume.ScheduleWithMoney	{schedule}，所持金 {money}G
+Training.Resume.ScheduleWithMoney	{schedule}，资金 {money}G
 Training.Resume.MotivationLabel	干劲 
 Training.Resume.StaminaLabel	，体力 {stamina} / {max}
 Training.Resume.Stats	HP {hp}\n攻击 {atk}\n防御 {def}\n速度 {spd}\n命中 {hit}
-Training.Resume.SummaryBody	{schedule}，所持金 {money}G\n干劲{glyph} 体力{stamina}/{max}\nHP {hp} 攻击 {atk} 防御 {def} 速度 {spd} 命中 {hit}
+Training.Resume.SummaryBody	{schedule}，资金 {money}G\n干劲{glyph} 体力{stamina}/{max}\nHP {hp} 攻击 {atk} 防御 {def} 速度 {spd} 命中 {hit}
 BattlePvp.LobbyTitle	联机对战
 BattlePvp.DirectMatch	指定
 BattlePvp.RandomMatch	随机
@@ -610,10 +608,10 @@ Training.ResumeContinue	继续
 Training.AmbushFight	战斗
 Training.AmbushFlee	逃走
 ClayEdit.NewCreate	新建
-ClayEdit.Remake	重做
+ClayEdit.Remake	重制
 ClayEdit.RemakeLong	重做怪物
 ClayEdit.Save	保存
-ClayEdit.SaveAsEnemy	存为敌
+ClayEdit.SaveAsEnemy	存为敌人
 ClayEdit.OverwriteSave	覆盖
 ClayEdit.Delete	删除
 ClayEdit.DeleteConfirm	删除
@@ -652,8 +650,8 @@ ClayEdit.PaintMode	上色
 ClayEdit.AnimationMode	动作
 ClayEdit.BackgroundColor	背景色
 Battle.MatchupStatus	能力
-Training.SwapSkip	跳过
-Training.Hud.Interrupt	中断
+Training.SwapSkip	不替换
+Training.Hud.Interrupt	中断并保存
 Enemy.Name.0	克雷蒙
 Enemy.Name.1	独眼史莱姆
 Enemy.Name.2	哈科猪
@@ -665,7 +663,7 @@ Enemy.Name.7	莫古拉
 Enemy.Name.8	蜘蛛
 Enemy.Name.9	暗骑士
 Enemy.Name.10	蝙蝠
-Enemy.Name.11	麦拉男
+Enemy.Name.11	木乃伊男
 Enemy.Name.12	石魔像
 Enemy.Name.13	黄蜥蜴
 Enemy.Name.14	蓝蜥蜴
