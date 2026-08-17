@@ -25,6 +25,7 @@ Title.ModelGallery	展示室
 Title.Option	オプション
 Title.DesktopPet	デスクトップペット
 Title.Quit	ゲームをやめる
+Title.QuitConfirm	ゲームを終了しますか？
 Battle.Draw	引き分け
 Battle.Victory	{winnerName} の勝利！
 Battle.RangeLabel	射程

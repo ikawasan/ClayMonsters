@@ -25,6 +25,7 @@ Title.ModelGallery	Galerie
 Title.Option	Options
 Title.DesktopPet	Mascotte bureau
 Title.Quit	Quitter
+Title.QuitConfirm	Quitter le jeu ?
 Battle.Draw	Match nul
 Battle.Victory	{winnerName} gagne !
 Battle.RangeLabel	Portée

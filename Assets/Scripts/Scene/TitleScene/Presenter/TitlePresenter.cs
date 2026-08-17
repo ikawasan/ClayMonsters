@@ -25,6 +25,7 @@ namespace Scene.TitleScene.Presenter
             DesktopPetZOrder = 2,
             NpcTournament = 3,
             NpcTournamentContinue = 4,
+            QuitGame = 5,
         }
 
         private readonly IClayMonsterSceneManager sceneManager;
@@ -420,6 +421,9 @@ namespace Scene.TitleScene.Presenter
                 case ConfirmIntent.NpcTournamentContinue:
                     OnNpcTournamentContinueConfirmYes();
                     break;
+                case ConfirmIntent.QuitGame:
+                    OnQuitGameConfirmYes();
+                    break;
                 default:
                     confirmWindowView.Hide();
                     break;
@@ -441,6 +445,9 @@ namespace Scene.TitleScene.Presenter
                     break;
                 case ConfirmIntent.NpcTournamentContinue:
                     OnNpcTournamentContinueConfirmNo();
+                    break;
+                case ConfirmIntent.QuitGame:
+                    OnQuitGameConfirmNo();
                     break;
                 default:
                     confirmWindowView.Hide();
@@ -530,7 +537,31 @@ namespace Scene.TitleScene.Presenter
 
         private void OnClickQuitGameButton()
         {
+            if (sceneManager.IsTransition)
+            {
+                return;
+            }
+
+            messageWindowView.Hide();
+            desktopPetSlotSelectView.Hide();
+            npcBattleMenuView.Hide();
+            confirmIntent = ConfirmIntent.QuitGame;
+            confirmWindowView.ShowLocalized(
+                GameTextKeys.TitleQuitConfirm,
+                "ÉQÅ[ÉÄÇèIóπÇµÇ‹Ç∑Ç©ÅH");
+        }
+
+        private void OnQuitGameConfirmYes()
+        {
+            confirmIntent = ConfirmIntent.None;
+            confirmWindowView.Hide();
             ApplicationQuitGuard.RequestQuit();
+        }
+
+        private void OnQuitGameConfirmNo()
+        {
+            confirmIntent = ConfirmIntent.None;
+            confirmWindowView.Hide();
         }
     }
 }

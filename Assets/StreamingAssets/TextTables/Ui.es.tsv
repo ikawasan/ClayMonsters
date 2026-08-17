@@ -25,6 +25,7 @@ Title.ModelGallery	Galeria
 Title.Option	Opciones
 Title.DesktopPet	Mascota de escritorio
 Title.Quit	Salir
+Title.QuitConfirm	¿Salir del juego?
 Battle.Draw	Empate
 Battle.Victory	¡Gana {winnerName}!
 Battle.RangeLabel	Alcance

@@ -25,6 +25,7 @@ Title.ModelGallery	Galerie
 Title.Option	Optionen
 Title.DesktopPet	Desktop-Pet
 Title.Quit	Ende
+Title.QuitConfirm	Spiel beenden?
 Battle.Draw	Unentschieden
 Battle.Victory	{winnerName} siegt!
 Battle.RangeLabel	Reichweite

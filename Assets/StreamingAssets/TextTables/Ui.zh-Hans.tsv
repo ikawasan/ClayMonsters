@@ -25,6 +25,7 @@ Title.ModelGallery	展厅
 Title.Option	设置
 Title.DesktopPet	桌面宠物
 Title.Quit	退出
+Title.QuitConfirm	要结束游戏吗？
 Battle.Draw	平局
 Battle.Victory	{winnerName} 获胜！
 Battle.RangeLabel	射程

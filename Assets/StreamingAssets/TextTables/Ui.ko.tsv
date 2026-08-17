@@ -25,6 +25,7 @@ Title.ModelGallery	전시
 Title.Option	설정
 Title.DesktopPet	데스크톱 펫
 Title.Quit	종료
+Title.QuitConfirm	게임을 종료할까요?
 Battle.Draw	무승부
 Battle.Victory	{winnerName} 승리!
 Battle.RangeLabel	사거리

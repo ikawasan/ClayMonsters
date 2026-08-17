@@ -25,6 +25,7 @@ Title.ModelGallery	Gallery
 Title.Option	Options
 Title.DesktopPet	Desktop Pet
 Title.Quit	Quit
+Title.QuitConfirm	Quit the game?
 Battle.Draw	Draw
 Battle.Victory	{winnerName} wins!
 Battle.RangeLabel	Range

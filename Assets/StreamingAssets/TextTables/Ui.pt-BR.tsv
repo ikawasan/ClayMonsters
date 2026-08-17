@@ -25,6 +25,7 @@ Title.ModelGallery	Galeria
 Title.Option	Opcoes
 Title.DesktopPet	Pet da área de trabalho
 Title.Quit	Sair
+Title.QuitConfirm	Sair do jogo?
 Battle.Draw	Empate
 Battle.Victory	{winnerName} venceu!
 Battle.RangeLabel	Alcance

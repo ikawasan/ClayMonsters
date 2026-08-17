@@ -25,6 +25,7 @@ namespace Localization
         public const string TitleOption = "Title.Option";
         public const string TitleDesktopPet = "Title.DesktopPet";
         public const string TitleQuit = "Title.Quit";
+        public const string TitleQuitConfirm = "Title.QuitConfirm";
         public const string TitleNoTrainedModel = "Title.NoTrainedModel";
         public const string TitleNoUntrainedModel = "Title.NoUntrainedModel";
         public const string TitleDesktopPetConfirm = "Title.DesktopPetConfirm";
