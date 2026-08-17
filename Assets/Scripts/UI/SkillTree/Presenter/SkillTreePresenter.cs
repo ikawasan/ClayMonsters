@@ -1,3 +1,5 @@
+using Audio;
+using Audio.Interface;
 using Localization;
 using R3;
 using SaveData;
@@ -18,6 +20,7 @@ namespace UI.SkillTree.Presenter
         private readonly ISkillTreeView view;
         private readonly ISkillTreeService skillTreeService;
         private readonly IPointsService pointsService;
+        private readonly ISeService seService;
 
         private SkillTreeNodeId selectedNodeId = SkillTreeNodeId.Center;
         private bool isSetup;
@@ -34,11 +37,13 @@ namespace UI.SkillTree.Presenter
         public SkillTreePresenter(
             ISkillTreeView view,
             ISkillTreeService skillTreeService,
-            IPointsService pointsService)
+            IPointsService pointsService,
+            ISeService seService)
         {
             this.view = view;
             this.skillTreeService = skillTreeService;
             this.pointsService = pointsService;
+            this.seService = seService;
         }
 
         /// <inheritdoc />
@@ -129,6 +134,7 @@ namespace UI.SkillTree.Presenter
                 return;
             }
 
+            seService.Play(SeTrackId.GetSkill);
             view.SetPoints(pointsService.Points);
             RefreshAll();
 

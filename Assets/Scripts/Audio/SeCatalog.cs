@@ -34,6 +34,7 @@ namespace Audio
                 SeTrackId.InheritanceLightFall => InheritanceRoot + "InheritanceLightFall",
                 SeTrackId.InheritanceLightGlow => InheritanceRoot + "InheritanceLightGlow",
                 SeTrackId.Reaction => ResourceRoot + "Reaction",
+                SeTrackId.GetSkill => ResourceRoot + "GetSkill",
                 _ => string.Empty
             };
         }

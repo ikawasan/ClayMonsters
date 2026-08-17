@@ -83,6 +83,11 @@ namespace Audio
         /// <summary>
         /// 育成でキャラクリック時の感嘆符
         /// </summary>
-        Reaction
+        Reaction,
+
+        /// <summary>
+        /// スキルツリーでスキル解放
+        /// </summary>
+        GetSkill
     }
 }
