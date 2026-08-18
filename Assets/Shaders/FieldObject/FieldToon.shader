@@ -29,8 +29,6 @@ Shader "Custom/FieldToon"
         [HideInInspector] _Cull("Cull", Float) = 2
     }
     
-    CustomEditor "FieldToonShaderGUI"
-    
     SubShader
     {
         Tags 
