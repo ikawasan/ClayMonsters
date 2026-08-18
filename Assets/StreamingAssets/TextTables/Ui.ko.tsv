@@ -298,7 +298,9 @@ ClayEdit.PaintGuide	【페인트】\n왼쪽 드래그: 칠하기\n휠: 브러시
 Training.LearnedMove	기술을 배웠습니다\n슬롯 {slot}: {name}
 Training.ChooseLearnSlot	{name}을 배울 슬롯을 선택하세요
 Training.InvalidSwapSlot	교체 슬롯이 유효하지 않습니다
-Training.SwappedMove	기술을 교체했습니다\n슬롯 {slot}: {name}
+Training.SwappedMove	「{oldName}」
+↓
+「{newName}」
 Training.FleeAmbush	【강적 습격】\n{name}에게서 도망쳤다
 Training.WinAmbush	【강적 습격】\n{name}에게 승리
 Training.LoseAmbush	【강적 습격】\n{name}에게 패배\n의욕 하락

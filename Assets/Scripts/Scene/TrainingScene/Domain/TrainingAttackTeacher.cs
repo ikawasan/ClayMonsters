@@ -111,6 +111,23 @@ namespace Scene.TrainingScene.Domain
         }
 
         /// <summary>
+        /// 技入れ替え後の結果テキストを返す
+        /// </summary>
+        /// <param name="oldAttack">変更前の攻撃</param>
+        /// <param name="newAttack">変更後の攻撃</param>
+        public static string FormatAttackSwapResult(MotionType oldAttack, MotionType newAttack)
+        {
+            return LocalizedText.GetOrFallback(
+                GameTextKeys.TrainingSwappedMove,
+                "「{oldName}」\n↓\n「{newName}」",
+                new Dictionary<string, object>
+                {
+                    { "oldName", FormatAttackName(oldAttack) },
+                    { "newName", FormatAttackName(newAttack) },
+                });
+        }
+
+        /// <summary>
         /// 攻撃入れ替えボタン用の比較テキストを返す
         /// </summary>
         /// <param name="slotNumber">スロット番号(1始まり)</param>

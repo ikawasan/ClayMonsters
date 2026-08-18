@@ -298,7 +298,9 @@ ClayEdit.PaintGuide	【Malen】\nLMB-ziehen: Malen\nRad: Pinselgröße\nUmschalt
 Training.LearnedMove	Technik erlernt\nSlot {slot}: {name}
 Training.ChooseLearnSlot	Slot für {name} wählen
 Training.InvalidSwapSlot	Ungültiger Slot
-Training.SwappedMove	Technik ersetzt\nSlot {slot}: {name}
+Training.SwappedMove	{oldName}
+↓
+{newName}
 Training.FleeAmbush	[Hinterhalt]\nVor {name} geflohen
 Training.WinAmbush	[Hinterhalt]\n{name} besiegt
 Training.LoseAmbush	[Hinterhalt]\nNiederlage gegen {name}\nMotivation sank

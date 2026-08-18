@@ -298,7 +298,9 @@ ClayEdit.PaintGuide	【Paint】\nLMB drag: Paint\nWheel: Brush size\nShift+drag:
 Training.LearnedMove	Learned a move\nSlot {slot}: {name}
 Training.ChooseLearnSlot	Choose a slot for {name}
 Training.InvalidSwapSlot	Invalid swap slot
-Training.SwappedMove	Move replaced\nSlot {slot}: {name}
+Training.SwappedMove	{oldName}
+↓
+{newName}
 Training.FleeAmbush	[Ambush]\nFled from {name}
 Training.WinAmbush	[Ambush]\nDefeated {name}
 Training.LoseAmbush	[Ambush]\nLost to {name}\nMotivation dropped

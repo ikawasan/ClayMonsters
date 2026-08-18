@@ -298,7 +298,9 @@ ClayEdit.PaintGuide	【ペイント操作】\n左ドラッグ:塗る\nホイー�
 Training.LearnedMove	技を覚えました\nスロット{slot}: {name}
 Training.ChooseLearnSlot	技「{name}」を覚えるスロットを選んでください
 Training.InvalidSwapSlot	入れ替えスロットが無効です
-Training.SwappedMove	技を入れ替えました\nスロット{slot}: {name}
+Training.SwappedMove	「{oldName}」
+↓
+「{newName}」
 Training.FleeAmbush	【強敵急襲】\n{name}から逃げ出した
 Training.WinAmbush	【強敵急襲】\n{name}に勝利した
 Training.LoseAmbush	【強敵急襲】\n{name}に敗北した\nやる気が下がった

@@ -1056,14 +1056,7 @@ namespace Scene.TrainingScene
 
             MotionType oldAttack = attacks[replaceIndex];
             attacks[replaceIndex] = learned;
-            hudView.ShowOverlayMessage(
-                LocalizedText.Get(
-                    GameTextKeys.TrainingSwappedMove,
-                    new System.Collections.Generic.Dictionary<string, object>
-                    {
-                        { "slot", replaceIndex + 1 },
-                        { "name", TrainingAttackTeacher.FormatAttackName(oldAttack) },
-                    }));
+            hudView.ShowOverlayMessage(TrainingAttackTeacher.FormatAttackSwapResult(oldAttack, learned));
             await hudView.WaitContinueAsync(cancellationToken);
             hudView.ClearOverlayMessage();
             return learned;
@@ -2224,13 +2217,7 @@ namespace Scene.TrainingScene
             if (session.TryReplaceAttack(replaceIndex, outcome.LearnedAttack))
             {
                 hudView.SetLogMessage(
-                    LocalizedText.Get(
-                        GameTextKeys.TrainingSwappedMove,
-                        new System.Collections.Generic.Dictionary<string, object>
-                        {
-                            { "slot", replaceIndex + 1 },
-                            { "name", TrainingAttackTeacher.FormatAttackName(oldAttack) },
-                        }));
+                    TrainingAttackTeacher.FormatAttackSwapResult(oldAttack, outcome.LearnedAttack));
             }
 
             await hudView.WaitContinueAsync(cancellationToken);

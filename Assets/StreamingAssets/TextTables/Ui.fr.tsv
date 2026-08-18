@@ -298,7 +298,9 @@ ClayEdit.PaintGuide	【Peinture】\nGlisser G: Peindre\nMolette: Taille\nMaj+gli
 Training.LearnedMove	Technique apprise\nEmplacement {slot}: {name}
 Training.ChooseLearnSlot	Choisissez un emplacement pour {name}
 Training.InvalidSwapSlot	Emplacement invalide
-Training.SwappedMove	Technique remplacée\nEmplacement {slot}: {name}
+Training.SwappedMove	{oldName}
+↓
+{newName}
 Training.FleeAmbush	[Embuscade]\nFui de {name}
 Training.WinAmbush	[Embuscade]\nVictoire contre {name}
 Training.LoseAmbush	[Embuscade]\nDéfaite face à {name}\nMotivation en baisse

@@ -298,7 +298,9 @@ ClayEdit.PaintGuide	【Pintura】\nArrastre izq: Pintar\nRueda: Tamaño\nMayús+
 Training.LearnedMove	Técnica aprendida\nEspacio {slot}: {name}
 Training.ChooseLearnSlot	Elige un espacio para {name}
 Training.InvalidSwapSlot	Espacio no válido
-Training.SwappedMove	Técnica reemplazada\nEspacio {slot}: {name}
+Training.SwappedMove	{oldName}
+↓
+{newName}
 Training.FleeAmbush	[Emboscada]\nHuiste de {name}
 Training.WinAmbush	[Emboscada]\nVictoria sobre {name}
 Training.LoseAmbush	[Emboscada]\nDerrota ante {name}\nMotivación bajó
