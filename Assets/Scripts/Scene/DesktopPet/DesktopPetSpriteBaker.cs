@@ -15,7 +15,7 @@ namespace Scene.DesktopPet
     /// </summary>
     public sealed class DesktopPetSpriteBaker
     {
-        private const int BakeSize = 160;
+        private const int BakeSize = 256;
         private const int BakeLayer = 30;
         private const int IdleFrameCount = 6;
         private const int WalkFrameCount = 8;

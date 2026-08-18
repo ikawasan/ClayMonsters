@@ -13,7 +13,7 @@ namespace Scene.DesktopPet
     /// </summary>
     public static class DesktopPetSpriteCache
     {
-        public const int FormatVersion = 12;
+        public const int FormatVersion = 13;
         public const int RequiredClipCount = 8;
         private const string RootFolderName = "DesktopPetCache";
         private const string ManifestFileName = "manifest.txt";
