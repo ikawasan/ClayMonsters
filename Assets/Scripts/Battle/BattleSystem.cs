@@ -969,12 +969,45 @@ namespace Battle
                 return;
             }
 
+            if (TryBeginDelayedStrike())
+            {
+                return;
+            }
+
             ResolvePendingAttackStrike();
         }
 
         private static bool ShouldLaunchProjectileBeforeStrike(AttackMove move)
         {
             return move != null && move.Motion == MotionType.Fireball;
+        }
+
+        /// <summary>
+        /// 打撃が見えるまで命中解決を遅らせ攻撃モーションを先に再生する
+        /// </summary>
+        private bool TryBeginDelayedStrike()
+        {
+            if (pendingAttackAttacker == null || pendingAttackMove == null)
+            {
+                return false;
+            }
+
+            float progress = ProceduralMotionCharacter.ResolveAttackImpactProgress(pendingAttackMove.Motion);
+            if (progress <= 0.05f)
+            {
+                return false;
+            }
+
+            float delay = pendingAttackMove.Recovery * progress;
+            if (delay <= 0.04f)
+            {
+                return false;
+            }
+
+            pendingProjectileFlightRemaining = delay;
+            pendingProjectileReplayMotionSkipped = true;
+            pendingAttackAttacker.PlayMotion(pendingAttackMove.Motion, pendingAttackMove.Recovery);
+            return true;
         }
 
         private void LaunchPendingProjectile()

@@ -49,7 +49,7 @@ namespace ClayEditor.Rigging
         [Tooltip("溜め姿勢を攻撃へ持ち越す強さ(0..1)")]
         [SerializeField] private float chargeCarryWeight = 0.9f;
         [Tooltip("ルート移動無効時でも見た目だけ踏み込む距離倍率")]
-        [SerializeField] private float visualLungeScale = 0.35f;
+        [SerializeField] private float visualLungeScale = 0.5f;
         [Tooltip("前方とみなすワールド方向(造形時の正面)")]
         [SerializeField] private Vector3 forwardDirection = Vector3.forward;
 

@@ -27,7 +27,7 @@ MonoBehaviour:
   attackStrikePortion: 0.28
   attackStrikeOvershoot: 0.18
   chargeCarryWeight: 0.9
-  visualLungeScale: 0.35
+  visualLungeScale: 0.5
   forwardDirection: {x: 0, y: 0, z: 1}
   tackleDistance: 2.2
   tackleLeanAngle: 42

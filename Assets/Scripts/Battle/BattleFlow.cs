@@ -548,7 +548,7 @@ namespace Battle
                 var enemyMotion = enemy.Model.GetComponent<ProceduralMotionCharacter>();
                 playerMotion?.SetRootTranslationEnabled(false);
                 enemyMotion?.SetRootTranslationEnabled(false);
-                fieldLayout.ConfigurePositionConstraint(playerMotion);
+                fieldLayout.ConfigureCombatMotions(playerMotion, enemyMotion);
                 fieldPresenter = new BattleFieldPresenter(fieldLayout, system, player.Model);
 
                 if (context.BattleCamera != null)

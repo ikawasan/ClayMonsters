@@ -162,6 +162,18 @@ namespace Battle
         }
 
         /// <summary>
+        /// 両ユニットの戦闘モーション制約と跳び乗り目標を設定する
+        /// </summary>
+        public void ConfigureCombatMotions(
+            ProceduralMotionCharacter playerMotion,
+            ProceduralMotionCharacter enemyMotion)
+        {
+            ConfigurePositionConstraint(playerMotion);
+            playerMotion?.ConfigureBattleAttackTarget(enemyModel);
+            enemyMotion?.ConfigureBattleAttackTarget(playerModel);
+        }
+
+        /// <summary>
         /// 戦闘中にプレイヤーが敵の右側へはみ出さないようモーションへ制約を渡す
         /// </summary>
         public void ConfigurePositionConstraint(ProceduralMotionCharacter playerMotion)

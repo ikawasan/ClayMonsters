@@ -434,7 +434,7 @@ namespace Scene.TrainingScene
                 ProceduralMotionCharacter enemyMotion = enemy.Model.GetComponent<ProceduralMotionCharacter>();
                 playerMotion?.SetRootTranslationEnabled(false);
                 enemyMotion?.SetRootTranslationEnabled(false);
-                fieldLayout.ConfigurePositionConstraint(playerMotion);
+                fieldLayout.ConfigureCombatMotions(playerMotion, enemyMotion);
 
                 movementInput = new BattleKeyboardMovementInput();
 
