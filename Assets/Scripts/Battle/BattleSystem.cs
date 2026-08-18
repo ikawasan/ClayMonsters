@@ -59,7 +59,8 @@ namespace Battle
             bool partLost,
             BonePart lostPart,
             bool isKnockout,
-            int lostLimbIndex = -1)
+            int lostLimbIndex = -1,
+            bool showDamagePopup = true)
         {
             Attacker = attacker;
             Target = target;
@@ -70,6 +71,7 @@ namespace Battle
             LostPart = lostPart;
             IsKnockout = isKnockout;
             LostLimbIndex = lostLimbIndex;
+            ShowDamagePopup = showDamagePopup;
         }
 
         public BattleUnit Attacker { get; }
@@ -81,6 +83,11 @@ namespace Battle
         public BonePart LostPart { get; }
         public bool IsKnockout { get; }
         public int LostLimbIndex { get; }
+
+        /// <summary>
+        /// ダメージ数値やミス表示を出すか
+        /// </summary>
+        public bool ShowDamagePopup { get; }
     }
 
     /// <summary>
@@ -114,6 +121,12 @@ namespace Battle
         private float pendingAttackPowerMultiplier = 1f;
         private bool pendingAttackIsCounter;
         private int pendingAttackSequence;
+        private int pendingStrikeHitIndex;
+        private int pendingStrikeHitCount = 1;
+        private bool pendingStrikeOutcomeRolled;
+        private bool pendingStrikeWillHit;
+        private int pendingStrikeTotalDamage;
+        private int pendingStrikeDealtDamage;
         private float attackLockoutRemaining;
         private float enemyAttackCooldownRemaining;
         private int lastPlayerMoveIndex = -1;
@@ -919,6 +932,12 @@ namespace Battle
             pendingAttackPowerMultiplier = powerMultiplier;
             pendingAttackIsCounter = isCounter;
             pendingAttackSequence = attackSequence;
+            pendingStrikeHitIndex = 0;
+            pendingStrikeHitCount = 1;
+            pendingStrikeOutcomeRolled = false;
+            pendingStrikeWillHit = false;
+            pendingStrikeTotalDamage = 0;
+            pendingStrikeDealtDamage = 0;
 
             if (attacker == enemy)
             {
@@ -992,7 +1011,7 @@ namespace Battle
                 return false;
             }
 
-            float progress = ProceduralMotionCharacter.ResolveAttackImpactProgress(pendingAttackMove.Motion);
+            float progress = ProceduralMotionCharacter.ResolveAttackImpactProgress(pendingAttackMove.Motion, 0);
             if (progress <= 0.05f)
             {
                 return false;
@@ -1004,6 +1023,12 @@ namespace Battle
                 return false;
             }
 
+            pendingStrikeHitIndex = 0;
+            pendingStrikeHitCount = ProceduralMotionCharacter.ResolveAttackHitCount(pendingAttackMove.Motion);
+            pendingStrikeOutcomeRolled = false;
+            pendingStrikeWillHit = false;
+            pendingStrikeTotalDamage = 0;
+            pendingStrikeDealtDamage = 0;
             pendingProjectileFlightRemaining = delay;
             pendingProjectileReplayMotionSkipped = true;
             pendingAttackAttacker.PlayMotion(pendingAttackMove.Motion, pendingAttackMove.Recovery);
@@ -1046,11 +1071,13 @@ namespace Battle
             bool wasCounter = pendingAttackIsCounter;
             bool wasEnemyAttack = attacker == enemy;
             int attackSequence = pendingAttackSequence;
-
-            ClearPendingAttack();
+            int hitIndex = pendingStrikeHitIndex;
+            int hitCount = Mathf.Max(1, pendingStrikeHitCount);
+            bool isLastHit = hitIndex >= hitCount - 1;
 
             if (IsFinished || !attacker.IsMoveUsableByPart(moveIndex))
             {
+                ClearPendingAttack();
                 if (wasEnemyAttack)
                 {
                     enemyAttackCooldownRemaining = UnityEngine.Random.Range(
@@ -1067,51 +1094,75 @@ namespace Battle
                 && attackSequence > 0
                 && cancelledAttackSequences.Contains(attackSequence))
             {
+                ClearPendingAttack();
                 attacker.PlayMotion(MotionType.Idle);
-                return;
-            }
-
-            if (wasCounter)
-            {
-                ExecuteMove(
-                    attacker,
-                    target,
-                    move,
-                    moveIndex,
-                    settings.CounterDamageMultiplier,
-                    attackSequence,
-                    replayAttackMotion);
-                enemyAttackCooldownRemaining = UnityEngine.Random.Range(
-                    settings.EnemyAttackCooldownMin,
-                    settings.EnemyAttackCooldownMax);
                 return;
             }
 
             if (wasEnemyAttack && combatSync != null && combatSync.ShouldDeferRemoteEnemyStrike)
             {
-                if (replayAttackMotion)
+                if (!isLastHit)
+                {
+                    ScheduleNextPendingStrikeHit(move, hitIndex);
+                    return;
+                }
+
+                if (replayAttackMotion && hitIndex == 0)
                 {
                     enemy.PlayMotion(move.Motion, move.Recovery);
                 }
 
-                enemy.ConsumeForMove(move);
+                if (!pendingStrikeOutcomeRolled)
+                {
+                    enemy.ConsumeForMove(move);
+                    pendingStrikeOutcomeRolled = true;
+                }
+
                 deferredEnemyAttackSequence = attackSequence;
                 deferredEnemyAttackConsumed = attackSequence > 0;
                 enemyAttackCooldownRemaining = UnityEngine.Random.Range(
                     settings.EnemyAttackCooldownMin,
                     settings.EnemyAttackCooldownMax);
+                ClearPendingAttack();
                 ProcessRemoteCombatSync();
                 return;
             }
 
-            ExecuteMove(attacker, target, move, moveIndex, powerMultiplier, attackSequence, replayAttackMotion);
+            float executeMultiplier = wasCounter ? settings.CounterDamageMultiplier : powerMultiplier;
+            bool knockout = ExecuteMove(
+                attacker,
+                target,
+                move,
+                moveIndex,
+                executeMultiplier,
+                attackSequence,
+                replayAttackMotion && hitIndex == 0,
+                hitIndex,
+                hitCount);
 
-            if (wasEnemyAttack)
+            if (!knockout && !isLastHit && !IsFinished)
+            {
+                ScheduleNextPendingStrikeHit(move, hitIndex);
+                return;
+            }
+
+            if (wasEnemyAttack || wasCounter)
             {
                 enemyAttackCooldownRemaining = UnityEngine.Random.Range(
                     settings.EnemyAttackCooldownMin,
                     settings.EnemyAttackCooldownMax);
             }
+
+            ClearPendingAttack();
+        }
+
+        private void ScheduleNextPendingStrikeHit(AttackMove move, int currentHitIndex)
+        {
+            pendingStrikeHitIndex = currentHitIndex + 1;
+            float previous = ProceduralMotionCharacter.ResolveAttackImpactProgress(move.Motion, currentHitIndex);
+            float next = ProceduralMotionCharacter.ResolveAttackImpactProgress(move.Motion, currentHitIndex + 1);
+            pendingProjectileFlightRemaining = Mathf.Max(0.04f, move.Recovery * Mathf.Max(0.02f, next - previous));
+            pendingProjectileReplayMotionSkipped = true;
         }
 
         private void ClearPendingAttack()
@@ -1126,6 +1177,12 @@ namespace Battle
             pendingAttackPowerMultiplier = 1f;
             pendingAttackIsCounter = false;
             pendingAttackSequence = 0;
+            pendingStrikeHitIndex = 0;
+            pendingStrikeHitCount = 1;
+            pendingStrikeOutcomeRolled = false;
+            pendingStrikeWillHit = false;
+            pendingStrikeTotalDamage = 0;
+            pendingStrikeDealtDamage = 0;
         }
 
         private void ExecutePlayerMove(int moveIndex)
@@ -1908,44 +1965,65 @@ namespace Battle
         }
 
         // 技を実行する(消費・命中判定・ダメージ・部位欠損)
-        private void ExecuteMove(
+        private bool ExecuteMove(
             BattleUnit attacker,
             BattleUnit target,
             AttackMove move,
             int moveIndex,
             float powerMultiplier = 1f,
             int attackSequence = 0,
-            bool replayAttackMotion = true)
+            bool replayAttackMotion = true,
+            int strikeHitIndex = 0,
+            int strikeHitCount = 1)
         {
-            float hitRate = BattleCombatRules.ComputeHitRate(
-                move.Accuracy,
-                attacker.Guts,
-                attacker.MaxGuts,
-                attacker.Hit,
-                target.Speed);
-            if (replayAttackMotion)
+            int hitCount = Mathf.Max(1, strikeHitCount);
+            int hitIndex = Mathf.Clamp(strikeHitIndex, 0, hitCount - 1);
+            bool isLastHit = hitIndex >= hitCount - 1;
+
+            if (!pendingStrikeOutcomeRolled)
             {
-                attacker.PlayMotion(move.Motion, move.Recovery);
+                float hitRate = BattleCombatRules.ComputeHitRate(
+                    move.Accuracy,
+                    attacker.Guts,
+                    attacker.MaxGuts,
+                    attacker.Hit,
+                    target.Speed);
+                if (replayAttackMotion)
+                {
+                    attacker.PlayMotion(move.Motion, move.Recovery);
+                }
+
+                attacker.ConsumeForMove(move);
+                pendingStrikeWillHit = UnityEngine.Random.value <= hitRate;
+                pendingStrikeTotalDamage = pendingStrikeWillHit
+                    ? ComputeDamage(attacker, move, target, powerMultiplier)
+                    : 0;
+                pendingStrikeDealtDamage = 0;
+                pendingStrikeOutcomeRolled = true;
             }
 
-            attacker.ConsumeForMove(move);
-
-            bool hit = UnityEngine.Random.value <= hitRate;
-            int damage = 0;
+            bool hit = pendingStrikeWillHit;
+            int hitDamage = 0;
             bool partLost = false;
             BonePart lostPart = BonePart.Body;
             int lostLimbIndex = -1;
-
             bool isKnockout = false;
+
             if (hit)
             {
-                damage = ComputeDamage(attacker, move, target, powerMultiplier);
-                target.TakeDamage(damage);
-                partLost = target.TryLosePart(move, out lostPart, out lostLimbIndex);
-                target.PlayHitMotion(partLost);
+                hitDamage = ResolveSplitHitDamage(pendingStrikeTotalDamage, hitIndex, hitCount);
+                target.TakeDamage(hitDamage);
+                pendingStrikeDealtDamage += hitDamage;
                 isKnockout = target.IsDefeated;
+                if (isLastHit || isKnockout)
+                {
+                    partLost = target.TryLosePart(move, out lostPart, out lostLimbIndex);
+                }
+
+                target.PlayHitMotion(partLost);
             }
 
+            bool showDamagePopup = isLastHit || isKnockout;
             if (hit)
             {
                 if (isKnockout)
@@ -1958,19 +2036,21 @@ namespace Battle
                 }
             }
 
+            int popupDamage = showDamagePopup ? pendingStrikeDealtDamage : hitDamage;
             var result = new MoveUsedResult(
                 attacker,
                 target,
                 move,
                 hit,
-                damage,
+                popupDamage,
                 partLost,
                 lostPart,
                 isKnockout,
-                lostLimbIndex);
+                lostLimbIndex,
+                showDamagePopup);
             PublishMoveUsed(result);
 
-            if (attacker == player && combatSync != null)
+            if (attacker == player && combatSync != null && showDamagePopup)
             {
                 combatSync.ReportLocalPlayerStrike(result, moveIndex, attackSequence);
             }
@@ -1980,7 +2060,29 @@ namespace Battle
                 Finish(attacker, BattleEndReason.Knockout);
             }
 
-            BeginPostAttackLockout();
+            if (isLastHit || isKnockout)
+            {
+                BeginPostAttackLockout();
+            }
+
+            return isKnockout;
+        }
+
+        private static int ResolveSplitHitDamage(int totalDamage, int hitIndex, int hitCount)
+        {
+            if (hitCount <= 1 || totalDamage <= 0)
+            {
+                return Mathf.Max(0, totalDamage);
+            }
+
+            int baseDamage = totalDamage / hitCount;
+            int remainder = totalDamage - (baseDamage * hitCount);
+            if (hitIndex >= hitCount - 1)
+            {
+                return baseDamage + remainder;
+            }
+
+            return baseDamage;
         }
 
         private void ApplySyncedStrike(
@@ -2049,7 +2151,8 @@ namespace Battle
                 partLost,
                 lostPart,
                 isKnockout,
-                payload.LostLimbIndex));
+                payload.LostLimbIndex,
+                showDamagePopup: true));
 
             if (target.IsDefeated)
             {

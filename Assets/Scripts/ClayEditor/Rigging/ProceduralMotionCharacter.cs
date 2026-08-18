@@ -128,7 +128,43 @@ namespace ClayEditor.Rigging
         /// <summary>
         /// サンダーショック(汎用魔法)
         /// </summary>
-        ThunderShock
+        ThunderShock,
+        /// <summary>
+        /// 手刀(利き腕を振り下ろす)
+        /// </summary>
+        Chop,
+        /// <summary>
+        /// おうふくビンタ(左右の腕で連続して叩く)
+        /// </summary>
+        DoubleSlap,
+        /// <summary>
+        /// ハンマーアーム(腕を振りかぶって叩き落とす)
+        /// </summary>
+        HammerArm,
+        /// <summary>
+        /// にだんげり(左右の脚で連続して蹴る)
+        /// </summary>
+        DoubleKick,
+        /// <summary>
+        /// ドロップキック(跳んで両脚を突き出す)
+        /// </summary>
+        DropKick,
+        /// <summary>
+        /// つつく(前部で連続して突く)
+        /// </summary>
+        Peck,
+        /// <summary>
+        /// つのでつく(前部を突き出しながら突進する)
+        /// </summary>
+        HornAttack,
+        /// <summary>
+        /// しっぽたたき(尻尾を振り上げて叩きつける)
+        /// </summary>
+        TailSlam,
+        /// <summary>
+        /// ころがる(体を丸めて転がって突進する)
+        /// </summary>
+        Rollout
     }
 
     /// <summary>
@@ -1084,7 +1120,16 @@ namespace ClayEditor.Rigging
                 || type == MotionType.Fireball
                 || type == MotionType.WindSlasher
                 || type == MotionType.DiamondDust
-                || type == MotionType.ThunderShock;
+                || type == MotionType.ThunderShock
+                || type == MotionType.Chop
+                || type == MotionType.DoubleSlap
+                || type == MotionType.HammerArm
+                || type == MotionType.DoubleKick
+                || type == MotionType.DropKick
+                || type == MotionType.Peck
+                || type == MotionType.HornAttack
+                || type == MotionType.TailSlam
+                || type == MotionType.Rollout;
         }
 
         /// <summary>
@@ -1131,12 +1176,57 @@ namespace ClayEditor.Rigging
         }
 
         /// <summary>
+        /// 攻撃のヒット回数を返す
+        /// </summary>
+        /// <param name="type">攻撃モーション</param>
+        /// <returns>ヒット回数</returns>
+        public static int ResolveAttackHitCount(MotionType type)
+        {
+            switch (type)
+            {
+                case MotionType.DoubleSlap:
+                case MotionType.DoubleKick:
+                case MotionType.TailWhip:
+                    return 2;
+                case MotionType.Peck:
+                    return 3;
+                default:
+                    return 1;
+            }
+        }
+
+        /// <summary>
         /// 攻撃モーション開始から打撃が見えるまでの進行度を返す
         /// </summary>
         /// <param name="type">攻撃モーション</param>
         /// <returns>0が開始1が終了</returns>
         public static float ResolveAttackImpactProgress(MotionType type)
         {
+            return ResolveAttackImpactProgress(type, 0);
+        }
+
+        /// <summary>
+        /// 攻撃モーション開始から指定ヒットが見えるまでの進行度を返す
+        /// </summary>
+        /// <param name="type">攻撃モーション</param>
+        /// <param name="hitIndex">0始まりのヒット番号</param>
+        /// <returns>0が開始1が終了</returns>
+        public static float ResolveAttackImpactProgress(MotionType type, int hitIndex)
+        {
+            if (hitIndex > 0)
+            {
+                switch (type)
+                {
+                    case MotionType.DoubleSlap:
+                    case MotionType.DoubleKick:
+                        return 0.7f;
+                    case MotionType.TailWhip:
+                        return 0.64f;
+                    case MotionType.Peck:
+                        return hitIndex == 1 ? 0.42f : 0.68f;
+                }
+            }
+
             switch (type)
             {
                 case MotionType.BellyFlop:
@@ -1154,20 +1244,38 @@ namespace ClayEditor.Rigging
                 case MotionType.Slap:
                 case MotionType.Uppercut:
                     return 0.3f;
+                case MotionType.Chop:
+                    return 0.42f;
+                case MotionType.DoubleSlap:
+                    return 0.24f;
+                case MotionType.HammerArm:
+                    return 0.48f;
                 case MotionType.Kick:
                 case MotionType.Knee:
                 case MotionType.LowSweep:
                     return 0.32f;
+                case MotionType.DoubleKick:
+                    return 0.26f;
+                case MotionType.DropKick:
+                    return 0.42f;
                 case MotionType.Headbutt:
                     return 0.32f;
+                case MotionType.HornAttack:
+                    return 0.36f;
+                case MotionType.Peck:
+                    return 0.16f;
                 case MotionType.Tackle:
                 case MotionType.ShoulderRam:
                     return 0.28f;
+                case MotionType.Rollout:
+                    return 0.38f;
                 case MotionType.SpinTackle:
                 case MotionType.HipCheck:
                     return 0.3f;
                 case MotionType.TailWhip:
                     return 0.36f;
+                case MotionType.TailSlam:
+                    return 0.46f;
                 case MotionType.Fireball:
                     return 0f;
                 case MotionType.WindSlasher:
@@ -1403,6 +1511,33 @@ namespace ClayEditor.Rigging
                         break;
                     case MotionType.Bite:
                         ApplyBite();
+                        break;
+                    case MotionType.Chop:
+                        ApplyChop();
+                        break;
+                    case MotionType.DoubleSlap:
+                        ApplyDoubleSlap();
+                        break;
+                    case MotionType.HammerArm:
+                        ApplyHammerArm();
+                        break;
+                    case MotionType.DoubleKick:
+                        ApplyDoubleKick();
+                        break;
+                    case MotionType.DropKick:
+                        ApplyDropKick();
+                        break;
+                    case MotionType.Peck:
+                        ApplyPeck();
+                        break;
+                    case MotionType.HornAttack:
+                        ApplyHornAttack();
+                        break;
+                    case MotionType.TailSlam:
+                        ApplyTailSlam();
+                        break;
+                    case MotionType.Rollout:
+                        ApplyRollout();
                         break;
                     case MotionType.Fireball:
                     case MotionType.WindSlasher:
@@ -1697,7 +1832,7 @@ namespace ClayEditor.Rigging
         }
 
         /// <summary>
-        /// 体当たり体を前傾させて相手へ突進し戻る
+        /// 体当たり体を縮めてから前傾して相手へ突進する
         /// </summary>
         private void ApplyTackle()
         {
@@ -1708,10 +1843,31 @@ namespace ClayEditor.Rigging
                 return;
             }
 
-            float strike = EvaluateStrikeEnvelope(u);
-            ApplyRushTowardTarget(Mathf.Max(0f, strike));
+            float coilEnd = 0.14f;
+            float rushEnd = 0.4f;
+            float coil;
+            float rush;
+            if (u < coilEnd)
+            {
+                coil = Smooth01(u / coilEnd);
+                rush = 0f;
+            }
+            else if (u < rushEnd)
+            {
+                float t = (u - coilEnd) / Mathf.Max(rushEnd - coilEnd, 0.01f);
+                coil = 1f - t;
+                rush = 1f - Mathf.Pow(1f - t, 4f);
+            }
+            else
+            {
+                float t = Smooth01((u - rushEnd) / Mathf.Max(1f - rushEnd, 0.01f));
+                coil = 0f;
+                rush = 1f - t;
+            }
+
+            ApplyRushTowardTarget(rush);
             Vector3 sagittalAxis = ResolveLocomotionSwingWorldAxis();
-            float lean = strike * MotionSettings.TackleLeanAngle * 1.15f;
+            float lean = -coil * MotionSettings.TackleLeanAngle * 0.35f + rush * MotionSettings.TackleLeanAngle * 1.25f;
 
             for (int i = 0; i < infos.Count; i++)
             {
@@ -1724,7 +1880,7 @@ namespace ClayEditor.Rigging
                 float depthFactor = maxDepth > 0 ? (float)info.depth / maxDepth : 1f;
                 if (info.isLimb)
                 {
-                    float tuck = Mathf.Max(0f, strike) * 18f * depthFactor;
+                    float tuck = (coil * 28f + rush * 12f) * depthFactor;
                     info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, lean * depthFactor + tuck);
                 }
                 else
@@ -1735,7 +1891,7 @@ namespace ClayEditor.Rigging
         }
 
         /// <summary>
-        /// パンチ利き腕を前方へ突き出しわずかに踏み込む
+        /// パンチ利き拳を引いてから踏み込みつつ突き出す
         /// </summary>
         private void ApplyPunch()
         {
@@ -1746,10 +1902,32 @@ namespace ClayEditor.Rigging
                 return;
             }
 
-            float strike = EvaluateStrikeEnvelope(u);
-            ApplyForwardMove(Mathf.Max(0f, strike) * MotionSettings.PunchDistance, 0.7f);
+            float chamberEnd = 0.16f;
+            float hitEnd = 0.38f;
+            float chamber;
+            float hit;
+            if (u < chamberEnd)
+            {
+                chamber = Smooth01(u / chamberEnd);
+                hit = 0f;
+            }
+            else if (u < hitEnd)
+            {
+                float t = (u - chamberEnd) / Mathf.Max(hitEnd - chamberEnd, 0.01f);
+                chamber = 1f - t;
+                hit = 1f - Mathf.Pow(1f - t, 4f);
+            }
+            else
+            {
+                float t = Smooth01((u - hitEnd) / Mathf.Max(1f - hitEnd, 0.01f));
+                chamber = 0f;
+                hit = 1f - t;
+            }
+
+            ApplyForwardMove((-chamber * 0.12f + hit) * MotionSettings.PunchDistance, 0.72f);
             Vector3 sagittalAxis = ResolveLocomotionSwingWorldAxis();
             float leadSign = ResolveDominantSideSign();
+            float leadArm = -chamber * MotionSettings.ChargeLimbPullbackAngle * 1.35f + hit * MotionSettings.PunchAmplitude;
 
             for (int i = 0; i < infos.Count; i++)
             {
@@ -1762,30 +1940,31 @@ namespace ClayEditor.Rigging
                 float tip = 0.55f + (maxDepth > 0 ? (float)info.depth / maxDepth : 1f) * 0.45f;
                 if (IsArmLike(info) && IsLeadLimb(info, leadSign))
                 {
-                    float armAngle = ResolveSwingAngle(
-                        strike,
-                        MotionSettings.ChargeLimbPullbackAngle * 1.25f,
-                        MotionSettings.PunchAmplitude);
                     ApplyWorldSwingWithYaw(
                         info,
                         sagittalAxis,
-                        armAngle * tip,
-                        Mathf.Max(0f, strike) * 18f * leadSign * tip);
+                        leadArm * tip,
+                        hit * 22f * leadSign * tip);
                 }
                 else if (IsArmLike(info))
                 {
-                    float guard = Mathf.Max(0f, strike) * MotionSettings.ChargeLimbPullbackAngle * 0.4f;
+                    float guard = (chamber * 0.55f + hit * 0.35f) * MotionSettings.ChargeLimbPullbackAngle;
                     info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, -guard * tip);
+                }
+                else if (IsLegLike(info) && IsLeadLimb(info, leadSign))
+                {
+                    float step = (-chamber * 0.2f + hit * 0.55f) * MotionSettings.ChargeLimbPullbackAngle;
+                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, step * tip);
                 }
                 else if (IsLegLike(info))
                 {
-                    float brace = Mathf.Max(0f, strike) * MotionSettings.ChargeLimbPullbackAngle * 0.22f;
-                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, -brace * tip);
+                    float plant = (chamber * 0.18f + hit * 0.22f) * MotionSettings.ChargeLimbPullbackAngle;
+                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, -plant * tip);
                 }
                 else
                 {
                     float depthFactor = maxDepth > 0 ? (float)info.depth / maxDepth : 1f;
-                    float bodyTwist = -strike * MotionSettings.ChargePullbackAngle * 0.5f * depthFactor;
+                    float bodyTwist = (-chamber * 0.45f + hit * 0.85f) * MotionSettings.ChargePullbackAngle * depthFactor;
                     info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, bodyTwist);
                 }
             }
@@ -1843,7 +2022,49 @@ namespace ClayEditor.Rigging
         }
 
         /// <summary>
-        /// キック利き脚を前方大きく振り上げて戻る
+        /// 指定区間を山型の打撃強度にする
+        /// </summary>
+        private static float EvaluatePulse(float progress, float start, float end)
+        {
+            if (progress < start || progress >= end)
+            {
+                return 0f;
+            }
+
+            float t = (progress - start) / Mathf.Max(end - start, 0.01f);
+            return Mathf.Sin(Mathf.Clamp01(t) * Mathf.PI);
+        }
+
+        /// <summary>
+        /// 指定区間内で引き打ち戻りを返す
+        /// </summary>
+        private static float EvaluateStroke(float progress, float start, float end)
+        {
+            if (progress < start || progress >= end)
+            {
+                return 0f;
+            }
+
+            float t = (progress - start) / Mathf.Max(end - start, 0.01f);
+            const float PullEnd = 0.22f;
+            const float HitEnd = 0.52f;
+            if (t < PullEnd)
+            {
+                return -Smooth01(t / PullEnd);
+            }
+
+            if (t < HitEnd)
+            {
+                float s = (t - PullEnd) / Mathf.Max(HitEnd - PullEnd, 0.01f);
+                return Mathf.Lerp(-1f, 1.12f, 1f - Mathf.Pow(1f - s, 4f));
+            }
+
+            float recover = (t - HitEnd) / Mathf.Max(1f - HitEnd, 0.01f);
+            return Mathf.Lerp(1.12f, 0f, Smooth01(recover));
+        }
+
+        /// <summary>
+        /// キック利き脚を一旦持ち上げてから前方へ振り出す
         /// </summary>
         private void ApplyKick()
         {
@@ -1854,10 +2075,42 @@ namespace ClayEditor.Rigging
                 return;
             }
 
-            float strike = EvaluateStrikeEnvelope(u);
-            ApplyForwardMove(Mathf.Max(0f, strike) * MotionSettings.KickDistance, 0.7f);
+            float chamberEnd = 0.2f;
+            float hitEnd = 0.4f;
+            float chamber;
+            float extend;
+            float hop;
+            float lunge;
+            if (u < chamberEnd)
+            {
+                chamber = Smooth01(u / chamberEnd);
+                extend = 0f;
+                hop = chamber * 0.12f;
+                lunge = -chamber * MotionSettings.KickDistance * 0.12f;
+            }
+            else if (u < hitEnd)
+            {
+                float t = (u - chamberEnd) / Mathf.Max(hitEnd - chamberEnd, 0.01f);
+                chamber = 1f - t;
+                extend = 1f - Mathf.Pow(1f - t, 4f);
+                hop = 0.12f * (1f - extend) + extend * 0.06f;
+                lunge = Mathf.Lerp(-MotionSettings.KickDistance * 0.12f, MotionSettings.KickDistance, extend);
+            }
+            else
+            {
+                float t = Smooth01((u - hitEnd) / Mathf.Max(1f - hitEnd, 0.01f));
+                chamber = 0f;
+                extend = 1f - t;
+                hop = 0.06f * (1f - t);
+                lunge = MotionSettings.KickDistance * (1f - t);
+            }
+
+            ApplyVisualLift(hop);
+            ApplyForwardMove(lunge, 0.7f);
             Vector3 sagittalAxis = ResolveLocomotionSwingWorldAxis();
+            Vector3 forwardAxis = ResolveLocomotionForwardWorldAxis();
             float leadSign = ResolveDominantSideSign();
+            float legAngle = -chamber * MotionSettings.KickAmplitude * 0.55f + extend * MotionSettings.KickAmplitude;
 
             for (int i = 0; i < infos.Count; i++)
             {
@@ -1870,33 +2123,34 @@ namespace ClayEditor.Rigging
                 float tip = 0.5f + (maxDepth > 0 ? (float)info.depth / maxDepth : 1f) * 0.5f;
                 if (IsLegLike(info) && IsLeadLimb(info, leadSign))
                 {
-                    float legAngle = ResolveSwingAngle(
-                        strike,
-                        MotionSettings.ChargeLimbPullbackAngle * 1.5f,
-                        MotionSettings.KickAmplitude);
-                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, legAngle * tip);
+                    ApplyCombinedWorldSwing(
+                        info,
+                        sagittalAxis,
+                        legAngle * tip,
+                        forwardAxis,
+                        -extend * 16f * tip);
                 }
                 else if (IsLegLike(info))
                 {
-                    float plant = Mathf.Max(0f, strike) * MotionSettings.ChargeLimbPullbackAngle * 0.28f;
-                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, -plant * tip);
+                    float plant = chamber * 10f - extend * MotionSettings.ChargeLimbPullbackAngle * 0.32f;
+                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, plant * tip);
                 }
                 else if (IsArmLike(info))
                 {
-                    float counter = Mathf.Max(0f, strike) * MotionSettings.ChargeLimbPullbackAngle * 0.45f;
+                    float counter = (chamber * 0.35f + extend) * MotionSettings.ChargeLimbPullbackAngle * 0.5f;
                     info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, -counter * tip);
                 }
                 else
                 {
                     float depthFactor = maxDepth > 0 ? (float)info.depth / maxDepth : 1f;
-                    float bodyLean = -strike * MotionSettings.ChargePullbackAngle * 0.55f * depthFactor;
-                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, bodyLean);
+                    float bodyLean = -chamber * 8f - extend * MotionSettings.ChargePullbackAngle * 0.6f;
+                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, bodyLean * depthFactor);
                 }
             }
         }
 
         /// <summary>
-        /// 回転体当たり、ルートボーンをY軸まわりに高速回転させながら前進し、戻る
+        /// 回転体当たり丸まって高速回転しながら突進する
         /// </summary>
         private void ApplySpinTackle()
         {
@@ -1907,17 +2161,39 @@ namespace ClayEditor.Rigging
                 return;
             }
 
-            float strike = EvaluateStrikeEnvelope(u);
-            float spin = (time - attackStartTime) * MotionSettings.SpinTackleSpeed;
+            float coilEnd = 0.12f;
+            float rushEnd = 0.72f;
+            float tuck;
+            float travel;
+            if (u < coilEnd)
+            {
+                tuck = Smooth01(u / coilEnd);
+                travel = 0f;
+            }
+            else if (u < rushEnd)
+            {
+                float t = (u - coilEnd) / Mathf.Max(rushEnd - coilEnd, 0.01f);
+                tuck = 1f;
+                travel = t < 0.32f ? Smooth01(t / 0.32f) : 1f;
+            }
+            else
+            {
+                float t = Smooth01((u - rushEnd) / Mathf.Max(1f - rushEnd, 0.01f));
+                tuck = 1f - t;
+                travel = 1f - t;
+            }
+
+            float spin = (time - attackStartTime) * MotionSettings.SpinTackleSpeed * (0.35f + tuck * 0.65f);
             transform.rotation = Quaternion.AngleAxis(spin, Vector3.up) * attackStartWorldRotation;
             if (rootBone != null)
             {
                 rootBone.localRotation = rootBoneBaseRotation;
             }
 
-            ApplyRushTowardTarget(Mathf.Max(0f, strike), 1.05f);
+            ApplyRushTowardTarget(travel, 1.05f);
+            ApplyVisualLift(tuck * 0.1f);
+            Vector3 sagittalAxis = ResolveLocomotionSwingWorldAxis();
 
-            float lean = strike * MotionSettings.TackleLeanAngle * 0.65f;
             for (int i = 0; i < infos.Count; i++)
             {
                 BoneInfo info = infos[i];
@@ -1927,22 +2203,13 @@ namespace ClayEditor.Rigging
                 }
 
                 float depthFactor = maxDepth > 0 ? (float)info.depth / maxDepth : 1f;
-                if (info.isLimb)
-                {
-                    float limbLean = lean * 0.85f * (0.6f + info.depth * 0.15f);
-                    info.transform.localRotation = info.baseLocalRotation
-                        * Quaternion.AngleAxis(limbLean, ResolveBendAxis(MotionSettings.LimbSwingAxis));
-                }
-                else
-                {
-                    info.transform.localRotation = info.baseLocalRotation
-                        * Quaternion.AngleAxis(lean * depthFactor, ResolveBendAxis(MotionSettings.SpineBendAxis));
-                }
+                float curl = tuck * 42f * (0.65f + depthFactor * 0.4f);
+                info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, curl);
             }
         }
 
         /// <summary>
-        /// しっぽ攻撃Y軸で背中を向けてから左右へ振る
+        /// しっぽ攻撃背中を向けて尻尾を左右へ叩きつける
         /// </summary>
         private void ApplyTailWhip()
         {
@@ -1953,29 +2220,27 @@ namespace ClayEditor.Rigging
                 return;
             }
 
-            float turnEnd = 0.24f;
-            float whipEnd = 0.78f;
+            float turnEnd = 0.2f;
+            float whipEnd = 0.8f;
             float leadSign = ResolveDominantSideSign();
             float turnYaw;
-            float whip;
             if (u < turnEnd)
             {
-                float t = Smooth01(u / turnEnd);
-                turnYaw = t * 180f * leadSign;
-                whip = -t * MotionSettings.TailWhipAmplitude * 0.4f;
+                turnYaw = Smooth01(u / turnEnd) * 180f * leadSign;
             }
             else if (u < whipEnd)
             {
-                float t = (u - turnEnd) / Mathf.Max(whipEnd - turnEnd, 0.01f);
                 turnYaw = 180f * leadSign;
-                whip = Mathf.Sin(t * Mathf.PI * 2f) * MotionSettings.TailWhipAmplitude;
             }
             else
             {
                 float t = Smooth01((u - whipEnd) / Mathf.Max(1f - whipEnd, 0.01f));
                 turnYaw = 180f * leadSign * (1f - t);
-                whip = 0f;
             }
+
+            float first = EvaluateStroke(u, 0.2f, 0.48f);
+            float second = EvaluateStroke(u, 0.48f, 0.8f);
+            float whip = first * MotionSettings.TailWhipAmplitude - second * MotionSettings.TailWhipAmplitude;
 
             ApplyVisualLunge(0f);
             transform.rotation = Quaternion.AngleAxis(turnYaw, Vector3.up) * attackStartWorldRotation;
@@ -1985,6 +2250,7 @@ namespace ClayEditor.Rigging
             }
 
             Vector3 sagittalAxis = ResolveLocomotionSwingWorldAxis();
+            Vector3 upAxis = Vector3.up;
             for (int i = 0; i < infos.Count; i++)
             {
                 BoneInfo info = infos[i];
@@ -1997,16 +2263,17 @@ namespace ClayEditor.Rigging
                 if (IsBackLike(info) || info.isBack)
                 {
                     float tip = 0.55f + depthFactor * 0.55f;
-                    info.transform.localRotation = WorldSwingLocalRotation(info, Vector3.up, whip * tip);
+                    info.transform.localRotation = WorldSwingLocalRotation(info, upAxis, whip * tip);
                 }
                 else if (IsArmLike(info) || IsLegLike(info))
                 {
-                    float brace = Mathf.Abs(whip) * 0.08f;
+                    float brace = Mathf.Abs(whip) * 0.16f;
                     info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, -brace);
                 }
                 else
                 {
-                    info.transform.localRotation = info.baseLocalRotation;
+                    float counter = -whip * 0.22f * depthFactor;
+                    info.transform.localRotation = WorldSwingLocalRotation(info, upAxis, counter);
                 }
             }
         }
@@ -2058,6 +2325,7 @@ namespace ClayEditor.Rigging
                     case MotionType.Kick:
                     case MotionType.Stomp:
                     case MotionType.Knee:
+                    case MotionType.DoubleKick:
                         if (IsLegLike(info))
                         {
                             angle = -intensity * MotionSettings.ChargeLimbPullbackAngle * 1.35f;
@@ -2078,6 +2346,7 @@ namespace ClayEditor.Rigging
                     case MotionType.Punch:
                     case MotionType.Elbow:
                     case MotionType.Uppercut:
+                    case MotionType.Chop:
                         if (IsArmLike(info))
                         {
                             angle = -intensity * MotionSettings.ChargeLimbPullbackAngle * 1.2f;
@@ -2096,6 +2365,7 @@ namespace ClayEditor.Rigging
                         break;
 
                     case MotionType.TailWhip:
+                    case MotionType.TailSlam:
                         if (IsBackLike(info) || info.isBack)
                         {
                             angle = -intensity * MotionSettings.ChargeLimbPullbackAngle * 1.35f;
@@ -2109,6 +2379,8 @@ namespace ClayEditor.Rigging
                         break;
 
                     case MotionType.Headbutt:
+                    case MotionType.HornAttack:
+                    case MotionType.Peck:
                         if (IsFrontLike(info))
                         {
                             angle = -intensity * MotionSettings.ChargeLimbPullbackAngle;
@@ -2126,6 +2398,7 @@ namespace ClayEditor.Rigging
                     case MotionType.BodySlam:
                     case MotionType.ShoulderRam:
                     case MotionType.HipCheck:
+                    case MotionType.Rollout:
                     case MotionType.Fireball:
                     case MotionType.WindSlasher:
                     case MotionType.DiamondDust:
@@ -2136,6 +2409,7 @@ namespace ClayEditor.Rigging
 
                     case MotionType.BellyFlop:
                     case MotionType.GroundPound:
+                    case MotionType.DropKick:
                         if (IsLegLike(info))
                         {
                             angle = intensity * MotionSettings.ChargeLimbPullbackAngle * 0.95f;
@@ -2154,6 +2428,7 @@ namespace ClayEditor.Rigging
                         break;
 
                     case MotionType.Slap:
+                    case MotionType.DoubleSlap:
                         if (IsArmLike(info))
                         {
                             angle = -intensity * MotionSettings.ChargeLimbPullbackAngle * 1.1f;
@@ -2192,6 +2467,24 @@ namespace ClayEditor.Rigging
                         }
                         break;
 
+                    case MotionType.HammerArm:
+                        if (IsArmLike(info))
+                        {
+                            angle = intensity * MotionSettings.ChargeLimbPullbackAngle * 1.6f;
+                            axis = MotionSettings.AttackBendAxis;
+                        }
+                        else if (IsLegLike(info))
+                        {
+                            angle = intensity * MotionSettings.ChargeLimbPullbackAngle * 0.35f;
+                            axis = MotionSettings.LegRunSwingAxis;
+                        }
+                        else
+                        {
+                            angle = intensity * MotionSettings.ChargePullbackAngle * 0.85f * depthFactor;
+                            axis = MotionSettings.SpineBendAxis;
+                        }
+                        break;
+
                     default:
                         angle = intensity * MotionSettings.ChargePullbackAngle * depthFactor;
                         axis = MotionSettings.SpineBendAxis;
@@ -2203,7 +2496,7 @@ namespace ClayEditor.Rigging
         }
 
         /// <summary>
-        /// 頭突き、頭部を前方へ強く突き出す
+        /// 頭突き頭を引いてから短く強く突き出す
         /// </summary>
         private void ApplyHeadbutt()
         {
@@ -2214,8 +2507,40 @@ namespace ClayEditor.Rigging
                 return;
             }
 
-            float thrust = EvaluateStrikeEnvelope(u);
-            ApplyRushTowardTarget(Mathf.Max(0f, thrust), 0.9f);
+            float pullEnd = 0.16f;
+            float thrustEnd = 0.4f;
+            float driveEnd = 0.54f;
+            float pull;
+            float thrust;
+            float travel;
+            if (u < pullEnd)
+            {
+                pull = Smooth01(u / pullEnd);
+                thrust = -pull;
+                travel = 0f;
+            }
+            else if (u < thrustEnd)
+            {
+                float t = (u - pullEnd) / Mathf.Max(thrustEnd - pullEnd, 0.01f);
+                pull = 1f - t;
+                thrust = Mathf.Lerp(-1f, 1.2f, 1f - Mathf.Pow(1f - t, 4f));
+                travel = Smooth01(t);
+            }
+            else if (u < driveEnd)
+            {
+                pull = 0f;
+                thrust = 1.2f;
+                travel = 1f;
+            }
+            else
+            {
+                float t = Smooth01((u - driveEnd) / Mathf.Max(1f - driveEnd, 0.01f));
+                pull = 0f;
+                thrust = 1.2f * (1f - t);
+                travel = 1f - t;
+            }
+
+            ApplyRushTowardTarget(travel, 0.88f);
             Vector3 sagittalAxis = ResolveLocomotionSwingWorldAxis();
 
             for (int i = 0; i < infos.Count; i++)
@@ -2231,28 +2556,26 @@ namespace ClayEditor.Rigging
                 {
                     float angle = ResolveSwingAngle(
                         thrust,
-                        MotionSettings.ChargeLimbPullbackAngle * 0.9f,
-                        MotionSettings.HeadbuttAmplitude);
+                        MotionSettings.ChargeLimbPullbackAngle * 1.05f,
+                        MotionSettings.HeadbuttAmplitude * 1.15f);
                     info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, angle * tip);
                 }
                 else if (IsArmLike(info) || IsLegLike(info))
                 {
-                    float brace = Mathf.Max(0f, thrust) * MotionSettings.ChargeLimbPullbackAngle * 0.2f;
-                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, -brace);
+                    float brace = pull * 8f - Mathf.Max(0f, thrust) * MotionSettings.ChargeLimbPullbackAngle * 0.22f;
+                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, brace);
                 }
                 else
                 {
                     float depthFactor = maxDepth > 0 ? (float)info.depth / maxDepth : 1f;
-                    info.transform.localRotation = WorldSwingLocalRotation(
-                        info,
-                        sagittalAxis,
-                        thrust * MotionSettings.HeadbuttAmplitude * 0.4f * depthFactor);
+                    float lean = -pull * 10f + Mathf.Max(0f, thrust) * MotionSettings.HeadbuttAmplitude * 0.45f;
+                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, lean * depthFactor);
                 }
             }
         }
 
         /// <summary>
-        /// エルボー利き肘を短く横前方へ叩き込む
+        /// エルボー間合いを詰めて利き肘を短く叩き込む
         /// </summary>
         private void ApplyElbow()
         {
@@ -2263,11 +2586,33 @@ namespace ClayEditor.Rigging
                 return;
             }
 
-            float strike = EvaluateStrikeEnvelope(u);
-            ApplyForwardMove(Mathf.Max(0f, strike) * MotionSettings.ElbowDistance, 0.68f);
+            float tuckEnd = 0.14f;
+            float hitEnd = 0.36f;
+            float tuck;
+            float hit;
+            if (u < tuckEnd)
+            {
+                tuck = Smooth01(u / tuckEnd);
+                hit = 0f;
+            }
+            else if (u < hitEnd)
+            {
+                float t = (u - tuckEnd) / Mathf.Max(hitEnd - tuckEnd, 0.01f);
+                tuck = 1f - t;
+                hit = 1f - Mathf.Pow(1f - t, 4f);
+            }
+            else
+            {
+                float t = Smooth01((u - hitEnd) / Mathf.Max(1f - hitEnd, 0.01f));
+                tuck = 0f;
+                hit = 1f - t;
+            }
+
+            ApplyForwardMove((tuck * 0.35f + hit * 0.8f) * MotionSettings.ElbowDistance, 0.7f);
             Vector3 sagittalAxis = ResolveLocomotionSwingWorldAxis();
             Vector3 forwardAxis = ResolveLocomotionForwardWorldAxis();
             float leadSign = ResolveDominantSideSign();
+            float leadArm = tuck * MotionSettings.ChargeLimbPullbackAngle * 0.55f + hit * MotionSettings.ElbowAmplitude * 0.9f;
 
             for (int i = 0; i < infos.Count; i++)
             {
@@ -2280,22 +2625,23 @@ namespace ClayEditor.Rigging
                 float rootBias = 1.1f - (maxDepth > 0 ? (float)info.depth / maxDepth : 1f) * 0.45f;
                 if (IsArmLike(info) && IsLeadLimb(info, leadSign))
                 {
-                    float armAngle = ResolveSwingAngle(
-                        strike,
-                        MotionSettings.ChargeLimbPullbackAngle * 0.7f,
-                        MotionSettings.ElbowAmplitude * 0.8f);
-                    float side = Mathf.Max(0f, strike) * 42f * leadSign * rootBias;
-                    ApplyCombinedWorldSwing(info, sagittalAxis, armAngle * rootBias, forwardAxis, side);
+                    float side = (tuck * 18f + hit * 48f) * leadSign * rootBias;
+                    ApplyCombinedWorldSwing(info, sagittalAxis, leadArm * rootBias, forwardAxis, side);
                 }
                 else if (IsArmLike(info))
                 {
-                    float guard = Mathf.Max(0f, strike) * MotionSettings.ChargeLimbPullbackAngle * 0.28f;
+                    float guard = (tuck * 0.4f + hit * 0.22f) * MotionSettings.ChargeLimbPullbackAngle;
                     info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, -guard);
+                }
+                else if (IsLegLike(info))
+                {
+                    float plant = (tuck * 0.16f + hit * 0.2f) * MotionSettings.ChargeLimbPullbackAngle;
+                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, -plant);
                 }
                 else
                 {
                     float depthFactor = maxDepth > 0 ? (float)info.depth / maxDepth : 1f;
-                    float brace = -strike * MotionSettings.ChargePullbackAngle * 0.3f * depthFactor;
+                    float brace = (-tuck * 0.2f + hit * 0.45f) * MotionSettings.ChargePullbackAngle * depthFactor;
                     info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, brace);
                 }
             }
@@ -2394,7 +2740,7 @@ namespace ClayEditor.Rigging
         }
 
         /// <summary>
-        /// アッパー利き腕を下から上へ突き上げる
+        /// アッパー沈み込んでから利き腕を下から突き上げる
         /// </summary>
         private void ApplyUppercut()
         {
@@ -2405,12 +2751,34 @@ namespace ClayEditor.Rigging
                 return;
             }
 
-            float strike = EvaluateStrikeEnvelope(u);
-            ApplyForwardMove(Mathf.Max(0f, strike) * MotionSettings.PunchDistance * 0.28f, 0.62f);
-            ApplyVisualLift(Mathf.Max(0f, strike) * 0.16f);
+            float dipEnd = 0.14f;
+            float riseEnd = 0.38f;
+            float dip;
+            float rise;
+            if (u < dipEnd)
+            {
+                dip = Smooth01(u / dipEnd);
+                rise = 0f;
+            }
+            else if (u < riseEnd)
+            {
+                float t = (u - dipEnd) / Mathf.Max(riseEnd - dipEnd, 0.01f);
+                dip = 1f - t;
+                rise = 1f - Mathf.Pow(1f - t, 4f);
+            }
+            else
+            {
+                float t = Smooth01((u - riseEnd) / Mathf.Max(1f - riseEnd, 0.01f));
+                dip = 0f;
+                rise = 1f - t;
+            }
+
+            ApplyForwardMove((-dip * 0.08f + rise * 0.4f) * MotionSettings.PunchDistance, 0.64f);
+            ApplyVisualLift(-dip * 0.08f + rise * 0.22f);
             Vector3 sagittalAxis = ResolveLocomotionSwingWorldAxis();
             Vector3 forwardAxis = ResolveLocomotionForwardWorldAxis();
             float leadSign = ResolveDominantSideSign();
+            float leadArm = -dip * MotionSettings.ChargeLimbPullbackAngle * 1.55f + rise * MotionSettings.PunchAmplitude;
 
             for (int i = 0; i < infos.Count; i++)
             {
@@ -2423,38 +2791,34 @@ namespace ClayEditor.Rigging
                 float tip = 0.55f + (maxDepth > 0 ? (float)info.depth / maxDepth : 1f) * 0.45f;
                 if (IsArmLike(info) && IsLeadLimb(info, leadSign))
                 {
-                    float armAngle = ResolveSwingAngle(
-                        strike,
-                        MotionSettings.ChargeLimbPullbackAngle * 1.45f,
-                        MotionSettings.PunchAmplitude);
                     ApplyCombinedWorldSwing(
                         info,
                         sagittalAxis,
-                        armAngle * 0.4f * tip,
+                        leadArm * 0.35f * tip,
                         forwardAxis,
-                        -armAngle * 0.95f * tip);
+                        -leadArm * 1.05f * tip);
                 }
                 else if (IsArmLike(info))
                 {
-                    float guard = Mathf.Max(0f, strike) * MotionSettings.ChargeLimbPullbackAngle * 0.35f;
+                    float guard = (dip * 0.5f + rise * 0.28f) * MotionSettings.ChargeLimbPullbackAngle;
                     info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, -guard);
                 }
                 else if (IsLegLike(info))
                 {
-                    float brace = Mathf.Max(0f, strike) * MotionSettings.ChargeLimbPullbackAngle * 0.18f;
+                    float brace = (dip * 0.55f - rise * 0.35f) * MotionSettings.ChargeLimbPullbackAngle;
                     info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, -brace);
                 }
                 else
                 {
                     float depthFactor = maxDepth > 0 ? (float)info.depth / maxDepth : 1f;
-                    float lean = -strike * MotionSettings.ChargePullbackAngle * 0.4f * depthFactor;
+                    float lean = (dip * 0.55f - rise * 0.85f) * MotionSettings.ChargePullbackAngle * depthFactor;
                     info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, lean);
                 }
             }
         }
 
         /// <summary>
-        /// 膝蹴り利き膝を短く前方上へ突き上げる
+        /// 膝蹴り跳び込み利き膝を短く前方上へ突き上げる
         /// </summary>
         private void ApplyKnee()
         {
@@ -2465,11 +2829,34 @@ namespace ClayEditor.Rigging
                 return;
             }
 
-            float strike = EvaluateStrikeEnvelope(u);
-            ApplyForwardMove(Mathf.Max(0f, strike) * MotionSettings.KickDistance * 0.45f, 0.68f);
+            float hopEnd = 0.14f;
+            float thrustEnd = 0.4f;
+            float hop;
+            float thrust;
+            if (u < hopEnd)
+            {
+                hop = Smooth01(u / hopEnd);
+                thrust = 0f;
+            }
+            else if (u < thrustEnd)
+            {
+                float t = (u - hopEnd) / Mathf.Max(thrustEnd - hopEnd, 0.01f);
+                hop = 1f - t * 0.35f;
+                thrust = 1f - Mathf.Pow(1f - t, 4f);
+            }
+            else
+            {
+                float t = Smooth01((u - thrustEnd) / Mathf.Max(1f - thrustEnd, 0.01f));
+                hop = 0.65f * (1f - t);
+                thrust = 1f - t;
+            }
+
+            ApplyForwardMove((hop * 0.35f + thrust * 0.7f) * MotionSettings.KickDistance * 0.52f, 0.7f);
+            ApplyVisualLift(hop * 0.14f);
             Vector3 sagittalAxis = ResolveLocomotionSwingWorldAxis();
             Vector3 forwardAxis = ResolveLocomotionForwardWorldAxis();
             float leadSign = ResolveDominantSideSign();
+            float leadLeg = -hop * MotionSettings.ChargeLimbPullbackAngle * 0.85f + thrust * MotionSettings.KickAmplitude * 0.72f;
 
             for (int i = 0; i < infos.Count; i++)
             {
@@ -2482,38 +2869,34 @@ namespace ClayEditor.Rigging
                 float midBias = 0.75f + (maxDepth > 0 ? 1f - Mathf.Abs((float)info.depth / maxDepth - 0.55f) : 0.25f) * 0.4f;
                 if (IsLegLike(info) && IsLeadLimb(info, leadSign))
                 {
-                    float legAngle = ResolveSwingAngle(
-                        strike,
-                        MotionSettings.ChargeLimbPullbackAngle * 1.2f,
-                        MotionSettings.KickAmplitude * 0.78f);
                     ApplyCombinedWorldSwing(
                         info,
                         sagittalAxis,
-                        legAngle * midBias,
+                        leadLeg * midBias,
                         forwardAxis,
-                        -legAngle * 0.6f * midBias);
+                        -leadLeg * 0.55f * midBias);
                 }
                 else if (IsLegLike(info))
                 {
-                    float plant = Mathf.Max(0f, strike) * 12f;
+                    float plant = (hop * 0.18f + thrust * 0.22f) * MotionSettings.ChargeLimbPullbackAngle;
                     info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, -plant);
                 }
                 else if (IsArmLike(info))
                 {
-                    float guard = Mathf.Max(0f, strike) * MotionSettings.ChargeLimbPullbackAngle * 0.3f;
+                    float guard = (hop * 0.22f + thrust * 0.28f) * MotionSettings.ChargeLimbPullbackAngle;
                     info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, -guard);
                 }
                 else
                 {
                     float depthFactor = maxDepth > 0 ? (float)info.depth / maxDepth : 1f;
-                    float brace = strike * MotionSettings.ChargePullbackAngle * 0.25f * depthFactor;
+                    float brace = (hop * 0.2f + thrust * 0.35f) * MotionSettings.ChargePullbackAngle * depthFactor;
                     info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, brace);
                 }
             }
         }
 
         /// <summary>
-        /// ボディスラム跳びかかり全体で叩き伏せる
+        /// ボディスラム跳びかかり手足を開いて全体で叩き伏せる
         /// </summary>
         private void ApplyBodySlam()
         {
@@ -2531,12 +2914,14 @@ namespace ClayEditor.Rigging
             float forward;
             float height;
             float leanAmount;
+            float splay;
             if (u < crouchEnd)
             {
                 float t = Smooth01(u / crouchEnd);
                 forward = -t * leapDistance * 0.1f;
                 height = 0f;
                 leanAmount = -t * 0.35f;
+                splay = t * 0.25f;
             }
             else if (u < slamEnd)
             {
@@ -2545,6 +2930,7 @@ namespace ClayEditor.Rigging
                 forward = eased * leapDistance;
                 height = Mathf.Sin(t * Mathf.PI) * peakHeight;
                 leanAmount = Mathf.Lerp(-0.15f, 1f, eased);
+                splay = Mathf.Lerp(0.25f, 1f, eased);
             }
             else
             {
@@ -2552,39 +2938,10 @@ namespace ClayEditor.Rigging
                 forward = leapDistance * (1f - t);
                 height = 0f;
                 leanAmount = 1f - t;
+                splay = 1f - t;
             }
 
             ApplyVisualLeap(forward, height);
-            Vector3 sagittalAxis = ResolveLocomotionSwingWorldAxis();
-
-            for (int i = 0; i < infos.Count; i++)
-            {
-                BoneInfo info = infos[i];
-                if (info.transform == null)
-                {
-                    continue;
-                }
-
-                float depthFactor = maxDepth > 0 ? (float)info.depth / maxDepth : 1f;
-                float lean = leanAmount * MotionSettings.BodySlamLeanAngle * 1.2f * (0.65f + depthFactor * 0.45f);
-                info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, lean);
-            }
-        }
-
-        /// <summary>
-        /// ショルダー肩を横に振り出しながら突進する
-        /// </summary>
-        private void ApplyShoulderRam()
-        {
-            float u = AttackProgress();
-            if (u >= 1f)
-            {
-                FinishAttack();
-                return;
-            }
-
-            float strike = EvaluateStrikeEnvelope(u);
-            ApplyRushTowardTarget(Mathf.Max(0f, strike), 0.92f);
             Vector3 sagittalAxis = ResolveLocomotionSwingWorldAxis();
             Vector3 forwardAxis = ResolveLocomotionForwardWorldAxis();
             float leadSign = ResolveDominantSideSign();
@@ -2598,8 +2955,77 @@ namespace ClayEditor.Rigging
                 }
 
                 float depthFactor = maxDepth > 0 ? (float)info.depth / maxDepth : 1f;
-                float sideLean = strike * MotionSettings.TackleLeanAngle * 1.05f * leadSign * depthFactor;
-                float forwardLean = strike * MotionSettings.TackleLeanAngle * 0.32f * depthFactor;
+                float lean = leanAmount * MotionSettings.BodySlamLeanAngle * 1.2f * (0.65f + depthFactor * 0.45f);
+                if (IsArmLike(info) || IsLegLike(info))
+                {
+                    float limbSign = ResolveLimbSwingSign(info, leadSign);
+                    float limbSpread = splay * 28f * limbSign * depthFactor;
+                    ApplyCombinedWorldSwing(info, sagittalAxis, lean + splay * 10f, forwardAxis, limbSpread);
+                }
+                else
+                {
+                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, lean);
+                }
+            }
+        }
+
+        /// <summary>
+        /// ショルダー肩を入れて横からぶつける
+        /// </summary>
+        private void ApplyShoulderRam()
+        {
+            float u = AttackProgress();
+            if (u >= 1f)
+            {
+                FinishAttack();
+                return;
+            }
+
+            float coilEnd = 0.14f;
+            float ramEnd = 0.4f;
+            float coil;
+            float ram;
+            if (u < coilEnd)
+            {
+                coil = Smooth01(u / coilEnd);
+                ram = 0f;
+            }
+            else if (u < ramEnd)
+            {
+                float t = (u - coilEnd) / Mathf.Max(ramEnd - coilEnd, 0.01f);
+                coil = 1f - t;
+                ram = 1f - Mathf.Pow(1f - t, 4f);
+            }
+            else
+            {
+                float t = Smooth01((u - ramEnd) / Mathf.Max(1f - ramEnd, 0.01f));
+                coil = 0f;
+                ram = 1f - t;
+            }
+
+            float leadSign = ResolveDominantSideSign();
+            float yaw = ram * 38f * leadSign;
+            transform.rotation = Quaternion.AngleAxis(yaw, Vector3.up) * attackStartWorldRotation;
+            if (rootBone != null)
+            {
+                rootBone.localRotation = rootBoneBaseRotation;
+            }
+
+            ApplyRushTowardTarget(ram, 0.92f);
+            Vector3 sagittalAxis = ResolveLocomotionSwingWorldAxis();
+            Vector3 forwardAxis = ResolveLocomotionForwardWorldAxis();
+
+            for (int i = 0; i < infos.Count; i++)
+            {
+                BoneInfo info = infos[i];
+                if (info.transform == null || info.transform == rootBone)
+                {
+                    continue;
+                }
+
+                float depthFactor = maxDepth > 0 ? (float)info.depth / maxDepth : 1f;
+                float sideLean = (-coil * 0.35f + ram * 1.15f) * MotionSettings.TackleLeanAngle * leadSign * depthFactor;
+                float forwardLean = (-coil * 0.2f + ram * 0.4f) * MotionSettings.TackleLeanAngle * depthFactor;
                 ApplyCombinedWorldSwing(info, sagittalAxis, forwardLean, forwardAxis, sideLean);
             }
         }
@@ -2700,7 +3126,7 @@ namespace ClayEditor.Rigging
         }
 
         /// <summary>
-        /// 腰ブン腰を回して横からぶつける
+        /// 腰ブン腰をためてから横へ弾き出す
         /// </summary>
         private void ApplyHipCheck()
         {
@@ -2711,29 +3137,63 @@ namespace ClayEditor.Rigging
                 return;
             }
 
-            float strike = EvaluateStrikeEnvelope(u);
+            float coilEnd = 0.14f;
+            float popEnd = 0.4f;
+            float coil;
+            float pop;
+            if (u < coilEnd)
+            {
+                coil = Smooth01(u / coilEnd);
+                pop = 0f;
+            }
+            else if (u < popEnd)
+            {
+                float t = (u - coilEnd) / Mathf.Max(popEnd - coilEnd, 0.01f);
+                coil = 1f - t;
+                pop = 1f - Mathf.Pow(1f - t, 4f);
+            }
+            else
+            {
+                float t = Smooth01((u - popEnd) / Mathf.Max(1f - popEnd, 0.01f));
+                coil = 0f;
+                pop = 1f - t;
+            }
+
             float leadSign = ResolveDominantSideSign();
-            float yaw = strike * 82f * leadSign;
+            float yaw = (-coil * 18f + pop * 88f) * leadSign;
             transform.rotation = Quaternion.AngleAxis(yaw, Vector3.up) * attackStartWorldRotation;
             if (rootBone != null)
             {
                 rootBone.localRotation = rootBoneBaseRotation;
             }
 
-            ApplyRushTowardTarget(Mathf.Max(0f, strike), 0.82f);
-
+            ApplyRushTowardTarget(pop * 0.92f, 0.78f);
+            Vector3 sagittalAxis = ResolveLocomotionSwingWorldAxis();
             Vector3 forwardAxis = ResolveLocomotionForwardWorldAxis();
+
             for (int i = 0; i < infos.Count; i++)
             {
                 BoneInfo info = infos[i];
-                if (info.transform == null)
+                if (info.transform == null || info.transform == rootBone)
                 {
                     continue;
                 }
 
                 float depthFactor = maxDepth > 0 ? (float)info.depth / maxDepth : 1f;
-                float side = strike * MotionSettings.TackleLeanAngle * 1.05f * leadSign * depthFactor;
-                info.transform.localRotation = WorldSwingLocalRotation(info, forwardAxis, side);
+                float side = (-coil * 0.4f + pop * 1.2f) * MotionSettings.TackleLeanAngle * leadSign * depthFactor;
+                float brace = coil * 12f - pop * 8f;
+                if (IsLegLike(info))
+                {
+                    ApplyCombinedWorldSwing(info, sagittalAxis, brace, forwardAxis, side * 0.55f);
+                }
+                else if (IsArmLike(info))
+                {
+                    ApplyCombinedWorldSwing(info, sagittalAxis, -brace * 0.45f, forwardAxis, side * 0.7f);
+                }
+                else
+                {
+                    ApplyCombinedWorldSwing(info, sagittalAxis, brace * 0.2f, forwardAxis, side);
+                }
             }
         }
 
@@ -2790,6 +3250,7 @@ namespace ClayEditor.Rigging
             ApplyVisualLift(height);
             ApplyVisualLunge(0f);
             float angle = tuck * MotionSettings.BodySlamLeanAngle * 0.35f - slam * MotionSettings.StompSlamAngle * 1.45f;
+            Vector3 forwardAxis = ResolveLocomotionForwardWorldAxis();
 
             for (int i = 0; i < infos.Count; i++)
             {
@@ -2800,20 +3261,26 @@ namespace ClayEditor.Rigging
                 }
 
                 float depthFactor = maxDepth > 0 ? (float)info.depth / maxDepth : 1f;
-                if (info.isLimb)
+                if (IsArmLike(info))
                 {
-                    float limbTuck = tuck * 28f - slam * 16f;
+                    float arm = -tuck * 42f - slam * 18f;
+                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, (angle + arm) * depthFactor);
+                }
+                else if (IsLegLike(info))
+                {
+                    float limbTuck = tuck * 24f - slam * 14f;
                     info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, (angle + limbTuck) * depthFactor);
                 }
                 else
                 {
-                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, angle * depthFactor);
+                    float spread = slam * 8f * depthFactor;
+                    ApplyCombinedWorldSwing(info, sagittalAxis, angle * depthFactor, forwardAxis, spread);
                 }
             }
         }
 
         /// <summary>
-        /// 平打ち利き腕を横へ大きく薙ぎ払う
+        /// 平打ち体をひねって利き腕を横へ大きく薙ぎ払う
         /// </summary>
         private void ApplySlap()
         {
@@ -2824,16 +3291,23 @@ namespace ClayEditor.Rigging
                 return;
             }
 
-            float strike = EvaluateStrikeEnvelope(u);
-            ApplyForwardMove(Mathf.Max(0f, strike) * MotionSettings.PunchDistance * 0.32f, 0.62f);
+            float strike = EvaluateStroke(u, 0f, 0.62f);
+            float leadSign = ResolveDominantSideSign();
+            float yaw = strike * 42f * leadSign;
+            transform.rotation = Quaternion.AngleAxis(yaw, Vector3.up) * attackStartWorldRotation;
+            if (rootBone != null)
+            {
+                rootBone.localRotation = rootBoneBaseRotation;
+            }
+
+            ApplyForwardMove(Mathf.Max(0f, strike) * MotionSettings.PunchDistance * 0.4f, 0.62f);
             Vector3 upAxis = Vector3.up;
             Vector3 sagittalAxis = ResolveLocomotionSwingWorldAxis();
-            float leadSign = ResolveDominantSideSign();
 
             for (int i = 0; i < infos.Count; i++)
             {
                 BoneInfo info = infos[i];
-                if (info.transform == null)
+                if (info.transform == null || info.transform == rootBone)
                 {
                     continue;
                 }
@@ -2843,30 +3317,34 @@ namespace ClayEditor.Rigging
                 {
                     float swing = ResolveSwingAngle(
                         strike,
-                        MotionSettings.ChargeLimbPullbackAngle * 1.15f,
-                        MotionSettings.PunchAmplitude * 1.15f);
+                        MotionSettings.ChargeLimbPullbackAngle * 1.2f,
+                        MotionSettings.PunchAmplitude * 1.25f);
                     info.transform.localRotation = WorldSwingLocalRotation(info, upAxis, swing * tip * leadSign);
                 }
                 else if (IsArmLike(info))
                 {
-                    float guard = Mathf.Max(0f, strike) * MotionSettings.ChargeLimbPullbackAngle * 0.3f;
+                    float guard = (Mathf.Max(0f, -strike) * 0.45f + Mathf.Max(0f, strike) * 0.3f) * MotionSettings.ChargeLimbPullbackAngle;
                     info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, -guard);
+                }
+                else if (IsLegLike(info) && IsLeadLimb(info, leadSign))
+                {
+                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, Mathf.Max(0f, strike) * 14f);
+                }
+                else if (IsLegLike(info))
+                {
+                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, -Mathf.Max(0f, strike) * 12f);
                 }
                 else
                 {
                     float depthFactor = maxDepth > 0 ? (float)info.depth / maxDepth : 1f;
-                    float twist = strike * MotionSettings.ChargePullbackAngle * 0.5f * depthFactor * leadSign;
+                    float twist = strike * MotionSettings.ChargePullbackAngle * 0.55f * depthFactor * leadSign;
                     info.transform.localRotation = WorldSwingLocalRotation(info, upAxis, twist);
-                    if (IsLegLike(info))
-                    {
-                        info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, -Mathf.Abs(twist) * 0.35f);
-                    }
                 }
             }
         }
 
         /// <summary>
-        /// 足払い低くかがんで利き脚を横に薙ぐ
+        /// 足払い低くかがんでから利き脚を横に薙ぐ
         /// </summary>
         private void ApplyLowSweep()
         {
@@ -2877,12 +3355,33 @@ namespace ClayEditor.Rigging
                 return;
             }
 
-            float strike = EvaluateStrikeEnvelope(u);
-            ApplyForwardMove(Mathf.Max(0f, strike) * MotionSettings.KickDistance * 0.28f, 0.55f);
+            float crouchEnd = 0.16f;
+            float sweepEnd = 0.42f;
+            float crouch;
+            float sweep;
+            if (u < crouchEnd)
+            {
+                crouch = Smooth01(u / crouchEnd);
+                sweep = -crouch;
+            }
+            else if (u < sweepEnd)
+            {
+                float t = (u - crouchEnd) / Mathf.Max(sweepEnd - crouchEnd, 0.01f);
+                crouch = 1f;
+                sweep = Mathf.Lerp(-1f, 1.15f, 1f - Mathf.Pow(1f - t, 4f));
+            }
+            else
+            {
+                float t = Smooth01((u - sweepEnd) / Mathf.Max(1f - sweepEnd, 0.01f));
+                crouch = 1f - t;
+                sweep = 1.15f * (1f - t);
+            }
+
+            ApplyForwardMove(Mathf.Max(0f, sweep) * MotionSettings.KickDistance * 0.32f, 0.55f);
             Vector3 upAxis = Vector3.up;
             Vector3 sagittalAxis = ResolveLocomotionSwingWorldAxis();
             float leadSign = ResolveDominantSideSign();
-            float crouch = Mathf.Max(0f, strike) * 38f;
+            float crouchAngle = crouch * 42f;
 
             for (int i = 0; i < infos.Count; i++)
             {
@@ -2895,31 +3394,35 @@ namespace ClayEditor.Rigging
                 float tip = 0.5f + (maxDepth > 0 ? (float)info.depth / maxDepth : 1f) * 0.5f;
                 if (IsLegLike(info) && IsLeadLimb(info, leadSign))
                 {
-                    float sweep = ResolveSwingAngle(
-                        strike,
-                        MotionSettings.ChargeLimbPullbackAngle * 0.9f,
-                        MotionSettings.KickAmplitude * 0.9f);
+                    float sweepAngle = ResolveSwingAngle(
+                        sweep,
+                        MotionSettings.ChargeLimbPullbackAngle * 0.95f,
+                        MotionSettings.KickAmplitude);
                     ApplyCombinedWorldSwing(
                         info,
                         sagittalAxis,
-                        crouch * 0.7f,
+                        crouchAngle * 0.75f,
                         upAxis,
-                        sweep * tip * leadSign);
+                        sweepAngle * tip * leadSign);
                 }
                 else if (IsLegLike(info))
                 {
-                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, crouch * 0.55f);
+                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, crouchAngle * 0.6f);
+                }
+                else if (IsArmLike(info))
+                {
+                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, crouchAngle * 0.25f);
                 }
                 else
                 {
                     float depthFactor = maxDepth > 0 ? (float)info.depth / maxDepth : 1f;
-                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, crouch * depthFactor);
+                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, crouchAngle * depthFactor);
                 }
             }
         }
 
         /// <summary>
-        /// 噛みつき前部を開いてから閉じる
+        /// 噛みつき前部を開いてから閉じ四肢で踏ん張る
         /// </summary>
         private void ApplyBite()
         {
@@ -2958,6 +3461,16 @@ namespace ClayEditor.Rigging
             }
 
             ApplyForwardMove(lunge, 0.75f);
+            float shake = 0f;
+            if (u >= openEnd && u < snapEnd)
+            {
+                shake = snap * Mathf.Sin(u * Mathf.PI * 12f) * 4f;
+            }
+            else if (u >= snapEnd)
+            {
+                float recover = (u - snapEnd) / Mathf.Max(1f - snapEnd, 0.01f);
+                shake = snap * Mathf.Sin(u * Mathf.PI * 16f) * 5f * (1f - recover);
+            }
 
             for (int i = 0; i < infos.Count; i++)
             {
@@ -2971,7 +3484,12 @@ namespace ClayEditor.Rigging
                 if (IsFrontLike(info))
                 {
                     float jaw = -open * MotionSettings.HeadbuttAmplitude * 0.7f + snap * MotionSettings.HeadbuttAmplitude * 1.35f;
-                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, jaw * tip);
+                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, (jaw + shake) * tip);
+                }
+                else if (IsArmLike(info) || IsLegLike(info))
+                {
+                    float brace = (open * 0.22f + snap * 0.35f) * MotionSettings.ChargeLimbPullbackAngle;
+                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, -brace);
                 }
                 else
                 {
@@ -2983,7 +3501,710 @@ namespace ClayEditor.Rigging
         }
 
         /// <summary>
-        /// 魔法詠唱技種に合わせて力を解放する
+        /// 手刀利き腕を高く構えて刃のように振り下ろす
+        /// </summary>
+        private void ApplyChop()
+        {
+            float u = AttackProgress();
+            if (u >= 1f)
+            {
+                FinishAttack();
+                return;
+            }
+
+            float raiseEnd = 0.26f;
+            float holdEnd = 0.34f;
+            float chopEnd = 0.5f;
+            float raise;
+            float chop;
+            float lunge;
+            if (u < raiseEnd)
+            {
+                raise = Smooth01(u / raiseEnd);
+                chop = 0f;
+                lunge = -raise * MotionSettings.PunchDistance * 0.16f;
+            }
+            else if (u < holdEnd)
+            {
+                raise = 1f;
+                chop = 0f;
+                lunge = -MotionSettings.PunchDistance * 0.16f;
+            }
+            else if (u < chopEnd)
+            {
+                float t = (u - holdEnd) / Mathf.Max(chopEnd - holdEnd, 0.01f);
+                raise = 1f - t;
+                chop = 1f - Mathf.Pow(1f - t, 4f);
+                lunge = Mathf.Lerp(-MotionSettings.PunchDistance * 0.16f, MotionSettings.PunchDistance * 0.62f, chop);
+            }
+            else
+            {
+                float t = Smooth01((u - chopEnd) / Mathf.Max(1f - chopEnd, 0.01f));
+                raise = 0f;
+                chop = 1f - t;
+                lunge = MotionSettings.PunchDistance * 0.62f * (1f - t);
+            }
+
+            ApplyForwardMove(lunge, 0.64f);
+            Vector3 sagittalAxis = ResolveLocomotionSwingWorldAxis();
+            Vector3 forwardAxis = ResolveLocomotionForwardWorldAxis();
+            Vector3 upAxis = Vector3.up;
+            float leadSign = ResolveDominantSideSign();
+            float armAngle = -raise * MotionSettings.PunchAmplitude * 1.4f + chop * MotionSettings.PunchAmplitude * 1.25f;
+
+            for (int i = 0; i < infos.Count; i++)
+            {
+                BoneInfo info = infos[i];
+                if (info.transform == null)
+                {
+                    continue;
+                }
+
+                float tip = 0.55f + (maxDepth > 0 ? (float)info.depth / maxDepth : 1f) * 0.45f;
+                if (IsArmLike(info) && IsLeadLimb(info, leadSign))
+                {
+                    ApplyCombinedWorldSwing(
+                        info,
+                        forwardAxis,
+                        armAngle * tip,
+                        upAxis,
+                        chop * 28f * leadSign * tip);
+                }
+                else if (IsArmLike(info))
+                {
+                    float guard = raise * 22f - chop * 10f;
+                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, -guard * tip);
+                }
+                else if (IsLegLike(info) && IsLeadLimb(info, leadSign))
+                {
+                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, chop * 16f * tip);
+                }
+                else
+                {
+                    float depthFactor = maxDepth > 0 ? (float)info.depth / maxDepth : 1f;
+                    float lean = -raise * 14f + chop * MotionSettings.ChargePullbackAngle * 0.7f;
+                    float twist = chop * 22f * leadSign * depthFactor;
+                    ApplyCombinedWorldSwing(info, sagittalAxis, lean * depthFactor, upAxis, twist);
+                }
+            }
+        }
+
+        /// <summary>
+        /// おうふくビンタ左右の腕で交互に大きく横へ叩く
+        /// </summary>
+        private void ApplyDoubleSlap()
+        {
+            float u = AttackProgress();
+            if (u >= 1f)
+            {
+                FinishAttack();
+                return;
+            }
+
+            float first = EvaluateStroke(u, 0f, 0.46f);
+            float second = EvaluateStroke(u, 0.46f, 0.96f);
+            float lunge =
+                Mathf.Max(0f, first) * MotionSettings.PunchDistance * 0.38f
+                + Mathf.Max(0f, second) * MotionSettings.PunchDistance * 0.32f;
+            ApplyForwardMove(lunge, 0.6f);
+
+            float leadSign = ResolveDominantSideSign();
+            float yaw = (Mathf.Max(0f, first) - Mathf.Max(0f, second)) * 48f * leadSign;
+            transform.rotation = Quaternion.AngleAxis(yaw, Vector3.up) * attackStartWorldRotation;
+            if (rootBone != null)
+            {
+                rootBone.localRotation = rootBoneBaseRotation;
+            }
+
+            Vector3 upAxis = Vector3.up;
+            Vector3 sagittalAxis = ResolveLocomotionSwingWorldAxis();
+
+            for (int i = 0; i < infos.Count; i++)
+            {
+                BoneInfo info = infos[i];
+                if (info.transform == null || info.transform == rootBone)
+                {
+                    continue;
+                }
+
+                float tip = 0.55f + (maxDepth > 0 ? (float)info.depth / maxDepth : 1f) * 0.45f;
+                if (IsArmLike(info) && IsLeadLimb(info, leadSign))
+                {
+                    float swing = ResolveSwingAngle(
+                        first,
+                        MotionSettings.ChargeLimbPullbackAngle * 1.05f,
+                        MotionSettings.PunchAmplitude * 1.2f);
+                    info.transform.localRotation = WorldSwingLocalRotation(info, upAxis, swing * tip * leadSign);
+                }
+                else if (IsArmLike(info))
+                {
+                    float swing = ResolveSwingAngle(
+                        second,
+                        MotionSettings.ChargeLimbPullbackAngle * 1.05f,
+                        MotionSettings.PunchAmplitude * 1.2f);
+                    info.transform.localRotation = WorldSwingLocalRotation(info, upAxis, swing * tip * -leadSign);
+                }
+                else if (IsLegLike(info) && IsLeadLimb(info, leadSign))
+                {
+                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, Mathf.Max(0f, first) * 14f);
+                }
+                else if (IsLegLike(info))
+                {
+                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, Mathf.Max(0f, second) * 14f);
+                }
+                else
+                {
+                    float depthFactor = maxDepth > 0 ? (float)info.depth / maxDepth : 1f;
+                    float twist = (first - second) * MotionSettings.ChargePullbackAngle * 0.55f * depthFactor * leadSign;
+                    info.transform.localRotation = WorldSwingLocalRotation(info, upAxis, twist);
+                }
+            }
+        }
+
+        /// <summary>
+        /// ハンマーアーム両腕を頭上へ振りかぶって叩き落とす
+        /// </summary>
+        private void ApplyHammerArm()
+        {
+            float u = AttackProgress();
+            if (u >= 1f)
+            {
+                FinishAttack();
+                return;
+            }
+
+            float raiseEnd = 0.24f;
+            float holdEnd = 0.36f;
+            float slamEnd = 0.54f;
+            float raise;
+            float slam;
+            float height;
+            if (u < raiseEnd)
+            {
+                raise = Smooth01(u / raiseEnd);
+                slam = 0f;
+                height = raise * 0.38f;
+            }
+            else if (u < holdEnd)
+            {
+                raise = 1f;
+                slam = 0f;
+                height = 0.38f + Mathf.Sin((u - raiseEnd) / Mathf.Max(holdEnd - raiseEnd, 0.01f) * Mathf.PI) * 0.04f;
+            }
+            else if (u < slamEnd)
+            {
+                float t = (u - holdEnd) / Mathf.Max(slamEnd - holdEnd, 0.01f);
+                raise = 1f - t;
+                slam = 1f - Mathf.Pow(1f - t, 4f);
+                height = 0.38f * (1f - slam);
+            }
+            else
+            {
+                float t = Smooth01((u - slamEnd) / Mathf.Max(1f - slamEnd, 0.01f));
+                raise = 0f;
+                slam = 1f - t * t;
+                height = 0f;
+            }
+
+            ApplyVisualLift(height);
+            ApplyForwardMove(slam * MotionSettings.PunchDistance * 0.42f, 0.58f);
+            Vector3 sagittalAxis = ResolveLocomotionSwingWorldAxis();
+            Vector3 forwardAxis = ResolveLocomotionForwardWorldAxis();
+            float armAngle = u < holdEnd
+                ? -raise * MotionSettings.PunchAmplitude * 1.55f
+                : slam * MotionSettings.StompSlamAngle * 1.15f;
+
+            for (int i = 0; i < infos.Count; i++)
+            {
+                BoneInfo info = infos[i];
+                if (info.transform == null)
+                {
+                    continue;
+                }
+
+                float tip = 0.5f + (maxDepth > 0 ? (float)info.depth / maxDepth : 1f) * 0.5f;
+                if (IsArmLike(info))
+                {
+                    ApplyCombinedWorldSwing(
+                        info,
+                        sagittalAxis,
+                        armAngle * 0.22f * tip,
+                        forwardAxis,
+                        armAngle * tip);
+                }
+                else if (IsLegLike(info))
+                {
+                    float plant = u < holdEnd ? raise * 16f : -slam * 22f;
+                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, plant);
+                }
+                else
+                {
+                    float depthFactor = maxDepth > 0 ? (float)info.depth / maxDepth : 1f;
+                    float lean = u < holdEnd
+                        ? -raise * 18f * depthFactor
+                        : slam * MotionSettings.StompSlamAngle * 0.7f * depthFactor;
+                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, lean);
+                }
+            }
+        }
+
+        /// <summary>
+        /// にだんげり左右の脚を交互に高く振り出して蹴る
+        /// </summary>
+        private void ApplyDoubleKick()
+        {
+            float u = AttackProgress();
+            if (u >= 1f)
+            {
+                FinishAttack();
+                return;
+            }
+
+            float first = EvaluateStroke(u, 0f, 0.46f);
+            float second = EvaluateStroke(u, 0.46f, 0.96f);
+            float hop = EvaluatePulse(u, 0.4f, 0.56f) * 0.18f;
+            ApplyVisualLift(hop);
+            ApplyForwardMove(
+                Mathf.Max(0f, first) * MotionSettings.KickDistance * 0.7f
+                + Mathf.Max(0f, second) * MotionSettings.KickDistance * 0.62f,
+                0.66f);
+
+            Vector3 sagittalAxis = ResolveLocomotionSwingWorldAxis();
+            Vector3 forwardAxis = ResolveLocomotionForwardWorldAxis();
+            float leadSign = ResolveDominantSideSign();
+
+            for (int i = 0; i < infos.Count; i++)
+            {
+                BoneInfo info = infos[i];
+                if (info.transform == null)
+                {
+                    continue;
+                }
+
+                float tip = 0.5f + (maxDepth > 0 ? (float)info.depth / maxDepth : 1f) * 0.5f;
+                if (IsLegLike(info) && IsLeadLimb(info, leadSign))
+                {
+                    float legAngle = ResolveSwingAngle(
+                        first,
+                        MotionSettings.ChargeLimbPullbackAngle * 1.35f,
+                        MotionSettings.KickAmplitude * 1.05f);
+                    ApplyCombinedWorldSwing(
+                        info,
+                        sagittalAxis,
+                        legAngle * tip,
+                        forwardAxis,
+                        -Mathf.Max(0f, first) * 18f * tip);
+                }
+                else if (IsLegLike(info))
+                {
+                    float legAngle = ResolveSwingAngle(
+                        second,
+                        MotionSettings.ChargeLimbPullbackAngle * 1.35f,
+                        MotionSettings.KickAmplitude * 1.05f);
+                    ApplyCombinedWorldSwing(
+                        info,
+                        sagittalAxis,
+                        legAngle * tip,
+                        forwardAxis,
+                        -Mathf.Max(0f, second) * 18f * tip);
+                }
+                else if (IsArmLike(info) && IsLeadLimb(info, leadSign))
+                {
+                    info.transform.localRotation = WorldSwingLocalRotation(
+                        info,
+                        sagittalAxis,
+                        -Mathf.Max(0f, first) * MotionSettings.ChargeLimbPullbackAngle * 0.5f * tip);
+                }
+                else if (IsArmLike(info))
+                {
+                    info.transform.localRotation = WorldSwingLocalRotation(
+                        info,
+                        sagittalAxis,
+                        -Mathf.Max(0f, second) * MotionSettings.ChargeLimbPullbackAngle * 0.5f * tip);
+                }
+                else
+                {
+                    float depthFactor = maxDepth > 0 ? (float)info.depth / maxDepth : 1f;
+                    float lean = -(first - second) * MotionSettings.ChargePullbackAngle * 0.55f * depthFactor;
+                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, lean);
+                }
+            }
+        }
+
+        /// <summary>
+        /// ドロップキック跳ねて空中で体を反らし脚を突き出す
+        /// </summary>
+        private void ApplyDropKick()
+        {
+            float u = AttackProgress();
+            if (u >= 1f)
+            {
+                FinishAttack();
+                return;
+            }
+
+            float crouchEnd = 0.12f;
+            float flyEnd = 0.4f;
+            float hangEnd = 0.54f;
+            float leapDistance = ResolveAttackLeapDistance() * 0.7f;
+            float peakHeight = ResolveAttackLeapPeakHeight() * 0.52f;
+            float forward;
+            float height;
+            float kick;
+            float arch;
+            if (u < crouchEnd)
+            {
+                float t = Smooth01(u / crouchEnd);
+                forward = -t * leapDistance * 0.12f;
+                height = 0f;
+                kick = -t;
+                arch = t * 0.25f;
+            }
+            else if (u < flyEnd)
+            {
+                float t = (u - crouchEnd) / Mathf.Max(flyEnd - crouchEnd, 0.01f);
+                float eased = 1f - Mathf.Pow(1f - t, 3f);
+                forward = eased * leapDistance;
+                height = Mathf.Sin(t * Mathf.PI * 0.92f) * peakHeight;
+                kick = Mathf.Lerp(-0.2f, 1f, eased);
+                arch = Mathf.Lerp(0.25f, 1f, eased);
+            }
+            else if (u < hangEnd)
+            {
+                float t = (u - flyEnd) / Mathf.Max(hangEnd - flyEnd, 0.01f);
+                forward = leapDistance;
+                height = peakHeight * (0.72f - t * 0.12f);
+                kick = 1f;
+                arch = 1f;
+            }
+            else
+            {
+                float t = Smooth01((u - hangEnd) / Mathf.Max(1f - hangEnd, 0.01f));
+                forward = leapDistance * (1f - t);
+                height = Mathf.Max(0f, peakHeight * 0.6f * (1f - t));
+                kick = 1f - t;
+                arch = 1f - t;
+            }
+
+            ApplyVisualLeap(forward, height);
+            Vector3 sagittalAxis = ResolveLocomotionSwingWorldAxis();
+            Vector3 forwardAxis = ResolveLocomotionForwardWorldAxis();
+
+            for (int i = 0; i < infos.Count; i++)
+            {
+                BoneInfo info = infos[i];
+                if (info.transform == null)
+                {
+                    continue;
+                }
+
+                float tip = 0.5f + (maxDepth > 0 ? (float)info.depth / maxDepth : 1f) * 0.5f;
+                if (IsLegLike(info))
+                {
+                    float legAngle = kick * MotionSettings.KickAmplitude * 1.05f * tip;
+                    ApplyCombinedWorldSwing(info, sagittalAxis, legAngle, forwardAxis, -kick * 12f * tip);
+                }
+                else if (IsArmLike(info))
+                {
+                    info.transform.localRotation = WorldSwingLocalRotation(
+                        info,
+                        sagittalAxis,
+                        -arch * MotionSettings.ChargeLimbPullbackAngle * 0.85f * tip);
+                }
+                else
+                {
+                    float depthFactor = maxDepth > 0 ? (float)info.depth / maxDepth : 1f;
+                    float lean = -arch * MotionSettings.BodySlamLeanAngle * 0.95f * depthFactor;
+                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, lean);
+                }
+            }
+        }
+
+        /// <summary>
+        /// つつく前部を引いてから3回素早く突き出す
+        /// </summary>
+        private void ApplyPeck()
+        {
+            float u = AttackProgress();
+            if (u >= 1f)
+            {
+                FinishAttack();
+                return;
+            }
+
+            float first = EvaluateStroke(u, 0.02f, 0.28f);
+            float second = EvaluateStroke(u, 0.3f, 0.54f);
+            float third = EvaluateStroke(u, 0.56f, 0.82f);
+            float peck = first + second + third;
+            float lunge =
+                Mathf.Max(0f, first) * MotionSettings.HeadbuttDistance * 0.5f
+                + Mathf.Max(0f, second) * MotionSettings.HeadbuttDistance * 0.42f
+                + Mathf.Max(0f, third) * MotionSettings.HeadbuttDistance * 0.36f;
+            ApplyForwardMove(lunge, 0.72f);
+            ApplyVisualLift(Mathf.Max(0f, first, second, third) * 0.05f);
+
+            Vector3 sagittalAxis = ResolveLocomotionSwingWorldAxis();
+            Vector3 upAxis = Vector3.up;
+            float side = (EvaluatePulse(u, 0.02f, 0.28f) - EvaluatePulse(u, 0.56f, 0.82f)) * 10f;
+
+            for (int i = 0; i < infos.Count; i++)
+            {
+                BoneInfo info = infos[i];
+                if (info.transform == null)
+                {
+                    continue;
+                }
+
+                float tip = 0.55f + (maxDepth > 0 ? (float)info.depth / maxDepth : 1f) * 0.45f;
+                if (IsFrontLike(info))
+                {
+                    float head = ResolveSwingAngle(
+                        peck,
+                        MotionSettings.ChargeLimbPullbackAngle * 0.85f,
+                        MotionSettings.HeadbuttAmplitude * 1.05f);
+                    ApplyCombinedWorldSwing(info, sagittalAxis, head * tip, upAxis, side * tip);
+                }
+                else if (IsArmLike(info) || IsLegLike(info))
+                {
+                    float brace = Mathf.Max(0f, peck) * 10f;
+                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, -brace);
+                }
+                else
+                {
+                    float depthFactor = maxDepth > 0 ? (float)info.depth / maxDepth : 1f;
+                    float bob = peck * MotionSettings.HeadbuttAmplitude * 0.32f * depthFactor;
+                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, bob);
+                }
+            }
+        }
+
+        /// <summary>
+        /// つのでつく低く構えて前部を突き出しながら突進する
+        /// </summary>
+        private void ApplyHornAttack()
+        {
+            float u = AttackProgress();
+            if (u >= 1f)
+            {
+                FinishAttack();
+                return;
+            }
+
+            float crouchEnd = 0.16f;
+            float rushEnd = 0.42f;
+            float driveEnd = 0.62f;
+            float crouch;
+            float thrust;
+            float travel;
+            if (u < crouchEnd)
+            {
+                crouch = Smooth01(u / crouchEnd);
+                thrust = -crouch;
+                travel = 0f;
+            }
+            else if (u < rushEnd)
+            {
+                float t = (u - crouchEnd) / Mathf.Max(rushEnd - crouchEnd, 0.01f);
+                crouch = 1f;
+                thrust = Mathf.Lerp(-1f, 1.15f, 1f - Mathf.Pow(1f - t, 4f));
+                travel = Smooth01(t);
+            }
+            else if (u < driveEnd)
+            {
+                crouch = 1f;
+                thrust = 1.15f;
+                travel = 1f;
+            }
+            else
+            {
+                float t = Smooth01((u - driveEnd) / Mathf.Max(1f - driveEnd, 0.01f));
+                crouch = 1f - t;
+                thrust = 1.15f * (1f - t);
+                travel = 1f - t;
+            }
+
+            ApplyRushTowardTarget(travel, 0.98f);
+            Vector3 sagittalAxis = ResolveLocomotionSwingWorldAxis();
+
+            for (int i = 0; i < infos.Count; i++)
+            {
+                BoneInfo info = infos[i];
+                if (info.transform == null)
+                {
+                    continue;
+                }
+
+                float tip = 0.6f + (maxDepth > 0 ? (float)info.depth / maxDepth : 1f) * 0.4f;
+                if (IsFrontLike(info))
+                {
+                    float angle = ResolveSwingAngle(
+                        thrust,
+                        MotionSettings.ChargeLimbPullbackAngle * 0.8f,
+                        MotionSettings.HeadbuttAmplitude * 1.25f);
+                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, angle * tip);
+                }
+                else if (IsArmLike(info) || IsLegLike(info))
+                {
+                    float tuck = crouch * 22f + Mathf.Max(0f, thrust) * 8f;
+                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, tuck * tip);
+                }
+                else
+                {
+                    float depthFactor = maxDepth > 0 ? (float)info.depth / maxDepth : 1f;
+                    float lean = crouch * MotionSettings.TackleLeanAngle * 1.15f * depthFactor;
+                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, lean);
+                }
+            }
+        }
+
+        /// <summary>
+        /// しっぽたたき腰をひねって尻尾を振り上げて叩きつける
+        /// </summary>
+        private void ApplyTailSlam()
+        {
+            float u = AttackProgress();
+            if (u >= 1f)
+            {
+                FinishAttack();
+                return;
+            }
+
+            float coilEnd = 0.26f;
+            float holdEnd = 0.34f;
+            float slamEnd = 0.52f;
+            float leadSign = ResolveDominantSideSign();
+            float coil;
+            float slam;
+            float yaw;
+            if (u < coilEnd)
+            {
+                coil = Smooth01(u / coilEnd);
+                slam = 0f;
+                yaw = coil * 48f * leadSign;
+            }
+            else if (u < holdEnd)
+            {
+                coil = 1f;
+                slam = 0f;
+                yaw = 48f * leadSign;
+            }
+            else if (u < slamEnd)
+            {
+                float t = (u - holdEnd) / Mathf.Max(slamEnd - holdEnd, 0.01f);
+                coil = 1f - t;
+                slam = 1f - Mathf.Pow(1f - t, 4f);
+                yaw = 48f * leadSign;
+            }
+            else
+            {
+                float t = Smooth01((u - slamEnd) / Mathf.Max(1f - slamEnd, 0.01f));
+                coil = 0f;
+                slam = 1f - t;
+                yaw = 48f * leadSign * (1f - t);
+            }
+
+            transform.rotation = Quaternion.AngleAxis(yaw, Vector3.up) * attackStartWorldRotation;
+            if (rootBone != null)
+            {
+                rootBone.localRotation = rootBoneBaseRotation;
+            }
+
+            ApplyForwardMove(slam * MotionSettings.TackleDistance * 0.22f, 0.5f);
+            ApplyVisualLift(coil * 0.12f);
+            Vector3 sagittalAxis = ResolveLocomotionSwingWorldAxis();
+            float tailAngle = -coil * MotionSettings.TailWhipAmplitude * 0.95f + slam * MotionSettings.TailWhipAmplitude * 1.15f;
+
+            for (int i = 0; i < infos.Count; i++)
+            {
+                BoneInfo info = infos[i];
+                if (info.transform == null || info.transform == rootBone)
+                {
+                    continue;
+                }
+
+                float depthFactor = maxDepth > 0 ? (float)info.depth / maxDepth : 1f;
+                if (IsBackLike(info) || info.isBack)
+                {
+                    float tip = 0.55f + depthFactor * 0.55f;
+                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, tailAngle * tip);
+                }
+                else if (IsArmLike(info) || IsLegLike(info))
+                {
+                    float brace = coil * 12f - slam * 8f;
+                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, -brace);
+                }
+                else
+                {
+                    float lean = -coil * 16f + slam * 28f;
+                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, lean * depthFactor);
+                }
+            }
+        }
+
+        /// <summary>
+        /// ころがる体を丸めて前方へ転がり突進する
+        /// </summary>
+        private void ApplyRollout()
+        {
+            float u = AttackProgress();
+            if (u >= 1f)
+            {
+                FinishAttack();
+                return;
+            }
+
+            float curlEnd = 0.14f;
+            float rollEnd = 0.78f;
+            float tuck;
+            float spin;
+            float travel;
+            if (u < curlEnd)
+            {
+                tuck = Smooth01(u / curlEnd);
+                spin = 0f;
+                travel = 0f;
+            }
+            else if (u < rollEnd)
+            {
+                float t = (u - curlEnd) / Mathf.Max(rollEnd - curlEnd, 0.01f);
+                tuck = 1f;
+                spin = t * 720f;
+                travel = t < 0.38f ? Smooth01(t / 0.38f) : 1f;
+            }
+            else
+            {
+                float t = Smooth01((u - rollEnd) / Mathf.Max(1f - rollEnd, 0.01f));
+                tuck = 1f - t;
+                spin = 720f;
+                travel = 1f - t;
+            }
+
+            Vector3 sagittalAxis = ResolveLocomotionSwingWorldAxis();
+            transform.rotation = Quaternion.AngleAxis(spin, sagittalAxis) * attackStartWorldRotation;
+            if (rootBone != null)
+            {
+                rootBone.localRotation = rootBoneBaseRotation;
+            }
+
+            ApplyRushTowardTarget(travel, 0.98f);
+            ApplyVisualLift(tuck * 0.1f + Mathf.Abs(Mathf.Sin(spin * Mathf.Deg2Rad)) * 0.06f);
+
+            for (int i = 0; i < infos.Count; i++)
+            {
+                BoneInfo info = infos[i];
+                if (info.transform == null || info.transform == rootBone)
+                {
+                    continue;
+                }
+
+                float depthFactor = maxDepth > 0 ? (float)info.depth / maxDepth : 1f;
+                float curl = tuck * 48f * (0.65f + depthFactor * 0.45f);
+                info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, curl);
+            }
+        }
+
+        /// <summary>
+        /// 魔法詠唱技種ごとに腕を上げて力を解放する
         /// </summary>
         private void ApplyMagicCast()
         {
@@ -2994,33 +4215,72 @@ namespace ClayEditor.Rigging
                 return;
             }
 
-            float thrust = EvaluateStrikeEnvelope(u);
+            float chargeEnd = 0.18f;
+            float releaseEnd = 0.42f;
+            float charge;
+            float release;
+            if (u < chargeEnd)
+            {
+                charge = Smooth01(u / chargeEnd);
+                release = 0f;
+            }
+            else if (u < releaseEnd)
+            {
+                float t = (u - chargeEnd) / Mathf.Max(releaseEnd - chargeEnd, 0.01f);
+                charge = 1f - t;
+                release = 1f - Mathf.Pow(1f - t, 3f);
+            }
+            else
+            {
+                float t = Smooth01((u - releaseEnd) / Mathf.Max(1f - releaseEnd, 0.01f));
+                charge = 0f;
+                release = 1f - t;
+            }
+
             Vector3 sagittalAxis = ResolveLocomotionSwingWorldAxis();
-            float lift = Mathf.Max(0f, thrust);
-            float lean = -thrust * MotionSettings.ChargePullbackAngle;
+            Vector3 forwardAxis = ResolveLocomotionForwardWorldAxis();
+            float leadSign = ResolveDominantSideSign();
+            float lift = 0f;
+            float lean = 0f;
             float yaw = 0f;
+            float armRaise = -charge * 32f - release * 10f;
+            float armSpread = charge * 8f + release * 12f;
             switch (currentMotion)
             {
                 case MotionType.Fireball:
-                    lift *= 0.12f;
-                    lean *= 0.55f;
-                    ApplyForwardMove(Mathf.Max(0f, thrust) * 0.35f, 0.45f);
+                    lift = charge * 0.06f + release * 0.1f;
+                    lean = -charge * MotionSettings.ChargePullbackAngle * 0.25f + release * MotionSettings.ChargePullbackAngle * 0.45f;
+                    armRaise = -charge * 26f + release * 18f;
+                    armSpread = release * 8f;
+                    ApplyForwardMove(release * 0.38f, 0.45f);
                     break;
                 case MotionType.WindSlasher:
-                    lift *= 0.22f;
-                    yaw = thrust * 55f;
-                    lean *= 0.35f;
+                    lift = charge * 0.1f + release * 0.16f;
+                    lean = -release * MotionSettings.ChargePullbackAngle * 0.22f;
+                    yaw = (charge * 24f + release * 72f) * leadSign;
+                    armRaise = -charge * 14f - release * 8f;
+                    armSpread = charge * 22f + release * 36f;
+                    transform.rotation = Quaternion.AngleAxis(yaw, Vector3.up) * attackStartWorldRotation;
+                    if (rootBone != null)
+                    {
+                        rootBone.localRotation = rootBoneBaseRotation;
+                    }
+
                     ApplyVisualLunge(0f);
                     break;
                 case MotionType.DiamondDust:
-                    lift *= 0.28f;
-                    lean *= 0.9f;
+                    lift = -charge * 0.08f + release * 0.2f;
+                    lean = charge * MotionSettings.ChargePullbackAngle * 0.55f - release * MotionSettings.ChargePullbackAngle * 0.7f;
+                    armRaise = charge * 8f - release * 22f;
+                    armSpread = charge * 16f + release * 40f;
                     ApplyVisualLunge(0f);
                     break;
                 default:
-                    lift *= 0.16f;
-                    lean *= 0.7f;
-                    yaw = Mathf.Sin(u * Mathf.PI * 8f) * 8f * Mathf.Max(0f, thrust);
+                    lift = charge * 0.1f + release * 0.14f;
+                    lean = -charge * MotionSettings.ChargePullbackAngle * 0.2f - release * MotionSettings.ChargePullbackAngle * 0.35f;
+                    yaw = Mathf.Sin(u * Mathf.PI * 16f) * 10f * (charge * 0.45f + release);
+                    armRaise = -charge * 38f - release * 16f;
+                    armSpread = charge * 6f + release * 10f;
                     ApplyVisualLunge(0f);
                     break;
             }
@@ -3030,18 +4290,37 @@ namespace ClayEditor.Rigging
             for (int i = 0; i < infos.Count; i++)
             {
                 BoneInfo info = infos[i];
-                if (info.transform == null)
+                if (info.transform == null || info.transform == rootBone)
                 {
                     continue;
                 }
 
                 float depthFactor = maxDepth > 0 ? (float)info.depth / maxDepth : 1f;
-                ApplyCombinedWorldSwing(
-                    info,
-                    sagittalAxis,
-                    lean * 0.85f * depthFactor,
-                    Vector3.up,
-                    yaw * depthFactor);
+                if (IsArmLike(info))
+                {
+                    float limbSign = ResolveLimbSwingSign(info, leadSign);
+                    ApplyCombinedWorldSwing(
+                        info,
+                        sagittalAxis,
+                        armRaise * (0.7f + depthFactor * 0.4f),
+                        forwardAxis,
+                        armSpread * limbSign * depthFactor);
+                }
+                else if (IsLegLike(info))
+                {
+                    float plant = (charge * 0.22f + release * 0.18f) * MotionSettings.ChargeLimbPullbackAngle;
+                    info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, -plant);
+                }
+                else
+                {
+                    float boneYaw = currentMotion == MotionType.WindSlasher ? 0f : yaw * depthFactor;
+                    ApplyCombinedWorldSwing(
+                        info,
+                        sagittalAxis,
+                        lean * 0.85f * depthFactor,
+                        Vector3.up,
+                        boneYaw);
+                }
             }
         }
 

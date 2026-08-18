@@ -55,7 +55,7 @@ namespace Battle.Presenter
 
         private void OnMoveUsed(MoveUsedResult result)
         {
-            PlaySe(result);
+            PlayHitFeedbackSe(result);
 
             Transform targetRoot = ResolveTargetRoot(result);
             if (targetRoot == null)
@@ -65,7 +65,7 @@ namespace Battle.Presenter
 
             Vector3 position = ResolveHitPosition(targetRoot);
 
-            if (damagePopup != null)
+            if (damagePopup != null && result.ShowDamagePopup)
             {
                 if (!result.Hit)
                 {
@@ -87,7 +87,7 @@ namespace Battle.Presenter
             }
         }
 
-        private void PlaySe(MoveUsedResult result)
+        private void PlayHitFeedbackSe(MoveUsedResult result)
         {
             if (seService == null)
             {
@@ -96,7 +96,11 @@ namespace Battle.Presenter
 
             if (!result.Hit)
             {
-                seService.PlayAttackMiss();
+                if (result.ShowDamagePopup)
+                {
+                    seService.PlayAttackMiss();
+                }
+
                 return;
             }
 

@@ -73,6 +73,15 @@ Motion.Knee	膝踢
 Motion.GroundPound	砸地
 Motion.Slap	掌摑
 Motion.Tackle	衝撞
+Motion.Chop	手刀
+Motion.DoubleSlap	連環掌
+Motion.HammerArm	重錘臂
+Motion.DoubleKick	二段踢
+Motion.DropKick	飛踢
+Motion.Peck	啄擊
+Motion.HornAttack	角撞
+Motion.TailSlam	尾砸
+Motion.Rollout	滾動
 BattlePvp.DisconnectMessage	連線已中斷
 BattlePvp.DisconnectClose	關閉
 ModelGallery.Points	{points} pt

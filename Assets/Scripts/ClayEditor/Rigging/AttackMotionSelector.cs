@@ -28,6 +28,9 @@ namespace ClayEditor.Rigging
                 case MotionType.LowSweep:
                 case MotionType.Tackle:
                 case MotionType.HipCheck:
+                case MotionType.Chop:
+                case MotionType.DoubleSlap:
+                case MotionType.Peck:
                     return 1;
                 case MotionType.Kick:
                 case MotionType.Headbutt:
@@ -37,6 +40,10 @@ namespace ClayEditor.Rigging
                 case MotionType.Bite:
                 case MotionType.Uppercut:
                 case MotionType.TailWhip:
+                case MotionType.DoubleKick:
+                case MotionType.HornAttack:
+                case MotionType.TailSlam:
+                case MotionType.Rollout:
                     return 2;
                 case MotionType.GroundPound:
                 case MotionType.Stomp:
@@ -47,6 +54,8 @@ namespace ClayEditor.Rigging
                 case MotionType.WindSlasher:
                 case MotionType.DiamondDust:
                 case MotionType.ThunderShock:
+                case MotionType.HammerArm:
+                case MotionType.DropKick:
                     return 3;
                 default:
                     return 1;
@@ -504,16 +513,24 @@ namespace ClayEditor.Rigging
                 case MotionType.Elbow:
                 case MotionType.Uppercut:
                 case MotionType.Slap:
+                case MotionType.Chop:
+                case MotionType.DoubleSlap:
+                case MotionType.HammerArm:
                     return BonePart.Arm;
                 case MotionType.Kick:
                 case MotionType.Stomp:
                 case MotionType.Knee:
                 case MotionType.LowSweep:
+                case MotionType.DoubleKick:
+                case MotionType.DropKick:
                     return BonePart.Leg;
                 case MotionType.TailWhip:
+                case MotionType.TailSlam:
                     return BonePart.Back;
                 case MotionType.Headbutt:
                 case MotionType.Bite:
+                case MotionType.Peck:
+                case MotionType.HornAttack:
                     return BonePart.Front;
                 case MotionType.Tackle:
                 case MotionType.SpinTackle:
@@ -522,6 +539,7 @@ namespace ClayEditor.Rigging
                 case MotionType.BellyFlop:
                 case MotionType.HipCheck:
                 case MotionType.GroundPound:
+                case MotionType.Rollout:
                 default:
                     return BonePart.Body;
             }

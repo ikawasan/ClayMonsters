@@ -148,3 +148,48 @@ MonoBehaviour:
     requiredLegCount: 0
     requiredFrontCount: 0
     requiredBackCount: 0
+  - motionType: 30
+    requiredArmCount: 1
+    requiredLegCount: 0
+    requiredFrontCount: 0
+    requiredBackCount: 0
+  - motionType: 31
+    requiredArmCount: 1
+    requiredLegCount: 0
+    requiredFrontCount: 0
+    requiredBackCount: 0
+  - motionType: 32
+    requiredArmCount: 1
+    requiredLegCount: 0
+    requiredFrontCount: 0
+    requiredBackCount: 0
+  - motionType: 33
+    requiredArmCount: 0
+    requiredLegCount: 1
+    requiredFrontCount: 0
+    requiredBackCount: 0
+  - motionType: 34
+    requiredArmCount: 0
+    requiredLegCount: 1
+    requiredFrontCount: 0
+    requiredBackCount: 0
+  - motionType: 35
+    requiredArmCount: 0
+    requiredLegCount: 0
+    requiredFrontCount: 1
+    requiredBackCount: 0
+  - motionType: 36
+    requiredArmCount: 0
+    requiredLegCount: 0
+    requiredFrontCount: 1
+    requiredBackCount: 0
+  - motionType: 37
+    requiredArmCount: 0
+    requiredLegCount: 0
+    requiredFrontCount: 0
+    requiredBackCount: 1
+  - motionType: 38
+    requiredArmCount: 0
+    requiredLegCount: 0
+    requiredFrontCount: 0
+    requiredBackCount: 0

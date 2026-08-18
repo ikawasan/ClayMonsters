@@ -73,6 +73,15 @@ Motion.Knee	Knee
 Motion.GroundPound	Ground Pound
 Motion.Slap	Slap
 Motion.Tackle	Tackle
+Motion.Chop	Chop
+Motion.DoubleSlap	Twin Slap
+Motion.HammerArm	Hammer Arm
+Motion.DoubleKick	Twin Kick
+Motion.DropKick	Drop Kick
+Motion.Peck	Peck
+Motion.HornAttack	Horn Jab
+Motion.TailSlam	Tail Slam
+Motion.Rollout	Rollout
 BattlePvp.DisconnectMessage	Connection lost
 BattlePvp.DisconnectClose	Close
 ModelGallery.Points	{points} pt

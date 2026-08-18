@@ -73,6 +73,15 @@ Motion.Knee	Joelhada
 Motion.GroundPound	Batida no chão
 Motion.Slap	Tapa
 Motion.Tackle	Investida
+Motion.Chop	Corte
+Motion.DoubleSlap	Tapa duplo
+Motion.HammerArm	Martelo
+Motion.DoubleKick	Chute duplo
+Motion.DropKick	Dropkick
+Motion.Peck	Bicada
+Motion.HornAttack	Chifrada
+Motion.TailSlam	Cauda
+Motion.Rollout	Rolamento
 BattlePvp.DisconnectMessage	Conexão perdida
 BattlePvp.DisconnectClose	Fechar
 ModelGallery.Points	{points} pt

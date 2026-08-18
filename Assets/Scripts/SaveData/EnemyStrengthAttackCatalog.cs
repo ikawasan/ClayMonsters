@@ -451,16 +451,24 @@ namespace SaveData
                 case MotionType.Elbow:
                 case MotionType.Uppercut:
                 case MotionType.Slap:
+                case MotionType.Chop:
+                case MotionType.DoubleSlap:
+                case MotionType.HammerArm:
                     return BonePart.Arm;
                 case MotionType.Kick:
                 case MotionType.Stomp:
                 case MotionType.Knee:
                 case MotionType.LowSweep:
+                case MotionType.DoubleKick:
+                case MotionType.DropKick:
                     return BonePart.Leg;
                 case MotionType.TailWhip:
+                case MotionType.TailSlam:
                     return BonePart.Back;
                 case MotionType.Headbutt:
                 case MotionType.Bite:
+                case MotionType.Peck:
+                case MotionType.HornAttack:
                     return BonePart.Front;
                 case MotionType.Tackle:
                 case MotionType.SpinTackle:
@@ -473,6 +481,7 @@ namespace SaveData
                 case MotionType.WindSlasher:
                 case MotionType.DiamondDust:
                 case MotionType.ThunderShock:
+                case MotionType.Rollout:
                 default:
                     return BonePart.Body;
             }

@@ -27,7 +27,14 @@ namespace ClayEditor.Rigging
             MotionType.GroundPound,
             MotionType.Slap,
             MotionType.LowSweep,
-            MotionType.Bite
+            MotionType.Bite,
+            MotionType.Chop,
+            MotionType.DoubleSlap,
+            MotionType.DoubleKick,
+            MotionType.Peck,
+            MotionType.HornAttack,
+            MotionType.TailSlam,
+            MotionType.Rollout
         };
 
         /// <summary>

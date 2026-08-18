@@ -20,16 +20,24 @@ namespace Battle
                 case MotionType.Elbow:
                 case MotionType.Uppercut:
                 case MotionType.Slap:
+                case MotionType.Chop:
+                case MotionType.DoubleSlap:
+                case MotionType.HammerArm:
                     return BonePart.Arm;
                 case MotionType.Kick:
                 case MotionType.Stomp:
                 case MotionType.Knee:
                 case MotionType.LowSweep:
+                case MotionType.DoubleKick:
+                case MotionType.DropKick:
                     return BonePart.Leg;
                 case MotionType.TailWhip:
+                case MotionType.TailSlam:
                     return BonePart.Back;
                 case MotionType.Headbutt:
                 case MotionType.Bite:
+                case MotionType.Peck:
+                case MotionType.HornAttack:
                     return BonePart.Front;
                 case MotionType.Tackle:
                 case MotionType.SpinTackle:
@@ -38,6 +46,7 @@ namespace Battle
                 case MotionType.BellyFlop:
                 case MotionType.HipCheck:
                 case MotionType.GroundPound:
+                case MotionType.Rollout:
                 default:
                     return BonePart.Body;
             }
@@ -61,6 +70,12 @@ namespace Battle
                     return BonePart.Front;
                 case MotionType.Slap:
                     return BonePart.Back;
+                case MotionType.Chop:
+                    return BonePart.Front;
+                case MotionType.DoubleSlap:
+                    return BonePart.Back;
+                case MotionType.HammerArm:
+                    return BonePart.Front;
 
                 // 脚技→腕や頭や後ろを狙う
                 case MotionType.Kick:
@@ -71,16 +86,26 @@ namespace Battle
                     return BonePart.Back;
                 case MotionType.LowSweep:
                     return BonePart.Arm;
+                case MotionType.DoubleKick:
+                    return BonePart.Arm;
+                case MotionType.DropKick:
+                    return BonePart.Front;
 
                 // 前技→腕や脚を狙う
                 case MotionType.Headbutt:
                     return BonePart.Arm;
                 case MotionType.Bite:
                     return BonePart.Leg;
+                case MotionType.Peck:
+                    return BonePart.Arm;
+                case MotionType.HornAttack:
+                    return BonePart.Arm;
 
                 // 後ろ技→脚を狙う
                 case MotionType.TailWhip:
                     return BonePart.Leg;
+                case MotionType.TailSlam:
+                    return BonePart.Arm;
 
                 // 胴体技と魔法は破壊部位なし
                 case MotionType.Tackle:
@@ -94,6 +119,7 @@ namespace Battle
                 case MotionType.WindSlasher:
                 case MotionType.DiamondDust:
                 case MotionType.ThunderShock:
+                case MotionType.Rollout:
                     return BonePart.Body;
 
                 default:
@@ -155,7 +181,10 @@ namespace Battle
             {
                 // 星1
                 case MotionType.Slap: return 0.50f;
+                case MotionType.DoubleSlap: return 0.52f;
+                case MotionType.Peck: return 0.54f;
                 case MotionType.LowSweep: return 0.55f;
+                case MotionType.Chop: return 0.56f;
                 case MotionType.Punch: return 0.58f;
                 case MotionType.HipCheck: return 0.65f;
                 case MotionType.Tackle: return 0.68f;
@@ -164,12 +193,18 @@ namespace Battle
                 case MotionType.Bite: return 0.90f;
                 case MotionType.ShoulderRam: return 0.92f;
                 case MotionType.Uppercut: return 0.95f;
+                case MotionType.Rollout: return 0.96f;
                 case MotionType.Knee: return 0.98f;
+                case MotionType.HornAttack: return 1.00f;
                 case MotionType.Kick: return 1.00f;
+                case MotionType.DoubleKick: return 1.02f;
+                case MotionType.TailSlam: return 1.02f;
                 case MotionType.Headbutt: return 1.05f;
                 case MotionType.TailWhip: return 1.05f;
                 // 星3
                 case MotionType.Stomp: return 1.25f;
+                case MotionType.DropKick: return 1.40f;
+                case MotionType.HammerArm: return 1.42f;
                 case MotionType.WindSlasher: return 1.30f;
                 case MotionType.GroundPound: return 1.32f;
                 case MotionType.Fireball: return 1.35f;
@@ -197,6 +232,10 @@ namespace Battle
                 case MotionType.Kick:
                 case MotionType.TailWhip:
                 case MotionType.SpinTackle:
+                case MotionType.DoubleKick:
+                case MotionType.DropKick:
+                case MotionType.HornAttack:
+                case MotionType.Rollout:
                     return BattleDistanceBand.Mid;
 
                 // 長距離
@@ -219,6 +258,11 @@ namespace Battle
                 case MotionType.GroundPound:
                 case MotionType.BellyFlop:
                 case MotionType.BodySlam:
+                case MotionType.Chop:
+                case MotionType.DoubleSlap:
+                case MotionType.HammerArm:
+                case MotionType.Peck:
+                case MotionType.TailSlam:
                 default:
                     return BattleDistanceBand.Close;
             }
@@ -351,6 +395,9 @@ namespace Battle
             {
                 // 星1 コスパが悪い
                 case MotionType.Slap: return 20f;
+                case MotionType.DoubleSlap: return 21f;
+                case MotionType.Peck: return 20f;
+                case MotionType.Chop: return 21f;
                 case MotionType.LowSweep: return 22f;
                 case MotionType.Punch: return 22f;
                 case MotionType.HipCheck: return 25f;
@@ -360,12 +407,18 @@ namespace Battle
                 case MotionType.Bite: return 25f;
                 case MotionType.ShoulderRam: return 26f;
                 case MotionType.Uppercut: return 26f;
+                case MotionType.Rollout: return 26f;
+                case MotionType.HornAttack: return 27f;
                 case MotionType.Knee: return 27f;
                 case MotionType.Kick: return 28f;
+                case MotionType.DoubleKick: return 28f;
                 case MotionType.Headbutt: return 28f;
+                case MotionType.TailSlam: return 29f;
                 case MotionType.TailWhip: return 30f;
                 // 星3 コスパが良い
                 case MotionType.Stomp: return 30f;
+                case MotionType.DropKick: return 34f;
+                case MotionType.HammerArm: return 34f;
                 case MotionType.WindSlasher: return 32f;
                 case MotionType.GroundPound: return 32f;
                 case MotionType.Fireball: return 33f;
@@ -387,7 +440,10 @@ namespace Battle
             {
                 // 星1
                 case MotionType.Slap: return 0.93f;
+                case MotionType.Peck: return 0.93f;
+                case MotionType.Chop: return 0.92f;
                 case MotionType.Punch: return 0.91f;
+                case MotionType.DoubleSlap: return 0.90f;
                 case MotionType.HipCheck: return 0.90f;
                 case MotionType.LowSweep: return 0.88f;
                 case MotionType.Tackle: return 0.89f;
@@ -398,10 +454,16 @@ namespace Battle
                 case MotionType.Bite: return 0.85f;
                 case MotionType.Headbutt: return 0.86f;
                 case MotionType.ShoulderRam: return 0.85f;
+                case MotionType.HornAttack: return 0.85f;
+                case MotionType.Rollout: return 0.86f;
                 case MotionType.Kick: return 0.84f;
+                case MotionType.DoubleKick: return 0.84f;
+                case MotionType.TailSlam: return 0.84f;
                 case MotionType.TailWhip: return 0.83f;
                 // 星3
                 case MotionType.Stomp: return 0.82f;
+                case MotionType.DropKick: return 0.80f;
+                case MotionType.HammerArm: return 0.79f;
                 case MotionType.GroundPound: return 0.81f;
                 case MotionType.BellyFlop: return 0.80f;
                 case MotionType.BodySlam: return 0.79f;
@@ -423,7 +485,10 @@ namespace Battle
             {
                 // 星1
                 case MotionType.Slap: return 0.55f;
+                case MotionType.Peck: return 0.55f;
+                case MotionType.Chop: return 0.58f;
                 case MotionType.Punch: return 0.60f;
+                case MotionType.DoubleSlap: return 0.62f;
                 case MotionType.HipCheck: return 0.65f;
                 case MotionType.LowSweep: return 0.72f;
                 case MotionType.Tackle: return 0.78f;
@@ -432,12 +497,18 @@ namespace Battle
                 case MotionType.Uppercut: return 0.85f;
                 case MotionType.Knee: return 0.88f;
                 case MotionType.Bite: return 0.90f;
+                case MotionType.Rollout: return 0.92f;
                 case MotionType.Headbutt: return 0.92f;
+                case MotionType.HornAttack: return 0.94f;
                 case MotionType.ShoulderRam: return 0.95f;
                 case MotionType.Kick: return 1.00f;
+                case MotionType.DoubleKick: return 1.00f;
+                case MotionType.TailSlam: return 1.02f;
                 case MotionType.TailWhip: return 1.05f;
                 // 星3
                 case MotionType.Stomp: return 1.10f;
+                case MotionType.DropKick: return 1.18f;
+                case MotionType.HammerArm: return 1.20f;
                 case MotionType.GroundPound: return 1.15f;
                 case MotionType.BellyFlop: return 1.18f;
                 case MotionType.WindSlasher: return 1.15f;
@@ -513,6 +584,15 @@ namespace Battle
                 case MotionType.Slap: japanese = "平打ち"; break;
                 case MotionType.LowSweep: japanese = "足払い"; break;
                 case MotionType.Bite: japanese = "噛みつき"; break;
+                case MotionType.Chop: japanese = "手刀"; break;
+                case MotionType.DoubleSlap: japanese = "おうふくビンタ"; break;
+                case MotionType.HammerArm: japanese = "ハンマーアーム"; break;
+                case MotionType.DoubleKick: japanese = "にだんげり"; break;
+                case MotionType.DropKick: japanese = "ドロップキック"; break;
+                case MotionType.Peck: japanese = "つつく"; break;
+                case MotionType.HornAttack: japanese = "つのでつく"; break;
+                case MotionType.TailSlam: japanese = "しっぽたたき"; break;
+                case MotionType.Rollout: japanese = "ころがる"; break;
                 case MotionType.Fireball: japanese = "ファイアーボール"; break;
                 case MotionType.WindSlasher: japanese = "ウィンドスラッシャー"; break;
                 case MotionType.DiamondDust: japanese = "ダイヤモンドダスト"; break;

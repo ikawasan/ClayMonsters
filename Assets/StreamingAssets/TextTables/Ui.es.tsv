@@ -73,6 +73,15 @@ Motion.Knee	Rodillazo
 Motion.GroundPound	Golpe de suelo
 Motion.Slap	Bofetada
 Motion.Tackle	Embestida
+Motion.Chop	Filo
+Motion.DoubleSlap	Doble cachete
+Motion.HammerArm	Martillo
+Motion.DoubleKick	Doble patada
+Motion.DropKick	Dropkick
+Motion.Peck	Picotazo
+Motion.HornAttack	Cornada
+Motion.TailSlam	Golpe cola
+Motion.Rollout	Rodada
 BattlePvp.DisconnectMessage	Conexión perdida
 BattlePvp.DisconnectClose	Cerrar
 ModelGallery.Points	{points} pt

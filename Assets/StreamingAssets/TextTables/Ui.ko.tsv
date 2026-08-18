@@ -73,6 +73,15 @@ Motion.Knee	무릎차기
 Motion.GroundPound	그라운드 파운드
 Motion.Slap	후려치기
 Motion.Tackle	태클
+Motion.Chop	손칼
+Motion.DoubleSlap	연속뺨치기
+Motion.HammerArm	해머암
+Motion.DoubleKick	이단킥
+Motion.DropKick	드롭킥
+Motion.Peck	쪼기
+Motion.HornAttack	뿔찌르기
+Motion.TailSlam	꼬리치기
+Motion.Rollout	구르기
 BattlePvp.DisconnectMessage	연결이 끊어졌습니다
 BattlePvp.DisconnectClose	닫기
 ModelGallery.Points	{points} pt

@@ -26,7 +26,7 @@ namespace SaveData
         /// <summary>
         /// 最強進行度
         /// </summary>
-        public const float StrongestProgress = 8f;
+        public const float StrongestProgress = 6.5f;
 
         /// <summary>
         /// 育成HPソフト目標

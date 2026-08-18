@@ -73,6 +73,15 @@ Motion.Knee	膝蹴り
 Motion.GroundPound	地叩き
 Motion.Slap	平打ち
 Motion.Tackle	タックル
+Motion.Chop	手刀
+Motion.DoubleSlap	おうふくビンタ
+Motion.HammerArm	ハンマーアーム
+Motion.DoubleKick	にだんげり
+Motion.DropKick	ドロップキック
+Motion.Peck	つつく
+Motion.HornAttack	つのでつく
+Motion.TailSlam	しっぽたたき
+Motion.Rollout	ころがる
 BattlePvp.DisconnectMessage	通信が切れました
 BattlePvp.DisconnectClose	閉じる
 ModelGallery.Points	{points} ポイント

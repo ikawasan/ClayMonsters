@@ -73,6 +73,15 @@ Motion.Knee	Knie
 Motion.GroundPound	Bodenschlag
 Motion.Slap	Klaps
 Motion.Tackle	Tackle
+Motion.Chop	Kantenschlag
+Motion.DoubleSlap	Doppelklaps
+Motion.HammerArm	Hammerarm
+Motion.DoubleKick	Doppeltritt
+Motion.DropKick	Dropkick
+Motion.Peck	Picken
+Motion.HornAttack	Hornstoss
+Motion.TailSlam	Schwanzschlag
+Motion.Rollout	Rolle
 BattlePvp.DisconnectMessage	Verbindung getrennt
 BattlePvp.DisconnectClose	Schließen
 ModelGallery.Points	{points} pt

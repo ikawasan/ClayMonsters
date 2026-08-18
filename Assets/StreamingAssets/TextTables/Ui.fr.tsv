@@ -73,6 +73,15 @@ Motion.Knee	Genou
 Motion.GroundPound	Frappe au sol
 Motion.Slap	Gifle
 Motion.Tackle	Tacle
+Motion.Chop	Tranchant
+Motion.DoubleSlap	Double gifle
+Motion.HammerArm	Marteau
+Motion.DoubleKick	Double coup
+Motion.DropKick	Dropkick
+Motion.Peck	Bec
+Motion.HornAttack	Cornes
+Motion.TailSlam	Frappe queue
+Motion.Rollout	Roulade
 BattlePvp.DisconnectMessage	Connexion perdue
 BattlePvp.DisconnectClose	Fermer
 ModelGallery.Points	{points} pt

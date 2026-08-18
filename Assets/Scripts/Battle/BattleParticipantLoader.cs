@@ -54,7 +54,16 @@ namespace Battle
             MotionType.Fireball,
             MotionType.WindSlasher,
             MotionType.DiamondDust,
-            MotionType.ThunderShock
+            MotionType.ThunderShock,
+            MotionType.Chop,
+            MotionType.DoubleSlap,
+            MotionType.HammerArm,
+            MotionType.DoubleKick,
+            MotionType.DropKick,
+            MotionType.Peck,
+            MotionType.HornAttack,
+            MotionType.TailSlam,
+            MotionType.Rollout
         };
 
         private readonly IClayModelImporter importer;
