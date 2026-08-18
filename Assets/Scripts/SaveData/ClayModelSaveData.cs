@@ -135,6 +135,41 @@ namespace SaveData
         public List<MotionType> attackMotions = new List<MotionType>();
 
         /// <summary>
+        /// 敵の強さ段階ごとの習得技が用意されているか
+        /// </summary>
+        public bool hasEnemyStrengthAttacks;
+
+        /// <summary>
+        /// 敵の強さ段階技の抽選改訂番号
+        /// </summary>
+        public int enemyStrengthAttackVersion;
+
+        /// <summary>
+        /// 敵の弱い習得技
+        /// </summary>
+        public List<MotionType> attackMotionsWeak = new List<MotionType>();
+
+        /// <summary>
+        /// 敵の普通習得技
+        /// </summary>
+        public List<MotionType> attackMotionsNormal = new List<MotionType>();
+
+        /// <summary>
+        /// 敵の強い習得技
+        /// </summary>
+        public List<MotionType> attackMotionsStrong = new List<MotionType>();
+
+        /// <summary>
+        /// 敵の超強い習得技
+        /// </summary>
+        public List<MotionType> attackMotionsVeryStrong = new List<MotionType>();
+
+        /// <summary>
+        /// 敵の最強習得技
+        /// </summary>
+        public List<MotionType> attackMotionsStrongest = new List<MotionType>();
+
+        /// <summary>
         /// 育成途中の進行データ
         /// </summary>
         public TrainingSlotProgress trainingProgress;

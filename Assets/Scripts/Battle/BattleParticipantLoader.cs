@@ -150,7 +150,8 @@ namespace Battle
                 status,
                 attackTier,
                 slotIndex,
-                ModelSavePool.Enemy);
+                ModelSavePool.Enemy,
+                useStoredStrengthAttacks: false);
             return FinalizeSpawnPlacement(participant, spawn);
         }
 
@@ -221,7 +222,8 @@ namespace Battle
                     ModelStatus.CloneOrDefault(slot.status),
                     null,
                     -1,
-                    ModelSavePool.TrainedPlayer);
+                    ModelSavePool.TrainedPlayer,
+                    useStoredStrengthAttacks: false);
                 return FinalizeSpawnPlacement(participant, spawn);
             }
             finally
@@ -282,7 +284,14 @@ namespace Battle
             ModelPartLossController partLoss = model.GetComponent<ModelPartLossController>();
             if (motion == null || !motion.IsReady)
             {
-                return BuildParticipant(model, slot, status, strengthTier, slotIndex, ModelSavePool.Enemy);
+                return BuildParticipant(
+                    model,
+                    slot,
+                    status,
+                    strengthTier,
+                    slotIndex,
+                    ModelSavePool.Enemy,
+                    useStoredStrengthAttacks: true);
             }
 
             NormalizeStatus(status, out int hp, out int attack, out int defense, out int speed, out int hit);
@@ -293,7 +302,7 @@ namespace Battle
                 defense,
                 speed,
                 hit,
-                ResolveAttackMotions(slot, model, partLoss, strengthTier, slotIndex),
+                ResolveAttackMotions(slot, model, partLoss, strengthTier, slotIndex, true),
                 motion,
                 partLoss);
 
@@ -424,7 +433,8 @@ namespace Battle
                 status,
                 strengthTier,
                 slotIndex,
-                pool);
+                pool,
+                useStoredStrengthAttacks: strengthTier.HasValue && pool == ModelSavePool.Enemy);
             return FinalizeSpawnPlacement(participant, spawn);
         }
 
@@ -473,7 +483,8 @@ namespace Battle
                 ModelStatus.CloneOrDefault(slot.status),
                 null,
                 slotIndex,
-                pool);
+                pool,
+                useStoredStrengthAttacks: false);
         }
 
         private BattleParticipant BuildParticipant(
@@ -482,7 +493,8 @@ namespace Battle
             ModelStatus status,
             EnemyStrengthTier? strengthTier,
             int slotIndex,
-            ModelSavePool pool)
+            ModelSavePool pool,
+            bool useStoredStrengthAttacks)
         {
             LoadedModelConfigurator.Result cfg = ResolveReusableOrConfigure(model);
 
@@ -506,7 +518,13 @@ namespace Battle
             var unit = new BattleUnit(
                 displayName,
                 hp, attack, defense, speed, hit,
-                ResolveAttackMotions(slot, model, cfg.PartLoss, strengthTier, slotIndex),
+                ResolveAttackMotions(
+                    slot,
+                    model,
+                    cfg.PartLoss,
+                    strengthTier,
+                    slotIndex,
+                    useStoredStrengthAttacks),
                 cfg.Motion,
                 cfg.PartLoss);
 
@@ -543,7 +561,8 @@ namespace Battle
             GameObject model,
             ModelPartLossController partLoss,
             EnemyStrengthTier? strengthTier,
-            int slotIndex)
+            int slotIndex,
+            bool useStoredStrengthAttacks)
         {
             HashSet<BonePart> availableParts = ModelAttackMotionUtility.CollectAvailableParts(partLoss);
 
@@ -558,6 +577,16 @@ namespace Battle
                 {
                     Debug.LogError(
                         "[BattleParticipantLoader] 骨格の使用可能技が空のため部位集合から候補を作りました");
+                }
+
+                if (useStoredStrengthAttacks)
+                {
+                    EnemyStrengthAttackCatalog.EnsureFromSaved(slot, seedSlot);
+                    List<MotionType> stored = EnemyStrengthAttackCatalog.GetStored(slot, strengthTier.Value);
+                    if (stored.Count > 0)
+                    {
+                        return KeepUsableOnly(stored, pool, ModelAttackMotionUtility.SlotCount);
+                    }
                 }
 
                 List<MotionType> byTier = EnemyStrengthAttackCatalog.Resolve(

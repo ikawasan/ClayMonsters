@@ -13,6 +13,26 @@ namespace SaveData
         private const int MaxMagicCount = 1;
 
         /// <summary>
+        /// NPC対戦の保存技抽選改訂番号
+        /// </summary>
+        public const int AttackDrawVersion = 1;
+
+        // 実行時抽選用
+        private const int DrawSalt = 0x62A26F;
+
+        // 値を変えるとNPC対戦の保存技が差し替わる
+        private const int NpcStoredDrawSalt = 0x9D5E27;
+
+        private static readonly EnemyStrengthTier[] AllTiers =
+        {
+            EnemyStrengthTier.Weak,
+            EnemyStrengthTier.Normal,
+            EnemyStrengthTier.Strong,
+            EnemyStrengthTier.VeryStrong,
+            EnemyStrengthTier.Strongest
+        };
+
+        /// <summary>
         /// 強さ段階と使用可能技から攻撃スロットを返す
         /// </summary>
         /// <param name="tier">強さ段階</param>
@@ -24,6 +44,16 @@ namespace SaveData
             IReadOnlyList<MotionType> usableAttacks,
             int slotIndex,
             int slotCount = ModelAttackMotionUtility.SlotCount)
+        {
+            return Resolve(tier, usableAttacks, slotIndex, slotCount, DrawSalt);
+        }
+
+        private static List<MotionType> Resolve(
+            EnemyStrengthTier tier,
+            IReadOnlyList<MotionType> usableAttacks,
+            int slotIndex,
+            int slotCount,
+            int drawSalt)
         {
             int count = Mathf.Max(0, slotCount);
             var result = new List<MotionType>(count);
@@ -39,7 +69,7 @@ namespace SaveData
                 return result;
             }
 
-            var random = new System.Random(BuildSeed(slotIndex, tier));
+            var random = new System.Random(BuildSeed(slotIndex, tier, drawSalt));
             int[] rankTargets = BuildRankTargets(tier, count, random);
             bool allowMagic = RollMagicAllowed(tier, random);
             var usedParts = new HashSet<BonePart>();
@@ -145,9 +175,68 @@ namespace SaveData
             int slotIndex,
             int slotCount = ModelAttackMotionUtility.SlotCount)
         {
-            HashSet<BonePart> parts = InferAvailableParts(savedAttacks);
-            List<MotionType> previewPool = AttackMotionSelector.CollectAttacksForAvailableParts(parts);
-            return Resolve(tier, previewPool, slotIndex, slotCount);
+            return DrawFromSavedAttacks(tier, savedAttacks, slotIndex, slotCount, DrawSalt);
+        }
+
+        /// <summary>
+        /// NPC対戦向けに強さ段階ごとの習得技を抽選して保存する
+        /// 改訂番号が変わったら全員分を引き直す
+        /// </summary>
+        /// <param name="slot">敵スロット</param>
+        /// <param name="slotIndex">敵スロット番号</param>
+        /// <returns>抽選し直したらtrue</returns>
+        public static bool EnsureFromSaved(ModelSaveSlot slot, int slotIndex)
+        {
+            if (slot == null)
+            {
+                return false;
+            }
+
+            if (slot.hasEnemyStrengthAttacks
+                && slot.enemyStrengthAttackVersion == AttackDrawVersion
+                && HasCompleteSet(slot))
+            {
+                return false;
+            }
+
+            int slotCount = ModelAttackMotionUtility.SlotCount;
+            for (int i = 0; i < AllTiers.Length; i++)
+            {
+                EnemyStrengthTier tier = AllTiers[i];
+                List<MotionType> drawn = DrawFromSavedAttacks(
+                    tier,
+                    slot.attackMotions,
+                    slotIndex,
+                    slotCount,
+                    NpcStoredDrawSalt);
+                SetStored(slot, tier, drawn);
+            }
+
+            slot.hasEnemyStrengthAttacks = true;
+            slot.enemyStrengthAttackVersion = AttackDrawVersion;
+            return true;
+        }
+
+        /// <summary>
+        /// 保存済みの強さ段階技を返す
+        /// 未抽選なら空リスト
+        /// </summary>
+        /// <param name="slot">敵スロット</param>
+        /// <param name="tier">強さ段階</param>
+        public static List<MotionType> GetStored(ModelSaveSlot slot, EnemyStrengthTier tier)
+        {
+            if (slot == null)
+            {
+                return new List<MotionType>();
+            }
+
+            List<MotionType> source = GetStoredList(slot, tier);
+            if (source == null || source.Count == 0)
+            {
+                return new List<MotionType>();
+            }
+
+            return new List<MotionType>(source);
         }
 
         /// <summary>
@@ -175,6 +264,68 @@ namespace SaveData
             }
 
             return parts;
+        }
+
+        private static List<MotionType> DrawFromSavedAttacks(
+            EnemyStrengthTier tier,
+            IReadOnlyList<MotionType> savedAttacks,
+            int slotIndex,
+            int slotCount,
+            int drawSalt)
+        {
+            HashSet<BonePart> parts = InferAvailableParts(savedAttacks);
+            List<MotionType> previewPool = AttackMotionSelector.CollectAttacksForAvailableParts(parts);
+            return Resolve(tier, previewPool, slotIndex, slotCount, drawSalt);
+        }
+
+        private static bool HasCompleteSet(ModelSaveSlot slot)
+        {
+            for (int i = 0; i < AllTiers.Length; i++)
+            {
+                List<MotionType> list = GetStoredList(slot, AllTiers[i]);
+                if (list == null || list.Count == 0)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static List<MotionType> GetStoredList(ModelSaveSlot slot, EnemyStrengthTier tier)
+        {
+            return tier switch
+            {
+                EnemyStrengthTier.Weak => slot.attackMotionsWeak,
+                EnemyStrengthTier.Normal => slot.attackMotionsNormal,
+                EnemyStrengthTier.Strong => slot.attackMotionsStrong,
+                EnemyStrengthTier.VeryStrong => slot.attackMotionsVeryStrong,
+                EnemyStrengthTier.Strongest => slot.attackMotionsStrongest,
+                _ => slot.attackMotionsNormal
+            };
+        }
+
+        private static void SetStored(ModelSaveSlot slot, EnemyStrengthTier tier, List<MotionType> attacks)
+        {
+            List<MotionType> copy = attacks != null ? new List<MotionType>(attacks) : new List<MotionType>();
+            switch (tier)
+            {
+                case EnemyStrengthTier.Weak:
+                    slot.attackMotionsWeak = copy;
+                    break;
+                case EnemyStrengthTier.Normal:
+                    slot.attackMotionsNormal = copy;
+                    break;
+                case EnemyStrengthTier.Strong:
+                    slot.attackMotionsStrong = copy;
+                    break;
+                case EnemyStrengthTier.VeryStrong:
+                    slot.attackMotionsVeryStrong = copy;
+                    break;
+                default:
+                    slot.attackMotionsStrongest = copy;
+                    break;
+            }
         }
 
         private static List<MotionType> BuildUsablePool(IReadOnlyList<MotionType> usableAttacks)
@@ -221,11 +372,11 @@ namespace SaveData
             }
         }
 
-        private static int BuildSeed(int slotIndex, EnemyStrengthTier tier)
+        private static int BuildSeed(int slotIndex, EnemyStrengthTier tier, int drawSalt)
         {
             unchecked
             {
-                return (slotIndex + 1) * 397 ^ ((int)tier + 1) * 7919 ^ 0x51F15E;
+                return (slotIndex + 1) * 397 ^ ((int)tier + 1) * 7919 ^ drawSalt;
             }
         }
 

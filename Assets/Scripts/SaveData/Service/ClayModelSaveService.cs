@@ -113,6 +113,7 @@ namespace SaveData.Service
             if (pool == ModelSavePool.Enemy)
             {
                 EnemyStrengthStatusCatalog.ApplyGeneratedFromBase(written, status);
+                EnemyStrengthAttackCatalog.EnsureFromSaved(written, slotIndex);
             }
 
             data.slots[slotIndex] = written;
@@ -837,11 +838,18 @@ namespace SaveData.Service
 
             MigrateLegacyWritableFiles(pool, data);
             EnsureEnemyStrengthStatuses(pool, data);
+            bool attacksChanged = EnsureEnemyStrengthAttacks(pool, data);
 
             if (resealLegacy)
             {
                 WriteToFile(pool, data);
             }
+#if UNITY_EDITOR
+            else if (attacksChanged)
+            {
+                WriteToFile(pool, data);
+            }
+#endif
 
             if (pool == ModelSavePool.Enemy)
             {
@@ -926,6 +934,31 @@ namespace SaveData.Service
 
                 EnemyStrengthStatusCatalog.EnsureFromBase(slot);
             }
+        }
+
+        private static bool EnsureEnemyStrengthAttacks(ModelSavePool pool, ClayModelSaveData data)
+        {
+            if (pool != ModelSavePool.Enemy || data?.slots == null)
+            {
+                return false;
+            }
+
+            bool changed = false;
+            for (int i = 0; i < data.slots.Count; i++)
+            {
+                ModelSaveSlot slot = data.slots[i];
+                if (slot == null || !slot.isUsed)
+                {
+                    continue;
+                }
+
+                if (EnemyStrengthAttackCatalog.EnsureFromSaved(slot, i))
+                {
+                    changed = true;
+                }
+            }
+
+            return changed;
         }
 
         /// <summary>

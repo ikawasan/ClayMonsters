@@ -1099,6 +1099,13 @@ namespace UI.ClayEditor.View
             int slotIndex,
             EnemyStrengthTier tier)
         {
+            EnemyStrengthAttackCatalog.EnsureFromSaved(slot, slotIndex);
+            List<MotionType> stored = EnemyStrengthAttackCatalog.GetStored(slot, tier);
+            if (stored.Count > 0)
+            {
+                return stored;
+            }
+
             return EnemyStrengthAttackCatalog.ResolveForConfirmPreview(
                 tier,
                 slot?.attackMotions,
