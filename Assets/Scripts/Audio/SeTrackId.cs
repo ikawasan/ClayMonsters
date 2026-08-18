@@ -98,6 +98,16 @@ namespace Audio
         /// <summary>
         /// ClayEditのスライダー操作
         /// </summary>
-        ClayEditSlider
+        ClayEditSlider,
+
+        /// <summary>
+        /// ClayEditのペイント開始
+        /// </summary>
+        ClayEditPaintIn,
+
+        /// <summary>
+        /// ClayEditのペイント中
+        /// </summary>
+        ClayEditPaint
     }
 }

@@ -1,3 +1,5 @@
+using Audio;
+using Audio.Interface;
 using ClayEditor.Input.Interface;
 using ClayEditor.Interface;
 using GameData;
@@ -19,6 +21,7 @@ namespace ClayEditor.Paint
         [Inject] private readonly IClayInputProvider input;
         [Inject] private readonly IClaySceneContext sceneContext;
         [Inject] private readonly ColorPicker colorPicker;
+        [Inject] private readonly ISeService seService;
 
         [SerializeField] private GameObject cursorObject;
         [SerializeField] private MeshRenderer cursorMeshRenderer;
@@ -44,6 +47,15 @@ namespace ClayEditor.Paint
 
         // 現在のストロークで実際に1回でも塗ったか(空振りを履歴へ入れないため)
         private bool paintedInStroke;
+        private SeTrackId? playingPaintSe;
+        private Vector2 lastPaintPointer;
+        private bool hasLastPaintPointer;
+        private bool playedPaintIn;
+
+        private const float MinPaintSePitch = 0.55f;
+        private const float MaxPaintSePitch = 2.6f;
+        private const float SpeedForMaxPaintSePitch = 1.2f;
+        private const float MinPaintMovePixels = 1.25f;
 
         private void Start()
         {
@@ -220,6 +232,7 @@ namespace ClayEditor.Paint
             }
 
             bool isPainting = false;
+            bool isPaintingOnSurface = false;
 
             // ペイントはカメラ側の表面にヒットしたときのみ行う
             if (input.IsPrimaryHeld && hasSurfaceHit)
@@ -227,11 +240,14 @@ namespace ClayEditor.Paint
                 painter.PaintAtWorldPosition(surfaceHit.point, surfaceHit.normal);
                 paintedInStroke = true;
                 isPainting = true;
+                isPaintingOnSurface = true;
             }
             else if (input.IsPrimaryHeld)
             {
                 isPainting = true;
             }
+
+            SyncPaintSe(isPaintingOnSurface);
 
             // 塗るのをやめた瞬間にストロークを確定する
             if (wasPainting && !isPainting)
@@ -250,6 +266,8 @@ namespace ClayEditor.Paint
                 CommitStroke();
                 wasPainting = false;
             }
+
+            StopPaintSe();
         }
 
         // ストロークを確定し 実際に塗った場合のみ使用色を履歴へ追加する
@@ -264,6 +282,75 @@ namespace ClayEditor.Paint
             }
 
             paintedInStroke = false;
+            StopPaintSe();
+        }
+
+        private void SyncPaintSe(bool isPaintingOnSurface)
+        {
+            if (!isPaintingOnSurface || seService == null)
+            {
+                StopPaintSe();
+                return;
+            }
+
+            if (!playedPaintIn)
+            {
+                seService.Play(SeTrackId.ClayEditPaintIn);
+                playedPaintIn = true;
+            }
+
+            if (!TryResolvePaintMovePitch(out float pitch))
+            {
+                StopPaintLoop();
+                return;
+            }
+
+            seService.PlayLoop(SeTrackId.ClayEditPaint, pitch);
+            playingPaintSe = SeTrackId.ClayEditPaint;
+        }
+
+        private bool TryResolvePaintMovePitch(out float pitch)
+        {
+            pitch = MinPaintSePitch;
+            Vector2 pointer = input.PointerPosition;
+            if (!hasLastPaintPointer)
+            {
+                lastPaintPointer = pointer;
+                hasLastPaintPointer = true;
+                return false;
+            }
+
+            float deltaPixels = (pointer - lastPaintPointer).magnitude;
+            lastPaintPointer = pointer;
+            if (deltaPixels < MinPaintMovePixels)
+            {
+                return false;
+            }
+
+            float screenHeight = Mathf.Max(1f, Screen.height);
+            float dt = Mathf.Max(Time.unscaledDeltaTime, 0.008f);
+            float speed = (deltaPixels / screenHeight) / dt;
+            float t = Mathf.Clamp01(speed / SpeedForMaxPaintSePitch);
+            pitch = Mathf.Lerp(MinPaintSePitch, MaxPaintSePitch, t);
+            return true;
+        }
+
+        private void StopPaintLoop()
+        {
+            if (!playingPaintSe.HasValue)
+            {
+                return;
+            }
+
+            seService?.Stop(playingPaintSe.Value);
+            playingPaintSe = null;
+        }
+
+        private void StopPaintSe()
+        {
+            StopPaintLoop();
+            hasLastPaintPointer = false;
+            playedPaintIn = false;
         }
 
         // Paint操作(ペイント 消し ブラシ変更)が有効な状態か

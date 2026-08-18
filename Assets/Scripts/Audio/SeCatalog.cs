@@ -38,6 +38,8 @@ namespace Audio
                 SeTrackId.GetSkill => ResourceRoot + "GetSkill",
                 SeTrackId.ClayEditGenerate => ClayEditRoot + "Generate",
                 SeTrackId.ClayEditSlider => ClayEditRoot + "Slider",
+                SeTrackId.ClayEditPaintIn => ClayEditRoot + "PaintIn",
+                SeTrackId.ClayEditPaint => ClayEditRoot + "Paint",
                 _ => string.Empty
             };
         }

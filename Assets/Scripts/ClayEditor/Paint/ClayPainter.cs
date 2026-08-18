@@ -1,3 +1,4 @@
+using ClayEditor.Paint.Interface;
 using System.Collections.Generic;
 using UnityEngine;
 using VContainer;
@@ -13,6 +14,7 @@ namespace ClayEditor.Paint
     {
         [Inject] private readonly ClayVoxelEngine engine;
         [Inject] private readonly ClayPaintHistoryManager historyManager;
+        [Inject] private readonly IClayPaintSplashEffect splashEffect;
 
         [Header("Paint Settings")]
         [SerializeField] private float brushRadius = 2f;
@@ -115,6 +117,7 @@ namespace ClayEditor.Paint
             }
 
             engine.PaintVoxels(worldPos, brushRadius, currentColor, worldNormal);
+            splashEffect.Play(worldPos, worldNormal, currentColor, brushRadius);
 
             historyManager.AddDab(new PaintDab
             {

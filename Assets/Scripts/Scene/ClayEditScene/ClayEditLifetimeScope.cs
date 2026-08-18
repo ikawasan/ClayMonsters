@@ -6,6 +6,7 @@ using ClayEditor.Input;
 using ClayEditor.Input.Interface;
 using ClayEditor.Interface;
 using ClayEditor.Paint;
+using ClayEditor.Paint.Interface;
 using ClayEditor.Rigging;
 using ClayEditor.Rigging.Interface;
 using SaveData;
@@ -114,6 +115,7 @@ namespace Scene.ClayEditScene
             builder.RegisterComponent(clayPainter);
             builder.RegisterComponent(clayPaintCursor).AsSelf().As<ITickable>();
             builder.Register<ClayPaintHistoryManager>(Lifetime.Singleton);
+            builder.Register<ClayPaintSplashEffect>(Lifetime.Singleton).As<IClayPaintSplashEffect>();
 
             builder.RegisterComponent(clayEditModeView);
             if (clayEditOperationGuideView != null)
