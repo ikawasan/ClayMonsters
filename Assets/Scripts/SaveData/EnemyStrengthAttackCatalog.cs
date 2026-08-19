@@ -10,18 +10,16 @@ namespace SaveData
     /// </summary>
     public static class EnemyStrengthAttackCatalog
     {
-        private const int MaxMagicCount = 1;
-
         /// <summary>
         /// NPC対戦の保存技抽選改訂番号
         /// </summary>
-        public const int AttackDrawVersion = 1;
+        public const int AttackDrawVersion = 3;
 
         // 実行時抽選用
         private const int DrawSalt = 0x62A26F;
 
         // 値を変えるとNPC対戦の保存技が差し替わる
-        private const int NpcStoredDrawSalt = 0x9D5E27;
+        private const int NpcStoredDrawSalt = 0xC38B14;
 
         private static readonly EnemyStrengthTier[] AllTiers =
         {
@@ -71,47 +69,17 @@ namespace SaveData
 
             var random = new System.Random(BuildSeed(slotIndex, tier, drawSalt));
             int[] rankTargets = BuildRankTargets(tier, count, random);
-            bool allowMagic = RollMagicAllowed(tier, random);
             var usedParts = new HashSet<BonePart>();
-            int magicCount = 0;
 
             for (int i = 0; i < count; i++)
             {
-                bool wantMagicNow = allowMagic
-                    && magicCount < MaxMagicCount
-                    && rankTargets[i] >= 3;
-                MotionType? picked = null;
-                if (wantMagicNow)
-                {
-                    picked = TryPickMagic(
-                        pool,
-                        result,
-                        usedParts,
-                        preferUniquePart: true,
-                        random);
-                    if (!picked.HasValue)
-                    {
-                        picked = TryPickMagic(
-                            pool,
-                            result,
-                            usedParts,
-                            preferUniquePart: false,
-                            random);
-                    }
-                }
-
-                if (!picked.HasValue)
-                {
-                    picked = TryPick(
-                        pool,
-                        result,
-                        usedParts,
-                        rankTargets[i],
-                        preferUniquePart: true,
-                        allowMagic: allowMagic && magicCount < MaxMagicCount,
-                        random);
-                }
-
+                MotionType? picked = TryPick(
+                    pool,
+                    result,
+                    usedParts,
+                    rankTargets[i],
+                    preferUniquePart: true,
+                    random);
                 if (!picked.HasValue)
                 {
                     picked = TryPick(
@@ -120,13 +88,12 @@ namespace SaveData
                         usedParts,
                         rankTargets[i],
                         preferUniquePart: false,
-                        allowMagic: allowMagic && magicCount < MaxMagicCount,
                         random);
                 }
 
                 if (!picked.HasValue)
                 {
-                    picked = TryPickAny(pool, result, allowMagic && magicCount < MaxMagicCount, random);
+                    picked = TryPickAny(pool, result, random);
                 }
 
                 if (!picked.HasValue)
@@ -144,10 +111,6 @@ namespace SaveData
 
                 result.Add(motion);
                 usedParts.Add(GetRequiredPart(motion));
-                if (ProceduralMotionCharacter.IsMagicAttack(motion))
-                {
-                    magicCount++;
-                }
             }
 
             ValidateAgainstPool(result, pool);
@@ -390,8 +353,8 @@ namespace SaveData
                     EnemyStrengthTier.Weak => 1,
                     EnemyStrengthTier.Normal => i < count / 2 ? 1 : 2,
                     EnemyStrengthTier.Strong => i < count / 2 ? 2 : 3,
-                    EnemyStrengthTier.VeryStrong => i == count - 1 ? 2 : 3,
-                    EnemyStrengthTier.Strongest => 3,
+                    EnemyStrengthTier.VeryStrong => random.Next(1, 4),
+                    EnemyStrengthTier.Strongest => random.Next(2, 4),
                     _ => 1
                 };
             }
@@ -406,63 +369,8 @@ namespace SaveData
                 targets[random.Next(0, count)] = 3;
             }
 
-            if (tier == EnemyStrengthTier.Strongest && count > 0)
-            {
-                for (int i = 0; i < count; i++)
-                {
-                    targets[i] = 3;
-                }
-            }
-
             ShuffleInPlace(targets, random);
             return targets;
-        }
-
-        private static bool RollMagicAllowed(EnemyStrengthTier tier, System.Random random)
-        {
-            int chance = tier switch
-            {
-                EnemyStrengthTier.Weak => 0,
-                EnemyStrengthTier.Normal => 20,
-                EnemyStrengthTier.Strong => 45,
-                EnemyStrengthTier.VeryStrong => 70,
-                EnemyStrengthTier.Strongest => 90,
-                _ => 0
-            };
-            return chance > 0 && random.Next(0, 100) < chance;
-        }
-
-        private static MotionType? TryPickMagic(
-            IReadOnlyList<MotionType> pool,
-            List<MotionType> used,
-            HashSet<BonePart> usedParts,
-            bool preferUniquePart,
-            System.Random random)
-        {
-            var candidates = new List<MotionType>();
-            for (int i = 0; i < pool.Count; i++)
-            {
-                MotionType motion = pool[i];
-                if (!ProceduralMotionCharacter.IsMagicAttack(motion) || used.Contains(motion))
-                {
-                    continue;
-                }
-
-                BonePart part = GetRequiredPart(motion);
-                if (preferUniquePart && usedParts.Contains(part))
-                {
-                    continue;
-                }
-
-                candidates.Add(motion);
-            }
-
-            if (candidates.Count == 0)
-            {
-                return null;
-            }
-
-            return candidates[random.Next(0, candidates.Count)];
         }
 
         private static MotionType? TryPick(
@@ -471,7 +379,6 @@ namespace SaveData
             HashSet<BonePart> usedParts,
             int preferredRank,
             bool preferUniquePart,
-            bool allowMagic,
             System.Random random)
         {
             var exact = new List<MotionType>();
@@ -484,15 +391,10 @@ namespace SaveData
                     continue;
                 }
 
-                if (ProceduralMotionCharacter.IsMagicAttack(motion) && !allowMagic)
-                {
-                    continue;
-                }
-
                 BonePart part = GetRequiredPart(motion);
                 if (preferUniquePart
                     && usedParts.Contains(part)
-                    && HasUnusedPartCandidate(pool, used, usedParts, allowMagic))
+                    && HasUnusedPartCandidate(pool, used, usedParts))
                 {
                     continue;
                 }
@@ -524,7 +426,6 @@ namespace SaveData
         private static MotionType? TryPickAny(
             IReadOnlyList<MotionType> pool,
             List<MotionType> used,
-            bool allowMagic,
             System.Random random)
         {
             var candidates = new List<MotionType>();
@@ -532,11 +433,6 @@ namespace SaveData
             {
                 MotionType motion = pool[i];
                 if (used.Contains(motion))
-                {
-                    continue;
-                }
-
-                if (ProceduralMotionCharacter.IsMagicAttack(motion) && !allowMagic)
                 {
                     continue;
                 }
@@ -555,18 +451,12 @@ namespace SaveData
         private static bool HasUnusedPartCandidate(
             IReadOnlyList<MotionType> pool,
             List<MotionType> used,
-            HashSet<BonePart> usedParts,
-            bool allowMagic)
+            HashSet<BonePart> usedParts)
         {
             for (int i = 0; i < pool.Count; i++)
             {
                 MotionType motion = pool[i];
                 if (used.Contains(motion))
-                {
-                    continue;
-                }
-
-                if (ProceduralMotionCharacter.IsMagicAttack(motion) && !allowMagic)
                 {
                     continue;
                 }

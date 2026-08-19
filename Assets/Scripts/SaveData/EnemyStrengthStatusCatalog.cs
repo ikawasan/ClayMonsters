@@ -13,33 +13,34 @@ namespace SaveData
         /// <summary>
         /// バランス改訂番号(不一致なら段階ステータスを再生成する)
         /// </summary>
-        public const int BalanceVersion = 14;
+        public const int BalanceVersion = 15;
 
         /// <summary>
         /// 弱い進行度
-        /// 未育成基準からソフト目標への途中地点
+        /// ソフト目標ちょうど
         /// </summary>
-        public const float WeakProgress = 0.55f;
+        public const float WeakProgress = 1f;
 
         /// <summary>
         /// 普通進行度
         /// </summary>
-        public const float NormalProgress = 1.00f;
+        public const float NormalProgress = 1.5f;
 
         /// <summary>
         /// 強い進行度
+        /// 選択UI非表示普通と超強いの間
         /// </summary>
-        public const float StrongProgress = 1.35f;
+        public const float StrongProgress = 2f;
 
         /// <summary>
         /// 超強い進行度
         /// </summary>
-        public const float VeryStrongProgress = 1.60f;
+        public const float VeryStrongProgress = 2.5f;
 
         /// <summary>
         /// 最強進行度
         /// </summary>
-        public const float StrongestProgress = 1.85f;
+        public const float StrongestProgress = 4.1f;
 
         /// <summary>
         /// 普通=100%時のHPソフト目標

@@ -1,6 +1,7 @@
-using System;
 using Camera.Interface;
+using Extensions;
 using R3;
+using System;
 using UnityEngine;
 
 namespace Battle.Presenter
@@ -117,7 +118,7 @@ namespace Battle.Presenter
             float holdDuration = Mathf.Max(
                 profile.AttackMinimumHoldSeconds,
                 result.Move.Recovery * profile.AttackHoldRecoveryMultiplier);
-            BeginAttackCamera(result.Attacker, result.Target, holdDuration);
+            BeginAttackCamera(result.Attacker, result.Target, holdDuration, keepExistingFraming: true);
 
             if (result.Hit)
             {
@@ -129,9 +130,14 @@ namespace Battle.Presenter
         {
             TickHitShake(Time.unscaledDeltaTime);
 
+            bool holdByMotion = hasAttackFraming && IsAttackerStillPerforming();
             if (attackCameraRemaining > 0f)
             {
-                attackCameraRemaining -= Time.deltaTime;
+                attackCameraRemaining = Mathf.Max(0f, attackCameraRemaining - GameplayTime.DeltaTime);
+            }
+
+            if (holdByMotion || attackCameraRemaining > 0f)
+            {
                 TickAttackCamera();
                 return;
             }
@@ -187,26 +193,58 @@ namespace Battle.Presenter
             return new Vector3(offsetX, offsetY, offsetZ);
         }
 
-        private void BeginAttackCamera(BattleUnit attacker, BattleUnit target, float holdDuration)
+        private void BeginAttackCamera(
+            BattleUnit attacker,
+            BattleUnit target,
+            float holdDuration,
+            bool keepExistingFraming = false)
         {
-            attackAttackerModel = ResolveModel(attacker);
-            attackTargetModel = ResolveModel(target);
-            if (attackAttackerModel == null)
+            Transform attackerModel = ResolveModel(attacker);
+            Transform targetModel = ResolveModel(target);
+            if (attackerModel == null)
             {
                 hasAttackFraming = false;
                 return;
             }
 
-            // 攻撃開始時に1回だけ構図を確定しTickでは補間のみにする
-            attackHorizontalTarget = ResolveAttackHorizontalAngle();
-            attackVerticalTarget = profile.AttackVerticalAngle;
-            attackFocusTarget = ResolveAttackFocusPoint();
-            attackOrbitDistanceTarget = ResolveAttackOrbitDistance(
-                attackFocusTarget,
-                attackHorizontalTarget,
-                attackVerticalTarget);
-            hasAttackFraming = true;
+            bool reuseFraming = keepExistingFraming
+                && hasAttackFraming
+                && attackAttackerModel == attackerModel
+                && attackTargetModel == targetModel;
+            attackAttackerModel = attackerModel;
+            attackTargetModel = targetModel;
+            if (!reuseFraming)
+            {
+                // 攻撃開始時に1回だけ構図を確定しTickでは補間のみにする
+                attackHorizontalTarget = ResolveAttackHorizontalAngle();
+                attackVerticalTarget = profile.AttackVerticalAngle;
+                attackFocusTarget = ResolveAttackFocusPoint();
+                attackOrbitDistanceTarget = ResolveAttackOrbitDistance(
+                    attackFocusTarget,
+                    attackHorizontalTarget,
+                    attackVerticalTarget);
+                hasAttackFraming = true;
+            }
+
             attackCameraRemaining = Mathf.Max(attackCameraRemaining, holdDuration);
+        }
+
+        /// <summary>
+        /// 攻撃カメラ対象がまだ攻撃演出中か
+        /// </summary>
+        private bool IsAttackerStillPerforming()
+        {
+            if (attackAttackerModel == playerModel)
+            {
+                return system.IsPlayerPerformingAttack;
+            }
+
+            if (attackAttackerModel == enemyModel)
+            {
+                return system.IsEnemyPerformingAttack;
+            }
+
+            return false;
         }
 
         private Transform ResolveModel(BattleUnit unit)

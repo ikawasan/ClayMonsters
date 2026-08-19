@@ -1,0 +1,15 @@
+D:\Unity_Projects\ClayMonsters\BuildScripts\ExportEnemyNpcAttacks\bin\Debug\net9.0\ExportEnemyNpcAttacks.exe
+D:\Unity_Projects\ClayMonsters\BuildScripts\ExportEnemyNpcAttacks\bin\Debug\net9.0\ExportEnemyNpcAttacks.deps.json
+D:\Unity_Projects\ClayMonsters\BuildScripts\ExportEnemyNpcAttacks\bin\Debug\net9.0\ExportEnemyNpcAttacks.runtimeconfig.json
+D:\Unity_Projects\ClayMonsters\BuildScripts\ExportEnemyNpcAttacks\bin\Debug\net9.0\ExportEnemyNpcAttacks.dll
+D:\Unity_Projects\ClayMonsters\BuildScripts\ExportEnemyNpcAttacks\bin\Debug\net9.0\ExportEnemyNpcAttacks.pdb
+D:\Unity_Projects\ClayMonsters\BuildScripts\ExportEnemyNpcAttacks\obj\Debug\net9.0\ExportEnemyNpcAttacks.GeneratedMSBuildEditorConfig.editorconfig
+D:\Unity_Projects\ClayMonsters\BuildScripts\ExportEnemyNpcAttacks\obj\Debug\net9.0\ExportEnemyNpcAttacks.AssemblyInfoInputs.cache
+D:\Unity_Projects\ClayMonsters\BuildScripts\ExportEnemyNpcAttacks\obj\Debug\net9.0\ExportEnemyNpcAttacks.AssemblyInfo.cs
+D:\Unity_Projects\ClayMonsters\BuildScripts\ExportEnemyNpcAttacks\obj\Debug\net9.0\ExportEnemyNpcAttacks.csproj.CoreCompileInputs.cache
+D:\Unity_Projects\ClayMonsters\BuildScripts\ExportEnemyNpcAttacks\obj\Debug\net9.0\ExportEnemyNpcAttacks.sourcelink.json
+D:\Unity_Projects\ClayMonsters\BuildScripts\ExportEnemyNpcAttacks\obj\Debug\net9.0\ExportEnemyNpcAttacks.dll
+D:\Unity_Projects\ClayMonsters\BuildScripts\ExportEnemyNpcAttacks\obj\Debug\net9.0\refint\ExportEnemyNpcAttacks.dll
+D:\Unity_Projects\ClayMonsters\BuildScripts\ExportEnemyNpcAttacks\obj\Debug\net9.0\ExportEnemyNpcAttacks.pdb
+D:\Unity_Projects\ClayMonsters\BuildScripts\ExportEnemyNpcAttacks\obj\Debug\net9.0\ExportEnemyNpcAttacks.genruntimeconfig.cache
+D:\Unity_Projects\ClayMonsters\BuildScripts\ExportEnemyNpcAttacks\obj\Debug\net9.0\ref\ExportEnemyNpcAttacks.dll
