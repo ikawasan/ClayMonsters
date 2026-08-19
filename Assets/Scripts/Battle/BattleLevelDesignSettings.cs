@@ -19,7 +19,7 @@ namespace Battle
 
         [Header("Time And Guts")]
         [Tooltip("制限時間(秒)")]
-        [SerializeField] private float timeLimit = 60f;
+        [SerializeField] private float timeLimit = 99f;
         [Tooltip("開幕ガッツ")]
         [SerializeField] private float initialGuts = 50f;
         [Tooltip("ガッツ回復速度(/秒)攻撃中は停止")]
@@ -118,10 +118,15 @@ namespace Battle
                 return asset.ToRuntimeSettings();
             }
 
+            Debug.LogError("[BattleLevelDesignSettings] 設定アセットが未配線です既定アセットを使います");
             BattleLevelDesignSettings fallback = LoadDefaultAsset();
-            return fallback != null
-                ? fallback.ToRuntimeSettings()
-                : CreateInstance<BattleLevelDesignSettings>().ToRuntimeSettings();
+            if (fallback != null)
+            {
+                return fallback.ToRuntimeSettings();
+            }
+
+            Debug.LogError("[BattleLevelDesignSettings] 既定アセットも読めません");
+            return CreateInstance<BattleLevelDesignSettings>().ToRuntimeSettings();
         }
 
         private static BattleLevelDesignSettings LoadDefaultAsset()

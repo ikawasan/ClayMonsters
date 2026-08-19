@@ -9005,7 +9005,7 @@ MonoBehaviour:
     partBreakShakeAmplitude: 0.32
     partBreakShakeDuration: 0.4
     partBreakShakeFrequency: 38
-  levelDesignSettings: {fileID: 0}
+  levelDesignSettings: {fileID: 11400000, guid: d5f9b2c34e6a478901bc23de45fa6789, type: 2}
 --- !u!1001 &861834337
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -9340,7 +9340,7 @@ MonoBehaviour:
     partBreakShakeDuration: 0.4
     partBreakShakeFrequency: 38
   enemySlotIndex: 0
-  levelDesignSettings: {fileID: 0}
+  levelDesignSettings: {fileID: 11400000, guid: d5f9b2c34e6a478901bc23de45fa6789, type: 2}
 --- !u!114 &883864126
 MonoBehaviour:
   m_ObjectHideFlags: 0
