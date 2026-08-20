@@ -51,6 +51,7 @@ namespace ClayEditor.Paint
         private Vector2 lastPaintPointer;
         private bool hasLastPaintPointer;
         private bool playedPaintIn;
+        private bool suppressPaintUntilPrimaryRelease;
 
         private const float MinPaintSePitch = 0.55f;
         private const float MaxPaintSePitch = 2.6f;
@@ -108,8 +109,24 @@ namespace ClayEditor.Paint
                         return;
                     }
 
+                    if (colorPicker != null && colorPicker.IsEyedropperActive)
+                    {
+                        TryPickColorAtPointer();
+                        return;
+                    }
+
                     painter.BeginStroke();
                     paintedInStroke = false;
+                })
+                .AddTo(this);
+
+            input.OnSecondaryPressed
+                .Subscribe(_ =>
+                {
+                    if (colorPicker != null && colorPicker.IsEyedropperActive)
+                    {
+                        colorPicker.CancelEyedropper();
+                    }
                 })
                 .AddTo(this);
 
@@ -159,6 +176,16 @@ namespace ClayEditor.Paint
                     if (cursorMeshRenderer != null)
                     {
                         cursorMeshRenderer.enabled = isVisible;
+                    }
+                })
+                .AddTo(this);
+
+            sceneContext.CurrentMode
+                .Subscribe(mode =>
+                {
+                    if (mode != EditModeType.Paint)
+                    {
+                        colorPicker?.CancelEyedropper();
                     }
                 })
                 .AddTo(this);
@@ -231,6 +258,25 @@ namespace ClayEditor.Paint
                 return;
             }
 
+            if (suppressPaintUntilPrimaryRelease)
+            {
+                if (!input.IsPrimaryHeld)
+                {
+                    suppressPaintUntilPrimaryRelease = false;
+                }
+
+                EndStrokeIfNeeded();
+                StopPaintSe();
+                return;
+            }
+
+            if (colorPicker != null && colorPicker.IsEyedropperActive)
+            {
+                EndStrokeIfNeeded();
+                StopPaintSe();
+                return;
+            }
+
             bool isPainting = false;
             bool isPaintingOnSurface = false;
 
@@ -256,6 +302,34 @@ namespace ClayEditor.Paint
             }
 
             wasPainting = isPainting;
+        }
+
+        // スポイト採取待ち中にヒット表面の色をピッカーへ反映する
+        private void TryPickColorAtPointer()
+        {
+            if (mainCamera == null || colorPicker == null || engine == null)
+            {
+                return;
+            }
+
+            if (!engine.TryRaycastSurface(mainCamera, input.PointerPosition, out RaycastHit surfaceHit))
+            {
+                return;
+            }
+
+            if (!engine.TrySampleSurfaceDisplayColor(surfaceHit, out Color displayColor))
+            {
+                return;
+            }
+
+            // 採取クリックの押しっぱなしで直後に塗らない
+            suppressPaintUntilPrimaryRelease = true;
+            EndStrokeIfNeeded();
+            StopPaintSe();
+
+            colorPicker.ApplySampledColor(displayColor);
+            ApplyCursorColor(displayColor);
+            seService?.Play(SeTrackId.ClayEditSpoito);
         }
 
         // 塗っていた状態から外れたときにストロークを確定する

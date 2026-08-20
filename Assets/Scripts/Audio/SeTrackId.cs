@@ -108,6 +108,11 @@ namespace Audio
         /// <summary>
         /// ClayEditのペイント中
         /// </summary>
-        ClayEditPaint
+        ClayEditPaint,
+
+        /// <summary>
+        /// ClayEditのスポイト採取
+        /// </summary>
+        ClayEditSpoito
     }
 }

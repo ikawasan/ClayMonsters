@@ -1363,6 +1363,120 @@ namespace ClayEditor
         }
 
         /// <summary>
+        /// 表面ヒット位置の表示色をサンプリングする
+        /// </summary>
+        /// <param name="worldHit">表面ヒット</param>
+        /// <param name="displayColor">カラーピッカー用表示色</param>
+        /// <returns>取得できた場合true</returns>
+        public bool TrySampleSurfaceDisplayColor(RaycastHit worldHit, out Color displayColor)
+        {
+            displayColor = Color.white;
+            if (TrySampleMeshVertexDisplayColor(worldHit, out displayColor))
+            {
+                return true;
+            }
+
+            return TrySampleVoxelDisplayColor(worldHit.point, out displayColor);
+        }
+
+        private static bool TrySampleMeshVertexDisplayColor(RaycastHit worldHit, out Color displayColor)
+        {
+            displayColor = Color.white;
+            var meshCollider = worldHit.collider as MeshCollider;
+            if (meshCollider == null || meshCollider.sharedMesh == null)
+            {
+                return false;
+            }
+
+            Mesh mesh = meshCollider.sharedMesh;
+            int triangleIndex = worldHit.triangleIndex;
+            if (triangleIndex < 0)
+            {
+                return false;
+            }
+
+            int[] triangles = mesh.triangles;
+            int indexOffset = triangleIndex * 3;
+            if (triangles == null || indexOffset + 2 >= triangles.Length)
+            {
+                return false;
+            }
+
+            int i0 = triangles[indexOffset];
+            int i1 = triangles[indexOffset + 1];
+            int i2 = triangles[indexOffset + 2];
+            if (!TryReadMeshVertexColor(mesh, i0, out Color c0)
+                || !TryReadMeshVertexColor(mesh, i1, out Color c1)
+                || !TryReadMeshVertexColor(mesh, i2, out Color c2))
+            {
+                return false;
+            }
+
+            Vector3 bary = worldHit.barycentricCoordinate;
+            Color storage = (c0 * bary.x) + (c1 * bary.y) + (c2 * bary.z);
+            storage.a = 1f;
+            displayColor = PaintColorUtility.ToDisplayColor(storage);
+            return true;
+        }
+
+        private static bool TryReadMeshVertexColor(Mesh mesh, int vertexIndex, out Color color)
+        {
+            color = Color.white;
+            if (mesh == null || vertexIndex < 0)
+            {
+                return false;
+            }
+
+            Color[] colors = mesh.colors;
+            if (colors != null && vertexIndex < colors.Length)
+            {
+                color = colors[vertexIndex];
+                return true;
+            }
+
+            Color32[] colors32 = mesh.colors32;
+            if (colors32 != null && vertexIndex < colors32.Length)
+            {
+                color = colors32[vertexIndex];
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool TrySampleVoxelDisplayColor(Vector3 worldPoint, out Color displayColor)
+        {
+            displayColor = Color.white;
+            if (!IsBackendReady)
+            {
+                return false;
+            }
+
+            Transform meshTransform = ClayModelTransform;
+            Vector3 localPos = meshTransform.InverseTransformPoint(worldPoint);
+            Vector3 voxelCenter = (localPos + CenterOffset) / Scale;
+            int gridCount = size + 1;
+            int x = Mathf.Clamp(Mathf.RoundToInt(voxelCenter.x), 0, size);
+            int y = Mathf.Clamp(Mathf.RoundToInt(voxelCenter.y), 0, size);
+            int z = Mathf.Clamp(Mathf.RoundToInt(voxelCenter.z), 0, size);
+            Vector3[] colors = backend.GetVoxelColors();
+            if (colors == null || colors.Length != TotalVoxelCount)
+            {
+                return false;
+            }
+
+            int index = x * gridCount * gridCount + y * gridCount + z;
+            if (index < 0 || index >= colors.Length)
+            {
+                return false;
+            }
+
+            Vector3 rgb = colors[index];
+            displayColor = PaintColorUtility.ToDisplayColor(new Color(rgb.x, rgb.y, rgb.z, 1f));
+            return true;
+        }
+
+        /// <summary>
         /// ボクセル色バッファのスナップショットを取得する（ペイントUndo案Bの土台 状態保存用）
         /// </summary>
         public Vector3[] GetVoxelColors()

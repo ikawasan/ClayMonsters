@@ -8,6 +8,21 @@ namespace ClayEditor.Paint
     public static class PaintColorUtility
     {
         /// <summary>
+        /// ボクセル保存色をカラーピッカー等の表示色へ戻す
+        /// </summary>
+        /// <param name="storageColor">保存用リニア色</param>
+        /// <returns>表示色</returns>
+        public static Color ToDisplayColor(Color storageColor)
+        {
+            Color display = storageColor.gamma;
+            display.r = Mathf.Clamp01(display.r);
+            display.g = Mathf.Clamp01(display.g);
+            display.b = Mathf.Clamp01(display.b);
+            display.a = 1f;
+            return display;
+        }
+
+        /// <summary>
         /// UIカラーピッカー等の表示色をボクセル保存用のリニア色へ変換する
         /// </summary>
         /// <param name="displayColor">表示色</param>

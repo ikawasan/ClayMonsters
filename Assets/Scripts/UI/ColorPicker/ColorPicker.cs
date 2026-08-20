@@ -23,16 +23,30 @@ namespace UI.ColorPicker
         [Header("Color History")]
         [SerializeField] private Button[] historyButtons;
 
+        [Header("Eyedropper")]
+        [SerializeField] private Button eyedropperButton;
+
         private readonly Subject<Color> onColorSelected = new Subject<Color>();
         public Observable<Color> OnColorSelected => onColorSelected;
 
         // 過去に使用した色の履歴(新しい順)が更新されたときに通知する
         private readonly Subject<IReadOnlyList<Color>> onHistoryChanged = new Subject<IReadOnlyList<Color>>();
+        private readonly ReactiveProperty<bool> isEyedropperActive = new(false);
 
         /// <summary>
         /// 使用色履歴が更新されたときに 新しい順の色リストを通知する
         /// </summary>
         public Observable<IReadOnlyList<Color>> OnHistoryChanged => onHistoryChanged;
+
+        /// <summary>
+        /// スポイト採取待ち状態の変化
+        /// </summary>
+        public Observable<bool> OnEyedropperActiveChanged => isEyedropperActive;
+
+        /// <summary>
+        /// スポイトでモデル色を採取する待ち状態か
+        /// </summary>
+        public bool IsEyedropperActive => isEyedropperActive.Value;
 
         // 過去に使用した色(先頭が最新)
         private readonly List<Color> colorHistory = new List<Color>();
@@ -116,6 +130,116 @@ namespace UI.ColorPicker
             // 初期表示
             UpdateButtons(colorHistory);
             ApplyVisualStyles();
+            BindEyedropperButton();
+        }
+
+        /// <summary>
+        /// スポイト採取待ちを開始する
+        /// </summary>
+        public void BeginEyedropper()
+        {
+            isEyedropperActive.Value = true;
+            RefreshEyedropperVisual();
+        }
+
+        /// <summary>
+        /// スポイト採取待ちを解除する
+        /// </summary>
+        public void CancelEyedropper()
+        {
+            if (!isEyedropperActive.Value)
+            {
+                return;
+            }
+
+            isEyedropperActive.Value = false;
+            RefreshEyedropperVisual();
+        }
+
+        /// <summary>
+        /// スポイトで取得した色をピッカーへ反映する
+        /// </summary>
+        /// <param name="color">採取した表示色</param>
+        public void ApplySampledColor(Color color)
+        {
+            SelectColor(color);
+            CancelEyedropper();
+        }
+
+        private void BindEyedropperButton()
+        {
+            if (eyedropperButton == null)
+            {
+                Debug.LogError(
+                    "[ColorPicker] eyedropperButtonが未配線ですHierarchyで接続してください",
+                    this);
+                return;
+            }
+
+            ApplyEyedropperIcon(eyedropperButton);
+            eyedropperButton.onClick.AsObservable()
+                .Subscribe(_ =>
+                {
+                    if (isEyedropperActive.Value)
+                    {
+                        CancelEyedropper();
+                    }
+                    else
+                    {
+                        BeginEyedropper();
+                    }
+                })
+                .AddTo(this);
+            RefreshEyedropperVisual();
+        }
+
+        private void ApplyEyedropperIcon(Button button)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            Sprite spoito = Resources.Load<Sprite>("Image/InputIcons/Spoito");
+            if (spoito == null)
+            {
+                Debug.LogWarning("[ColorPicker] Spoitoアイコンが見つかりません: Image/InputIcons/Spoito", this);
+                return;
+            }
+
+            Image image = button.targetGraphic as Image;
+            if (image == null)
+            {
+                image = button.GetComponent<Image>();
+            }
+
+            if (image == null)
+            {
+                return;
+            }
+
+            image.sprite = spoito;
+            image.type = Image.Type.Simple;
+            image.preserveAspect = true;
+            image.color = Color.white;
+        }
+
+        private void RefreshEyedropperVisual()
+        {
+            if (eyedropperButton == null)
+            {
+                return;
+            }
+
+            Graphic graphic = eyedropperButton.targetGraphic;
+            if (graphic == null)
+            {
+                return;
+            }
+
+            graphic.color = isEyedropperActive.Value
+                ? new Color(1f, 0.85f, 0.35f, 1f)
+                : Color.white;
         }
 
         private void BindSliderMoveSe()
@@ -528,6 +652,7 @@ namespace UI.ColorPicker
 
         private void OnDisable()
         {
+            CancelEyedropper();
             sliderSeBinder?.Stop();
         }
 
@@ -552,6 +677,8 @@ namespace UI.ColorPicker
 
             onHistoryChanged.OnCompleted();
             onHistoryChanged.Dispose();
+
+            isEyedropperActive.Dispose();
 
             sliderSeBinder?.Dispose();
             sliderSeBinder = null;

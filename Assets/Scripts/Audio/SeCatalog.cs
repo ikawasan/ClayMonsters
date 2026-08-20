@@ -40,6 +40,7 @@ namespace Audio
                 SeTrackId.ClayEditSlider => ClayEditRoot + "Slider",
                 SeTrackId.ClayEditPaintIn => ClayEditRoot + "PaintIn",
                 SeTrackId.ClayEditPaint => ClayEditRoot + "Paint",
+                SeTrackId.ClayEditSpoito => ClayEditRoot + "Spoito",
                 _ => string.Empty
             };
         }
