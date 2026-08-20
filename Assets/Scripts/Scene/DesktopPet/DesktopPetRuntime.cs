@@ -22,9 +22,11 @@ namespace Scene.DesktopPet
         private const int PetTargetFps = 8;
         private const int MaxPetCount = 5;
         private const int PetVisualLayer = 30;
+        private const float PointSettleIntervalSeconds = 60f;
 
         private IClayModelSaveService saveService;
         private IBgmService bgmService;
+        private IPointsService pointsService;
         private Action onStopped;
         private readonly List<int> slotIndices = new List<int>(MaxPetCount);
         private readonly List<PetActor> actors = new List<PetActor>(MaxPetCount);
@@ -50,6 +52,7 @@ namespace Scene.DesktopPet
             IReadOnlyList<int> playerSlotIndices,
             IClayModelSaveService clayModelSaveService,
             IBgmService clayBgmService,
+            IPointsService clayPointsService,
             bool stayOnTop,
             Action stoppedCallback)
         {
@@ -68,6 +71,7 @@ namespace Scene.DesktopPet
 
             saveService = clayModelSaveService;
             bgmService = clayBgmService;
+            pointsService = clayPointsService;
             this.stayOnTop = stayOnTop;
             onStopped = stoppedCallback;
             StartFromSaveCache(this.GetCancellationTokenOnDestroy());
@@ -90,11 +94,16 @@ namespace Scene.DesktopPet
                 Debug.Log(
                     "[DesktopPetRuntime] キャッシュ済みのため即外部ビューアへ引き継ぎます count="
                     + readyDirectories.Count);
-                ShutdownInternal(quitApplication: true, restoreTitle: false, immediate: true);
+                ShutdownInternal(
+                    quitApplication: true,
+                    restoreTitle: false,
+                    immediate: true,
+                    endPointSession: false);
                 return;
             }
 #endif
 
+            DesktopPetPointAccrual.BeginSession();
             PrepareEnvironment();
             List<string> cacheDirectories = new List<string>(slotIndices.Count);
             for (int i = 0; i < slotIndices.Count; i++)
@@ -158,6 +167,25 @@ namespace Scene.DesktopPet
             loopCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             ApplyNativeChromeWhenReadyAsync(loopCts.Token).Forget();
             StartInProcessFlock(loopCts.Token);
+            RunPointAccrualLoopAsync(loopCts.Token).Forget();
+        }
+
+        private async UniTaskVoid RunPointAccrualLoopAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    await UniTask.Delay(
+                        TimeSpan.FromSeconds(PointSettleIntervalSeconds),
+                        ignoreTimeScale: true,
+                        cancellationToken: cancellationToken);
+                    DesktopPetPointAccrual.SettlePending(pointsService);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+            }
         }
 
         private async UniTaskVoid ApplyNativeChromeWhenReadyAsync(CancellationToken cancellationToken)
@@ -628,15 +656,27 @@ namespace Scene.DesktopPet
 
         private void ReturnToTitle()
         {
-            ShutdownInternal(quitApplication: false, restoreTitle: true);
+            ShutdownInternal(
+                quitApplication: false,
+                restoreTitle: true,
+                immediate: false,
+                endPointSession: true);
         }
 
         private void ShutdownAndQuit()
         {
-            ShutdownInternal(quitApplication: true, restoreTitle: false, immediate: false);
+            ShutdownInternal(
+                quitApplication: true,
+                restoreTitle: false,
+                immediate: false,
+                endPointSession: true);
         }
 
-        private void ShutdownInternal(bool quitApplication, bool restoreTitle, bool immediate = false)
+        private void ShutdownInternal(
+            bool quitApplication,
+            bool restoreTitle,
+            bool immediate = false,
+            bool endPointSession = true)
         {
             if (isShuttingDown)
             {
@@ -644,6 +684,11 @@ namespace Scene.DesktopPet
             }
 
             isShuttingDown = true;
+            if (endPointSession)
+            {
+                DesktopPetPointAccrual.EndSession(pointsService);
+            }
+
             CleanupResources(restoreTitle);
             if (quitApplication)
             {

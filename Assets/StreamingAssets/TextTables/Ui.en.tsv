@@ -559,7 +559,7 @@ LoadSlot.PlayerInstruction	Select your monster
 LoadSlot.EnemyInstruction	Select an enemy monster
 Title.NoTrainedModel	You have no trained monsters
 Title.NoUntrainedModel	Create a monster first
-Title.DesktopPetConfirm	Close the game and show the monster on the desktop?
+Title.DesktopPetConfirm	Close the game and show the monster on the desktop?\n(You can automatically earn points based on elapsed time.)
 Title.DesktopPetZOrderChoice	Choose whether to show in front or behind other windows
 Title.DesktopPetTopmost	Always on top
 Title.DesktopPetBottommost	Always behind

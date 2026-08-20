@@ -22,6 +22,7 @@ namespace Scene.DesktopPet
         {
             DesktopPetSpriteCache.ClearLauncherKeepAliveMarker();
             CloseRunningViewers();
+            DesktopPetPointAccrual.EndSession();
         }
 
         /// <summary>
@@ -152,6 +153,7 @@ namespace Scene.DesktopPet
                 DesktopPetSpriteCache.WriteLauncherKeepAliveMarker();
                 DesktopPetSpriteCache.WriteActiveMarker(valid);
                 DesktopPetSpriteCache.WriteLanguageMarker(languageCode);
+                DesktopPetPointAccrual.BeginSession();
                 return true;
             }
             catch (Exception exception)

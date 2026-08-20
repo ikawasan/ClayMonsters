@@ -559,7 +559,7 @@ LoadSlot.PlayerInstruction	Selecciona tu monstruo
 LoadSlot.EnemyInstruction	Selecciona un monstruo enemigo
 Title.NoTrainedModel	No tienes monstruos entrenados
 Title.NoUntrainedModel	Crea un monstruo primero
-Title.DesktopPetConfirm	¿Cerrar el juego y mostrar el monstruo en el escritorio?
+Title.DesktopPetConfirm	¿Cerrar el juego y mostrar el monstruo en el escritorio?\n(Puedes obtener puntos automáticamente según el tiempo transcurrido.)
 Title.DesktopPetZOrderChoice	Elige el orden de visualización
 Title.DesktopPetTopmost	Siempre al frente
 Title.DesktopPetBottommost	Siempre detrás

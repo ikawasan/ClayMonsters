@@ -2986,7 +2986,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 720, y: 280}
+  m_SizeDelta: {x: 1220, y: 480}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &564373352
 MonoBehaviour:
@@ -32962,7 +32962,7 @@ Canvas:
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 0
-  m_AdditionalShaderChannelsFlag: 0
+  m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
   m_SortingOrder: 150
@@ -61253,7 +61253,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 
+  m_text: "\u30B2\u30FC\u30E0\u3092\u9589\u3058\u3066\u30E2\u30F3\u30B9\u30BF\u30FC\u3092\u30C7\u30B9\u30AF\u30C8\u30C3\u30D7\u3078\u8868\u793A\u3057\u307E\u3059\u304B\uFF1F\n\uFF08\u30C7\u30B9\u30AF\u30C8\u30C3\u30D7\u30DA\u30C3\u30C8\u30E2\u30FC\u30C9\u6642\u306F\u7D4C\u904E\u6642\u9593\u306B\u5FDC\u3058\u3066\u81EA\u52D5\u3067\u30DD\u30A4\u30F3\u30C8\u3092\u7372\u5F97\u3059\u308B\u3053\u3068\u304C\u3067\u304D\u307E\u3059\uFF09"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: da27886aa0ea0fc419a09b08647ae508, type: 2}
   m_sharedMaterial: {fileID: -1695953746719502857, guid: da27886aa0ea0fc419a09b08647ae508, type: 2}
@@ -61262,7 +61262,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 4281220444
   m_fontColor: {r: 0.36, g: 0.24, b: 0.18, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -63111,6 +63111,7 @@ MonoBehaviour:
   fieldRoot: {fileID: 55793583}
   fieldFloorLocalY: 0.605
   groundReference: {fileID: 0}
+  forceClemonForDebug: 0
 --- !u!114 &2100000106
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -559,7 +559,7 @@ LoadSlot.PlayerInstruction	あなたのモンスターを選択してくださ�
 LoadSlot.EnemyInstruction	敵のモンスターを選択してください
 Title.NoTrainedModel	育成済みのモンスターがありません
 Title.NoUntrainedModel	モンスターを作成してください
-Title.DesktopPetConfirm	ゲームを閉じてモンスターをデスクトップに表示しますか？
+Title.DesktopPetConfirm	ゲームを閉じてモンスターをデスクトップへ表示しますか？\n（経過時間に応じて自動でポイントを獲得することができます）
 Title.DesktopPetZOrderChoice	表示の重ね順を選んでください
 Title.DesktopPetTopmost	最前面表示
 Title.DesktopPetBottommost	最背面表示

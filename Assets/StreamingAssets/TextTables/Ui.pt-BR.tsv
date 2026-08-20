@@ -559,7 +559,7 @@ LoadSlot.PlayerInstruction	Selecione seu monstro
 LoadSlot.EnemyInstruction	Selecione um monstro inimigo
 Title.NoTrainedModel	Você não tem monstros treinados
 Title.NoUntrainedModel	Crie um monstro primeiro
-Title.DesktopPetConfirm	Fechar o jogo e mostrar o monstro na área de trabalho?
+Title.DesktopPetConfirm	Fechar o jogo e mostrar o monstro na área de trabalho?\n(Você pode ganhar pontos automaticamente conforme o tempo decorrido.)
 Title.DesktopPetZOrderChoice	Escolha a ordem de exibição
 Title.DesktopPetTopmost	Sempre na frente
 Title.DesktopPetBottommost	Sempre atrás

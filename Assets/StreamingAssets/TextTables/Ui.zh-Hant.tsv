@@ -559,7 +559,7 @@ LoadSlot.PlayerInstruction	選擇你的怪物
 LoadSlot.EnemyInstruction	選擇敵方怪物
 Title.NoTrainedModel	沒有已育成的怪物
 Title.NoUntrainedModel	請先建立一個怪物
-Title.DesktopPetConfirm	關閉遊戲並將怪物顯示在桌面上嗎？
+Title.DesktopPetConfirm	關閉遊戲並將怪物顯示在桌面上嗎？\n（可依經過時間自動獲得點數）
 Title.DesktopPetZOrderChoice	請選擇顯示疊放順序
 Title.DesktopPetTopmost	最前面顯示
 Title.DesktopPetBottommost	最後面顯示

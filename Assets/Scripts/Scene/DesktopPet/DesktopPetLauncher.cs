@@ -18,6 +18,7 @@ namespace Scene.DesktopPet
         private const int MaxLaunchCount = 5;
 
         private readonly IBgmService bgmService;
+        private readonly IPointsService pointsService;
         private readonly IClayModelSaveService saveService;
         private DesktopPetRuntime activeRuntime;
 
@@ -27,9 +28,11 @@ namespace Scene.DesktopPet
         [Inject]
         public DesktopPetLauncher(
             IBgmService bgmService,
+            IPointsService pointsService,
             IClayModelSaveService saveService)
         {
             this.bgmService = bgmService;
+            this.pointsService = pointsService;
             this.saveService = saveService;
         }
 
@@ -84,6 +87,7 @@ namespace Scene.DesktopPet
                 validSlots,
                 saveService,
                 bgmService,
+                pointsService,
                 stayOnTop,
                 OnRuntimeStopped);
             DesktopPetLaunchRequest.Clear();

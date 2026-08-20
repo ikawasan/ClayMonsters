@@ -121,7 +121,7 @@ namespace Scene.TitleScene
             }
 
             builder.Register<SkillTreePresenter>(Lifetime.Singleton).AsImplementedInterfaces();
-            builder.Register<LocalModelGalleryService>(Lifetime.Singleton).AsImplementedInterfaces();
+            builder.Register<SteamModelGalleryService>(Lifetime.Singleton).AsImplementedInterfaces();
             builder.Register<ModelGalleryPresenter>(Lifetime.Singleton).AsImplementedInterfaces();
             builder.Register<DesktopPetLauncher>(Lifetime.Singleton).As<IDesktopPetLauncher>();
             builder.Register<TitlePresenter>(Lifetime.Singleton).AsImplementedInterfaces();

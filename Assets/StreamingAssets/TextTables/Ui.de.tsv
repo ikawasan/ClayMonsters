@@ -559,7 +559,7 @@ LoadSlot.PlayerInstruction	Waehle dein Monster
 LoadSlot.EnemyInstruction	Waehle ein Gegner-Monster
 Title.NoTrainedModel	Keine trainierten Monster vorhanden
 Title.NoUntrainedModel	Erstelle zuerst ein Monster
-Title.DesktopPetConfirm	Spiel schließen und das Monster auf dem Desktop anzeigen?
+Title.DesktopPetConfirm	Spiel schließen und das Monster auf dem Desktop anzeigen?\n(Du kannst je nach verstrichener Zeit automatisch Punkte erhalten.)
 Title.DesktopPetZOrderChoice	Wähle die Anzeigereihenfolge
 Title.DesktopPetTopmost	Immer im Vordergrund
 Title.DesktopPetBottommost	Immer im Hintergrund

@@ -394,7 +394,7 @@ namespace Scene.TitleScene.Presenter
             confirmIntent = ConfirmIntent.DesktopPet;
             confirmWindowView.ShowLocalized(
                 GameTextKeys.TitleDesktopPetConfirm,
-                "ゲームを閉じてモンスターをデスクトップに表示しますか？");
+                "ゲームを閉じてモンスターをデスクトップへ表示しますか？\n（経過時間に応じて自動でポイントを獲得することができます）");
         }
 
         private void OnDesktopPetSlotSelectCancelled()

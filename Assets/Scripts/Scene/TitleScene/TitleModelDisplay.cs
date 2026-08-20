@@ -13,17 +13,21 @@ namespace Scene.TitleScene
 {
     /// <summary>
     /// TitleシーンのModelSpawnRootへ保存済みモデルを1体表示する
-    /// プレイヤー作成モンスターからランダムに選び未作成時は敵スロット0を使う
+    /// プレイヤー作成モンスターからランダムに選び未作成時は敵スロット0クレモンを使う
     /// </summary>
     public sealed class TitleModelDisplay : MonoBehaviour
     {
-        private const int EnemyFallbackSlotIndex = 0;
+        private const int ClemonEnemySlotIndex = 0;
 
         [SerializeField] private Transform spawnParent;
         [SerializeField] private LoadedModelConfigurator configurator;
         [SerializeField] private Transform fieldRoot;
         [SerializeField] private float fieldFloorLocalY = 0.605f;
         [SerializeField] private Transform groundReference;
+
+        [Header("Debug")]
+        [Tooltip("ONのときタイトル表示を敵スロット0のクレモンに固定する")]
+        [SerializeField] private bool forceClemonForDebug;
 
         [Inject] private readonly IClayModelImporter importer;
         [Inject] private readonly IClayModelSaveService saveService;
@@ -210,6 +214,23 @@ namespace Scene.TitleScene
 
         private bool TryResolveSpawnSlot(out ModelSavePool pool, out int slotIndex)
         {
+            if (forceClemonForDebug)
+            {
+                if (IsSlotLoadable(ModelSavePool.Enemy, ClemonEnemySlotIndex))
+                {
+                    pool = ModelSavePool.Enemy;
+                    slotIndex = ClemonEnemySlotIndex;
+                    return true;
+                }
+
+                Debug.LogWarning(
+                    "[TitleModelDisplay] forceClemonForDebugがONだが敵スロット0クレモンを読めません",
+                    this);
+                pool = default;
+                slotIndex = -1;
+                return false;
+            }
+
             List<int> playerSlots = CollectUsedPlayerSlots();
             if (playerSlots.Count > 0)
             {
@@ -218,10 +239,10 @@ namespace Scene.TitleScene
                 return true;
             }
 
-            if (IsSlotLoadable(ModelSavePool.Enemy, EnemyFallbackSlotIndex))
+            if (IsSlotLoadable(ModelSavePool.Enemy, ClemonEnemySlotIndex))
             {
                 pool = ModelSavePool.Enemy;
-                slotIndex = EnemyFallbackSlotIndex;
+                slotIndex = ClemonEnemySlotIndex;
                 return true;
             }
 
