@@ -287,7 +287,7 @@ namespace Scene.BattleNpcScene
             UniTask spinTask = winnerModel != null
                 ? BattleVictoryWalkSpin.SpinWhileAsync(
                     winnerModel,
-                    VictorySpinDegreesPerSecond,
+                    degreesPerSecond: 0f,
                     spinCts.Token)
                 : UniTask.CompletedTask;
 

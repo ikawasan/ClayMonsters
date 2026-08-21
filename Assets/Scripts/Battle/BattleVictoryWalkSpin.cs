@@ -5,14 +5,14 @@ using UnityEngine;
 namespace Battle
 {
     /// <summary>
-    /// 勝利演出で勝者を歩きモーションのままその場回転させつつ軽く跳ねさせる
+    /// 勝利演出で勝者を歩きモーションのまま軽く跳ねさせる
     /// </summary>
     public static class BattleVictoryWalkSpin
     {
         /// <summary>
-        /// 既定の回転速度(度/秒)
+        /// 既定の回転速度(度/秒)勝利演出では使用しない
         /// </summary>
-        public const float DefaultDegreesPerSecond = 48f;
+        public const float DefaultDegreesPerSecond = 0f;
 
         /// <summary>
         /// 既定の跳ね高さ
@@ -34,7 +34,7 @@ namespace Battle
         }
 
         /// <summary>
-        /// モデルを水平軸まわりにその場回転させ続け軽く跳ねさせる
+        /// モデルを軽く跳ねさせ続ける(degreesPerSecondが0以外なら水平回転も行う)
         /// </summary>
         /// <param name="model">勝者モデル</param>
         /// <param name="degreesPerSecond">回転速度(度/秒)</param>
@@ -53,7 +53,7 @@ namespace Battle
         }
 
         /// <summary>
-        /// モデルを水平軸まわりにその場回転させ続け軽く跳ねさせる
+        /// モデルを軽く跳ねさせ続ける(degreesPerSecondが0以外なら水平回転も行う)
         /// </summary>
         /// <param name="model">勝者モデル</param>
         /// <param name="degreesPerSecond">回転速度(度/秒)</param>

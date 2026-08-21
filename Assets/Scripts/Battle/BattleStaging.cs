@@ -16,7 +16,7 @@ namespace Battle
         [SerializeField] private float victorySeconds = 2f;
 
         [Header("勝利演出")]
-        [SerializeField] private float victorySpinDegreesPerSecond = BattleVictoryWalkSpin.DefaultDegreesPerSecond;
+        [SerializeField] private float victorySpinDegreesPerSecond = 0f;
 
         /// <summary>
         /// 両モンスターを見せる導入演出既定では一定時間待つだけ
@@ -35,7 +35,7 @@ namespace Battle
         }
 
         /// <summary>
-        /// 勝利演出。歩きモーションとその場回転を再生して一定時間待つ。
+        /// 勝利演出。歩きモーションと軽い跳ねを再生して一定時間待つ。
         /// </summary>
         public virtual async UniTask PlayVictoryAsync(
             BattleStagingContext context,
@@ -53,7 +53,7 @@ namespace Battle
             using CancellationTokenSource linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             UniTask spinTask = BattleVictoryWalkSpin.SpinWhileAsync(
                 winnerModel,
-                victorySpinDegreesPerSecond,
+                degreesPerSecond: 0f,
                 linkedCts.Token);
 
             try
