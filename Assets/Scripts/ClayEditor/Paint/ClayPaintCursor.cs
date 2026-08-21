@@ -44,6 +44,8 @@ namespace ClayEditor.Paint
 
         // 直前フレームに塗っていたか(ストローク終了の検知に使う)
         private bool wasPainting;
+        // 直前フレームでShiftによる深度固定中だったか
+        private bool wasShiftPressed;
 
         // 現在のストロークで実際に1回でも塗ったか(空振りを履歴へ入れないため)
         private bool paintedInStroke;
@@ -190,9 +192,9 @@ namespace ClayEditor.Paint
                 })
                 .AddTo(this);
 
-            if (mainCamera != null)
+            if (mainCamera != null && painter.RaycastAnchor != null)
             {
-                raycaster.InitializeDepth(mainCamera, cursorObject.transform.position);
+                raycaster.InitializeDepth(mainCamera, painter.RaycastAnchor.position);
             }
         }
 
@@ -201,6 +203,7 @@ namespace ClayEditor.Paint
         {
             if (!isActiveAndEnabled)
             {
+                wasShiftPressed = false;
                 EndStrokeIfNeeded();
                 return;
             }
@@ -213,18 +216,30 @@ namespace ClayEditor.Paint
             // Paintモード以外では何もしない
             if (sceneContext.CurrentMode.Value != EditModeType.Paint)
             {
+                wasShiftPressed = false;
                 EndStrokeIfNeeded();
                 return;
             }
 
             if (input.IsPointerOverUI)
             {
+                wasShiftPressed = input.IsShiftPressed;
                 EndStrokeIfNeeded();
                 return;
             }
 
             // カーソル位置の更新(表示メッシュへのレイヒットを優先する)
             bool hasSurfaceHit = engine.TryRaycastSurface(mainCamera, input.PointerPosition, out RaycastHit surfaceHit);
+            bool isShiftPressed = input.IsShiftPressed;
+
+            // 何もないところで深度固定を開始したらEdit範囲中心の深度へ合わせる
+            if (isShiftPressed && !wasShiftPressed && !hasSurfaceHit)
+            {
+                raycaster.InitializeDepth(mainCamera, painter.RaycastAnchor.position);
+            }
+
+            wasShiftPressed = isShiftPressed;
+
             Vector3 worldPos;
             if (hasSurfaceHit)
             {
@@ -238,7 +253,7 @@ namespace ClayEditor.Paint
                     painter.RaycastAnchor,
                     input.PointerPosition,
                     raycastLayerMask,
-                    lockDepth: input.IsShiftPressed,
+                    lockDepth: isShiftPressed,
                     resetDepthOnMiss: true,
                     out _,
                     out _);

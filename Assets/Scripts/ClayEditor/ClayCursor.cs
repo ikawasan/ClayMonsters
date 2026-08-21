@@ -31,6 +31,8 @@ namespace ClayEditor
 
         // 直前フレームに造形していたか(ストローク終了の検知に使う)
         private bool wasModifying;
+        // 直前フレームでShiftによる深度固定中だったか
+        private bool wasShiftPressed;
         private SeTrackId? playingSculptSe;
 
         void Awake()
@@ -48,9 +50,9 @@ namespace ClayEditor
 
             CacheCursorMeshDiameter();
 
-            if (mainCamera != null)
+            if (mainCamera != null && editor.RaycastAnchor != null)
             {
-                raycaster.InitializeDepth(mainCamera, cursorObject.transform.position);
+                raycaster.InitializeDepth(mainCamera, editor.RaycastAnchor.position);
             }
 
             input.OnUndo
@@ -122,6 +124,7 @@ namespace ClayEditor
             // 非表示中（モード切替で GameObject が非アクティブ時）では何もしない
             if (!isActiveAndEnabled)
             {
+                wasShiftPressed = false;
                 FlushIfStrokeEnded();
                 return;
             }
@@ -129,6 +132,7 @@ namespace ClayEditor
             // Clay モード以外では造形しない
             if (sceneContext.CurrentMode.Value != EditModeType.Clay)
             {
+                wasShiftPressed = false;
                 FlushIfStrokeEnded();
                 return;
             }
@@ -141,9 +145,27 @@ namespace ClayEditor
 
             if (input.IsPointerOverUI)
             {
+                wasShiftPressed = input.IsShiftPressed;
                 FlushIfStrokeEnded();
                 return;
             }
+
+            // 何もないところで深度固定を開始したらEdit範囲中心の深度へ合わせる
+            bool isShiftPressed = input.IsShiftPressed;
+            if (isShiftPressed && !wasShiftPressed)
+            {
+                Ray pointerRay = mainCamera.ScreenPointToRay(input.PointerPosition);
+                if (!CursorRaycaster.TryRaycastFrontSurface(
+                        pointerRay,
+                        raycastLayerMask,
+                        editor.RaycastAnchor,
+                        out _))
+                {
+                    raycaster.InitializeDepth(mainCamera, editor.RaycastAnchor.position);
+                }
+            }
+
+            wasShiftPressed = isShiftPressed;
 
             // カーソル位置の更新
             Vector3 worldPos = raycaster.Resolve(
@@ -151,7 +173,7 @@ namespace ClayEditor
                 editor.RaycastAnchor,
                 input.PointerPosition,
                 raycastLayerMask,
-                lockDepth: input.IsShiftPressed,
+                lockDepth: isShiftPressed,
                 resetDepthOnMiss: true);
 
             if (cursorObject != null)

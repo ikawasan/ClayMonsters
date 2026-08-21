@@ -4,8 +4,8 @@ namespace ClayEditor
 {
     /// <summary>
     /// スクリーン座標からブラシのワールド座標を求める共通ヘルパー
-    /// レイがメッシュに当たればその点を、外れた場合は保持している深度に投影した点を返す
-    /// 深度を内部に保持するため、カーソルごとにインスタンスを生成して使う
+    /// レイがメッシュに当たればその点を外れた場合は保持している深度に投影した点を返す
+    /// 深度を内部に保持するためカーソルごとにインスタンスを生成して使う
     /// </summary>
     public sealed class CursorRaycaster
     {
@@ -21,7 +21,7 @@ namespace ClayEditor
         /// <param name="anchor">深度の基準となる対象</param>
         /// <param name="screenPos">ポインタのスクリーン座標</param>
         /// <param name="mask">レイキャスト対象のレイヤー</param>
-        /// <param name="lockDepth">true の場合はレイキャストせず保持深度に投影する</param>
+        /// <param name="lockDepth">trueの場合はレイキャストせず保持深度に投影する</param>
         /// <param name="resetDepthOnMiss">レイが外れたときに深度をanchorの深度へ戻すか</param>
         /// <returns>解決されたワールド座標。</returns>
         public Vector3 Resolve(UnityEngine.Camera camera, Transform anchor, Vector2 screenPos, LayerMask mask, bool lockDepth, bool resetDepthOnMiss)
@@ -36,7 +36,7 @@ namespace ClayEditor
         /// <param name="anchor">深度の基準となる対象</param>
         /// <param name="screenPos">ポインタのスクリーン座標</param>
         /// <param name="mask">レイキャスト対象のレイヤー</param>
-        /// <param name="lockDepth">true の場合はレイキャストせず保持深度に投影する</param>
+        /// <param name="lockDepth">trueの場合はレイキャストせず保持深度に投影する</param>
         /// <param name="resetDepthOnMiss">レイが外れたときに深度をanchorの深度へ戻すか</param>
         /// <param name="surfaceHit">カメラ側の表面ヒット情報</param>
         /// <param name="hasSurfaceHit">表面ヒットがあったか</param>
@@ -53,15 +53,15 @@ namespace ClayEditor
         {
             surfaceHit = default;
             hasSurfaceHit = false;
-            Ray ray = camera.ScreenPointToRay(screenPos);
-            float anchorDepth = ComputeDepthAlongRay(ray, anchor.position);
+            float anchorDepth = ComputeCameraDepth(camera, anchor.position);
 
             if (!lockDepth)
             {
+                Ray ray = camera.ScreenPointToRay(screenPos);
                 if (TryRaycastFrontSurface(ray, mask, anchor, out surfaceHit))
                 {
                     hasSurfaceHit = true;
-                    currentDepth = ComputeDepthAlongRay(ray, surfaceHit.point);
+                    currentDepth = ComputeCameraDepth(camera, surfaceHit.point);
                     return surfaceHit.point;
                 }
 
@@ -87,8 +87,7 @@ namespace ClayEditor
         /// <param name="worldPoint">基準とするワールド座標</param>
         public void InitializeDepth(UnityEngine.Camera camera, Vector3 worldPoint)
         {
-            Ray ray = camera.ScreenPointToRay(camera.WorldToScreenPoint(worldPoint));
-            currentDepth = ComputeDepthAlongRay(ray, worldPoint);
+            currentDepth = ComputeCameraDepth(camera, worldPoint);
         }
 
         /// <summary>
@@ -99,8 +98,7 @@ namespace ClayEditor
         /// <param name="worldPoint">ヒットしたワールド座標</param>
         public void RecordDepth(UnityEngine.Camera camera, Vector2 screenPos, Vector3 worldPoint)
         {
-            Ray ray = camera.ScreenPointToRay(screenPos);
-            currentDepth = ComputeDepthAlongRay(ray, worldPoint);
+            currentDepth = ComputeCameraDepth(camera, worldPoint);
         }
 
         /// <summary>
@@ -193,10 +191,12 @@ namespace ClayEditor
             }
         }
 
-        private static float ComputeDepthAlongRay(Ray ray, Vector3 worldPoint)
+        /// <summary>
+        /// ScreenToWorldPointのZと一致するカメラ前方深度を返す
+        /// </summary>
+        private static float ComputeCameraDepth(UnityEngine.Camera camera, Vector3 worldPoint)
         {
-            Vector3 toPoint = worldPoint - ray.origin;
-            return Vector3.Dot(toPoint, ray.direction);
+            return camera.WorldToScreenPoint(worldPoint).z;
         }
     }
 }
