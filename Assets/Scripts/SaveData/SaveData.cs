@@ -12,8 +12,8 @@ namespace SaveData
     [Serializable]
     public class  SoundOptionSaveData
     {
-        public float MusicVolume = 0.5f;
-        public float SoundEffectVolume = 0.5f;
+        public float MusicVolume = 0.3f;
+        public float SoundEffectVolume = 0.3f;
     }
 
     [Serializable]

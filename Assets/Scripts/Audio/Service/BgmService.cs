@@ -23,7 +23,7 @@ namespace Audio.Service
         private AudioSource activeSource;
         private AudioSource inactiveSource;
         private BgmTrackId? currentTrackId;
-        private float musicVolume = 0.5f;
+        private float musicVolume = 0.3f;
         private int crossfadeGeneration;
         private CancellationTokenSource crossfadeCts;
 

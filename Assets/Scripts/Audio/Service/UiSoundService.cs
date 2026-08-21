@@ -10,7 +10,7 @@ namespace Audio.Service
     {
         private readonly UiSoundSettings settings;
         private readonly AudioSource source;
-        private float soundEffectVolume = 0.5f;
+        private float soundEffectVolume = 0.3f;
 
         public UiSoundService(UiSoundSettings settings)
         {

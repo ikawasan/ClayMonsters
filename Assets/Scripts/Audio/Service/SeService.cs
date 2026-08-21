@@ -17,7 +17,7 @@ namespace Audio.Service
         private readonly AudioSource timedSource;
         private readonly AudioSource loopSource;
         private readonly Dictionary<SeTrackId, AudioClip> clipCache = new();
-        private float soundEffectVolume = 0.5f;
+        private float soundEffectVolume = 0.3f;
         private SeTrackId? timedTrackId;
         private SeTrackId? loopTrackId;
         private float[] loopPcmSamples;
