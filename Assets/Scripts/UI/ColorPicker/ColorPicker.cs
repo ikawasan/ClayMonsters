@@ -513,6 +513,17 @@ namespace UI.ColorPicker
             onHistoryChanged.OnNext(colorHistory);
         }
 
+        /// <summary>
+        /// 履歴とスライダー表示を指定色へ初期化する
+        /// </summary>
+        /// <param name="color">初期化する表示色</param>
+        public void ResetToColor(Color color)
+        {
+            CancelEyedropper();
+            ClearHistory();
+            SelectColor(color);
+        }
+
         // RGBがほぼ等しいかどうか(履歴の重複判定に使う)
         private static bool ApproximatelyEqual(Color a, Color b)
         {

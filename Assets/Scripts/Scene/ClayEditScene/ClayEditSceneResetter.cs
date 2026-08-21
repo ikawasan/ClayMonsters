@@ -67,9 +67,9 @@ namespace Scene.ClayEditScene
             historyManager.Clear();
             paintHistoryManager.Clear();
 
-            // カラーピッカーの使用色履歴とブラシ色を初期化する
-            colorPicker.ClearHistory();
+            // ブラシ色とカラーピッカー表示を初期化する(再入場時に前回色が残らないようにする)
             clayPainter.ResetPaintState();
+            colorPicker.ResetToColor(clayPainter.CurrentColor);
 
             // 自動生成したボーンを破棄する（固定モデル自体は破棄しない）
             ClayModel model = context.CurrentModel.Value;
