@@ -696,3 +696,18 @@ Training.Status.Desc.Hit	명중\n기술의 명중률에 영향을 준다
 DesktopPet.QuitMenu	데스크톱 펫 종료
 DesktopPet.LaunchGameMenu	ClayMonsters 실행
 DesktopPet.CacheNotFound	데스크톱 펫 캐시를 찾을 수 없습니다.
+ModelGallery.SortLatest	최신
+ModelGallery.Publishing	게시 중…
+ModelGallery.PublishSuccess	게시가 완료되었습니다
+ModelGallery.PublishAcceptedNeedsLegal	게시를 접수했습니다. Steam 창작마당 이용 약관 동의 후 공개됩니다
+ModelGallery.ErrorSteamUnavailable	Steam에 연결할 수 없습니다. Steam을 실행하고 로그인하세요
+ModelGallery.ErrorPublishFailed	전시실 게시에 실패했습니다
+ModelGallery.ErrorNeedsLegalAgreement	Steam 창작마당 이용 약관 동의가 필요합니다. 오버레이에서 동의한 뒤 다시 게시하세요
+ModelGallery.ErrorTimedOut	통신이 시간 초과되었습니다. 잠시 후 다시 시도하세요
+ModelGallery.ErrorPublishTimedOut	통신이 시간 초과되었습니다. 게시 상태가 불확실하니 나중에 목록을 확인하세요
+ModelGallery.ErrorQueryFailed	전시실 목록을 가져오지 못했습니다
+ModelGallery.ErrorFavoriteFailed	즐겨찾기 업데이트에 실패했습니다
+ModelGallery.ErrorDownloadFailed	다운로드에 실패했습니다. 포인트는 환급되었습니다
+ModelGallery.DownloadSuccess	다운로드가 완료되었습니다
+ModelGallery.Saving	저장 중…
+ModelGallery.SaveSuccess	저장이 완료되었습니다

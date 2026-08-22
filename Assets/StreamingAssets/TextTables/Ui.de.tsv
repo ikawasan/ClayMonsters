@@ -696,3 +696,18 @@ Training.Status.Desc.Hit	Treffer\nBeeinflusst die Trefferquote von Angriffen
 DesktopPet.QuitMenu	Desktop-Pet beenden
 DesktopPet.LaunchGameMenu	ClayMonsters starten
 DesktopPet.CacheNotFound	Desktop-Pet-Cache wurde nicht gefunden.
+ModelGallery.SortLatest	Neueste
+ModelGallery.Publishing	Wird gepostet…
+ModelGallery.PublishSuccess	Erfolgreich gepostet
+ModelGallery.PublishAcceptedNeedsLegal	Eingereicht. Wird nach Annahme der Steam-Workshop-Vereinbarung oeffentlich
+ModelGallery.ErrorSteamUnavailable	Keine Steam-Verbindung. Steam starten und anmelden
+ModelGallery.ErrorPublishFailed	Posten in der Galerie fehlgeschlagen
+ModelGallery.ErrorNeedsLegalAgreement	Steam-Workshop-Vereinbarung noetig. Im Overlay annehmen, dann erneut posten
+ModelGallery.ErrorTimedOut	Zeitueberschreitung. Bitte spaeter erneut versuchen
+ModelGallery.ErrorPublishTimedOut	Zeitueberschreitung. Poststatus unklar — Liste spaeter pruefen
+ModelGallery.ErrorQueryFailed	Galerie-Liste konnte nicht geladen werden
+ModelGallery.ErrorFavoriteFailed	Favorit konnte nicht aktualisiert werden
+ModelGallery.ErrorDownloadFailed	Download fehlgeschlagen. Punkte wurden erstattet
+ModelGallery.DownloadSuccess	Download abgeschlossen
+ModelGallery.Saving	Speichern…
+ModelGallery.SaveSuccess	Speichern abgeschlossen

@@ -36,9 +36,14 @@ namespace UI.ModelGallery.View
         [SerializeField] private ToggleGroup tabToggleGroup;
         [SerializeField] private LHButton postConfirmPublishButton;
         [SerializeField] private LHButton postConfirmCloseButton;
+        [SerializeField] private Canvas postConfirmPublishButtonCanvas;
+        [SerializeField] private Canvas postConfirmCloseButtonCanvas;
+        [SerializeField] private LHButton postConfirmResultCloseButton;
+        [SerializeField] private Canvas postConfirmResultCloseButtonCanvas;
         [SerializeField] private Toggle randomSortToggle;
         [SerializeField] private Toggle monthlyRankingToggle;
         [SerializeField] private Toggle overallRankingToggle;
+        [SerializeField] private Toggle latestSortToggle;
         [SerializeField] private ToggleGroup browseSortToggleGroup;
         [SerializeField] private LHButton browseRefreshButton;
         [SerializeField] private LHButton pointsInsufficientCloseButton;
@@ -46,14 +51,23 @@ namespace UI.ModelGallery.View
         [SerializeField] private Canvas browseRefreshButtonCanvas;
         [SerializeField] private TMP_Text titleText;
         [SerializeField] private TMP_Text pointsText;
+        [SerializeField] private TMP_Text pointsInsufficientMessageText;
+        [SerializeField] private TMP_Text pointsInsufficientHeldPointsText;
+        [SerializeField] private TMP_Text pointsInsufficientCostPointsText;
         [SerializeField] private TMP_Text postConfirmNameText;
         [SerializeField] private TMP_Text postConfirmMessageText;
         [SerializeField] private Image postConfirmThumbnailImage;
         [SerializeField] private Canvas downloadConfirmCanvas;
         [SerializeField] private LHButton downloadConfirmSaveButton;
         [SerializeField] private LHButton downloadConfirmCloseButton;
+        [SerializeField] private Canvas downloadConfirmSaveButtonCanvas;
+        [SerializeField] private Canvas downloadConfirmCloseButtonCanvas;
+        [SerializeField] private LHButton downloadConfirmResultCloseButton;
+        [SerializeField] private Canvas downloadConfirmResultCloseButtonCanvas;
         [SerializeField] private TMP_Text downloadConfirmNameText;
         [SerializeField] private TMP_Text downloadConfirmMessageText;
+        [SerializeField] private TMP_Text downloadConfirmCostText;
+        [SerializeField] private Canvas downloadConfirmCostTextCanvas;
         [SerializeField] private Image downloadConfirmThumbnailImage;
         [SerializeField] private ModelSaveSlotScrollListView postSlotScrollList;
         [SerializeField] private ScrollRect browseScrollRect;
@@ -97,9 +111,15 @@ namespace UI.ModelGallery.View
         private int cachedPoints;
         private bool postConfirmVisible;
         private string cachedPostConfirmName = string.Empty;
+        private string postConfirmResultKey = string.Empty;
+        private string postConfirmResultFallback = string.Empty;
+        private PostConfirmDisplayMode postConfirmDisplayMode = PostConfirmDisplayMode.Confirm;
         private bool downloadConfirmVisible;
         private string cachedDownloadConfirmName = string.Empty;
         private bool downloadConfirmIsOverwrite;
+        private string downloadConfirmResultKey = string.Empty;
+        private string downloadConfirmResultFallback = string.Empty;
+        private DownloadConfirmDisplayMode downloadConfirmDisplayMode = DownloadConfirmDisplayMode.Confirm;
 
         private void Awake()
         {
@@ -126,12 +146,8 @@ namespace UI.ModelGallery.View
                     LocalizedFont.SetText(postConfirmNameText, cachedPostConfirmName);
                 }
 
-                if (postConfirmMessageText != null)
-                {
-                    LocalizedFont.SetText(
-                        postConfirmMessageText,
-                        LocalizedText.Get(GameTextKeys.ModelGalleryPostConfirm));
-                }
+                ApplyPostConfirmMessageText();
+                ApplyPostConfirmButtonLabels();
             }
 
             if (downloadConfirmVisible)
@@ -141,18 +157,9 @@ namespace UI.ModelGallery.View
                     LocalizedFont.SetText(downloadConfirmNameText, cachedDownloadConfirmName);
                 }
 
-                if (downloadConfirmMessageText != null)
-                {
-                    LocalizedFont.SetText(
-                        downloadConfirmMessageText,
-                        downloadConfirmIsOverwrite
-                            ? LocalizedText.GetOrFallback(
-                                GameTextKeys.ModelGalleryOverwriteConfirm,
-                                "既存のセーブデータに上書き保存しますか？")
-                            : LocalizedText.GetOrFallback(
-                                GameTextKeys.ModelGallerySaveToSlotConfirm,
-                                "このスロットに保存しますか？"));
-                }
+                ApplyDownloadConfirmMessageText();
+                ApplyDownloadConfirmCostText();
+                ApplyDownloadConfirmButtonLabels();
             }
 
             // 投稿/取得スロットと確認文を現在言語で再組み立て
@@ -174,6 +181,7 @@ namespace UI.ModelGallery.View
             ApplyToggleActiveVisual(randomSortToggle);
             ApplyToggleActiveVisual(monthlyRankingToggle);
             ApplyToggleActiveVisual(overallRankingToggle);
+            ApplyToggleActiveVisual(latestSortToggle);
         }
 
         private void RefreshAttackSlotsUnderThis()
@@ -207,6 +215,7 @@ namespace UI.ModelGallery.View
             bakedLabelApplier.Register(GameTextKeys.ModelGallerySortMonthly, "月間ランキング");
             bakedLabelApplier.Register(GameTextKeys.ModelGallerySortOverall, "総合");
             bakedLabelApplier.Register(GameTextKeys.ModelGallerySortOverall, "総合ランキング");
+            bakedLabelApplier.Register(GameTextKeys.ModelGallerySortLatest, "最新");
             bakedLabelApplier.Register(GameTextKeys.ModelGalleryPrev, "前へ");
             bakedLabelApplier.Register(GameTextKeys.ModelGalleryNext, "次へ");
             bakedLabelApplier.Register(GameTextKeys.ModelGalleryRefresh, "更新");
@@ -222,9 +231,16 @@ namespace UI.ModelGallery.View
             bakedLabelApplier.Register(GameTextKeys.ModelGallerySaveDestEmpty, "保存先: 空きスロット");
             bakedLabelApplier.Register(GameTextKeys.ModelGallerySelectSaveSlot, "保存先スロットを選択");
             bakedLabelApplier.Register(GameTextKeys.ModelGalleryPostConfirm, "投稿しますか？");
+            bakedLabelApplier.Register(GameTextKeys.ModelGalleryPublishing, "投稿中…");
+            bakedLabelApplier.Register(GameTextKeys.ModelGalleryPublishSuccess, "投稿が完了しました");
+            bakedLabelApplier.Register(
+                GameTextKeys.ModelGalleryOverwriteConfirm,
+                "既存のセーブデータに上書き保存しますか？");
             bakedLabelApplier.Register(
                 GameTextKeys.ModelGallerySaveToSlotConfirm,
                 "このスロットに保存しますか？");
+            bakedLabelApplier.Register(GameTextKeys.ModelGallerySaving, "保存中…");
+            bakedLabelApplier.Register(GameTextKeys.ModelGallerySaveSuccess, "保存が完了しました");
             bakedLabelApplier.Capture(transform);
         }
 
@@ -281,6 +297,9 @@ namespace UI.ModelGallery.View
             LhButtonLabelUtility.SetLabel(
                 overallRankingToggle,
                 SceneLocalizedLabel.Resolve(GameTextKeys.ModelGallerySortOverall, overallSortOriginal));
+            LhButtonLabelUtility.SetLabel(
+                latestSortToggle,
+                SceneLocalizedLabel.Resolve(GameTextKeys.ModelGallerySortLatest, latestSortOriginal));
         }
 
         private bool chromeOriginalsCaptured;
@@ -298,6 +317,7 @@ namespace UI.ModelGallery.View
         private string randomSortOriginal = "ランダム";
         private string monthlySortOriginal = "月間ランキング";
         private string overallSortOriginal = "総合ランキング";
+        private string latestSortOriginal = "最新";
 
         private void CaptureChromeOriginalsIfNeeded()
         {
@@ -331,6 +351,7 @@ namespace UI.ModelGallery.View
             randomSortOriginal = CaptureJapaneseOriginal(randomSortToggle, randomSortOriginal);
             monthlySortOriginal = CaptureJapaneseOriginal(monthlyRankingToggle, monthlySortOriginal);
             overallSortOriginal = CaptureJapaneseOriginal(overallRankingToggle, overallSortOriginal);
+            latestSortOriginal = CaptureJapaneseOriginal(latestSortToggle, latestSortOriginal);
             chromeOriginalsCaptured = true;
         }
 
@@ -469,14 +490,19 @@ namespace UI.ModelGallery.View
         /// <inheritdoc />
         public void SetPoints(int points)
         {
+            cachedPoints = Mathf.Max(0, points);
             if (pointsText != null)
             {
-                cachedPoints = Mathf.Max(0, points);
-                pointsText.text = Localization.LocalizedText.Get(
-                    Localization.GameTextKeys.ModelGalleryPoints,
-                    "points",
-                    cachedPoints);
+                LocalizedFont.SetText(
+                    pointsText,
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.ModelGalleryPoints,
+                        "{points} ポイント",
+                        "points",
+                        cachedPoints));
             }
+
+            ApplyPointsInsufficientDynamicTexts();
         }
 
         /// <inheritdoc />
@@ -489,6 +515,7 @@ namespace UI.ModelGallery.View
             SetToggleIsOnWithoutNotify(
                 overallRankingToggle,
                 sortMode == ModelGalleryBrowseSortMode.OverallRanking);
+            SetToggleIsOnWithoutNotify(latestSortToggle, sortMode == ModelGalleryBrowseSortMode.Latest);
 
             bool browseTabVisible = browseTabCanvas != null && browseTabCanvas.enabled;
             SetBrowseRefreshButtonVisible(
@@ -574,6 +601,17 @@ namespace UI.ModelGallery.View
                 return;
             }
 
+            ApplyPointsInsufficientDynamicTexts();
+            if (pointsInsufficientHeldPointsText != null)
+            {
+                pointsInsufficientHeldPointsText.gameObject.SetActive(true);
+            }
+
+            if (pointsInsufficientCostPointsText != null)
+            {
+                pointsInsufficientCostPointsText.gameObject.SetActive(true);
+            }
+
             pointsInsufficientCanvas.enabled = true;
         }
 
@@ -630,6 +668,9 @@ namespace UI.ModelGallery.View
 
             HideDownloadConfirm();
             postConfirmVisible = true;
+            postConfirmDisplayMode = PostConfirmDisplayMode.Confirm;
+            postConfirmResultKey = string.Empty;
+            postConfirmResultFallback = string.Empty;
             cachedPostConfirmName = modelName ?? string.Empty;
 
             if (postConfirmNameText != null)
@@ -637,11 +678,9 @@ namespace UI.ModelGallery.View
                 postConfirmNameText.text = cachedPostConfirmName;
             }
 
-            if (postConfirmMessageText != null)
-            {
-                postConfirmMessageText.text = Localization.LocalizedText.Get(
-                    Localization.GameTextKeys.ModelGalleryPostConfirm);
-            }
+            ApplyPostConfirmMessageText();
+            ApplyPostConfirmButtonLabels();
+            SetPostConfirmButtonVisible(publishVisible: true, closeVisible: true, resultCloseVisible: false);
 
             ReplacePostConfirmThumbnail(thumbnail);
             if (postConfirmThumbnailImage != null)
@@ -657,12 +696,52 @@ namespace UI.ModelGallery.View
         public void HidePostConfirm()
         {
             postConfirmVisible = false;
+            postConfirmDisplayMode = PostConfirmDisplayMode.Confirm;
+            postConfirmResultKey = string.Empty;
+            postConfirmResultFallback = string.Empty;
             if (postConfirmCanvas != null)
             {
                 postConfirmCanvas.enabled = false;
             }
 
             ReplacePostConfirmThumbnail(null);
+        }
+
+        /// <inheritdoc />
+        public void ShowPostConfirmPublishing()
+        {
+            if (postConfirmCanvas == null)
+            {
+                Debug.LogError("[ModelGalleryView] postConfirmCanvasが未配線です", this);
+                return;
+            }
+
+            postConfirmVisible = true;
+            postConfirmDisplayMode = PostConfirmDisplayMode.Publishing;
+            postConfirmResultKey = string.Empty;
+            postConfirmResultFallback = string.Empty;
+            ApplyPostConfirmMessageText();
+            SetPostConfirmButtonVisible(publishVisible: false, closeVisible: false, resultCloseVisible: false);
+            postConfirmCanvas.enabled = true;
+        }
+
+        /// <inheritdoc />
+        public void ShowPostConfirmResult(string messageKey, string messageFallback)
+        {
+            if (postConfirmCanvas == null)
+            {
+                Debug.LogError("[ModelGalleryView] postConfirmCanvasが未配線です", this);
+                return;
+            }
+
+            postConfirmVisible = true;
+            postConfirmDisplayMode = PostConfirmDisplayMode.Result;
+            postConfirmResultKey = messageKey ?? string.Empty;
+            postConfirmResultFallback = messageFallback ?? string.Empty;
+            ApplyPostConfirmMessageText();
+            ApplyPostConfirmButtonLabels();
+            SetPostConfirmButtonVisible(publishVisible: false, closeVisible: false, resultCloseVisible: true);
+            postConfirmCanvas.enabled = true;
         }
 
         /// <inheritdoc />
@@ -676,6 +755,9 @@ namespace UI.ModelGallery.View
 
             HidePostConfirm();
             downloadConfirmVisible = true;
+            downloadConfirmDisplayMode = DownloadConfirmDisplayMode.Confirm;
+            downloadConfirmResultKey = string.Empty;
+            downloadConfirmResultFallback = string.Empty;
             cachedDownloadConfirmName = modelName ?? string.Empty;
             downloadConfirmIsOverwrite = isOverwrite;
 
@@ -684,16 +766,9 @@ namespace UI.ModelGallery.View
                 downloadConfirmNameText.text = cachedDownloadConfirmName;
             }
 
-            if (downloadConfirmMessageText != null)
-            {
-                downloadConfirmMessageText.text = downloadConfirmIsOverwrite
-                    ? Localization.LocalizedText.GetOrFallback(
-                        Localization.GameTextKeys.ModelGalleryOverwriteConfirm,
-                        "既存のセーブデータに上書き保存しますか？")
-                    : Localization.LocalizedText.GetOrFallback(
-                        Localization.GameTextKeys.ModelGallerySaveToSlotConfirm,
-                        "このスロットに保存しますか？");
-            }
+            ApplyDownloadConfirmMessageText();
+            ApplyDownloadConfirmButtonLabels();
+            SetDownloadConfirmButtonVisible(saveVisible: true, closeVisible: true, resultCloseVisible: false);
 
             ReplaceDownloadConfirmThumbnail(thumbnail);
             if (downloadConfirmThumbnailImage != null)
@@ -706,9 +781,49 @@ namespace UI.ModelGallery.View
         }
 
         /// <inheritdoc />
+        public void ShowDownloadConfirmSaving()
+        {
+            if (downloadConfirmCanvas == null)
+            {
+                Debug.LogError("[ModelGalleryView] downloadConfirmCanvasが未配線です", this);
+                return;
+            }
+
+            downloadConfirmVisible = true;
+            downloadConfirmDisplayMode = DownloadConfirmDisplayMode.Saving;
+            downloadConfirmResultKey = string.Empty;
+            downloadConfirmResultFallback = string.Empty;
+            ApplyDownloadConfirmMessageText();
+            SetDownloadConfirmButtonVisible(saveVisible: false, closeVisible: false, resultCloseVisible: false);
+            downloadConfirmCanvas.enabled = true;
+        }
+
+        /// <inheritdoc />
+        public void ShowDownloadConfirmResult(string messageKey, string messageFallback)
+        {
+            if (downloadConfirmCanvas == null)
+            {
+                Debug.LogError("[ModelGalleryView] downloadConfirmCanvasが未配線です", this);
+                return;
+            }
+
+            downloadConfirmVisible = true;
+            downloadConfirmDisplayMode = DownloadConfirmDisplayMode.Result;
+            downloadConfirmResultKey = messageKey ?? string.Empty;
+            downloadConfirmResultFallback = messageFallback ?? string.Empty;
+            ApplyDownloadConfirmMessageText();
+            ApplyDownloadConfirmButtonLabels();
+            SetDownloadConfirmButtonVisible(saveVisible: false, closeVisible: false, resultCloseVisible: true);
+            downloadConfirmCanvas.enabled = true;
+        }
+
+        /// <inheritdoc />
         public void HideDownloadConfirm()
         {
             downloadConfirmVisible = false;
+            downloadConfirmDisplayMode = DownloadConfirmDisplayMode.Confirm;
+            downloadConfirmResultKey = string.Empty;
+            downloadConfirmResultFallback = string.Empty;
             if (downloadConfirmCanvas != null)
             {
                 downloadConfirmCanvas.enabled = false;
@@ -734,16 +849,36 @@ namespace UI.ModelGallery.View
             SubscribeButton(postConfirmPublishButton, action, nameof(postConfirmPublishButton));
 
         /// <inheritdoc />
-        public IDisposable SubscribePostConfirmCloseButtonClick(UnityAction action) =>
-            SubscribeButton(postConfirmCloseButton, action, nameof(postConfirmCloseButton));
+        public IDisposable SubscribePostConfirmCloseButtonClick(UnityAction action)
+        {
+            IDisposable confirmClose = SubscribeButton(
+                postConfirmCloseButton,
+                action,
+                nameof(postConfirmCloseButton));
+            IDisposable resultClose = SubscribeButton(
+                postConfirmResultCloseButton,
+                action,
+                nameof(postConfirmResultCloseButton));
+            return new CompositeDisposable(confirmClose, resultClose);
+        }
 
         /// <inheritdoc />
         public IDisposable SubscribeDownloadConfirmSaveButtonClick(UnityAction action) =>
             SubscribeButton(downloadConfirmSaveButton, action, nameof(downloadConfirmSaveButton));
 
         /// <inheritdoc />
-        public IDisposable SubscribeDownloadConfirmCloseButtonClick(UnityAction action) =>
-            SubscribeButton(downloadConfirmCloseButton, action, nameof(downloadConfirmCloseButton));
+        public IDisposable SubscribeDownloadConfirmCloseButtonClick(UnityAction action)
+        {
+            IDisposable confirmClose = SubscribeButton(
+                downloadConfirmCloseButton,
+                action,
+                nameof(downloadConfirmCloseButton));
+            IDisposable resultClose = SubscribeButton(
+                downloadConfirmResultCloseButton,
+                action,
+                nameof(downloadConfirmResultCloseButton));
+            return new CompositeDisposable(confirmClose, resultClose);
+        }
 
         /// <inheritdoc />
         public IDisposable SubscribeRandomSortButtonClick(UnityAction action) =>
@@ -756,6 +891,10 @@ namespace UI.ModelGallery.View
         /// <inheritdoc />
         public IDisposable SubscribeOverallRankingButtonClick(UnityAction action) =>
             SubscribeToggleOn(overallRankingToggle, action, nameof(overallRankingToggle));
+
+        /// <inheritdoc />
+        public IDisposable SubscribeLatestSortButtonClick(UnityAction action) =>
+            SubscribeToggleOn(latestSortToggle, action, nameof(latestSortToggle));
 
         /// <inheritdoc />
         public IDisposable SubscribeBrowseRefreshButtonClick(UnityAction action) =>
@@ -850,14 +989,28 @@ namespace UI.ModelGallery.View
                 Debug.LogError("[ModelGalleryView] downloadSlotSelectCanvasが未配線です", this);
             }
 
-            if (postConfirmCanvas == null)
+            if (postConfirmCanvas == null
+                || postConfirmPublishButton == null
+                || postConfirmCloseButton == null
+                || postConfirmResultCloseButton == null
+                || postConfirmPublishButtonCanvas == null
+                || postConfirmCloseButtonCanvas == null
+                || postConfirmResultCloseButtonCanvas == null)
             {
-                Debug.LogError("[ModelGalleryView] postConfirmCanvasが未配線です", this);
+                Debug.LogError("[ModelGalleryView] postConfirm関連参照が未配線です", this);
             }
 
-            if (downloadConfirmCanvas == null)
+            if (downloadConfirmCanvas == null
+                || downloadConfirmSaveButton == null
+                || downloadConfirmCloseButton == null
+                || downloadConfirmResultCloseButton == null
+                || downloadConfirmSaveButtonCanvas == null
+                || downloadConfirmCloseButtonCanvas == null
+                || downloadConfirmResultCloseButtonCanvas == null
+                || downloadConfirmCostText == null
+                || downloadConfirmCostTextCanvas == null)
             {
-                Debug.LogError("[ModelGalleryView] downloadConfirmCanvasが未配線です", this);
+                Debug.LogError("[ModelGalleryView] downloadConfirm関連参照が未配線です", this);
             }
 
             if (postSlotScrollList == null)
@@ -903,6 +1056,7 @@ namespace UI.ModelGallery.View
             if (randomSortToggle == null
                 || monthlyRankingToggle == null
                 || overallRankingToggle == null
+                || latestSortToggle == null
                 || browseSortToggleGroup == null)
             {
                 Debug.LogError("[ModelGalleryView] 並び替えToggleが未配線です", this);
@@ -931,6 +1085,7 @@ namespace UI.ModelGallery.View
             ConfigureToggleNoSelected(randomSortToggle);
             ConfigureToggleNoSelected(monthlyRankingToggle);
             ConfigureToggleNoSelected(overallRankingToggle);
+            ConfigureToggleNoSelected(latestSortToggle);
         }
 
         private void CacheToggleSprites()
@@ -1034,9 +1189,175 @@ namespace UI.ModelGallery.View
             }
         }
 
+        private void ApplyPointsInsufficientDynamicTexts()
+        {
+            if (pointsInsufficientMessageText != null)
+            {
+                LocalizedFont.SetText(
+                    pointsInsufficientMessageText,
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.ModelGalleryPointsInsufficient,
+                        "ポイントが不足しています"));
+            }
+
+            if (pointsInsufficientHeldPointsText != null)
+            {
+                LocalizedFont.SetText(
+                    pointsInsufficientHeldPointsText,
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.ModelGalleryHeldPoints,
+                        "所持: {points} ポイント",
+                        "points",
+                        cachedPoints));
+            }
+
+            if (pointsInsufficientCostPointsText != null)
+            {
+                LocalizedFont.SetText(
+                    pointsInsufficientCostPointsText,
+                    LocalizedText.GetOrFallback(
+                        GameTextKeys.ModelGalleryCostPoints,
+                        "消費: {points} ポイント",
+                        "points",
+                        ModelGalleryDownloadSettings.DownloadCostPoints));
+            }
+        }
+
         private void SetBrowseRefreshButtonVisible(bool visible)
         {
             SetCanvasEnabled(browseRefreshButtonCanvas, visible);
+        }
+
+
+        private void SetDownloadConfirmButtonVisible(
+            bool saveVisible,
+            bool closeVisible,
+            bool resultCloseVisible)
+        {
+            SetCanvasEnabled(downloadConfirmSaveButtonCanvas, saveVisible);
+            SetCanvasEnabled(downloadConfirmCloseButtonCanvas, closeVisible);
+            SetCanvasEnabled(downloadConfirmResultCloseButtonCanvas, resultCloseVisible);
+            // 確認中のみ消費ポイントを表示する
+            SetCanvasEnabled(
+                downloadConfirmCostTextCanvas,
+                saveVisible && closeVisible && !resultCloseVisible);
+            ApplyDownloadConfirmCostText();
+        }
+
+
+        private void ApplyDownloadConfirmCostText()
+        {
+            if (downloadConfirmCostText == null)
+            {
+                return;
+            }
+
+            if (downloadConfirmDisplayMode != DownloadConfirmDisplayMode.Confirm)
+            {
+                return;
+            }
+
+            LocalizedFont.SetText(
+                downloadConfirmCostText,
+                LocalizedText.GetOrFallback(
+                    GameTextKeys.ModelGalleryCostPoints,
+                    "消費: {points} ポイント",
+                    "points",
+                    ModelGalleryDownloadSettings.DownloadCostPoints));
+        }
+
+        private void ApplyDownloadConfirmMessageText()
+        {
+            if (downloadConfirmMessageText == null)
+            {
+                return;
+            }
+
+            switch (downloadConfirmDisplayMode)
+            {
+                case DownloadConfirmDisplayMode.Saving:
+                    downloadConfirmMessageText.text = LocalizedText.GetOrFallback(
+                        GameTextKeys.ModelGallerySaving,
+                        "保存中…");
+                    break;
+                case DownloadConfirmDisplayMode.Result:
+                    downloadConfirmMessageText.text = LocalizedText.GetOrFallback(
+                        downloadConfirmResultKey,
+                        downloadConfirmResultFallback);
+                    break;
+                default:
+                    downloadConfirmMessageText.text = downloadConfirmIsOverwrite
+                        ? LocalizedText.GetOrFallback(
+                            GameTextKeys.ModelGalleryOverwriteConfirm,
+                            "既存のセーブデータに上書き保存しますか？")
+                        : LocalizedText.GetOrFallback(
+                            GameTextKeys.ModelGallerySaveToSlotConfirm,
+                            "このスロットに保存しますか？");
+                    break;
+            }
+        }
+
+        private void ApplyDownloadConfirmButtonLabels()
+        {
+            LhButtonLabelUtility.SetLabel(
+                downloadConfirmSaveButton,
+                SceneLocalizedLabel.Resolve(GameTextKeys.CommonSave, downloadSaveOriginal));
+            LhButtonLabelUtility.SetLabel(
+                downloadConfirmCloseButton,
+                SceneLocalizedLabel.Resolve(GameTextKeys.CommonClose, downloadConfirmCloseOriginal));
+            LhButtonLabelUtility.SetLabel(
+                downloadConfirmResultCloseButton,
+                SceneLocalizedLabel.Resolve(GameTextKeys.CommonClose, downloadConfirmCloseOriginal));
+        }
+
+        private void SetPostConfirmButtonVisible(
+            bool publishVisible,
+            bool closeVisible,
+            bool resultCloseVisible)
+        {
+            SetCanvasEnabled(postConfirmPublishButtonCanvas, publishVisible);
+            SetCanvasEnabled(postConfirmCloseButtonCanvas, closeVisible);
+            SetCanvasEnabled(postConfirmResultCloseButtonCanvas, resultCloseVisible);
+        }
+
+        private void ApplyPostConfirmMessageText()
+        {
+            if (postConfirmMessageText == null)
+            {
+                return;
+            }
+
+            switch (postConfirmDisplayMode)
+            {
+                case PostConfirmDisplayMode.Publishing:
+                    postConfirmMessageText.text = LocalizedText.GetOrFallback(
+                        GameTextKeys.ModelGalleryPublishing,
+                        "投稿中…");
+                    break;
+                case PostConfirmDisplayMode.Result:
+                    postConfirmMessageText.text = LocalizedText.GetOrFallback(
+                        postConfirmResultKey,
+                        postConfirmResultFallback);
+                    break;
+                default:
+                    postConfirmMessageText.text = LocalizedText.GetOrFallback(
+                        GameTextKeys.ModelGalleryPostConfirm,
+                        "投稿しますか？");
+                    break;
+            }
+        }
+
+        private void ApplyPostConfirmButtonLabels()
+        {
+            LhButtonLabelUtility.SetLabel(
+                postConfirmPublishButton,
+                SceneLocalizedLabel.Resolve(GameTextKeys.ModelGalleryPublish, publishOriginal));
+            LhButtonLabelUtility.SetLabel(
+                postConfirmCloseButton,
+                SceneLocalizedLabel.Resolve(GameTextKeys.CommonClose, postConfirmCloseOriginal));
+            LhButtonLabelUtility.SetLabel(
+                postConfirmResultCloseButton,
+                SceneLocalizedLabel.Resolve(GameTextKeys.CommonClose, postConfirmCloseOriginal));
         }
 
         private void BindBrowseScroll()
@@ -1357,6 +1678,38 @@ namespace UI.ModelGallery.View
 
             public void Dispose()
             {
+            }
+        }
+
+        private enum PostConfirmDisplayMode
+        {
+            Confirm = 0,
+            Publishing = 1,
+            Result = 2
+        }
+
+        private enum DownloadConfirmDisplayMode
+        {
+            Confirm = 0,
+            Saving = 1,
+            Result = 2
+        }
+
+        private sealed class CompositeDisposable : IDisposable
+        {
+            private readonly IDisposable first;
+            private readonly IDisposable second;
+
+            public CompositeDisposable(IDisposable first, IDisposable second)
+            {
+                this.first = first;
+                this.second = second;
+            }
+
+            public void Dispose()
+            {
+                first?.Dispose();
+                second?.Dispose();
             }
         }
 

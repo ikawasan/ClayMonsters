@@ -41,7 +41,7 @@ namespace UI.ModelGallery.Service
         }
 
         /// <inheritdoc />
-        public async UniTask<string> PublishAsync(
+        public async UniTask<ModelGalleryPublishResult> PublishAsync(
             int sourceSlotIndex,
             string title,
             CancellationToken cancellationToken)
@@ -52,14 +52,14 @@ namespace UI.ModelGallery.Service
             if (slot == null)
             {
                 Debug.LogError($"[LocalModelGalleryService] 未育成スロット{sourceSlotIndex}が空です");
-                return null;
+                return ModelGalleryPublishResult.FromStatus(ModelGalleryOperationStatus.Failed);
             }
 
             byte[] glbBytes = ModelSaveStorage.ReadAllBytes(slot.glbFileName);
             if (glbBytes == null || glbBytes.Length == 0)
             {
                 Debug.LogError($"[LocalModelGalleryService] glbが読めません: {slot.glbFileName}");
-                return null;
+                return ModelGalleryPublishResult.FromStatus(ModelGalleryOperationStatus.Failed);
             }
 
             string itemId = Guid.NewGuid().ToString("N");
@@ -102,7 +102,7 @@ namespace UI.ModelGallery.Service
                 favoriteCount = 0
             });
             SaveIndex(index);
-            return itemId;
+            return ModelGalleryPublishResult.Success(itemId);
         }
 
         /// <inheritdoc />
@@ -143,6 +143,20 @@ namespace UI.ModelGallery.Service
                         if (favoriteCompare != 0)
                         {
                             return favoriteCompare;
+                        }
+
+                        return b.publishedUnixTime.CompareTo(a.publishedUnixTime);
+                    });
+                    break;
+                case ModelGalleryBrowseSortMode.Latest:
+                    working.Sort((a, b) =>
+                    {
+                        long aUpdated = a.updatedUnixTime > 0 ? a.updatedUnixTime : a.publishedUnixTime;
+                        long bUpdated = b.updatedUnixTime > 0 ? b.updatedUnixTime : b.publishedUnixTime;
+                        int updatedCompare = bUpdated.CompareTo(aUpdated);
+                        if (updatedCompare != 0)
+                        {
+                            return updatedCompare;
                         }
 
                         return b.publishedUnixTime.CompareTo(a.publishedUnixTime);
@@ -293,6 +307,7 @@ namespace UI.ModelGallery.Service
                 title = entry.title,
                 authorName = entry.authorName,
                 publishedUnixTime = entry.publishedUnixTime,
+                updatedUnixTime = entry.publishedUnixTime,
                 favoriteCount = Mathf.Max(0, entry.favoriteCount),
                 isFavoritedByMe = ContainsFavorite(favorites, entry.itemId)
             };

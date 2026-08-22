@@ -696,3 +696,18 @@ Training.Status.Desc.Hit	Precision\nInfluence le taux de reussite des techniques
 DesktopPet.QuitMenu	Quitter la mascotte bureau
 DesktopPet.LaunchGameMenu	Lancer ClayMonsters
 DesktopPet.CacheNotFound	Cache de la mascotte bureau introuvable.
+ModelGallery.SortLatest	Récents
+ModelGallery.Publishing	Publication…
+ModelGallery.PublishSuccess	Publication réussie
+ModelGallery.PublishAcceptedNeedsLegal	Soumission reçue. Publié après acceptation de l'accord Workshop Steam
+ModelGallery.ErrorSteamUnavailable	Impossible de se connecter à Steam. Lancez Steam et connectez-vous
+ModelGallery.ErrorPublishFailed	Échec de la publication dans la Galerie
+ModelGallery.ErrorNeedsLegalAgreement	Accord Steam Workshop requis. Acceptez-le dans l'overlay, puis réessayez
+ModelGallery.ErrorTimedOut	Délai dépassé. Réessayez plus tard
+ModelGallery.ErrorPublishTimedOut	Délai dépassé. Statut de publication incertain — vérifiez la liste plus tard
+ModelGallery.ErrorQueryFailed	Échec du chargement de la liste Galerie
+ModelGallery.ErrorFavoriteFailed	Échec de la mise à jour des favoris
+ModelGallery.ErrorDownloadFailed	Échec du téléchargement. Points remboursés
+ModelGallery.DownloadSuccess	Téléchargement terminé
+ModelGallery.Saving	Enregistrement…
+ModelGallery.SaveSuccess	Enregistrement terminé

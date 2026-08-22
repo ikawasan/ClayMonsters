@@ -696,3 +696,18 @@ Training.Status.Desc.Hit	命中\n影响技能的命中率
 DesktopPet.QuitMenu	退出桌面宠物
 DesktopPet.LaunchGameMenu	启动 ClayMonsters
 DesktopPet.CacheNotFound	未找到桌面宠物缓存。
+ModelGallery.SortLatest	最新
+ModelGallery.Publishing	发布中…
+ModelGallery.PublishSuccess	发布完成
+ModelGallery.PublishAcceptedNeedsLegal	已受理投稿。同意Steam创意工坊协议后将公开
+ModelGallery.ErrorSteamUnavailable	无法连接Steam。请启动Steam并登录
+ModelGallery.ErrorPublishFailed	展厅投稿失败
+ModelGallery.ErrorNeedsLegalAgreement	需要同意Steam创意工坊协议。请在叠加层中同意后重新投稿
+ModelGallery.ErrorTimedOut	通信超时。请稍后再试
+ModelGallery.ErrorPublishTimedOut	通信超时。投稿状态不明，请稍后查看列表
+ModelGallery.ErrorQueryFailed	未能获取展厅列表
+ModelGallery.ErrorFavoriteFailed	收藏更新失败
+ModelGallery.ErrorDownloadFailed	下载失败。点数已返还
+ModelGallery.DownloadSuccess	下载完成
+ModelGallery.Saving	保存中…
+ModelGallery.SaveSuccess	保存完成

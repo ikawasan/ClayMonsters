@@ -29,6 +29,11 @@ namespace UI.ModelGallery.Data
         public long publishedUnixTime;
 
         /// <summary>
+        /// 最終更新時刻(Unix秒)
+        /// </summary>
+        public long updatedUnixTime;
+
+        /// <summary>
         /// お気に入り数
         /// </summary>
         public int favoriteCount;

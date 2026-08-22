@@ -113,12 +113,36 @@ namespace UI.ModelGallery.Interface
         void HidePostConfirm();
 
         /// <summary>
+        /// 投稿確認を投稿中表示にする
+        /// </summary>
+        void ShowPostConfirmPublishing();
+
+        /// <summary>
+        /// 投稿確認を結果表示にする閉じるボタンのみ出す
+        /// </summary>
+        /// <param name="messageKey">文言キー</param>
+        /// <param name="messageFallback">フォールバック文言</param>
+        void ShowPostConfirmResult(string messageKey, string messageFallback);
+
+        /// <summary>
         /// ダウンロード保存確認ウィンドウを表示する
         /// </summary>
         /// <param name="modelName">保存するモデル名</param>
         /// <param name="isOverwrite">上書き確認か</param>
         /// <param name="thumbnail">サムネイル</param>
         void ShowDownloadConfirm(string modelName, bool isOverwrite, Texture2D thumbnail);
+
+        /// <summary>
+        /// ダウンロード保存確認を保存中表示にする
+        /// </summary>
+        void ShowDownloadConfirmSaving();
+
+        /// <summary>
+        /// ダウンロード保存確認を結果表示にする閉じるボタンのみ出す
+        /// </summary>
+        /// <param name="messageKey">文言キー</param>
+        /// <param name="messageFallback">フォールバック文言</param>
+        void ShowDownloadConfirmResult(string messageKey, string messageFallback);
 
         /// <summary>
         /// ダウンロード保存確認ウィンドウを閉じる
@@ -174,6 +198,11 @@ namespace UI.ModelGallery.Interface
         /// 総合ランキングボタン押下を購読する
         /// </summary>
         IDisposable SubscribeOverallRankingButtonClick(UnityAction action);
+
+        /// <summary>
+        /// 最新表示ボタン押下を購読する
+        /// </summary>
+        IDisposable SubscribeLatestSortButtonClick(UnityAction action);
 
         /// <summary>
         /// 閲覧ランダム更新ボタン押下を購読する

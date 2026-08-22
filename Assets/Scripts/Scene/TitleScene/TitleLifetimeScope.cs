@@ -7,7 +7,9 @@ using Scene.DesktopPet;
 using Scene.DesktopPet.Interface;
 using Scene.TitleScene.Interface;
 using Scene.TitleScene.Presenter;
+using Scene.TitleScene.Service;
 using Scene.TitleScene.View;
+using UI.ModelGallery.Interface;
 using UI.ModelGallery.Presenter;
 using UI.ModelGallery.Service;
 using UI.ModelGallery.View;
@@ -49,10 +51,14 @@ namespace Scene.TitleScene
             if (messageWindowView == null)
             {
                 Debug.LogError("[TitleLifetimeScope] TitleMessageWindowViewが未設定です", this);
+                builder.Register<NullModelGalleryUserMessage>(Lifetime.Singleton)
+                    .AsImplementedInterfaces();
             }
             else
             {
                 builder.RegisterComponent(messageWindowView).AsImplementedInterfaces();
+                builder.Register<ModelGalleryUserMessageAdapter>(Lifetime.Singleton)
+                    .AsImplementedInterfaces();
             }
 
             if (confirmWindowView == null)

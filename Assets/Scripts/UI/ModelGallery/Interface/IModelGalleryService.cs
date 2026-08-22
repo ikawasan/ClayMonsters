@@ -17,8 +17,11 @@ namespace UI.ModelGallery.Interface
         /// <param name="sourceSlotIndex">投稿元未育成スロット番号</param>
         /// <param name="title">展示タイトル</param>
         /// <param name="cancellationToken">キャンセルトークン</param>
-        /// <returns>成功時はアイテムID失敗時はnull</returns>
-        UniTask<string> PublishAsync(int sourceSlotIndex, string title, CancellationToken cancellationToken);
+        /// <returns>投稿結果</returns>
+        UniTask<ModelGalleryPublishResult> PublishAsync(
+            int sourceSlotIndex,
+            string title,
+            CancellationToken cancellationToken);
 
         /// <summary>
         /// 展示室の公開一覧を取得する

@@ -696,3 +696,18 @@ Training.Status.Desc.Hit	Precisao\nAfeta a taxa de acerto dos ataques
 DesktopPet.QuitMenu	Encerrar pet da área de trabalho
 DesktopPet.LaunchGameMenu	Iniciar ClayMonsters
 DesktopPet.CacheNotFound	Cache do pet da área de trabalho não encontrado.
+ModelGallery.SortLatest	Recentes
+ModelGallery.Publishing	Publicando…
+ModelGallery.PublishSuccess	Publicado com sucesso
+ModelGallery.PublishAcceptedNeedsLegal	Envio recebido. Ficará público após aceitar o acordo do Steam Workshop
+ModelGallery.ErrorSteamUnavailable	Não foi possível conectar ao Steam. Abra o Steam e entre
+ModelGallery.ErrorPublishFailed	Falha ao publicar na Galeria
+ModelGallery.ErrorNeedsLegalAgreement	É preciso aceitar o acordo do Steam Workshop. Aceite no overlay e tente de novo
+ModelGallery.ErrorTimedOut	Tempo esgotado. Tente novamente mais tarde
+ModelGallery.ErrorPublishTimedOut	Tempo esgotado. Status da publicação incerto — confira a lista depois
+ModelGallery.ErrorQueryFailed	Falha ao carregar a lista da Galeria
+ModelGallery.ErrorFavoriteFailed	Falha ao atualizar favorito
+ModelGallery.ErrorDownloadFailed	Falha no download. Pontos reembolsados
+ModelGallery.DownloadSuccess	Download concluído
+ModelGallery.Saving	Salvando…
+ModelGallery.SaveSuccess	Salvamento concluído

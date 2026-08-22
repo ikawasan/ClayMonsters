@@ -696,3 +696,18 @@ Training.Status.Desc.Hit	Precision\nAfecta la tasa de acierto de los ataques
 DesktopPet.QuitMenu	Cerrar mascota de escritorio
 DesktopPet.LaunchGameMenu	Iniciar ClayMonsters
 DesktopPet.CacheNotFound	No se encontró la caché de la mascota de escritorio.
+ModelGallery.SortLatest	Recientes
+ModelGallery.Publishing	Publicando…
+ModelGallery.PublishSuccess	Publicado correctamente
+ModelGallery.PublishAcceptedNeedsLegal	Envío recibido. Se publicará tras aceptar el acuerdo de Steam Workshop
+ModelGallery.ErrorSteamUnavailable	No se puede conectar a Steam. Abre Steam e inicia sesión
+ModelGallery.ErrorPublishFailed	Error al publicar en la Galería
+ModelGallery.ErrorNeedsLegalAgreement	Debes aceptar el acuerdo de Steam Workshop. Acepta en la superposición y reintenta
+ModelGallery.ErrorTimedOut	Tiempo de espera agotado. Inténtalo más tarde
+ModelGallery.ErrorPublishTimedOut	Tiempo de espera agotado. Estado de publicación poco claro — revisa la lista más tarde
+ModelGallery.ErrorQueryFailed	No se pudo cargar la lista de la Galería
+ModelGallery.ErrorFavoriteFailed	Error al actualizar favoritos
+ModelGallery.ErrorDownloadFailed	Error de descarga. Se devolvieron los puntos
+ModelGallery.DownloadSuccess	Descarga completada
+ModelGallery.Saving	Guardando…
+ModelGallery.SaveSuccess	Guardado completado

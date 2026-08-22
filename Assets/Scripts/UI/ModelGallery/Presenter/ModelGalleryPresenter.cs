@@ -1,4 +1,5 @@
 using Cysharp.Threading.Tasks;
+using Localization;
 using R3;
 using SaveData;
 using SaveData.Interface;
@@ -21,6 +22,7 @@ namespace UI.ModelGallery.Presenter
         private readonly IModelGalleryService galleryService;
         private readonly IClayModelSaveService saveService;
         private readonly IPointsService pointsService;
+        private readonly IModelGalleryUserMessage userMessage;
 
         private bool isSetup;
         private bool isBusy;
@@ -31,6 +33,7 @@ namespace UI.ModelGallery.Presenter
         private IReadOnlyList<ModelGalleryItemSummary> browseItems = Array.Empty<ModelGalleryItemSummary>();
         private CancellationTokenSource lifetimeCts;
         private IDisposable pointsSubscription;
+        private int browseQuerySerial;
 
         /// <summary>
         /// 依存を注入する
@@ -40,12 +43,14 @@ namespace UI.ModelGallery.Presenter
             IModelGalleryView view,
             IModelGalleryService galleryService,
             IClayModelSaveService saveService,
-            IPointsService pointsService)
+            IPointsService pointsService,
+            IModelGalleryUserMessage userMessage)
         {
             this.view = view;
             this.galleryService = galleryService;
             this.saveService = saveService;
             this.pointsService = pointsService;
+            this.userMessage = userMessage;
         }
 
         /// <inheritdoc />
@@ -56,7 +61,6 @@ namespace UI.ModelGallery.Presenter
                 return;
             }
 
-            lifetimeCts = new CancellationTokenSource();
             view.SubscribeCloseButtonClick(Hide);
             view.SubscribePostTabButtonClick(OnClickPostTab);
             view.SubscribeBrowseTabButtonClick(OnClickBrowseTab);
@@ -67,6 +71,7 @@ namespace UI.ModelGallery.Presenter
             view.SubscribeRandomSortButtonClick(() => ChangeBrowseSortMode(ModelGalleryBrowseSortMode.Random));
             view.SubscribeMonthlyRankingButtonClick(() => ChangeBrowseSortMode(ModelGalleryBrowseSortMode.MonthlyRanking));
             view.SubscribeOverallRankingButtonClick(() => ChangeBrowseSortMode(ModelGalleryBrowseSortMode.OverallRanking));
+            view.SubscribeLatestSortButtonClick(() => ChangeBrowseSortMode(ModelGalleryBrowseSortMode.Latest));
             view.SubscribeBrowseRefreshButtonClick(OnClickBrowseRefresh);
             view.SubscribePostSlotSelected(OnPostSlotSelected);
             view.SubscribeDownloadSlotSelected(OnDownloadSlotSelected);
@@ -82,6 +87,7 @@ namespace UI.ModelGallery.Presenter
         public void Show()
         {
             Setup();
+            ResetLifetimeToken();
             selectedPostSlotIndex = -1;
             pendingDownloadItemIndex = -1;
             pendingDownloadDestinationSlotIndex = -1;
@@ -101,6 +107,7 @@ namespace UI.ModelGallery.Presenter
         /// <inheritdoc />
         public void Hide()
         {
+            CancelLifetimeToken();
             pendingDownloadItemIndex = -1;
             pendingDownloadDestinationSlotIndex = -1;
             view.HidePointsInsufficient();
@@ -142,6 +149,11 @@ namespace UI.ModelGallery.Presenter
 
         private void OnClickPostConfirmClose()
         {
+            if (isBusy)
+            {
+                return;
+            }
+
             selectedPostSlotIndex = -1;
             view.HidePostConfirm();
         }
@@ -158,6 +170,11 @@ namespace UI.ModelGallery.Presenter
 
         private void OnClickDownloadConfirmClose()
         {
+            if (isBusy)
+            {
+                return;
+            }
+
             pendingDownloadDestinationSlotIndex = -1;
             view.HideDownloadConfirm();
         }
@@ -274,14 +291,30 @@ namespace UI.ModelGallery.Presenter
             try
             {
                 preview = await galleryService.LoadPreviewAsync(item.itemId, GetToken());
+                GetToken().ThrowIfCancellationRequested();
             }
             catch (OperationCanceledException)
             {
+                if (preview != null)
+                {
+                    UnityEngine.Object.Destroy(preview);
+                }
+
                 return;
             }
             catch (Exception exception)
             {
                 Debug.LogError($"[ModelGalleryPresenter] 保存確認プレビュー読込失敗: {exception.Message}");
+            }
+
+            if (pendingDownloadItemIndex < 0 || pendingDownloadItemIndex >= browseItems.Count)
+            {
+                if (preview != null)
+                {
+                    UnityEngine.Object.Destroy(preview);
+                }
+
+                return;
             }
 
             pendingDownloadDestinationSlotIndex = destinationSlotIndex;
@@ -296,28 +329,65 @@ namespace UI.ModelGallery.Presenter
 
         private async UniTaskVoid RefreshBrowseItemsAsync()
         {
-            if (isBusy)
-            {
-                return;
-            }
-
-            isBusy = true;
+            int serial = ++browseQuerySerial;
+            ModelGalleryBrowseSortMode requestedSortMode = browseSortMode;
             try
             {
-                browseItems = await galleryService.QueryAsync(browseSortMode, GetToken());
+                IReadOnlyList<ModelGalleryItemSummary> queried =
+                    await galleryService.QueryAsync(requestedSortMode, GetToken());
+                if (serial != browseQuerySerial)
+                {
+                    return;
+                }
+
+                GetToken().ThrowIfCancellationRequested();
+                browseItems = queried;
                 view.SetBrowseSortMode(browseSortMode);
                 RefreshBrowseListVisual();
             }
             catch (OperationCanceledException)
             {
             }
+            catch (TimeoutException)
+            {
+                if (serial != browseQuerySerial)
+                {
+                    return;
+                }
+
+                browseItems = Array.Empty<ModelGalleryItemSummary>();
+                RefreshBrowseListVisual();
+                ShowUserMessage(
+                    GameTextKeys.ModelGalleryErrorTimedOut,
+                    "通信がタイムアウトしました時間をおいて再試行してください");
+            }
+            catch (InvalidOperationException exception)
+                when (exception.Message == "SteamUnavailable")
+            {
+                if (serial != browseQuerySerial)
+                {
+                    return;
+                }
+
+                browseItems = Array.Empty<ModelGalleryItemSummary>();
+                RefreshBrowseListVisual();
+                ShowUserMessage(
+                    GameTextKeys.ModelGalleryErrorSteamUnavailable,
+                    "Steamに接続できませんSteamを起動してログインしてください");
+            }
             catch (Exception exception)
             {
+                if (serial != browseQuerySerial)
+                {
+                    return;
+                }
+
+                browseItems = Array.Empty<ModelGalleryItemSummary>();
+                RefreshBrowseListVisual();
                 Debug.LogError($"[ModelGalleryPresenter] 閲覧取得に失敗: {exception.Message}");
-            }
-            finally
-            {
-                isBusy = false;
+                ShowUserMessage(
+                    GameTextKeys.ModelGalleryErrorQueryFailed,
+                    "展示室の一覧取得に失敗しました");
             }
         }
 
@@ -349,7 +419,6 @@ namespace UI.ModelGallery.Presenter
         {
             try
             {
-                // BindBrowseCellの同期続きでnull上書きされないよう1フレーム空ける
                 await UniTask.Yield(PlayerLoopTiming.Update, GetToken());
                 Texture2D preview = await galleryService.LoadPreviewAsync(itemId, GetToken());
                 if (preview == null)
@@ -402,12 +471,25 @@ namespace UI.ModelGallery.Presenter
                 bool? favorited = await galleryService.ToggleFavoriteAsync(item.itemId, GetToken());
                 if (favorited == null)
                 {
+                    ShowUserMessage(
+                        GameTextKeys.ModelGalleryErrorFavoriteFailed,
+                        "お気に入りの更新に失敗しました");
                     return;
                 }
 
                 item.isFavoritedByMe = favorited.Value;
                 item.favoriteCount = Mathf.Max(0, item.favoriteCount + (favorited.Value ? 1 : -1));
                 Texture2D preview = await galleryService.LoadPreviewAsync(item.itemId, GetToken());
+                if (GetToken().IsCancellationRequested)
+                {
+                    if (preview != null)
+                    {
+                        UnityEngine.Object.Destroy(preview);
+                    }
+
+                    return;
+                }
+
                 view.SetBrowseItemCell(
                     cellIndex,
                     item.title,
@@ -419,9 +501,18 @@ namespace UI.ModelGallery.Presenter
             catch (OperationCanceledException)
             {
             }
+            catch (TimeoutException)
+            {
+                ShowUserMessage(
+                    GameTextKeys.ModelGalleryErrorTimedOut,
+                    "通信がタイムアウトしました時間をおいて再試行してください");
+            }
             catch (Exception exception)
             {
                 Debug.LogError($"[ModelGalleryPresenter] お気に入り失敗: {exception.Message}");
+                ShowUserMessage(
+                    GameTextKeys.ModelGalleryErrorFavoriteFailed,
+                    "お気に入りの更新に失敗しました");
             }
             finally
             {
@@ -443,27 +534,71 @@ namespace UI.ModelGallery.Presenter
             }
 
             isBusy = true;
+            view.ShowPostConfirmPublishing();
             try
             {
-                string itemId = await galleryService.PublishAsync(
+                ModelGalleryPublishResult result = await galleryService.PublishAsync(
                     selectedPostSlotIndex,
                     slot.modelName,
                     GetToken());
-                if (string.IsNullOrEmpty(itemId))
+                GetToken().ThrowIfCancellationRequested();
+                switch (result.Status)
                 {
-                    return;
-                }
+                    case ModelGalleryOperationStatus.Success:
+                        selectedPostSlotIndex = -1;
+                        RefreshPostSlots();
+                        if (result.NeedsLegalAgreement)
+                        {
+                            view.ShowPostConfirmResult(
+                                GameTextKeys.ModelGalleryPublishAcceptedNeedsLegal,
+                                "投稿は受け付けましたSteamワークショップ利用規約への同意後に公開されます");
+                        }
+                        else
+                        {
+                            view.ShowPostConfirmResult(
+                                GameTextKeys.ModelGalleryPublishSuccess,
+                                "投稿が完了しました");
+                        }
 
-                selectedPostSlotIndex = -1;
-                view.HidePostConfirm();
-                RefreshPostSlots();
+                        break;
+                    case ModelGalleryOperationStatus.NeedsWorkshopLegalAgreement:
+                        view.ShowPostConfirmResult(
+                            GameTextKeys.ModelGalleryErrorNeedsLegalAgreement,
+                            "Steamワークショップ利用規約への同意が必要ですオーバーレイで同意後に再投稿してください");
+                        break;
+                    case ModelGalleryOperationStatus.SteamUnavailable:
+                        view.ShowPostConfirmResult(
+                            GameTextKeys.ModelGalleryErrorSteamUnavailable,
+                            "Steamに接続できませんSteamを起動してログインしてください");
+                        break;
+                    case ModelGalleryOperationStatus.TimedOut:
+                        view.ShowPostConfirmResult(
+                            GameTextKeys.ModelGalleryErrorPublishTimedOut,
+                            "通信がタイムアウトしました投稿状況が不明なため時間をおいて一覧を確認してください");
+                        break;
+                    default:
+                        view.ShowPostConfirmResult(
+                            GameTextKeys.ModelGalleryErrorPublishFailed,
+                            "展示室への投稿に失敗しました");
+                        break;
+                }
             }
             catch (OperationCanceledException)
             {
+                view.HidePostConfirm();
+            }
+            catch (TimeoutException)
+            {
+                view.ShowPostConfirmResult(
+                    GameTextKeys.ModelGalleryErrorPublishTimedOut,
+                    "通信がタイムアウトしました投稿状況が不明なため時間をおいて一覧を確認してください");
             }
             catch (Exception exception)
             {
                 Debug.LogError($"[ModelGalleryPresenter] 投稿失敗: {exception.Message}");
+                view.ShowPostConfirmResult(
+                    GameTextKeys.ModelGalleryErrorPublishFailed,
+                    "展示室への投稿に失敗しました");
             }
             finally
             {
@@ -501,6 +636,7 @@ namespace UI.ModelGallery.Presenter
             }
 
             isBusy = true;
+            view.ShowDownloadConfirmSaving();
             try
             {
                 ModelGalleryItemSummary item = browseItems[pendingDownloadItemIndex];
@@ -511,28 +647,65 @@ namespace UI.ModelGallery.Presenter
                 if (!success)
                 {
                     pointsService.AddPoints(cost);
+                    if (!GetToken().IsCancellationRequested)
+                    {
+                        view.ShowDownloadConfirmResult(
+                            GameTextKeys.ModelGalleryErrorDownloadFailed,
+                            "ダウンロードに失敗しましたポイントは返還しました");
+                    }
+
+                    return;
+                }
+
+                // 保存成功後はキャンセルでもポイントを返還しない
+                if (GetToken().IsCancellationRequested)
+                {
                     return;
                 }
 
                 pendingDownloadItemIndex = -1;
                 pendingDownloadDestinationSlotIndex = -1;
-                view.HideDownloadConfirm();
                 view.HideDownloadSlotSelect();
+                view.ShowDownloadConfirmResult(
+                    GameTextKeys.ModelGallerySaveSuccess,
+                    "保存が完了しました");
             }
             catch (OperationCanceledException)
             {
                 pointsService.AddPoints(cost);
+                view.HideDownloadConfirm();
+            }
+            catch (TimeoutException)
+            {
+                pointsService.AddPoints(cost);
+                view.ShowDownloadConfirmResult(
+                    GameTextKeys.ModelGalleryErrorTimedOut,
+                    "通信がタイムアウトしました時間をおいて再試行してください");
             }
             catch (Exception exception)
             {
                 pointsService.AddPoints(cost);
                 Debug.LogError($"[ModelGalleryPresenter] ダウンロード失敗: {exception.Message}");
+                view.ShowDownloadConfirmResult(
+                    GameTextKeys.ModelGalleryErrorDownloadFailed,
+                    "ダウンロードに失敗しましたポイントは返還しました");
             }
             finally
             {
                 isBusy = false;
                 view.SetPoints(pointsService.Points);
             }
+        }
+
+        private void ShowUserMessage(string key, string fallback)
+        {
+            if (userMessage == null)
+            {
+                Debug.LogError($"[ModelGalleryPresenter] userMessage未配線: {fallback}");
+                return;
+            }
+
+            userMessage.ShowLocalized(key, fallback);
         }
 
         private int ResolveBrowseItemIndex(int cellIndex)
@@ -548,6 +721,24 @@ namespace UI.ModelGallery.Presenter
         private CancellationToken GetToken()
         {
             return lifetimeCts != null ? lifetimeCts.Token : CancellationToken.None;
+        }
+
+        private void ResetLifetimeToken()
+        {
+            CancelLifetimeToken();
+            lifetimeCts = new CancellationTokenSource();
+        }
+
+        private void CancelLifetimeToken()
+        {
+            if (lifetimeCts == null)
+            {
+                return;
+            }
+
+            lifetimeCts.Cancel();
+            lifetimeCts.Dispose();
+            lifetimeCts = null;
         }
     }
 }

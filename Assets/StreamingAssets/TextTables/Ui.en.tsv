@@ -696,3 +696,18 @@ Training.Status.Desc.Hit	Accuracy\nAffects attack hit rate
 DesktopPet.QuitMenu	Quit Desktop Pet
 DesktopPet.LaunchGameMenu	Launch ClayMonsters
 DesktopPet.CacheNotFound	Desktop Pet cache was not found.
+ModelGallery.SortLatest	Latest
+ModelGallery.Publishing	Publishing…
+ModelGallery.PublishSuccess	Posted successfully
+ModelGallery.PublishAcceptedNeedsLegal	Submission received. It will go public after you accept the Steam Workshop agreement
+ModelGallery.ErrorSteamUnavailable	Unable to connect to Steam. Launch Steam and sign in
+ModelGallery.ErrorPublishFailed	Failed to post to the Gallery
+ModelGallery.ErrorNeedsLegalAgreement	You must accept the Steam Workshop agreement. Accept it in the overlay, then try again
+ModelGallery.ErrorTimedOut	The request timed out. Please try again later
+ModelGallery.ErrorPublishTimedOut	The request timed out. Post status is unclear — check the list later
+ModelGallery.ErrorQueryFailed	Failed to load the Gallery list
+ModelGallery.ErrorFavoriteFailed	Failed to update favorite
+ModelGallery.ErrorDownloadFailed	Download failed. Points were refunded
+ModelGallery.DownloadSuccess	Download complete
+ModelGallery.Saving	Saving…
+ModelGallery.SaveSuccess	Save complete

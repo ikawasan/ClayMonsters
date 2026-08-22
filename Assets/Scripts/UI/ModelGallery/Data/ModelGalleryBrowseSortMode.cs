@@ -18,6 +18,11 @@ namespace UI.ModelGallery.Data
         /// <summary>
         /// 総合お気に入り数ランキング
         /// </summary>
-        OverallRanking = 2
+        OverallRanking = 2,
+
+        /// <summary>
+        /// 最近更新された投稿順
+        /// </summary>
+        Latest = 3
     }
 }

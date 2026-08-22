@@ -160,6 +160,7 @@ namespace Localization
         public const string ModelGallerySortRandom = "ModelGallery.SortRandom";
         public const string ModelGallerySortMonthly = "ModelGallery.SortMonthly";
         public const string ModelGallerySortOverall = "ModelGallery.SortOverall";
+        public const string ModelGallerySortLatest = "ModelGallery.SortLatest";
         public const string ModelGalleryRefresh = "ModelGallery.Refresh";
         public const string ModelGalleryPublish = "ModelGallery.Publish";
         public const string ModelGalleryDownload = "ModelGallery.Download";
@@ -171,6 +172,21 @@ namespace Localization
         public const string ModelGalleryCostPoints = "ModelGallery.CostPoints";
         public const string ModelGallerySaveDestEmpty = "ModelGallery.SaveDestEmpty";
         public const string ModelGallerySelectSaveSlot = "ModelGallery.SelectSaveSlot";
+        public const string ModelGalleryPublishSuccess = "ModelGallery.PublishSuccess";
+        public const string ModelGalleryPublishing = "ModelGallery.Publishing";
+        public const string ModelGalleryPublishAcceptedNeedsLegal =
+            "ModelGallery.PublishAcceptedNeedsLegal";
+        public const string ModelGalleryErrorSteamUnavailable = "ModelGallery.ErrorSteamUnavailable";
+        public const string ModelGalleryErrorPublishFailed = "ModelGallery.ErrorPublishFailed";
+        public const string ModelGalleryErrorNeedsLegalAgreement = "ModelGallery.ErrorNeedsLegalAgreement";
+        public const string ModelGalleryErrorTimedOut = "ModelGallery.ErrorTimedOut";
+        public const string ModelGalleryErrorPublishTimedOut = "ModelGallery.ErrorPublishTimedOut";
+        public const string ModelGalleryErrorQueryFailed = "ModelGallery.ErrorQueryFailed";
+        public const string ModelGalleryErrorFavoriteFailed = "ModelGallery.ErrorFavoriteFailed";
+        public const string ModelGalleryErrorDownloadFailed = "ModelGallery.ErrorDownloadFailed";
+        public const string ModelGalleryDownloadSuccess = "ModelGallery.DownloadSuccess";
+        public const string ModelGallerySaving = "ModelGallery.Saving";
+        public const string ModelGallerySaveSuccess = "ModelGallery.SaveSuccess";
         public const string LoadSlotPlayerInstruction = "LoadSlot.PlayerInstruction";
         public const string LoadSlotEnemyInstruction = "LoadSlot.EnemyInstruction";
         public const string LoadSlotLoad = "LoadSlot.Load";
