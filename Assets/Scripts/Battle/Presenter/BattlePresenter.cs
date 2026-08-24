@@ -43,6 +43,13 @@ namespace Battle.Presenter
         private bool lastMoveRefreshAnyRecast;
         private string lastCombatHint = string.Empty;
         private bool isBattleEnded;
+        private bool lastHintCounterWindow;
+        private BonePart lastHintCounterPart = (BonePart)(-1);
+        private bool lastHintAttackLockout;
+        private int lastHintPlayerLostParts = int.MinValue;
+        private bool lastHintKnockbackAvailable;
+        private int lastHintPlayerChain = int.MinValue;
+        private bool hasCombatHintState;
 
         public BattlePresenter(IBattleView view)
         {
@@ -102,6 +109,7 @@ namespace Battle.Presenter
             // 技名・ヒント・距離帯を次のRefreshで再構築する
             lastMoveRefreshDistanceBand = (BattleDistanceBand)(-1);
             lastCombatHint = string.Empty;
+            hasCombatHintState = false;
             if (system != null && !isBattleEnded)
             {
                 RefreshContinuous();
@@ -138,7 +146,7 @@ namespace Battle.Presenter
                 system.Distance,
                 system.MaxDistance,
                 BattleDistanceBandResolver.ToDisplayName(system.CurrentDistanceBand));
-            ApplyCombatHint(BuildCombatHint());
+            RefreshCombatHintIfNeeded();
             view.SetTimeRemaining(system.TimeRemaining);
 
             bool anyRecast = p.HasActiveMoveRecast || e.HasActiveMoveRecast;
@@ -240,6 +248,38 @@ namespace Battle.Presenter
             {
                 destination.Add(unit.GetMoveRecastReadyRatio(i));
             }
+        }
+
+        private void RefreshCombatHintIfNeeded()
+        {
+            bool counterWindow = system.IsCounterWindowOpen;
+            BonePart counterPart = counterWindow
+                ? system.PendingEnemyTargetDestroyPart
+                : BonePart.Body;
+            bool attackLockout = system.IsAttackLockoutActive;
+            int lostParts = system.Player.LostPartCount;
+            bool knockbackAvailable = system.IsKnockbackAvailable;
+            int chainCount = system.PlayerChainCount;
+
+            if (hasCombatHintState
+                && counterWindow == lastHintCounterWindow
+                && counterPart == lastHintCounterPart
+                && attackLockout == lastHintAttackLockout
+                && lostParts == lastHintPlayerLostParts
+                && knockbackAvailable == lastHintKnockbackAvailable
+                && chainCount == lastHintPlayerChain)
+            {
+                return;
+            }
+
+            lastHintCounterWindow = counterWindow;
+            lastHintCounterPart = counterPart;
+            lastHintAttackLockout = attackLockout;
+            lastHintPlayerLostParts = lostParts;
+            lastHintKnockbackAvailable = knockbackAvailable;
+            lastHintPlayerChain = chainCount;
+            hasCombatHintState = true;
+            ApplyCombatHint(BuildCombatHint());
         }
 
         private void ApplyCombatHint(string hint)

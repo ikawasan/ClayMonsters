@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using System.Text;
 using Scene.DesktopPet.Interface;
 using UnityEngine;
 
@@ -12,6 +13,7 @@ namespace Scene.DesktopPet
     {
         private const int GwlExstyle = -20;
         private const int GwlStyle = -16;
+        private const int GwOwner = 4;
         private const uint WsPopup = 0x80000000;
         private const int WsExLayered = 0x00080000;
         private const int WsExTopmost = 0x00000008;
@@ -23,6 +25,7 @@ namespace Scene.DesktopPet
         private const uint SwpNozorder = 0x0004;
         private const uint SwpNoactivate = 0x0010;
         private const uint SwpShowwindow = 0x0040;
+        private const uint SwpFramechanged = 0x0020;
         private static readonly IntPtr HwndTopmost = new IntPtr(-1);
         private static readonly IntPtr HwndNotopmost = new IntPtr(-2);
         private static readonly IntPtr HwndBottom = new IntPtr(1);
@@ -68,29 +71,37 @@ namespace Scene.DesktopPet
             savedFullScreenMode = Screen.fullScreenMode;
             savedWidth = Screen.width;
             savedHeight = Screen.height;
+
+            // SetResolution前にハンドルを掴むフォーカス喪失でGetActiveWindowが空になるのを避ける
+            hwnd = FindMainWindowHandle();
+            if (hwnd == IntPtr.Zero)
+            {
+                hwnd = GetActiveWindow();
+            }
+
             Screen.fullScreenMode = FullScreenMode.Windowed;
             Screen.SetResolution(width, height, false);
 
-            hwnd = GetActiveWindow();
+            IntPtr resolved = FindMainWindowHandle();
+            if (resolved != IntPtr.Zero)
+            {
+                hwnd = resolved;
+            }
+            else if (hwnd == IntPtr.Zero)
+            {
+                hwnd = GetActiveWindow();
+            }
+
             if (hwnd == IntPtr.Zero)
             {
-                Debug.LogError("[WindowsDesktopPetWindow] ウィンドウハンドルを取得できません");
+                Debug.LogError(
+                    "[WindowsDesktopPetWindow] ウィンドウハンドルを取得できません外部ペット起動を優先してください");
                 return;
             }
 
             savedStyle = GetWindowLong(hwnd, GwlStyle);
             savedExStyle = GetWindowLong(hwnd, GwlExstyle);
-            ApplyPetExStyle();
-            SetWindowLong(hwnd, GwlStyle, unchecked((int)WsPopup));
-            SetLayeredWindowAttributes(hwnd, ColorToColorRef(chromaKey), 0, LwaColorkey);
-            SetWindowPos(
-                hwnd,
-                stayOnTop ? HwndTopmost : HwndBottom,
-                0,
-                0,
-                width,
-                height,
-                SwpNoactivate | SwpShowwindow);
+            ApplyPetWindowChrome(width, height, resize: true);
             isPetMode = true;
 #else
             Debug.LogError("[WindowsDesktopPetWindow] Windows以外では使えません");
@@ -102,12 +113,22 @@ namespace Scene.DesktopPet
         public void ApplyNativeChrome()
         {
 #if UNITY_STANDALONE_WIN && !UNITY_EDITOR
-            if (!isPetMode || hwnd == IntPtr.Zero)
+            if (!isPetMode)
             {
                 return;
             }
 
-            ApplyPetExStyle();
+            if (hwnd == IntPtr.Zero || !IsWindow(hwnd))
+            {
+                hwnd = FindMainWindowHandle();
+            }
+
+            if (hwnd == IntPtr.Zero)
+            {
+                return;
+            }
+
+            ApplyPetWindowChrome(0, 0, resize: false);
 #endif
         }
 
@@ -121,7 +142,7 @@ namespace Scene.DesktopPet
                 return;
             }
 
-            ApplyPetExStyle();
+            ApplyPetWindowChrome(0, 0, resize: false);
 #endif
         }
 
@@ -140,9 +161,9 @@ namespace Scene.DesktopPet
             }
 
 #if UNITY_STANDALONE_WIN && !UNITY_EDITOR
-            if (hwnd == IntPtr.Zero)
+            if (hwnd == IntPtr.Zero || !IsWindow(hwnd))
             {
-                hwnd = GetActiveWindow();
+                hwnd = FindMainWindowHandle();
             }
 
             if (hwnd == IntPtr.Zero)
@@ -170,9 +191,9 @@ namespace Scene.DesktopPet
                 return;
             }
 
-            if (hwnd == IntPtr.Zero)
+            if (hwnd == IntPtr.Zero || !IsWindow(hwnd))
             {
-                hwnd = GetActiveWindow();
+                hwnd = FindMainWindowHandle();
             }
 
             if (hwnd == IntPtr.Zero)
@@ -196,7 +217,7 @@ namespace Scene.DesktopPet
             isPetMode = false;
             clickThrough = false;
 #if UNITY_STANDALONE_WIN && !UNITY_EDITOR
-            if (hwnd == IntPtr.Zero)
+            if (hwnd == IntPtr.Zero || !IsWindow(hwnd))
             {
                 return;
             }
@@ -210,7 +231,7 @@ namespace Scene.DesktopPet
                 0,
                 0,
                 0,
-                SwpNosize | SwpNoactivate | SwpNozorder);
+                SwpNosize | SwpNoactivate | SwpNozorder | SwpFramechanged);
             Screen.fullScreenMode = savedFullScreenMode;
             if (savedWidth > 0 && savedHeight > 0)
             {
@@ -219,7 +240,7 @@ namespace Scene.DesktopPet
 #endif
         }
 
-        private void ApplyPetExStyle()
+        private void ApplyPetWindowChrome(int width, int height, bool resize)
         {
 #if UNITY_STANDALONE_WIN && !UNITY_EDITOR
             int exStyle = WsExLayered | WsExToolwindow | WsExNoactivate;
@@ -233,23 +254,106 @@ namespace Scene.DesktopPet
                 exStyle |= WsExTransparent;
             }
 
+            SetWindowLong(hwnd, GwlStyle, unchecked((int)WsPopup));
             SetWindowLong(hwnd, GwlExstyle, exStyle);
             SetLayeredWindowAttributes(hwnd, ColorToColorRef(chromaKey), 0, LwaColorkey);
+
+            uint flags = SwpNoactivate | SwpShowwindow | SwpFramechanged;
+            int cx = 0;
+            int cy = 0;
+            if (!resize)
+            {
+                flags |= SwpNosize;
+            }
+            else
+            {
+                cx = width;
+                cy = height;
+            }
+
             SetWindowPos(
                 hwnd,
                 stayOnTop ? HwndTopmost : HwndBottom,
                 0,
                 0,
-                0,
-                0,
-                SwpNosize | SwpNoactivate | SwpShowwindow);
+                cx,
+                cy,
+                flags);
 #endif
+        }
+
+        private static IntPtr FindMainWindowHandle()
+        {
+            int currentPid = System.Diagnostics.Process.GetCurrentProcess().Id;
+            IntPtr found = IntPtr.Zero;
+            EnumWindows(
+                (hWnd, _) =>
+                {
+                    GetWindowThreadProcessId(hWnd, out uint windowPid);
+                    if ((int)windowPid != currentPid)
+                    {
+                        return true;
+                    }
+
+                    if (!IsWindowVisible(hWnd))
+                    {
+                        return true;
+                    }
+
+                    if (GetWindow(hWnd, GwOwner) != IntPtr.Zero)
+                    {
+                        return true;
+                    }
+
+                    if (!IsUnityPlayerWindow(hWnd))
+                    {
+                        return true;
+                    }
+
+                    found = hWnd;
+                    return false;
+                },
+                IntPtr.Zero);
+            return found;
+        }
+
+        private static bool IsUnityPlayerWindow(IntPtr hWnd)
+        {
+            var className = new StringBuilder(256);
+            if (GetClassName(hWnd, className, className.Capacity) <= 0)
+            {
+                return false;
+            }
+
+            string name = className.ToString();
+            return name.IndexOf("Unity", StringComparison.OrdinalIgnoreCase) >= 0
+                || string.Equals(name, "UnityWndClass", StringComparison.Ordinal);
         }
 
         private static uint ColorToColorRef(Color32 color)
         {
             return (uint)(color.r | (color.g << 8) | (color.b << 16));
         }
+
+        private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+
+        [DllImport("user32.dll")]
+        private static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
+
+        [DllImport("user32.dll")]
+        private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+        [DllImport("user32.dll")]
+        private static extern bool IsWindowVisible(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        private static extern bool IsWindow(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr GetWindow(IntPtr hWnd, int uCmd);
+
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+        private static extern int GetClassName(IntPtr hWnd, StringBuilder lpClassName, int nMaxCount);
 
         [DllImport("user32.dll")]
         private static extern IntPtr GetActiveWindow();

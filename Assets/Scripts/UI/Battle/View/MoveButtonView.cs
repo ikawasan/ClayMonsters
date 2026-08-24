@@ -65,6 +65,7 @@ namespace UI.Battle.View
         private const string FrameFxRootName = "FrameFxRoot";
         private const string RecastFillName = "RecastFill";
         private const string HoverOverlayName = "HoverOverlay";
+        private const float RecastFillEpsilon = 0.002f;
 
         private bool isUsable;
         private bool isPointerOver;
@@ -76,6 +77,7 @@ namespace UI.Battle.View
         private Image frameFxMaskImage;
         private Mask frameFxMask;
         private RectMask2D frameFxRectMask;
+        private float lastRecastReady01 = float.NaN;
 
         private void Awake()
         {
@@ -720,15 +722,33 @@ namespace UI.Battle.View
             }
 
             float ready = Mathf.Clamp01(recastReady01);
-            bool showFill = ready < 0.999f;
-            recastFillImage.enabled = showFill;
-            if (!showFill)
+            if (!float.IsNaN(lastRecastReady01)
+                && Mathf.Abs(ready - lastRecastReady01) < RecastFillEpsilon)
             {
-                recastFillImage.fillAmount = 1f;
                 return;
             }
 
-            recastFillImage.fillAmount = ready;
+            lastRecastReady01 = ready;
+            bool showFill = ready < 0.999f;
+            if (recastFillImage.enabled != showFill)
+            {
+                recastFillImage.enabled = showFill;
+            }
+
+            if (!showFill)
+            {
+                if (!Mathf.Approximately(recastFillImage.fillAmount, 1f))
+                {
+                    recastFillImage.fillAmount = 1f;
+                }
+
+                return;
+            }
+
+            if (!Mathf.Approximately(recastFillImage.fillAmount, ready))
+            {
+                recastFillImage.fillAmount = ready;
+            }
         }
 
         private static Sprite cachedUiWhiteSprite;

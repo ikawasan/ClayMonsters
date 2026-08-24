@@ -807,14 +807,12 @@ namespace Battle
             context.EnemySlotIndex = selectionSession.SelectedSlotIndex;
             context.EnemyStrengthTier = selectionSession.SelectedStrengthTier;
 
-            // 確認画面のプレビュー用ロードは破棄し強さ付きで正式配置する
-            UnityEngine.Object.Destroy(selectedModel);
-
-            return await loader.LoadEnemyAsync(
+            // 選択時に読み込んだモデルを再利用し二重インポートを避ける
+            return loader.BuildEnemyFromLoadedModel(
+                selectedModel,
                 context.EnemySlotIndex,
-                context.EnemySpawn,
                 context.EnemyStrengthTier,
-                cancellationToken);
+                context.EnemySpawn);
         }
 
         private static void DestroyParticipantModels(GameObject playerModel, GameObject enemyModel)

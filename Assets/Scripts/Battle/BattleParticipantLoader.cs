@@ -263,6 +263,38 @@ namespace Battle
         }
 
         /// <summary>
+        /// 選択画面で読み込み済みの敵モデルを強さ付きで参加者化する
+        /// 再インポートせず配置だけ行う
+        /// </summary>
+        /// <param name="model">選択済みモデル</param>
+        /// <param name="slotIndex">敵スロット</param>
+        /// <param name="strengthTier">強さ段階</param>
+        /// <param name="spawn">配置先</param>
+        public BattleParticipant BuildEnemyFromLoadedModel(
+            GameObject model,
+            int slotIndex,
+            EnemyStrengthTier strengthTier,
+            Transform spawn)
+        {
+            ModelSaveSlot slot = saveService.GetSlot(ModelSavePool.Enemy, slotIndex);
+            if (model == null || slot == null)
+            {
+                return default;
+            }
+
+            ModelStatus status = EnemyStrengthStatusCatalog.Resolve(slot, strengthTier);
+            BattleParticipant participant = BuildParticipant(
+                model,
+                slot,
+                status,
+                strengthTier,
+                slotIndex,
+                ModelSavePool.Enemy,
+                useStoredStrengthAttacks: true);
+            return FinalizeSpawnPlacement(participant, spawn);
+        }
+
+        /// <summary>
         /// 読み込み済み敵モデルの強さ段階だけ差し替えて参加者を再構築する
         /// </summary>
         /// <param name="model">既存モデル</param>

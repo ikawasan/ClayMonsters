@@ -101,6 +101,9 @@ namespace Scene.DesktopPet
                     endPointSession: false);
                 return;
             }
+
+            Debug.LogWarning(
+                "[DesktopPetRuntime] 外部ビューアへ引き継げないため本編内表示にフォールバックします");
 #endif
 
             DesktopPetPointAccrual.BeginSession();

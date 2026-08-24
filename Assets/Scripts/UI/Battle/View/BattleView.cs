@@ -240,6 +240,19 @@ namespace UI.Battle.View
 
         private void Update()
         {
+            bool needsTimePulse = timeText != null && lastTimeRemaining <= timeWarningSeconds;
+            bool gaugesSettled =
+                !gaugesNeedUpdate
+                && Mathf.Abs(displayPlayerHpFill - targetPlayerHpFill) <= GaugeSettleEpsilon
+                && Mathf.Abs(displayEnemyHpFill - targetEnemyHpFill) <= GaugeSettleEpsilon
+                && Mathf.Abs(displayPlayerGutsFill - targetPlayerGutsFill) <= GaugeSettleEpsilon
+                && Mathf.Abs(displayEnemyGutsFill - targetEnemyGutsFill) <= GaugeSettleEpsilon
+                && Mathf.Abs(displayDistanceFill - targetDistanceFill) <= GaugeSettleEpsilon;
+            if (gaugesSettled && !needsTimePulse)
+            {
+                return;
+            }
+
             float deltaTime = Time.unscaledDeltaTime;
             bool anyMoved = SmoothToward(ref displayPlayerHpFill, targetPlayerHpFill, gaugeSmoothSpeed, deltaTime)
                 | SmoothToward(ref displayEnemyHpFill, targetEnemyHpFill, gaugeSmoothSpeed, deltaTime)
@@ -655,14 +668,15 @@ namespace UI.Battle.View
         {
             currentMaxDistance = maxDistance > 0f ? maxDistance : currentMaxDistance;
             string safeBandName = string.IsNullOrEmpty(bandName) ? string.Empty : bandName;
-            float nextFill = maxDistance > 0f ? Mathf.Clamp01(1f - distance / maxDistance) : 0f;
             float rounded = Mathf.Round(distance * 10f) * 0.1f;
+            float nextFill = maxDistance > 0f ? Mathf.Clamp01(1f - rounded / maxDistance) : 0f;
 
             bool bandChanged = lastDisplayedBandName != safeBandName;
-            bool fillChanged = !Mathf.Approximately(lastDisplayedDistance, distance);
-            if (bandChanged || fillChanged)
+            bool valueChanged = !Mathf.Approximately(lastDisplayedDistanceRounded, rounded);
+            if (bandChanged || valueChanged)
             {
-                lastDisplayedDistance = distance;
+                lastDisplayedDistance = rounded;
+                lastDisplayedDistanceRounded = rounded;
                 lastDisplayedBandName = safeBandName;
                 currentDistanceBandName = safeBandName;
                 if (!Mathf.Approximately(targetDistanceFill, nextFill) || bandChanged)
@@ -677,15 +691,13 @@ namespace UI.Battle.View
                 return;
             }
 
-            bool textNeedsBand = lastDistanceTextBand != safeBandName;
-            bool textNeedsValue = !Mathf.Approximately(lastDisplayedDistanceRounded, rounded);
-            if (!textNeedsBand && !textNeedsValue)
+            // roundedは上で同期済みなので帯/数値の変化時だけテキストを張り直す
+            if (lastDistanceTextBand == safeBandName && !valueChanged)
             {
                 return;
             }
 
             lastDistanceTextBand = safeBandName;
-            lastDisplayedDistanceRounded = rounded;
 
             if (string.IsNullOrEmpty(safeBandName))
             {

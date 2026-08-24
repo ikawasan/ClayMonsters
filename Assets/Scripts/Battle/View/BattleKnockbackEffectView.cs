@@ -137,7 +137,10 @@ namespace Battle.View
             instance.transform.localScale = Vector3.one * scale;
 
             float destroyDelay = lifetimeSeconds + startDelay + 0.15f;
-            ParticleSystem[] particleSystems = instance.GetComponentsInChildren<ParticleSystem>(true);
+            BattleEffectParticleCache cache = BattleEffectParticleCache.GetOrAdd(instance);
+            ParticleSystem[] particleSystems = cache != null
+                ? cache.GetParticleSystems()
+                : instance.GetComponentsInChildren<ParticleSystem>(true);
             for (int i = 0; i < particleSystems.Length; i++)
             {
                 ParticleSystem particleSystem = particleSystems[i];

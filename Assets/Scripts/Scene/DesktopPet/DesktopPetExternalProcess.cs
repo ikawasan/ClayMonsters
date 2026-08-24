@@ -124,45 +124,97 @@ namespace Scene.DesktopPet
             string viewerPath = ResolveViewerPath();
             if (string.IsNullOrEmpty(viewerPath) || !File.Exists(viewerPath))
             {
+                UnityEngine.Debug.LogError(
+                    "[DesktopPetExternalProcess] ClayMonstersPet.exeが見つかりません"
+                    + " StreamingAssetsまたはゲームルートのClayMonstersPetを確認してください");
                 return false;
             }
 
             string gameExe = ResolveGameExecutablePath();
             string languageCode = ResolveLanguageCode();
             string textTablesDirectory = ResolveTextTablesDirectory();
+            string arguments = BuildArguments(
+                valid,
+                gameExe,
+                languageCode,
+                textTablesDirectory,
+                stayOnTop);
+            string workingDirectory = ResolveWorkingDirectory(viewerPath, gameExe);
+            if (!TryStartViewerProcess(viewerPath, arguments, workingDirectory, useShellExecute: false)
+                && !TryStartViewerProcess(viewerPath, arguments, workingDirectory, useShellExecute: true))
+            {
+                return false;
+            }
+
+            DesktopPetSpriteCache.WriteLauncherKeepAliveMarker();
+            DesktopPetSpriteCache.WriteActiveMarker(valid);
+            DesktopPetSpriteCache.WriteLanguageMarker(languageCode);
+            DesktopPetPointAccrual.BeginSession();
+            return true;
+#endif
+        }
+
+        private static bool TryStartViewerProcess(
+            string viewerPath,
+            string arguments,
+            string workingDirectory,
+            bool useShellExecute)
+        {
             try
             {
                 ProcessStartInfo startInfo = new ProcessStartInfo
                 {
                     FileName = viewerPath,
-                    Arguments = BuildArguments(
-                        valid,
-                        gameExe,
-                        languageCode,
-                        textTablesDirectory,
-                        stayOnTop),
-                    UseShellExecute = false,
-                    WorkingDirectory = Path.GetDirectoryName(viewerPath) ?? string.Empty
+                    Arguments = arguments,
+                    UseShellExecute = useShellExecute,
+                    WorkingDirectory = workingDirectory
                 };
                 Process process = Process.Start(startInfo);
                 if (process == null)
                 {
+                    UnityEngine.Debug.LogWarning(
+                        "[DesktopPetExternalProcess] Process.Startがnullを返しました"
+                        + " shell="
+                        + useShellExecute);
                     return false;
                 }
 
-                DesktopPetSpriteCache.WriteLauncherKeepAliveMarker();
-                DesktopPetSpriteCache.WriteActiveMarker(valid);
-                DesktopPetSpriteCache.WriteLanguageMarker(languageCode);
-                DesktopPetPointAccrual.BeginSession();
+                UnityEngine.Debug.Log(
+                    "[DesktopPetExternalProcess] 外部ビューアを起動しました path="
+                    + viewerPath
+                    + " shell="
+                    + useShellExecute);
                 return true;
             }
             catch (Exception exception)
             {
                 UnityEngine.Debug.LogWarning(
-                    "[DesktopPetExternalProcess] 外部ビューア起動失敗: " + exception.Message);
+                    "[DesktopPetExternalProcess] 外部ビューア起動失敗 shell="
+                    + useShellExecute
+                    + " "
+                    + exception.Message);
                 return false;
             }
-#endif
+        }
+
+        private static string ResolveWorkingDirectory(string viewerPath, string gameExe)
+        {
+            if (!string.IsNullOrEmpty(gameExe))
+            {
+                string gameDir = Path.GetDirectoryName(gameExe);
+                if (!string.IsNullOrEmpty(gameDir) && Directory.Exists(gameDir))
+                {
+                    return gameDir;
+                }
+            }
+
+            string parentOfData = Directory.GetParent(Application.dataPath)?.FullName;
+            if (!string.IsNullOrEmpty(parentOfData) && Directory.Exists(parentOfData))
+            {
+                return parentOfData;
+            }
+
+            return Path.GetDirectoryName(viewerPath) ?? string.Empty;
         }
 
         private static string BuildArguments(
@@ -226,6 +278,15 @@ namespace Scene.DesktopPet
 
         private static string ResolveViewerPath()
         {
+            string gameRoot = Directory.GetParent(Application.dataPath)?.FullName ?? string.Empty;
+
+            // Steam提出フォルダではルートのClayMonstersPetを優先する
+            string rootViewer = Path.Combine(gameRoot, ViewerFolderName, ViewerFileName);
+            if (File.Exists(rootViewer))
+            {
+                return rootViewer;
+            }
+
             string streaming = Path.Combine(
                 Application.streamingAssetsPath,
                 ViewerFolderName,
@@ -235,9 +296,7 @@ namespace Scene.DesktopPet
                 return streaming;
             }
 
-            string besideData = Path.Combine(
-                Directory.GetParent(Application.dataPath)?.FullName ?? string.Empty,
-                ViewerFileName);
+            string besideData = Path.Combine(gameRoot, ViewerFileName);
             if (File.Exists(besideData))
             {
                 return besideData;

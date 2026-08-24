@@ -376,8 +376,11 @@ namespace Battle.View
         {
             Transform root = instance.transform;
             float minLocalY = 0f;
+            BattleEffectParticleCache cache = BattleEffectParticleCache.GetOrAdd(instance);
 
-            Transform[] transforms = instance.GetComponentsInChildren<Transform>(true);
+            Transform[] transforms = cache != null
+                ? cache.GetChildTransforms()
+                : instance.GetComponentsInChildren<Transform>(true);
             for (int i = 0; i < transforms.Length; i++)
             {
                 Transform child = transforms[i];
@@ -393,7 +396,9 @@ namespace Battle.View
                 }
             }
 
-            ParticleSystem[] systems = instance.GetComponentsInChildren<ParticleSystem>(true);
+            ParticleSystem[] systems = cache != null
+                ? cache.GetParticleSystems()
+                : instance.GetComponentsInChildren<ParticleSystem>(true);
             for (int i = 0; i < systems.Length; i++)
             {
                 ParticleSystem system = systems[i];
@@ -416,7 +421,10 @@ namespace Battle.View
 
         private static void SimulateParticlesBriefly(GameObject instance)
         {
-            ParticleSystem[] systems = instance.GetComponentsInChildren<ParticleSystem>(true);
+            BattleEffectParticleCache cache = BattleEffectParticleCache.GetOrAdd(instance);
+            ParticleSystem[] systems = cache != null
+                ? cache.GetParticleSystems()
+                : instance.GetComponentsInChildren<ParticleSystem>(true);
             for (int i = 0; i < systems.Length; i++)
             {
                 ParticleSystem system = systems[i];
@@ -441,7 +449,10 @@ namespace Battle.View
             float minAcceptedY = surfaceY - 2f;
             float maxAcceptedY = surfaceY + 1.5f;
 
-            ParticleSystemRenderer[] renderers = instance.GetComponentsInChildren<ParticleSystemRenderer>(true);
+            BattleEffectParticleCache cache = BattleEffectParticleCache.GetOrAdd(instance);
+            ParticleSystemRenderer[] renderers = cache != null
+                ? cache.GetParticleRenderers()
+                : instance.GetComponentsInChildren<ParticleSystemRenderer>(true);
             for (int i = 0; i < renderers.Length; i++)
             {
                 ParticleSystemRenderer renderer = renderers[i];
@@ -482,7 +493,10 @@ namespace Battle.View
 
         private static float ConfigureParticlesOnce(GameObject instance, float fallbackDuration)
         {
-            ParticleSystem[] systems = instance.GetComponentsInChildren<ParticleSystem>(true);
+            BattleEffectParticleCache cache = BattleEffectParticleCache.GetOrAdd(instance);
+            ParticleSystem[] systems = cache != null
+                ? cache.GetParticleSystems()
+                : instance.GetComponentsInChildren<ParticleSystem>(true);
             float maxDuration = fallbackDuration;
             if (systems == null || systems.Length == 0)
             {

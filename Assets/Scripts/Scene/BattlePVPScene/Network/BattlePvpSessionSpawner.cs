@@ -16,6 +16,7 @@ namespace Scene.BattlePVPScene.Network
         [SerializeField] private BattlePvpInputRelay playerRelayPrefab;
 
         private bool isSubscribed;
+        private bool relaysReady;
 
         private void OnDisable()
         {
@@ -24,7 +25,7 @@ namespace Scene.BattlePVPScene.Network
 
         private void Update()
         {
-            if (playerRelayPrefab == null)
+            if (relaysReady || playerRelayPrefab == null)
             {
                 return;
             }
@@ -35,10 +36,14 @@ namespace Scene.BattlePVPScene.Network
                 return;
             }
 
-            if (!AllClientsHaveRelay(manager))
+            if (AllClientsHaveRelay(manager))
             {
-                SpawnPlayers();
+                relaysReady = true;
+                enabled = false;
+                return;
             }
+
+            SpawnPlayers();
         }
 
         /// <summary>
@@ -170,6 +175,8 @@ namespace Scene.BattlePVPScene.Network
 
             if (AllClientsHaveRelay(manager))
             {
+                relaysReady = true;
+                enabled = false;
                 return;
             }
 

@@ -254,6 +254,90 @@ namespace UI.ClayEditor.View
             MarkSelectionContentsPrepared();
         }
 
+        /// <summary>
+        /// 敵カタログ展開とメタ読込を先に済ませる
+        /// </summary>
+        public void WarmEnemyCatalog()
+        {
+            if (saveService == null)
+            {
+                return;
+            }
+
+            ModelSaveStorage.EnsureEnemyCatalogReadable();
+            // GetSlotでEnemyメタのLoadOrCreateを起こす
+            saveService.GetSlot(ModelSavePool.Enemy, 0);
+        }
+
+        /// <summary>
+        /// 育成済みサムネイルを裏で先読みする
+        /// </summary>
+        /// <param name="cancellationToken">中断トークン</param>
+        public void BeginPrefetchTrainedPlayerThumbnails(CancellationToken cancellationToken)
+        {
+            if (!UsesTrainedSlotGrid() || trainedSlotGrid == null || saveService == null)
+            {
+                return;
+            }
+
+            PrefetchPoolThumbnailsAsync(ModelSavePool.TrainedPlayer, null, cancellationToken).Forget();
+        }
+
+        /// <summary>
+        /// プレイヤー選択中に敵サムネイルを裏で先読みする
+        /// </summary>
+        /// <param name="cancellationToken">中断トークン</param>
+        public void BeginPrefetchEnemyThumbnails(CancellationToken cancellationToken)
+        {
+            if (!UsesTrainedSlotGrid() || trainedSlotGrid == null || saveService == null)
+            {
+                return;
+            }
+
+            PrefetchPoolThumbnailsAsync(
+                ModelSavePool.Enemy,
+                ResolveEnemySlotUnlockPredicateForPrefetch(),
+                cancellationToken).Forget();
+        }
+
+        private async UniTaskVoid PrefetchPoolThumbnailsAsync(
+            ModelSavePool pool,
+            Func<int, bool> isSlotUnlocked,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                if (pool == ModelSavePool.Enemy)
+                {
+                    WarmEnemyCatalog();
+                }
+                else
+                {
+                    saveService.Load(pool);
+                }
+
+                await trainedSlotGrid.PrefetchThumbnailsAsync(
+                    saveService,
+                    pool,
+                    isSlotUnlocked,
+                    cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                // 選択終了やシーン退場での中断は正常
+            }
+        }
+
+        private Func<int, bool> ResolveEnemySlotUnlockPredicateForPrefetch()
+        {
+            if (npcBattleProgress == null)
+            {
+                return _ => false;
+            }
+
+            return npcBattleProgress.IsEnemySlotUnlocked;
+        }
+
         private async UniTask ApplyInstructionTextMeshAsync(CancellationToken cancellationToken)
         {
             if (selectionInstructionText == null)
@@ -845,12 +929,6 @@ namespace UI.ClayEditor.View
             if (canvasTransition != null)
             {
                 await canvasTransition.FadeInAsync(cancellationToken);
-            }
-
-            // 明転後にも再反映しTMPの未更新を防ぐ
-            if (selectedSlot == slotIndex && IsConfirmPanelVisible())
-            {
-                RefreshLoadConfirm(slotIndex);
             }
         }
 

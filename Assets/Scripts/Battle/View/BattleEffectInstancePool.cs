@@ -111,7 +111,10 @@ namespace Battle.View
 
         private static void StopParticles(GameObject instance)
         {
-            ParticleSystem[] systems = instance.GetComponentsInChildren<ParticleSystem>(true);
+            BattleEffectParticleCache cache = BattleEffectParticleCache.GetOrAdd(instance);
+            ParticleSystem[] systems = cache != null
+                ? cache.GetParticleSystems()
+                : instance.GetComponentsInChildren<ParticleSystem>(true);
             for (int i = 0; i < systems.Length; i++)
             {
                 if (systems[i] != null)

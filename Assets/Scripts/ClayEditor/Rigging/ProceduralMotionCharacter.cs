@@ -212,7 +212,17 @@ namespace ClayEditor.Rigging
             public int limbIndex;     // ‰½”Ô–Ú‚Ì•t‘®ˆ‚©(¶‰EŒğŒİ‚ÌˆÊ‘Š‚Ég‚¤)
             public float lateralSign; // ƒ{[ƒ“‚Ì¶‰EˆÊ’u(+1=‰E -1=¶)¶‰E‚Å‹tŒü‚«‚ÉU‚é‚Ì‚Ég‚¤
             public bool isSharedLimbTrunk; // ¶‰E•ªŠò‚Æ‚»‚Ìã—¬‚Ì‹¤—LŠ²(U‚é‚Æ—¼‘«“¯‘Š‚É‚È‚é)
+            public bool isLimbSwingRoot; // •às‚ÅU‚é•t‘®ˆ‚Ìæ“ª
+            public bool isLegSwingRoot; // ‹r‘–s‚ÅU‚é‹r‚Ìæ“ª
+            public bool isArmSwingRoot; // ‹r‘–s‚ÅU‚é˜r‚Ìæ“ª
+            public bool isOtherLimbSwingRoot; // ‹r˜rˆÈŠO‚Ì•t‘®ˆæ“ª
         }
+
+        private static readonly System.Func<BoneInfo, bool> IsLimbPart = static b => b.isLimb;
+        private static readonly System.Func<BoneInfo, bool> IsLegPart = static b => b.isLeg;
+        private static readonly System.Func<BoneInfo, bool> IsArmPart = static b => b.isArm;
+        private static readonly System.Func<BoneInfo, bool> IsOtherLimbPart =
+            static b => b.isLimb && !b.isLeg && !b.isArm;
 
         private readonly List<BoneInfo> infos = new();
         private int maxDepth = 1;
@@ -223,6 +233,7 @@ namespace ClayEditor.Rigging
 
         // •àsf’f‚ğˆê“x‚¾‚¯o‚·‚½‚ß‚Ìƒtƒ‰ƒO
         private bool loggedLocomotionDiagnostics;
+        private float lastIdleAppliedAngle = float.NaN;
 
         private MotionType currentMotion = MotionType.None;
         private MotionType previousMotion = MotionType.Idle;
@@ -354,6 +365,7 @@ namespace ClayEditor.Rigging
         {
             infos.Clear();
             currentMotion = MotionType.None;
+            lastIdleAppliedAngle = float.NaN;
             time = 0f;
             rootBone = null;
             HasLegs = false;
@@ -541,6 +553,23 @@ namespace ClayEditor.Rigging
             // Šeƒ{[ƒ“‚Ì•”ˆÊ(‹r/˜r)‚ğŠ„‚è“–‚Ä‚é
             AssignParts(bones);
             UpdateHasLegs();
+            CacheLocomotionSwingRoots();
+        }
+
+        /// <summary>
+        /// •às‚ÅU‚éæ“ªƒ{[ƒ“‚ğ–‘OŒvZ‚·‚é
+        /// </summary>
+        private void CacheLocomotionSwingRoots()
+        {
+            for (int i = 0; i < infos.Count; i++)
+            {
+                BoneInfo info = infos[i];
+                info.isLimbSwingRoot = IsLocomotionSwingRoot(info, IsLimbPart);
+                info.isLegSwingRoot = IsLocomotionSwingRoot(info, IsLegPart);
+                info.isArmSwingRoot = IsLocomotionSwingRoot(info, IsArmPart);
+                info.isOtherLimbSwingRoot = IsLocomotionSwingRoot(info, IsOtherLimbPart);
+                infos[i] = info;
+            }
         }
 
         private void UpdateHasLegs()
@@ -711,8 +740,8 @@ namespace ClayEditor.Rigging
 
             // ¶‰EˆÊ’u‚Å‚Í‚È‚­‹r(˜r)‚ğ"•ÊX‚Ì}"‚É•ª‚¯}‚²‚Æ‚É‹tˆÊ‘Š‚ğŠ„‚è“–‚Ä‚é
             // ¶‰E‹r‚ª’†‰›Šñ‚è‚Åd‚È‚Á‚Ä‚¢‚Ä‚à•Ê}‚È‚çŠmÀ‚ÉŒğŒİ‚É‚È‚é
-            AssignAlternatingSwingByBranch(b => b.isLeg, firstSign: 1f);
-            AssignAlternatingSwingByBranch(b => b.isArm, firstSign: -1f);
+            AssignAlternatingSwingByBranch(IsLegPart, firstSign: 1f);
+            AssignAlternatingSwingByBranch(IsArmPart, firstSign: -1f);
         }
 
         /// <summary>
@@ -1013,6 +1042,7 @@ namespace ClayEditor.Rigging
             if (type == MotionType.None)
             {
                 currentMotion = MotionType.None;
+                lastIdleAppliedAngle = float.NaN;
                 ResetPose();
                 return;
             }
@@ -1057,6 +1087,10 @@ namespace ClayEditor.Rigging
             }
 
             currentMotion = type;
+            if (type != MotionType.Idle)
+            {
+                lastIdleAppliedAngle = float.NaN;
+            }
         }
 
         /// <summary>
@@ -1090,6 +1124,7 @@ namespace ClayEditor.Rigging
             }
 
             currentMotion = MotionType.AttackCharge;
+            lastIdleAppliedAngle = float.NaN;
         }
 
         /// <summary>
@@ -1587,7 +1622,7 @@ namespace ClayEditor.Rigging
                     continue;
                 }
 
-                if (info.isLimb && IsLocomotionSwingRoot(info, b => b.isLimb))
+                if (info.isLimb && info.isLimbSwingRoot)
                 {
                     float sign = ResolveLimbSwingSign(info, 1f);
                     float swing = Mathf.Sin(w) * MotionSettings.RunLimbAmplitude * sign * bakeLocomotionScale;
@@ -1663,24 +1698,21 @@ namespace ClayEditor.Rigging
                     continue;
                 }
 
-                if (info.isLeg && IsLocomotionSwingRoot(info, b => b.isLeg))
+                if (info.isLeg && info.isLegSwingRoot)
                 {
                     // ¶‰E‚Ìƒ{[ƒ“‚Å•„†‚ª‹t‚É‚È‚é‚Ì‚Å•Ğ‹r‘O•Ğ‹rŒã‚ë‚ÅŒğŒİ‚É‚È‚é
                     float sign = ResolveLimbSwingSign(info, 1f);
                     float swing = Mathf.Sin(w) * MotionSettings.LegRunLegAmplitude * sign * bakeLocomotionScale;
                     info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, swing);
                 }
-                else if (info.isArm && IsLocomotionSwingRoot(info, b => b.isArm))
+                else if (info.isArm && info.isArmSwingRoot)
                 {
                     // ˜r‚Í“¯‚¶‘¤‚Ì‹r‚Æ‹tˆÊ‘Š‚É‚µ‚Ä©‘R‚È‘ŠŒİU‚è‚É‚·‚é
                     float sign = ResolveLimbSwingSign(info, -1f);
                     float swing = Mathf.Sin(w) * MotionSettings.LegRunArmAmplitude * (-sign) * bakeLocomotionScale;
                     info.transform.localRotation = WorldSwingLocalRotation(info, sagittalAxis, swing);
                 }
-                else if (info.isLimb
-                    && !info.isLeg
-                    && !info.isArm
-                    && IsLocomotionSwingRoot(info, b => b.isLimb && !b.isLeg && !b.isArm))
+                else if (info.isOtherLimbSwingRoot)
                 {
                     // •”ˆÊ”»’è˜R‚ê‚Ìè‘«‚à‘–s‚Æ‚µ‚ÄU‚é
                     float sign = ResolveLimbSwingSign(info, 1f);
@@ -1823,7 +1855,7 @@ namespace ClayEditor.Rigging
                 if (info.transform != null && info.isLeg)
                 {
                     Transform p = info.transform.parent;
-                    bool swingRoot = IsLocomotionSwingRoot(info, b => b.isLeg);
+                    bool swingRoot = info.isLegSwingRoot;
                     sb.Append($"\n  ‹r {info.transform.name} parent={(p != null ? p.name : "null")} sign={info.lateralSign} swingRoot={swingRoot} trunk={info.isSharedLimbTrunk} pos={info.transform.position}");
                 }
             }
@@ -5020,6 +5052,14 @@ namespace ClayEditor.Rigging
         private void ApplyIdle()
         {
             float angle = Mathf.Sin(time * MotionSettings.IdleFrequency) * MotionSettings.IdleAmplitude;
+            if (!float.IsNaN(lastIdleAppliedAngle)
+                && Mathf.Abs(angle - lastIdleAppliedAngle) < 0.02f)
+            {
+                return;
+            }
+
+            lastIdleAppliedAngle = angle;
+            Vector3 bendAxis = ResolveBendAxis(MotionSettings.SpineBendAxis);
 
             for (int i = 0; i < infos.Count; i++)
             {
@@ -5030,7 +5070,8 @@ namespace ClayEditor.Rigging
                 }
 
                 float depthFactor = maxDepth > 0 ? (float)info.depth / maxDepth : 1f;
-                info.transform.localRotation = info.baseLocalRotation * Quaternion.AngleAxis(angle * depthFactor, ResolveBendAxis(MotionSettings.SpineBendAxis));
+                info.transform.localRotation = info.baseLocalRotation
+                    * Quaternion.AngleAxis(angle * depthFactor, bendAxis);
             }
         }
     }

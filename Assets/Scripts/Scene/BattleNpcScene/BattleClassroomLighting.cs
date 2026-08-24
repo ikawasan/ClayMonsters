@@ -35,6 +35,8 @@ namespace Scene.BattleNpcScene
         [SerializeField] private float modelFillRange = 22f;
 
         private Transform lightingRoot;
+        private Transform modelFillLight;
+        private Vector3 lastModelFillPosition = new Vector3(float.NaN, float.NaN, float.NaN);
 
         private void Awake()
         {
@@ -128,6 +130,8 @@ namespace Scene.BattleNpcScene
             if (existing != null)
             {
                 lightingRoot = existing;
+                modelFillLight = null;
+                lastModelFillPosition = new Vector3(float.NaN, float.NaN, float.NaN);
                 if (existing.GetComponentsInChildren<Light>(true).Length == 0)
                 {
                     DestroyAllChildren(existing);
@@ -140,6 +144,8 @@ namespace Scene.BattleNpcScene
             var rootObject = new GameObject(LightingRootName);
             lightingRoot = rootObject.transform;
             lightingRoot.SetParent(parent, false);
+            modelFillLight = null;
+            lastModelFillPosition = new Vector3(float.NaN, float.NaN, float.NaN);
             CreateClassroomLights(lightingRoot);
         }
 
@@ -187,11 +193,25 @@ namespace Scene.BattleNpcScene
                 return;
             }
 
-            Transform modelFill = lightingRoot.Find("Model Fill Light");
-            if (modelFill != null)
+            if (modelFillLight == null)
             {
-                modelFill.position = ResolveFieldCenter() + Vector3.up * modelFillHeightOffset;
+                modelFillLight = lightingRoot.Find("Model Fill Light");
             }
+
+            if (modelFillLight == null)
+            {
+                return;
+            }
+
+            Vector3 nextPosition = ResolveFieldCenter() + Vector3.up * modelFillHeightOffset;
+            if (!float.IsNaN(lastModelFillPosition.x)
+                && (nextPosition - lastModelFillPosition).sqrMagnitude < 1e-6f)
+            {
+                return;
+            }
+
+            lastModelFillPosition = nextPosition;
+            modelFillLight.position = nextPosition;
         }
 
         private Vector3 ResolveFieldCenter()

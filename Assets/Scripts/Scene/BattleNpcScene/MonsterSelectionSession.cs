@@ -61,6 +61,10 @@ namespace Scene.BattleNpcScene
             loadSlotView?.HideForLeave();
             loadSlotView?.ConfigureSavePool(ModelSavePool.TrainedPlayer);
             loadSlotView?.PrepareLayout();
+            loadSlotView?.WarmEnemyCatalog();
+            // 明転前に育成済みサムネを先読みする
+            loadSlotView?.BeginPrefetchTrainedPlayerThumbnails(
+                loadSlotView.GetCancellationTokenOnDestroy());
             Hide();
         }
 
@@ -210,6 +214,11 @@ namespace Scene.BattleNpcScene
             await loadSlotView.PrepareSelectionContentsAsync(cancellationToken);
             // 準備完了後に選択待ちへ入り再構築を避ける
             loadSlotView.PrepareForSelectionWait();
+            // プレイヤー選択中に敵一覧サムネを先読みする
+            if (loadSlotView.SavePool == ModelSavePool.TrainedPlayer)
+            {
+                loadSlotView.BeginPrefetchEnemyThumbnails(cancellationToken);
+            }
 
             await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate, cancellationToken);
             Canvas.ForceUpdateCanvases();

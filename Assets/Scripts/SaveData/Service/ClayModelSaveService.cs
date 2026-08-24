@@ -17,6 +17,8 @@ namespace SaveData.Service
         public const int AttackMotionCount = ModelAttackMotionUtility.SlotCount;
 
         private readonly IClayModelExporter exporter;
+        private readonly Dictionary<ModelSavePool, ClayModelSaveData> loadedPoolCache =
+            new Dictionary<ModelSavePool, ClayModelSaveData>(4);
 
         /// <summary>
         /// セーブサービスを生成する
@@ -789,6 +791,11 @@ namespace SaveData.Service
 
         private ClayModelSaveData LoadOrCreate(ModelSavePool pool)
         {
+            if (loadedPoolCache.TryGetValue(pool, out ClayModelSaveData cached) && cached != null)
+            {
+                return cached;
+            }
+
             if (pool == ModelSavePool.Enemy)
             {
                 ModelSaveStorage.EnsureEnemyCatalogReadable();
@@ -857,6 +864,7 @@ namespace SaveData.Service
                 LogMissingEnemyGlbs(data);
             }
 
+            loadedPoolCache[pool] = data;
             return data;
         }
 
@@ -986,6 +994,7 @@ namespace SaveData.Service
 
         private void WriteToFile(ModelSavePool pool, ClayModelSaveData data)
         {
+            loadedPoolCache[pool] = data;
             string json = JsonUtility.ToJson(data, true);
             ModelSaveStorage.WriteAllText(
                 ModelSavePoolSettings.GetMetadataFileName(pool),
