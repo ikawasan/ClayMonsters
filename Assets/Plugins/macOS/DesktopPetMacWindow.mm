@@ -156,13 +156,57 @@ extern "C" void CMPet_SetScreenPosition(int x, int y, int width, int height)
         return;
     }
 
-    NSScreen *screen = window.screen ?: [NSScreen mainScreen];
-    NSRect vis = screen.visibleFrame;
     CGFloat scale = MAX(1.0, window.backingScaleFactor);
+    CGFloat virtualLeft = CGFLOAT_MAX;
+    CGFloat virtualTop = -CGFLOAT_MAX;
+    for (NSScreen *screen in [NSScreen screens])
+    {
+        NSRect frame = screen.frame;
+        virtualLeft = MIN(virtualLeft, NSMinX(frame));
+        virtualTop = MAX(virtualTop, NSMaxY(frame));
+    }
+
     NSSize size = window.frame.size;
-    CGFloat macX = vis.origin.x + (x / scale);
-    CGFloat macY = vis.origin.y + vis.size.height - (y / scale) - size.height;
+    CGFloat macX = virtualLeft + (x / scale);
+    CGFloat macY = virtualTop - (y / scale) - size.height;
     [window setFrameOrigin:NSMakePoint(macX, macY)];
+}
+
+extern "C" int CMPet_GetWorkingAreaCount(void)
+{
+    return (int)[NSScreen screens].count;
+}
+
+extern "C" int CMPet_GetWorkingArea(int index, int *outX, int *outY, int *outW, int *outH)
+{
+    if (outX == NULL || outY == NULL || outW == NULL || outH == NULL)
+    {
+        return 0;
+    }
+
+    NSArray<NSScreen *> *screens = [NSScreen screens];
+    if (index < 0 || index >= (int)screens.count)
+    {
+        return 0;
+    }
+
+    CGFloat virtualLeft = CGFLOAT_MAX;
+    CGFloat virtualTop = -CGFLOAT_MAX;
+    for (NSScreen *screen in screens)
+    {
+        NSRect frame = screen.frame;
+        virtualLeft = MIN(virtualLeft, NSMinX(frame));
+        virtualTop = MAX(virtualTop, NSMaxY(frame));
+    }
+
+    NSScreen *screen = screens[index];
+    NSRect vis = screen.visibleFrame;
+    CGFloat scale = MAX(1.0, screen.backingScaleFactor);
+    *outX = (int)lround((NSMinX(vis) - virtualLeft) * scale);
+    *outY = (int)lround((virtualTop - NSMaxY(vis)) * scale);
+    *outW = (int)lround(vis.size.width * scale);
+    *outH = (int)lround(vis.size.height * scale);
+    return 1;
 }
 
 extern "C" void CMPet_SetClickThrough(int enabled)

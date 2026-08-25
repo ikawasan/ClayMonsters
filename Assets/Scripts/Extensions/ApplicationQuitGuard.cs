@@ -148,10 +148,10 @@ namespace Extensions
             try
             {
                 int pid = Process.GetCurrentProcess().Id;
-                // /Tで子プロセスツリーも終了する
+                // /Tは使わないデスクトップペットを子として巻き込むため
                 string arguments =
                     $"/c timeout /t {ExternalWatchdogDelaySeconds} /nobreak >nul "
-                    + $"& taskkill /F /T /PID {pid} >nul 2>&1";
+                    + $"& taskkill /F /PID {pid} >nul 2>&1";
 
                 ProcessStartInfo startInfo = new ProcessStartInfo
                 {

@@ -99,23 +99,12 @@ namespace Scene.DesktopPet
 
         private Vector2Int ResolveInitialPosition()
         {
-            int areaW = Mathf.Max(windowWidth, Display.main.systemWidth);
-            int areaH = Mathf.Max(windowHeight, Display.main.systemHeight);
-            int x = Mathf.Clamp((areaW - windowWidth) / 2, 0, Mathf.Max(0, areaW - windowWidth));
-            int y = Mathf.Clamp((areaH - windowHeight) / 2, 0, Mathf.Max(0, areaH - windowHeight));
-            return new Vector2Int(x, y);
+            return DesktopPetScreenBounds.CenterTopLeft(windowWidth, windowHeight);
         }
 
         private Vector2Int PickRandomPosition()
         {
-            int areaW = Mathf.Max(windowWidth + 1, Display.main.systemWidth);
-            int areaH = Mathf.Max(windowHeight + 1, Display.main.systemHeight);
-            int margin = 24;
-            int maxX = Mathf.Max(margin, areaW - windowWidth - margin);
-            int maxY = Mathf.Max(margin, areaH - windowHeight - margin);
-            return new Vector2Int(
-                UnityEngine.Random.Range(margin, maxX + 1),
-                UnityEngine.Random.Range(margin, maxY + 1));
+            return DesktopPetScreenBounds.RandomTopLeft(windowWidth, windowHeight);
         }
     }
 }

@@ -722,14 +722,17 @@ namespace UI.Battle.View
             }
 
             float ready = Mathf.Clamp01(recastReady01);
+            bool showFill = ready < 0.999f;
+            bool lastShowFill = float.IsNaN(lastRecastReady01) || lastRecastReady01 < 0.999f;
+            // 完了境界(赤表示のON/OFF)をまたぐ更新は必ず反映する
             if (!float.IsNaN(lastRecastReady01)
+                && showFill == lastShowFill
                 && Mathf.Abs(ready - lastRecastReady01) < RecastFillEpsilon)
             {
                 return;
             }
 
             lastRecastReady01 = ready;
-            bool showFill = ready < 0.999f;
             if (recastFillImage.enabled != showFill)
             {
                 recastFillImage.enabled = showFill;

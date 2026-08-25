@@ -81,6 +81,14 @@ namespace SaveData
         }
 
         /// <summary>
+        /// スタンプ比較用に保存実体パスを返す(なければnull)
+        /// </summary>
+        /// <param name="fileName">論理ファイル名</param>
+        /// <returns>存在する保存パス</returns>
+        public static string ResolveStoredPathForStamp(string fileName) =>
+            ResolveStoredPath(fileName);
+
+        /// <summary>
         /// 読み取り可能な場所にファイルが存在するか判定する
         /// </summary>
         /// <param name="fileName">ファイル名</param>

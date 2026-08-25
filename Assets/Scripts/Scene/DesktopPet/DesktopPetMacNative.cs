@@ -40,6 +40,18 @@ namespace Scene.DesktopPet
         [DllImport("__Internal", EntryPoint = "CMPet_ShowContextMenu", CallingConvention = CallingConvention.Cdecl)]
         private static extern int ShowMenuInternal(IntPtr quitUtf8, IntPtr launchUtf8);
 
+        [DllImport("DesktopPetMacWindow", EntryPoint = "CMPet_GetWorkingAreaCount", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int GetWorkingAreaCountBundle();
+
+        [DllImport("__Internal", EntryPoint = "CMPet_GetWorkingAreaCount", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int GetWorkingAreaCountInternal();
+
+        [DllImport("DesktopPetMacWindow", EntryPoint = "CMPet_GetWorkingArea", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int GetWorkingAreaBundle(int index, out int x, out int y, out int w, out int h);
+
+        [DllImport("__Internal", EntryPoint = "CMPet_GetWorkingArea", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int GetWorkingAreaInternal(int index, out int x, out int y, out int w, out int h);
+
         private static bool useInternal;
 
         /// <summary>
@@ -131,6 +143,34 @@ namespace Scene.DesktopPet
                     Marshal.FreeHGlobal(launchPtr);
                 }
             }
+        }
+
+        /// <summary>
+        /// 作業領域の数を返す
+        /// </summary>
+        public static int CMPet_GetWorkingAreaCount()
+        {
+            return Invoke(GetWorkingAreaCountBundle, GetWorkingAreaCountInternal);
+        }
+
+        /// <summary>
+        /// 指定インデックスの作業領域を返す
+        /// </summary>
+        public static bool CMPet_TryGetWorkingArea(int index, out int x, out int y, out int w, out int h)
+        {
+            int result = Invoke(
+                () => GetWorkingAreaBundle(index, out x, out y, out w, out h),
+                () => GetWorkingAreaInternal(index, out x, out y, out w, out h));
+            if (result == 0)
+            {
+                x = 0;
+                y = 0;
+                w = 0;
+                h = 0;
+                return false;
+            }
+
+            return true;
         }
 
         private static int Invoke(Func<int> bundleCall, Func<int> internalCall)

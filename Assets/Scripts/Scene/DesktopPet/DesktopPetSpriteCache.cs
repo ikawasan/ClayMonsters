@@ -65,15 +65,11 @@ namespace Scene.DesktopPet
 
         /// <summary>
         /// ディスク上のキャッシュが外部ビューア起動に使えるか(画像は読まない)
+        /// スタンプ不一致でも必須クリップがあれば起動可とする(古い見た目のまま出せる)
         /// </summary>
         public static bool IsReady(int playerSlotIndex, string glbFileName)
         {
             if (string.IsNullOrEmpty(glbFileName))
-            {
-                return false;
-            }
-
-            if (!TryResolveSourceStamp(glbFileName, out long sourceTicks, out long sourceLength))
             {
                 return false;
             }
@@ -99,14 +95,27 @@ namespace Scene.DesktopPet
 
             if (version != FormatVersion
                 || slot != playerSlotIndex
-                || !string.Equals(cachedGlb, glbFileName, StringComparison.Ordinal)
-                || cachedTicks != sourceTicks
-                || cachedLength != sourceLength)
+                || !string.Equals(cachedGlb, glbFileName, StringComparison.Ordinal))
             {
                 return false;
             }
 
-            return AreRequiredClipFilesReady(directory, clips);
+            if (!AreRequiredClipFilesReady(directory, clips))
+            {
+                return false;
+            }
+
+            if (TryResolveSourceStamp(glbFileName, out long sourceTicks, out long sourceLength)
+                && (cachedTicks != sourceTicks || cachedLength != sourceLength))
+            {
+                Debug.LogWarning(
+                    "[DesktopPetSpriteCache] キャッシュが古いです再保存で更新されます slot="
+                    + playerSlotIndex
+                    + " glb="
+                    + glbFileName);
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -509,7 +518,13 @@ namespace Scene.DesktopPet
         {
             sourceTicks = 0;
             sourceLength = 0;
-            string path = ModelSaveStorage.ResolveReadPath(glbFileName);
+            // 展開後テンポラリではなく保存実体(gz等)のスタンプを使う
+            string path = ModelSaveStorage.ResolveStoredPathForStamp(glbFileName);
+            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+            {
+                path = ModelSaveStorage.ResolveReadPath(glbFileName);
+            }
+
             if (string.IsNullOrEmpty(path) || !File.Exists(path))
             {
                 return false;

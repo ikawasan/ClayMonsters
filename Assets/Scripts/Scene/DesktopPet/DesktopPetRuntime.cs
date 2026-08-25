@@ -102,8 +102,12 @@ namespace Scene.DesktopPet
                 return;
             }
 
-            Debug.LogWarning(
-                "[DesktopPetRuntime] 外部ビューアへ引き継げないため本編内表示にフォールバックします");
+            // Windows製品版では本編内ピンク窓フォールバックを使わない
+            Debug.LogError(
+                "[DesktopPetRuntime] 外部ペットを起動できません"
+                + " 選択スロットをモデル編集で再保存しスプライトを更新してから再試行してください");
+            ShutdownInternal(quitApplication: false, restoreTitle: true);
+            return;
 #endif
 
             DesktopPetPointAccrual.BeginSession();

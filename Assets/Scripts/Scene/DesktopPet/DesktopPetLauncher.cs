@@ -103,9 +103,21 @@ namespace Scene.DesktopPet
                     ? saveService.GetSlot(ModelSavePool.Player, slotIndex)
                     : null;
                 string glbFileName = slot != null ? slot.glbFileName : null;
-                if (string.IsNullOrEmpty(glbFileName)
-                    || !DesktopPetSpriteCache.IsReady(slotIndex, glbFileName))
+                if (string.IsNullOrEmpty(glbFileName))
                 {
+                    Debug.LogWarning(
+                        "[DesktopPetLauncher] glbが空のため外部引き継ぎ不可 slot=" + slotIndex);
+                    return false;
+                }
+
+                if (!DesktopPetSpriteCache.IsReady(slotIndex, glbFileName))
+                {
+                    Debug.LogWarning(
+                        "[DesktopPetLauncher] スプライトキャッシュ不足 slot="
+                        + slotIndex
+                        + " glb="
+                        + glbFileName
+                        + " モデルを再保存してから起動してください");
                     return false;
                 }
 
@@ -114,6 +126,7 @@ namespace Scene.DesktopPet
 
             if (directories.Count == 0 || !DesktopPetExternalProcess.TryStart(directories, stayOnTop))
             {
+                Debug.LogWarning("[DesktopPetLauncher] 外部ビューアの起動に失敗しました");
                 return false;
             }
 

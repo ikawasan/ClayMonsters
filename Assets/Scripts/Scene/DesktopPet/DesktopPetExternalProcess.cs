@@ -140,8 +140,7 @@ namespace Scene.DesktopPet
                 textTablesDirectory,
                 stayOnTop);
             string workingDirectory = ResolveWorkingDirectory(viewerPath, gameExe);
-            if (!TryStartViewerProcess(viewerPath, arguments, workingDirectory, useShellExecute: false)
-                && !TryStartViewerProcess(viewerPath, arguments, workingDirectory, useShellExecute: true))
+            if (!TryStartViewerProcess(viewerPath, arguments, workingDirectory))
             {
                 return false;
             }
@@ -157,41 +156,35 @@ namespace Scene.DesktopPet
         private static bool TryStartViewerProcess(
             string viewerPath,
             string arguments,
-            string workingDirectory,
-            bool useShellExecute)
+            string workingDirectory)
         {
             try
             {
+                // UseShellExecuteでUnityのプロセスツリーから切り離す
                 ProcessStartInfo startInfo = new ProcessStartInfo
                 {
                     FileName = viewerPath,
                     Arguments = arguments,
-                    UseShellExecute = useShellExecute,
+                    UseShellExecute = true,
                     WorkingDirectory = workingDirectory
                 };
                 Process process = Process.Start(startInfo);
                 if (process == null)
                 {
                     UnityEngine.Debug.LogWarning(
-                        "[DesktopPetExternalProcess] Process.Startがnullを返しました"
-                        + " shell="
-                        + useShellExecute);
+                        "[DesktopPetExternalProcess] Process.Startがnullを返しました");
                     return false;
                 }
 
                 UnityEngine.Debug.Log(
                     "[DesktopPetExternalProcess] 外部ビューアを起動しました path="
-                    + viewerPath
-                    + " shell="
-                    + useShellExecute);
+                    + viewerPath);
                 return true;
             }
             catch (Exception exception)
             {
                 UnityEngine.Debug.LogWarning(
-                    "[DesktopPetExternalProcess] 外部ビューア起動失敗 shell="
-                    + useShellExecute
-                    + " "
+                    "[DesktopPetExternalProcess] 外部ビューア起動失敗 "
                     + exception.Message);
                 return false;
             }
