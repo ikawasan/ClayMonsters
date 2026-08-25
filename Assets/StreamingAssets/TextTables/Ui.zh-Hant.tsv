@@ -307,9 +307,7 @@ ClayEdit.PaintGuide	【上色】\n左鍵拖曳:上色\n滾輪:筆刷大小\nShif
 Training.LearnedMove	學會了技能\n槽位{slot}: {name}
 Training.ChooseLearnSlot	選擇學習{name}的槽位
 Training.InvalidSwapSlot	替換槽位無效
-Training.SwappedMove	「{oldName}」
-↓
-「{newName}」
+Training.SwappedMove	「{oldName}」\n↓\n「{newName}」
 Training.FleeAmbush	【強敵突襲】\n從{name}逃走了
 Training.WinAmbush	【強敵突襲】\n戰勝了{name}
 Training.LoseAmbush	【強敵突襲】\n敗給了{name}\n幹勁下降

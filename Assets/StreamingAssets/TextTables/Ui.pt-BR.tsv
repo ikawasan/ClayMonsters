@@ -307,9 +307,7 @@ ClayEdit.PaintGuide	【Pintura】\nArrastar esq: Pintar\nRoda: Tamanho\nShift+ar
 Training.LearnedMove	Técnica aprendida\nEspaço {slot}: {name}
 Training.ChooseLearnSlot	Escolha um espaço para {name}
 Training.InvalidSwapSlot	Espaço inválido
-Training.SwappedMove	{oldName}
-↓
-{newName}
+Training.SwappedMove	"{oldName}"\n↓\n"{newName}"
 Training.FleeAmbush	[Emboscada]\nFugiu de {name}
 Training.WinAmbush	[Emboscada]\nVenceu {name}
 Training.LoseAmbush	[Emboscada]\nDerrota para {name}\nMotivação caiu
