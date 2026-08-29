@@ -32,16 +32,13 @@ internal sealed class PetSparkForm : Form
     /// </summary>
     public void BurstAt(PointF worldCenter)
     {
-        Rectangle work = Screen.PrimaryScreen?.WorkingArea ?? new Rectangle(0, 0, 1280, 720);
-        float left = Math.Clamp(
-            worldCenter.X - (OverlaySize * 0.5f),
-            work.Left,
-            work.Right - OverlaySize);
-        float top = Math.Clamp(
-            worldCenter.Y - (OverlaySize * 0.5f),
-            work.Top,
-            work.Bottom - OverlaySize);
-        Location = Point.Round(new PointF(left, top));
+        PointF topLeft = PetDesktopBounds.ClampTopLeft(
+            new PointF(
+                worldCenter.X - (OverlaySize * 0.5f),
+                worldCenter.Y - (OverlaySize * 0.5f)),
+            OverlaySize,
+            OverlaySize);
+        Location = Point.Round(topLeft);
 
         float originX = OverlaySize * 0.5f;
         float originY = OverlaySize * 0.5f;

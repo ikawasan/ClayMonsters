@@ -15,6 +15,8 @@ internal static class Program
     private const string MutexName = "Local\\ClayMonstersLauncher.Singleton";
     private const int DefaultGraceMilliseconds = 8000;
     private const int PollMilliseconds = 500;
+    // 本編終了からペット起動までの短い隙間だけマーカーでつなぐ
+    private const double KeepAliveMarkerMaxAgeSeconds = 45;
 
     [STAThread]
     private static int Main(string[] args)
@@ -227,12 +229,11 @@ internal static class Program
             string text = File.ReadAllText(path, Encoding.UTF8).Trim();
             if (!long.TryParse(text, out long ticks))
             {
-                // 中身が読めなくてもファイルがあれば引き継ぎ中とみなす
-                return true;
+                return false;
             }
 
             DateTime writtenUtc = new(ticks, DateTimeKind.Utc);
-            return (DateTime.UtcNow - writtenUtc).TotalMinutes < 30;
+            return (DateTime.UtcNow - writtenUtc).TotalSeconds < KeepAliveMarkerMaxAgeSeconds;
         }
         catch
         {

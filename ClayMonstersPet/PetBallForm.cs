@@ -39,10 +39,7 @@ internal sealed class PetBallForm : Form
         PetWindowOrder.Apply(this);
         ballImage = LoadBallImage();
 
-        Rectangle work = Screen.PrimaryScreen?.WorkingArea ?? new Rectangle(0, 0, 1280, 720);
-        currentPos = new PointF(
-            work.Left + (work.Width - BallSize) * 0.5f,
-            work.Top + (work.Height - BallSize) * 0.5f);
+        currentPos = PetDesktopBounds.RandomTopLeft(new Random(), BallSize, BallSize);
         Location = Point.Round(currentPos);
     }
 
@@ -258,10 +255,7 @@ internal sealed class PetBallForm : Form
 
     private static PointF ClampToWorkArea(PointF point)
     {
-        Rectangle work = Screen.PrimaryScreen?.WorkingArea ?? new Rectangle(0, 0, 1280, 720);
-        float x = Math.Clamp(point.X, work.Left, work.Right - BallSize);
-        float y = Math.Clamp(point.Y, work.Top, work.Bottom - BallSize);
-        return new PointF(x, y);
+        return PetDesktopBounds.ClampTopLeft(point, BallSize, BallSize);
     }
 
     private static float Lerp(float a, float b, float t) => a + ((b - a) * t);

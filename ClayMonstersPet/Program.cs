@@ -87,6 +87,9 @@ internal static class Program
             return;
         }
 
+        // ペットプロセス自体が生存合図になるので引き継ぎマーカーは消す
+        ClearLauncherKeepAliveMarker(cacheDirectories);
+
         PetGroupBrain brain = new(forms);
 
         ApplicationContext context = new ApplicationContext();
@@ -99,6 +102,8 @@ internal static class Program
                 remaining--;
                 if (remaining <= 0)
                 {
+                    ClearLauncherKeepAliveMarker(cacheDirectories);
+                    MarkPointSessionEnded(cacheDirectories);
                     brain.Dispose();
                     context.ExitThread();
                 }
@@ -106,7 +111,158 @@ internal static class Program
             form.Show();
         }
 
+        Application.ApplicationExit += (_, _) => ClearLauncherKeepAliveMarker(cacheDirectories);
         Application.Run(context);
+    }
+
+    /// <summary>
+    /// Steamランチャー向け引き継ぎマーカーを消す
+    /// </summary>
+    private static void ClearLauncherKeepAliveMarker(IReadOnlyList<string> cacheDirectories)
+    {
+        string? path = ResolveLauncherKeepAlivePath(cacheDirectories);
+        if (string.IsNullOrEmpty(path))
+        {
+            path = TryFindLauncherKeepAlivePath();
+        }
+
+        if (string.IsNullOrEmpty(path) || !File.Exists(path))
+        {
+            return;
+        }
+
+        try
+        {
+            File.Delete(path);
+        }
+        catch
+        {
+            // 削除失敗は終了を妨げない
+        }
+    }
+
+    private static string? ResolveLauncherKeepAlivePath(IReadOnlyList<string> cacheDirectories)
+    {
+        if (cacheDirectories == null || cacheDirectories.Count == 0)
+        {
+            return null;
+        }
+
+        string cacheDirectory = cacheDirectories[0]
+            .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        string? root = Path.GetDirectoryName(cacheDirectory);
+        if (string.IsNullOrEmpty(root))
+        {
+            return null;
+        }
+
+        return Path.Combine(root, "launcher_keepalive.txt");
+    }
+
+    private static string? TryFindLauncherKeepAlivePath()
+    {
+        string localLow = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            "AppData",
+            "LocalLow");
+        if (!Directory.Exists(localLow))
+        {
+            return null;
+        }
+
+        try
+        {
+            foreach (string companyDir in Directory.GetDirectories(localLow))
+            {
+                foreach (string productDir in Directory.GetDirectories(companyDir))
+                {
+                    string marker = Path.Combine(productDir, "DesktopPetCache", "launcher_keepalive.txt");
+                    if (File.Exists(marker))
+                    {
+                        return marker;
+                    }
+                }
+            }
+        }
+        catch
+        {
+            return null;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// 外部ペット終了時刻をセッションへ書き残す
+    /// Unity側が次回起動時に時間精算する
+    /// </summary>
+    private static void MarkPointSessionEnded(IReadOnlyList<string> cacheDirectories)
+    {
+        string? sessionPath = ResolvePointSessionPath(cacheDirectories);
+        if (string.IsNullOrEmpty(sessionPath) || !File.Exists(sessionPath))
+        {
+            return;
+        }
+
+        try
+        {
+            long lastSettledUtcTicks = 0;
+            string[] lines = File.ReadAllLines(sessionPath, Encoding.UTF8);
+            for (int i = 0; i < lines.Length; i++)
+            {
+                string line = lines[i];
+                int separator = line.IndexOf('=');
+                if (separator <= 0 || separator >= line.Length - 1)
+                {
+                    continue;
+                }
+
+                string key = line.Substring(0, separator).Trim();
+                string value = line.Substring(separator + 1).Trim();
+                if (string.Equals(key, "lastSettledUtcTicks", StringComparison.OrdinalIgnoreCase)
+                    && long.TryParse(value, out long parsed))
+                {
+                    lastSettledUtcTicks = parsed;
+                }
+            }
+
+            if (lastSettledUtcTicks <= 0)
+            {
+                return;
+            }
+
+            string content =
+                "active=0\n"
+                + "lastSettledUtcTicks="
+                + lastSettledUtcTicks.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                + "\n"
+                + "endedUtcTicks="
+                + DateTime.UtcNow.Ticks.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                + "\n";
+            File.WriteAllText(sessionPath, content, Encoding.UTF8);
+        }
+        catch
+        {
+            // 終了時の書込失敗は次回起動精算に委ねる
+        }
+    }
+
+    private static string? ResolvePointSessionPath(IReadOnlyList<string> cacheDirectories)
+    {
+        if (cacheDirectories == null || cacheDirectories.Count == 0)
+        {
+            return null;
+        }
+
+        string cacheDirectory = cacheDirectories[0]
+            .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        string? root = Path.GetDirectoryName(cacheDirectory);
+        if (string.IsNullOrEmpty(root))
+        {
+            return null;
+        }
+
+        return Path.Combine(root, "points_session.txt");
     }
 
     private static string? TryReadSavedLanguage()

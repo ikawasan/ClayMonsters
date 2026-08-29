@@ -409,68 +409,16 @@ internal sealed class PetGroupBrain : IDisposable, IPetBehaviorAdvisor
 
     private PointF DistantLineMarchPoint(PointF from)
     {
-        Rectangle work = Screen.PrimaryScreen?.WorkingArea ?? new Rectangle(0, 0, 1280, 720);
-        int margin = 8;
-        int minX = work.Left + margin;
-        int minY = work.Top + margin;
-        int maxX = Math.Max(minX, work.Right - PetForm.WindowSize - margin);
-        int maxY = Math.Max(minY, work.Bottom - PetForm.WindowSize - margin);
-        float minDistance = Math.Max(work.Width, work.Height) * 0.58f;
-        float midX = (minX + maxX) * 0.5f;
-        float midY = (minY + maxY) * 0.5f;
-        PointF best = from;
-        float bestDist = 0f;
-        for (int attempt = 0; attempt < 18; attempt++)
-        {
-            int x0 = minX;
-            int x1 = maxX;
-            int y0 = minY;
-            int y1 = maxY;
-            if (attempt < 12)
-            {
-                if (from.X < midX)
-                {
-                    x0 = (int)MathF.Ceiling(minX + ((maxX - minX) * 0.62f));
-                }
-                else
-                {
-                    x1 = (int)MathF.Floor(minX + ((maxX - minX) * 0.38f));
-                }
-
-                if (from.Y < midY)
-                {
-                    y0 = (int)MathF.Ceiling(minY + ((maxY - minY) * 0.62f));
-                }
-                else
-                {
-                    y1 = (int)MathF.Floor(minY + ((maxY - minY) * 0.38f));
-                }
-
-                x0 = Math.Clamp(x0, minX, maxX);
-                x1 = Math.Clamp(Math.Max(x0, x1), minX, maxX);
-                y0 = Math.Clamp(y0, minY, maxY);
-                y1 = Math.Clamp(Math.Max(y0, y1), minY, maxY);
-            }
-
-            PointF candidate = new(
-                random.Next(x0, x1 + 1),
-                random.Next(y0, y1 + 1));
-            float dx = candidate.X - from.X;
-            float dy = candidate.Y - from.Y;
-            float dist = MathF.Sqrt((dx * dx) + (dy * dy));
-            if (dist >= minDistance)
-            {
-                return candidate;
-            }
-
-            if (dist > bestDist)
-            {
-                bestDist = dist;
-                best = candidate;
-            }
-        }
-
-        return best;
+        float minDistance = Math.Max(
+            PetDesktopBounds.MaxVirtualSpan() * 0.35f,
+            PetForm.WindowSize * 2.5f);
+        return PetDesktopBounds.DistantTopLeft(
+            random,
+            from,
+            PetForm.WindowSize,
+            PetForm.WindowSize,
+            minDistance,
+            8);
     }
 
     private List<PetForm> BuildShuffledOrder(List<PetForm> source)
@@ -642,10 +590,10 @@ internal sealed class PetGroupBrain : IDisposable, IPetBehaviorAdvisor
     {
         if (battleA == null || battleB == null)
         {
-            Rectangle work = Screen.PrimaryScreen?.WorkingArea ?? new Rectangle(0, 0, 1280, 720);
-            return new PointF(
-                work.Left + (work.Width * 0.5f),
-                work.Top + (work.Height * 0.5f));
+            return PetDesktopBounds.WorkingAreaCenterNear(
+                PointF.Empty,
+                PetForm.WindowSize,
+                PetForm.WindowSize);
         }
 
         return new PointF(
@@ -1209,10 +1157,10 @@ internal sealed class PetGroupBrain : IDisposable, IPetBehaviorAdvisor
 
     private PointF BallTopLeftTowardInterior(PointF fromCenter)
     {
-        Rectangle work = Screen.PrimaryScreen?.WorkingArea ?? new Rectangle(0, 0, 1280, 720);
-        PointF destCenter = new(
-            work.Left + (work.Width * 0.5f),
-            work.Top + (work.Height * 0.5f));
+        PointF destCenter = PetDesktopBounds.WorkingAreaCenterNear(
+            fromCenter,
+            PetBallForm.BallSize,
+            PetBallForm.BallSize);
         float dx = destCenter.X - fromCenter.X;
         float dy = destCenter.Y - fromCenter.Y;
         float length = MathF.Sqrt((dx * dx) + (dy * dy));
@@ -1230,18 +1178,12 @@ internal sealed class PetGroupBrain : IDisposable, IPetBehaviorAdvisor
 
     private static PointF ClampPetTopLeft(PointF topLeft)
     {
-        Rectangle work = Screen.PrimaryScreen?.WorkingArea ?? new Rectangle(0, 0, 1280, 720);
-        return new PointF(
-            Math.Clamp(topLeft.X, work.Left, work.Right - PetForm.WindowSize),
-            Math.Clamp(topLeft.Y, work.Top, work.Bottom - PetForm.WindowSize));
+        return PetDesktopBounds.ClampTopLeft(topLeft, PetForm.WindowSize, PetForm.WindowSize);
     }
 
     private static PointF ClampBallTopLeft(PointF topLeft)
     {
-        Rectangle work = Screen.PrimaryScreen?.WorkingArea ?? new Rectangle(0, 0, 1280, 720);
-        return new PointF(
-            Math.Clamp(topLeft.X, work.Left, work.Right - PetBallForm.BallSize),
-            Math.Clamp(topLeft.Y, work.Top, work.Bottom - PetBallForm.BallSize));
+        return PetDesktopBounds.ClampTopLeft(topLeft, PetBallForm.BallSize, PetBallForm.BallSize);
     }
 
     private static float Distance(PointF a, PointF b)
@@ -1367,17 +1309,19 @@ internal sealed class PetGroupBrain : IDisposable, IPetBehaviorAdvisor
 
     private PointF RandomBallPointAwayFrom(PointF from, float minDistance)
     {
-        Rectangle work = Screen.PrimaryScreen?.WorkingArea ?? new Rectangle(0, 0, 1280, 720);
-        int margin = 24;
-        int maxX = Math.Max(work.Left + margin, work.Right - PetBallForm.BallSize - margin);
-        int maxY = Math.Max(work.Top + margin, work.Bottom - PetBallForm.BallSize - margin);
-        PointF best = new(work.Left + margin, work.Top + margin);
+        PointF best = PetDesktopBounds.RandomTopLeft(
+            random,
+            PetBallForm.BallSize,
+            PetBallForm.BallSize,
+            24);
         float bestDist = 0f;
         for (int attempt = 0; attempt < 14; attempt++)
         {
-            PointF candidate = new(
-                random.Next(work.Left + margin, maxX + 1),
-                random.Next(work.Top + margin, maxY + 1));
+            PointF candidate = PetDesktopBounds.RandomTopLeft(
+                random,
+                PetBallForm.BallSize,
+                PetBallForm.BallSize,
+                24);
             float dx = candidate.X + PetBallForm.BallSize * 0.5f - from.X;
             float dy = candidate.Y + PetBallForm.BallSize * 0.5f - from.Y;
             float dist = MathF.Sqrt((dx * dx) + (dy * dy));
@@ -1398,10 +1342,10 @@ internal sealed class PetGroupBrain : IDisposable, IPetBehaviorAdvisor
 
     private void ScatterInitialPositions()
     {
-        Rectangle work = Screen.PrimaryScreen?.WorkingArea ?? new Rectangle(0, 0, 1280, 720);
         for (int i = 0; i < pets.Count; i++)
         {
-            pets[i].PlaceAt(RandomPoint(work));
+            pets[i].PlaceAt(
+                PetDesktopBounds.RandomTopLeft(random, PetForm.WindowSize, PetForm.WindowSize, 32));
         }
     }
 
@@ -1502,13 +1446,4 @@ internal sealed class PetGroupBrain : IDisposable, IPetBehaviorAdvisor
         return first != null && second != null && !ReferenceEquals(first, second);
     }
 
-    private PointF RandomPoint(Rectangle work)
-    {
-        int margin = 32;
-        int maxX = Math.Max(work.Left + margin, work.Right - PetForm.WindowSize - margin);
-        int maxY = Math.Max(work.Top + margin, work.Bottom - PetForm.WindowSize - margin);
-        return new PointF(
-            random.Next(work.Left + margin, maxX + 1),
-            random.Next(work.Top + margin, maxY + 1));
-    }
 }

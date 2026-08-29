@@ -61,10 +61,7 @@ internal sealed class PetForm : Form
         DoubleBuffered = true;
         PetWindowOrder.Apply(this);
 
-        Rectangle work = Screen.PrimaryScreen?.WorkingArea ?? new Rectangle(0, 0, 1280, 720);
-        currentPos = new PointF(
-            work.Left + (work.Width - WindowSize) * 0.5f,
-            work.Top + (work.Height - WindowSize) * 0.5f);
+        currentPos = PetDesktopBounds.RandomTopLeft(random, WindowSize, WindowSize);
         Location = Point.Round(currentPos);
 
         animTimer = new System.Windows.Forms.Timer { Interval = 1000 / Fps };
@@ -81,9 +78,14 @@ internal sealed class PetForm : Form
         MouseDown += OnMouseDown;
         MouseMove += OnMouseMove;
         MouseUp += OnMouseUp;
-        ApplyLayeredStyle();
         RollInitialBehavior();
         Invalidate();
+    }
+
+    protected override void OnHandleCreated(EventArgs e)
+    {
+        base.OnHandleCreated(e);
+        ApplyLayeredStyle();
     }
 
     public PointF Position => currentPos;
@@ -921,14 +923,8 @@ internal sealed class PetForm : Form
 
     private void BeginLocalWander()
     {
-        Rectangle work = Screen.PrimaryScreen?.WorkingArea ?? Bounds;
-        int margin = 24;
-        int maxX = Math.Max(work.Left + margin, work.Right - WindowSize - margin);
-        int maxY = Math.Max(work.Top + margin, work.Bottom - WindowSize - margin);
         BeginExternalMove(
-            new PointF(
-                random.Next(work.Left + margin, maxX + 1),
-                random.Next(work.Top + margin, maxY + 1)),
+            PetDesktopBounds.RandomTopLeft(random, WindowSize, WindowSize),
             3.2f + (float)random.NextDouble() * 2.0f,
             PetAiState.Walk);
     }
@@ -1108,6 +1104,8 @@ internal sealed class PetForm : Form
         }
 
         SetWindowLong(hwnd, -20, exStyle);
+        // TransparencyKeyに加え色キーを明示しピンク背景を残さない
+        SetLayeredWindowAttributes(hwnd, 0x00FF00FF, 0, 0x00000001);
     }
 
     private void ApplySleepVisual()
@@ -1142,10 +1140,7 @@ internal sealed class PetForm : Form
 
     private static PointF ClampToWorkArea(PointF position)
     {
-        Rectangle work = Screen.PrimaryScreen?.WorkingArea ?? new Rectangle(0, 0, 1280, 720);
-        float x = Math.Clamp(position.X, work.Left, work.Right - WindowSize);
-        float y = Math.Clamp(position.Y, work.Top, work.Bottom - WindowSize);
-        return new PointF(x, y);
+        return PetDesktopBounds.ClampTopLeft(position, WindowSize, WindowSize);
     }
 
     private static float Lerp(float a, float b, float t) => a + (b - a) * t;
@@ -1190,6 +1185,13 @@ internal sealed class PetForm : Form
 
     [DllImport("user32.dll")]
     private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
+
+    [DllImport("user32.dll")]
+    private static extern bool SetLayeredWindowAttributes(
+        IntPtr hwnd,
+        uint crKey,
+        byte bAlpha,
+        uint dwFlags);
 
     private struct NoteParticle
     {
