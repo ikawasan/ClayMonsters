@@ -1,4 +1,5 @@
 using System;
+using ClayEditor;
 using ClayEditor.Backend.Interface;
 using UnityEngine;
 
@@ -37,6 +38,10 @@ namespace ClayEditor.Backend
             public static readonly int PaintSize = Shader.PropertyToID("_PaintSize");
             public static readonly int ModOrigin = Shader.PropertyToID("_ModOrigin");
             public static readonly int ModSize = Shader.PropertyToID("_ModSize");
+            public static readonly int ModBrushShape = Shader.PropertyToID("_ModBrushShape");
+            public static readonly int ModBrushAxisX = Shader.PropertyToID("_ModBrushAxisX");
+            public static readonly int ModBrushAxisY = Shader.PropertyToID("_ModBrushAxisY");
+            public static readonly int ModBrushAxisZ = Shader.PropertyToID("_ModBrushAxisZ");
             public static readonly int DefaultColor = Shader.PropertyToID("_DefaultColor");
         }
 
@@ -154,7 +159,12 @@ namespace ClayEditor.Backend
         }
 
         /// <inheritdoc/>
-        public void Modify(Vector3 hitPosition, float modRadius, float modStrength)
+        public void Modify(
+            Vector3 hitPosition,
+            float modRadius,
+            float modStrength,
+            ClaySculptBrushShape brushShape,
+            ClaySculptBrushOrientation brushOrientation)
         {
             EnsureShaderGridParams();
             ComputeBrushVoxelBounds(
@@ -175,6 +185,16 @@ namespace ClayEditor.Backend
             marchingCubesCompute.SetVector(ShaderIDs.HitPosition, hitPosition);
             marchingCubesCompute.SetFloat(ShaderIDs.ModRadius, modRadius);
             marchingCubesCompute.SetFloat(ShaderIDs.ModStrength, modStrength);
+            marchingCubesCompute.SetInt(ShaderIDs.ModBrushShape, (int)brushShape);
+            marchingCubesCompute.SetVector(
+                ShaderIDs.ModBrushAxisX,
+                new Vector4(brushOrientation.AxisX.x, brushOrientation.AxisX.y, brushOrientation.AxisX.z, 0f));
+            marchingCubesCompute.SetVector(
+                ShaderIDs.ModBrushAxisY,
+                new Vector4(brushOrientation.AxisY.x, brushOrientation.AxisY.y, brushOrientation.AxisY.z, 0f));
+            marchingCubesCompute.SetVector(
+                ShaderIDs.ModBrushAxisZ,
+                new Vector4(brushOrientation.AxisZ.x, brushOrientation.AxisZ.y, brushOrientation.AxisZ.z, 0f));
             marchingCubesCompute.SetBuffer(kernelModifyVoxels, ShaderIDs.Voxels, voxelBuffer);
             marchingCubesCompute.SetInts(ShaderIDs.ModOrigin, minX, minY, minZ);
             marchingCubesCompute.SetInts(ShaderIDs.ModSize, sizeX, sizeY, sizeZ);

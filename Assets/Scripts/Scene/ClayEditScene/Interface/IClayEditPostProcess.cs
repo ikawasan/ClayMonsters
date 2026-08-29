@@ -29,5 +29,11 @@ namespace Scene.ClayEditScene.Interface
         /// </summary>
         /// <param name="color">適用する背景色</param>
         void SetBackgroundColor(Color color);
+
+        /// <summary>
+        /// 背景色を既定値へ戻す
+        /// 有効中ならカメラへ即時反映する
+        /// </summary>
+        void ResetBackgroundColorToDefault();
     }
 }

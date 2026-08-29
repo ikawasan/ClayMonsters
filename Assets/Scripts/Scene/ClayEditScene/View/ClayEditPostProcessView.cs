@@ -16,7 +16,9 @@ namespace Scene.ClayEditScene.View
     {
         private const int DefaultRendererIndex = -1;
 
-        [SerializeField] private Color backgroundColor = Color.black;
+        public static readonly Color DefaultBackgroundColor = Color.black;
+
+        [SerializeField] private Color backgroundColor = DefaultBackgroundColor;
 
         private UniversalAdditionalCameraData cameraData;
         private CameraClearFlags previousClearFlags;
@@ -82,6 +84,12 @@ namespace Scene.ClayEditScene.View
 
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = backgroundColor;
+        }
+
+        /// <inheritdoc/>
+        public void ResetBackgroundColorToDefault()
+        {
+            SetBackgroundColor(DefaultBackgroundColor);
         }
 
         private void ApplyBackground()

@@ -1548,14 +1548,19 @@ namespace ClayEditor
             MarkAllChunksDirty();
         }
 
-        public void Modify(Vector3 localPos, float radius, float strength)
+        public void Modify(
+            Vector3 localPos,
+            float radius,
+            float strength,
+            ClaySculptBrushShape brushShape,
+            ClaySculptBrushOrientation brushOrientation)
         {
             if (!IsBackendReady)
             {
                 return;
             }
 
-            backend.Modify(localPos, radius, strength);
+            backend.Modify(localPos, radius, strength, brushShape, brushOrientation);
             MarkDirtyChunks(localPos, radius);
         }
 

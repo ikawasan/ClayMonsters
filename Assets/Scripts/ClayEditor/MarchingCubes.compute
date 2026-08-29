@@ -27,6 +27,10 @@ float3 _Offset; // 中心にずらすためのオフセット値
 float3 _HitPosition; // ローカル座標
 float _ModRadius;
 float _ModStrength;
+int _ModBrushShape;
+float3 _ModBrushAxisX;
+float3 _ModBrushAxisY;
+float3 _ModBrushAxisZ;
 
 // 部分更新用 GenerateMeshで処理するチャンクの原点（ボクセル座標）と範囲
 int3 _ChunkOrigin;
@@ -154,6 +158,106 @@ float3 InterpolateColor(uint3 cornerA, uint3 cornerB, float valA, float valB)
     return lerp(colorA, colorB, t);
 }
 
+float EvaluateBrushInfluence(float3 localPos, float3 hitPosition, float radius, int brushShape)
+{
+    if (radius <= 1e-6)
+    {
+        return 0.0;
+    }
+
+    float3 position = localPos - hitPosition;
+    if (brushShape != 0)
+    {
+        position = float3(
+            dot(position, _ModBrushAxisX),
+            dot(position, _ModBrushAxisY),
+            dot(position, _ModBrushAxisZ));
+    }
+
+    if (brushShape == 1)
+    {
+        float3 absolute = abs(position);
+        float maxAxis = max(absolute.x, max(absolute.y, absolute.z));
+        if (maxAxis >= radius)
+        {
+            return 0.0;
+        }
+
+        float normalized = maxAxis / radius;
+        return 1.0 - normalized * normalized;
+    }
+
+    if (brushShape == 2)
+    {
+        if (position.y < -radius || position.y > radius)
+        {
+            return 0.0;
+        }
+
+        float allowedRadius = saturate((radius - position.y) / (radius * 2.0)) * radius;
+        if (allowedRadius <= 1e-6)
+        {
+            return 0.0;
+        }
+
+        float radialDistance = length(position.xz);
+        if (radialDistance >= allowedRadius)
+        {
+            return 0.0;
+        }
+
+        float radialNormalized = radialDistance / allowedRadius;
+        return 1.0 - radialNormalized * radialNormalized;
+    }
+
+    if (brushShape == 3)
+    {
+        if (position.y < -radius || position.y > radius)
+        {
+            return 0.0;
+        }
+
+        float allowedHalfExtent = saturate((radius - position.y) / (radius * 2.0)) * radius;
+        if (allowedHalfExtent <= 1e-6)
+        {
+            return 0.0;
+        }
+
+        float planarDistance = max(abs(position.x), abs(position.z));
+        if (planarDistance >= allowedHalfExtent)
+        {
+            return 0.0;
+        }
+
+        float planarNormalized = planarDistance / allowedHalfExtent;
+        return 1.0 - planarNormalized * planarNormalized;
+    }
+
+    if (brushShape == 4)
+    {
+        float tubeRadius = radius * 0.35;
+        float ringRadius = radius * 0.65;
+        float2 ringOffset = float2(length(position.xy) - ringRadius, position.z);
+        float distSq = dot(ringOffset, ringOffset);
+        float tubeRadiusSq = tubeRadius * tubeRadius;
+        if (distSq >= tubeRadiusSq)
+        {
+            return 0.0;
+        }
+
+        return 1.0 - distSq / tubeRadiusSq;
+    }
+
+    float radiusSq = radius * radius;
+    float sphereDistSq = dot(position, position);
+    if (sphereDistSq >= radiusSq)
+    {
+        return 0.0;
+    }
+
+    return 1.0 - sphereDistSq / radiusSq;
+}
+
 [numthreads(8, 8, 8)]
 void GenerateMesh(uint3 tid : SV_DispatchThreadID)
 {
@@ -257,12 +361,10 @@ void ModifyVoxels(uint3 id : SV_DispatchThreadID)
     }
 
     float3 localPos = (float3) voxelId * _Scale - _Offset;
-    float radiusSq = _ModRadius * _ModRadius;
-    float distSq = dot(localPos - _HitPosition, localPos - _HitPosition);
-
-    if (distSq < radiusSq)
+    float influence = EvaluateBrushInfluence(localPos, _HitPosition, _ModRadius, _ModBrushShape);
+    if (influence > 0.0)
     {
-        float influence = (1.0 - distSq / radiusSq) * _ModStrength;
+        influence *= _ModStrength;
         int idx = GetIndex(voxelId.x, voxelId.y, voxelId.z);
         // 極端な密度で等値面補間が壊れるのを防ぐ
         _Voxels[idx] = clamp(_Voxels[idx] + influence, -1.0, 1.0);

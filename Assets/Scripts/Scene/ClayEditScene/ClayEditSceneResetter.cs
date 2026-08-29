@@ -3,6 +3,8 @@ using ClayEditor.Interface;
 using ClayEditor.Paint;
 using ClayEditor.Rigging;
 using GameData;
+using Scene.ClayEditScene.Interface;
+using Scene.ClayEditScene.View;
 using TMPro;
 using UI.ClayEditor.View;
 using UI.ColorPicker;
@@ -26,6 +28,9 @@ namespace Scene.ClayEditScene
         private readonly ClayPainter clayPainter;
         private readonly ClayAutoRigger rigger;
         private readonly ClayEditSessionContext sessionContext;
+        private readonly ClaySculptBrushShapeContext brushShapeContext;
+        private readonly IClayEditPostProcess clayEditPostProcess;
+        private readonly ClayEditBackgroundColorView backgroundColorView;
 
         [Inject]
         public ClayEditSceneResetter(
@@ -37,7 +42,10 @@ namespace Scene.ClayEditScene
             ColorPicker colorPicker,
             ClayPainter clayPainter,
             ClayAutoRigger rigger,
-            ClayEditSessionContext sessionContext)
+            ClayEditSessionContext sessionContext,
+            ClaySculptBrushShapeContext brushShapeContext,
+            IClayEditPostProcess clayEditPostProcess,
+            ClayEditBackgroundColorView backgroundColorView)
         {
             this.context = context;
             this.editor = editor;
@@ -48,6 +56,18 @@ namespace Scene.ClayEditScene
             this.clayPainter = clayPainter;
             this.rigger = rigger;
             this.sessionContext = sessionContext;
+            this.brushShapeContext = brushShapeContext;
+            this.clayEditPostProcess = clayEditPostProcess;
+            this.backgroundColorView = backgroundColorView;
+        }
+
+        /// <summary>
+        /// ClayEdit 入場時に編集UIの表示状態を初期化する
+        /// </summary>
+        public void ResetOnEnter()
+        {
+            ResetBrushShape();
+            ResetBackgroundColor();
         }
 
         /// <summary>
@@ -57,6 +77,8 @@ namespace Scene.ClayEditScene
         {
             sessionContext.Reset();
             CollapseModeDropdown();
+            ResetBrushShape();
+            ResetBackgroundColor();
             // 造形メッシュ・ボクセルを空に戻す
             editor.ClearMesh();
 
@@ -86,6 +108,20 @@ namespace Scene.ClayEditScene
 
             // 編集モードを初期化する
             context.ChangeMode(EditModeType.Clay);
+        }
+
+        private void ResetBrushShape()
+        {
+            brushShapeContext.Reset();
+        }
+
+        private void ResetBackgroundColor()
+        {
+            clayEditPostProcess.ResetBackgroundColorToDefault();
+            if (backgroundColorView != null)
+            {
+                backgroundColorView.ResetToDefault();
+            }
         }
 
         private static void CollapseModeDropdown()

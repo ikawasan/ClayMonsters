@@ -16,6 +16,7 @@ namespace ClayEditor
         [Inject] private readonly IClayInputProvider input;
         [Inject] private readonly IClaySceneContext sceneContext;
         [Inject] private readonly ISeService seService;
+        [Inject] private readonly ClaySculptBrushShapeContext brushShapeContext;
 
         [SerializeField] private GameObject cursorObject;
         [SerializeField] private MeshRenderer cursorMeshRenderer;
@@ -26,6 +27,12 @@ namespace ClayEditor
         private UnityEngine.Camera mainCamera;
         private readonly CursorRaycaster raycaster = new();
         private float cursorMeshDiameter = 1f;
+        private MeshFilter cursorMeshFilter;
+        private Mesh sphereCursorMesh;
+        private Mesh cubeCursorMesh;
+        private Mesh coneCursorMesh;
+        private Mesh squarePyramidCursorMesh;
+        private Mesh torusCursorMesh;
         private const float MinSculptSePitch = 0.05f;
         private const float MaxSculptSePitch = 0.5f;
 
@@ -49,6 +56,12 @@ namespace ClayEditor
             }
 
             CacheCursorMeshDiameter();
+            CacheBuiltinCursorMeshes();
+            ApplyCursorBrushShape(brushShapeContext.Shape);
+
+            brushShapeContext.CurrentShape
+                .Subscribe(ApplyCursorBrushShape)
+                .AddTo(this);
 
             if (mainCamera != null && editor.RaycastAnchor != null)
             {
@@ -178,10 +191,8 @@ namespace ClayEditor
 
             if (cursorObject != null)
             {
-                cursorObject.transform.position = worldPos;
-                // å©ÇΩñ⁄ÇÃîºåaÇ™BrushRadiusÇ∆àÍívÇ∑ÇÈÇÊÇ§ÉÅÉbÉVÉÖíºåaÇ≈ê≥ãKâªÇ∑ÇÈ
-                float cursorScale = editor.BrushRadius * 2f / cursorMeshDiameter;
-                cursorObject.transform.localScale = Vector3.one * cursorScale;
+                UpdateBrushOrientation();
+                ApplyCursorTransform(worldPos);
             }
 
             // AltíÜÅiÉJÉÅÉâëÄçÏíÜÅjÇÕë¢å`ÇµÇ»Ç¢
@@ -299,16 +310,7 @@ namespace ClayEditor
 
         private void CacheCursorMeshDiameter()
         {
-            MeshFilter meshFilter = null;
-            if (cursorMeshRenderer != null)
-            {
-                meshFilter = cursorMeshRenderer.GetComponent<MeshFilter>();
-            }
-            else if (cursorObject != null)
-            {
-                meshFilter = cursorObject.GetComponent<MeshFilter>();
-            }
-
+            MeshFilter meshFilter = ResolveCursorMeshFilter();
             if (meshFilter == null || meshFilter.sharedMesh == null)
             {
                 return;
@@ -320,6 +322,105 @@ namespace ClayEditor
             {
                 cursorMeshDiameter = 1f;
             }
+        }
+
+        private void CacheBuiltinCursorMeshes()
+        {
+            sphereCursorMesh = Resources.GetBuiltinResource<Mesh>("Sphere.fbx");
+            cubeCursorMesh = Resources.GetBuiltinResource<Mesh>("Cube.fbx");
+            coneCursorMesh = ClaySculptBrushCursorVisual.GetOrCreateConeMesh();
+            squarePyramidCursorMesh = ClaySculptBrushCursorVisual.GetOrCreateSquarePyramidMesh();
+            torusCursorMesh = ClaySculptBrushCursorVisual.GetOrCreateTorusMesh();
+        }
+
+        private void ApplyCursorBrushShape(ClaySculptBrushShape shape)
+        {
+            MeshFilter meshFilter = ResolveCursorMeshFilter();
+            if (meshFilter == null)
+            {
+                return;
+            }
+
+            Mesh targetMesh = ClaySculptBrushCursorVisual.ResolveMesh(
+                shape,
+                sphereCursorMesh,
+                cubeCursorMesh,
+                coneCursorMesh,
+                squarePyramidCursorMesh,
+                torusCursorMesh);
+            if (targetMesh != null)
+            {
+                meshFilter.sharedMesh = targetMesh;
+            }
+
+            CacheCursorMeshDiameter();
+            if (cursorObject != null)
+            {
+                UpdateBrushOrientation();
+                ApplyCursorTransform(cursorObject.transform.position);
+            }
+        }
+
+        private void UpdateBrushOrientation()
+        {
+            Transform meshTransform = editor.RaycastAnchor;
+            if (meshTransform == null || mainCamera == null)
+            {
+                return;
+            }
+
+            Transform cameraTransform = mainCamera.transform;
+            Vector3 localAxisY = meshTransform.InverseTransformDirection(cameraTransform.up);
+            Vector3 localAxisZ = meshTransform.InverseTransformDirection(-cameraTransform.forward);
+            brushShapeContext.SetViewAlignedOrientation(localAxisY, localAxisZ);
+        }
+
+        private void ApplyCursorTransform(Vector3 worldPos)
+        {
+            if (cursorObject == null)
+            {
+                return;
+            }
+
+            cursorObject.transform.position = worldPos;
+
+            ClaySculptBrushShape shape = brushShapeContext.Shape;
+            Transform meshTransform = editor.RaycastAnchor;
+            if (meshTransform != null && shape != ClaySculptBrushShape.Sphere)
+            {
+                cursorObject.transform.rotation = ClaySculptBrushCursorVisual.ResolveWorldRotation(
+                    meshTransform.rotation,
+                    brushShapeContext.Orientation,
+                    shape);
+            }
+            else
+            {
+                cursorObject.transform.rotation = Quaternion.identity;
+            }
+
+            cursorObject.transform.localScale = ClaySculptBrushCursorVisual.ResolveLocalScale(
+                shape,
+                editor.BrushRadius,
+                cursorMeshDiameter);
+        }
+
+        private MeshFilter ResolveCursorMeshFilter()
+        {
+            if (cursorMeshFilter != null)
+            {
+                return cursorMeshFilter;
+            }
+
+            if (cursorMeshRenderer != null)
+            {
+                cursorMeshFilter = cursorMeshRenderer.GetComponent<MeshFilter>();
+            }
+            else if (cursorObject != null)
+            {
+                cursorMeshFilter = cursorObject.GetComponent<MeshFilter>();
+            }
+
+            return cursorMeshFilter;
         }
 
         // îÒï\é¶íÜÇ≈ÇÕëÄçÏÇñ≥éã

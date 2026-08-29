@@ -1,3 +1,4 @@
+using ClayEditor;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -49,6 +50,10 @@ namespace ClayEditor.Backend.Jobs
         [ReadOnly] public float3 HitPosition;
         [ReadOnly] public float ModRadius;
         [ReadOnly] public float ModStrength;
+        [ReadOnly] public ClaySculptBrushShape BrushShape;
+        [ReadOnly] public float3 BrushAxisX;
+        [ReadOnly] public float3 BrushAxisY;
+        [ReadOnly] public float3 BrushAxisZ;
         [ReadOnly] public int MinX;
         [ReadOnly] public int MinY;
         [ReadOnly] public int MinZ;
@@ -76,15 +81,19 @@ namespace ClayEditor.Backend.Jobs
             }
 
             float3 localPos = new float3(x, y, z) * Scale - Offset;
-            float radiusSq = ModRadius * ModRadius;
-            float distSq = math.lengthsq(localPos - HitPosition);
-            if (distSq >= radiusSq)
+            var orientation = new ClaySculptBrushOrientation(BrushAxisX, BrushAxisY, BrushAxisZ);
+            float shapeInfluence = ClaySculptBrushShapeMath.EvaluateInfluence(
+                localPos,
+                HitPosition,
+                ModRadius,
+                BrushShape,
+                orientation);
+            if (shapeInfluence <= 0f)
             {
                 return;
             }
 
-            // 1-(d/r)^2 を平方距離だけで評価する
-            float influence = (1f - distSq / radiusSq) * ModStrength;
+            float influence = shapeInfluence * ModStrength;
             int voxelIndex = x * GridCount * GridCount + y * GridCount + z;
             // 極端な密度で等値面補間が壊れるのを防ぐ
             Voxels[voxelIndex] = math.clamp(Voxels[voxelIndex] + influence, -1f, 1f);

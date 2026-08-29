@@ -56,6 +56,7 @@ namespace Scene.ClayEditScene
         [SerializeField] ClayEditModeView clayEditModeView;
         [SerializeField] ClayEditOperationGuideView clayEditOperationGuideView;
         [SerializeField] ClayEditBackgroundColorView clayEditBackgroundColorView;
+        [SerializeField] ClaySculptBrushShapeView claySculptBrushShapeView;
         [SerializeField] ClayModelAnimationView clayModelAnimationView;
         [SerializeField] SaveSlotView saveSlotView;
 
@@ -99,6 +100,7 @@ namespace Scene.ClayEditScene
             builder.Register<ClayEditSessionContext>(Lifetime.Singleton);
             builder.Register<ClayEditSavedModelImporter>(Lifetime.Singleton);
 
+            builder.Register<ClaySculptBrushShapeContext>(Lifetime.Singleton);
             builder.RegisterComponent(clayEditor);
             builder.RegisterComponent(clayVoxelEngine).AsSelf().As<IInitializable>();
             builder.Register<ClayEditModeViewModel>(Lifetime.Singleton).AsImplementedInterfaces().AsSelf();
@@ -126,6 +128,11 @@ namespace Scene.ClayEditScene
             if (clayEditBackgroundColorView != null)
             {
                 builder.RegisterComponent(clayEditBackgroundColorView);
+            }
+
+            if (claySculptBrushShapeView != null)
+            {
+                builder.RegisterComponent(claySculptBrushShapeView);
             }
 
             builder.RegisterComponent(clayModelAnimationView);

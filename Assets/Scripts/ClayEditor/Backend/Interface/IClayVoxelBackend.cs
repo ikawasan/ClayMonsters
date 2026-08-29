@@ -1,4 +1,5 @@
 using System;
+using ClayEditor;
 using UnityEngine;
 
 namespace ClayEditor.Backend.Interface
@@ -37,7 +38,12 @@ namespace ClayEditor.Backend.Interface
         /// <summary>
         /// ブラシでボクセル密度を変更する
         /// </summary>
-        void Modify(Vector3 hitPosition, float modRadius, float modStrength);
+        void Modify(
+            Vector3 hitPosition,
+            float modRadius,
+            float modStrength,
+            ClaySculptBrushShape brushShape,
+            ClaySculptBrushOrientation brushOrientation);
 
         /// <summary>
         /// ブラシでボクセル色を塗る

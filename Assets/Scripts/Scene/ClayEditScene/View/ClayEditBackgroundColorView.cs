@@ -91,6 +91,21 @@ namespace Scene.ClayEditScene.View
             ApplySliderValue(initialValue);
         }
 
+        /// <summary>
+        /// 背景色スライダーとカメラ背景色を既定値へ戻す
+        /// </summary>
+        public void ResetToDefault()
+        {
+            if (backgroundColorSlider == null)
+            {
+                return;
+            }
+
+            const float defaultSliderValue = 0f;
+            backgroundColorSlider.SetValueWithoutNotify(defaultSliderValue);
+            ApplySliderValue(defaultSliderValue);
+        }
+
 
         /// <inheritdoc/>
         public void RefreshLocalizedUi()

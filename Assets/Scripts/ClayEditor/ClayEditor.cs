@@ -10,6 +10,7 @@ namespace ClayEditor
         [Inject] private readonly ClayHistoryManager historyManager;
         [Inject] private readonly ClayVoxelEngine engine;
         [Inject] private readonly ClayEditorRangeVisualizer editorRangeVisualizer;
+        [Inject] private readonly ClaySculptBrushShapeContext brushShapeContext;
 
         [Header("Brush Settings")]
         [SerializeField] private float brushRadius = 2f;
@@ -82,7 +83,12 @@ namespace ClayEditor
             float localRadius = modelScale > 0f ? brushRadius / modelScale : brushRadius;
             float strength = isSubtract ? -brushStrength : brushStrength;
 
-            engine.Modify(localPos, localRadius, strength);
+            engine.Modify(
+                localPos,
+                localRadius,
+                strength,
+                brushShapeContext.Shape,
+                brushShapeContext.Orientation);
             lastModifyLocalPos = localPos;
             lastModifyLocalRadius = localRadius;
             hasLastModify = true;

@@ -3,6 +3,7 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+using ClayEditor;
 using ClayEditor.Backend.Interface;
 using ClayEditor.Backend.Jobs;
 
@@ -94,7 +95,12 @@ namespace ClayEditor.Backend
         }
 
         /// <inheritdoc/>
-        public void Modify(Vector3 hitPosition, float modRadius, float modStrength)
+        public void Modify(
+            Vector3 hitPosition,
+            float modRadius,
+            float modStrength,
+            ClaySculptBrushShape brushShape,
+            ClaySculptBrushOrientation brushOrientation)
         {
             Vector3 voxelCenter = (hitPosition + (Vector3)offset) / scale;
             float voxelRadius = modRadius / scale + 1f;
@@ -124,6 +130,10 @@ namespace ClayEditor.Backend
                 HitPosition = hitPosition,
                 ModRadius = modRadius,
                 ModStrength = modStrength,
+                BrushShape = brushShape,
+                BrushAxisX = brushOrientation.AxisX,
+                BrushAxisY = brushOrientation.AxisY,
+                BrushAxisZ = brushOrientation.AxisZ,
                 MinX = minX,
                 MinY = minY,
                 MinZ = minZ,
