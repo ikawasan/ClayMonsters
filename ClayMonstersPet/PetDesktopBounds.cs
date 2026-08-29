@@ -102,6 +102,66 @@ internal static class PetDesktopBounds
     }
 
     /// <summary>
+    /// 画面間移動中に窓が一時的にまたがっても通過できるよう左上を補正する
+    /// </summary>
+    public static PointF ClampTopLeftForTransit(PointF topLeft, int windowWidth, int windowHeight)
+    {
+        if (WindowFitsAnyWorkingArea(topLeft, windowWidth, windowHeight))
+        {
+            return topLeft;
+        }
+
+        Rectangle virtualBounds = GetVirtualDesktopBounds();
+        float maxX = Math.Max(virtualBounds.Left, virtualBounds.Right - windowWidth);
+        float maxY = Math.Max(virtualBounds.Top, virtualBounds.Bottom - windowHeight);
+        return new PointF(
+            Math.Clamp(topLeft.X, virtualBounds.Left, maxX),
+            Math.Clamp(topLeft.Y, virtualBounds.Top, maxY));
+    }
+
+    /// <summary>
+    /// 窓全体がいずれかの作業領域へ収まるか返す
+    /// </summary>
+    public static bool WindowFitsAnyWorkingArea(PointF topLeft, int windowWidth, int windowHeight)
+    {
+        Rectangle[] areas = GetWorkingAreas();
+        for (int i = 0; i < areas.Length; i++)
+        {
+            Rectangle work = areas[i];
+            if (topLeft.X >= work.Left
+                && topLeft.Y >= work.Top
+                && topLeft.X + windowWidth <= work.Right
+                && topLeft.Y + windowHeight <= work.Bottom)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// 全モニターを包む仮想デスクトップ矩形を返す
+    /// </summary>
+    public static Rectangle GetVirtualDesktopBounds()
+    {
+        Rectangle[] areas = GetWorkingAreas();
+        int left = areas[0].Left;
+        int top = areas[0].Top;
+        int right = areas[0].Right;
+        int bottom = areas[0].Bottom;
+        for (int i = 1; i < areas.Length; i++)
+        {
+            left = Math.Min(left, areas[i].Left);
+            top = Math.Min(top, areas[i].Top);
+            right = Math.Max(right, areas[i].Right);
+            bottom = Math.Max(bottom, areas[i].Bottom);
+        }
+
+        return Rectangle.FromLTRB(left, top, right, bottom);
+    }
+
+    /// <summary>
     /// 点が属する作業領域の中心を返す
     /// </summary>
     public static PointF WorkingAreaCenterNear(PointF point, int windowWidth, int windowHeight)

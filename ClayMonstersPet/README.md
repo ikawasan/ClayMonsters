@@ -16,10 +16,18 @@ Steamから遊ぶ場合は兄弟プロジェクト `ClayMonstersLauncher` を起
 
 ## ビルド
 
-.NET 9 Desktop Runtime が必要です。
+Release publish は `.NET 9 Desktop Runtime` 同梱の self-contained 単一exeになります。プレイヤーPCへの .NET インストールは不要です。
+
+Unity開発用（StreamingAssetsへ配置）:
 
 ```powershell
-dotnet publish .\ClayMonstersPet\ClayMonstersPet.csproj -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -o .\Assets\StreamingAssets\ClayMonstersPet
+dotnet publish .\ClayMonstersPet\ClayMonstersPet.csproj -c Release -o .\Assets\StreamingAssets\ClayMonstersPet
+```
+
+Steam出荷用（ゲームルート配下）:
+
+```powershell
+dotnet publish .\ClayMonstersPet\ClayMonstersPet.csproj -c Release -o .\Build\Steam\ClayMonstersPet
 ```
 
 出力された `ClayMonstersPet.exe` がビルド済みゲームから見つかり次第、Unity本体は焼き出し後に終了し、このexeへ引き継ぎます。

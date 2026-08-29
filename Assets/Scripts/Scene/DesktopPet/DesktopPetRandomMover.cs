@@ -31,7 +31,7 @@ namespace Scene.DesktopPet
             Action onIdle,
             float minIdleSeconds = 1.2f,
             float maxIdleSeconds = 3.5f,
-            float moveSeconds = 2.4f)
+            float moveSeconds = 4.5f)
         {
             this.window = window;
             this.windowWidth = windowWidth;

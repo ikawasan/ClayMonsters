@@ -37,18 +37,18 @@ namespace Scene.DesktopPet
         }
 
         /// <inheritdoc/>
-        public void Launch(IReadOnlyList<int> playerSlotIndices, bool stayOnTop)
+        public bool Launch(IReadOnlyList<int> playerSlotIndices, bool stayOnTop)
         {
             if (playerSlotIndices == null || playerSlotIndices.Count == 0)
             {
                 Debug.LogError("[DesktopPetLauncher] スロットが選択されていません");
-                return;
+                return false;
             }
 
             if (activeRuntime != null)
             {
                 Debug.LogWarning("[DesktopPetLauncher] 既にデスクトップペットが起動中です");
-                return;
+                return false;
             }
 
             List<int> validSlots = new List<int>(MaxLaunchCount);
@@ -66,16 +66,23 @@ namespace Scene.DesktopPet
             if (validSlots.Count == 0)
             {
                 Debug.LogError("[DesktopPetLauncher] 有効なスロットがありません");
-                return;
+                return false;
             }
 
             bgmService?.Stop();
 
 #if UNITY_STANDALONE_WIN && !UNITY_EDITOR
+            ApplicationQuitGuard.BeginDesktopPetHandoff();
             if (TryHandoffReadyCacheAndQuit(validSlots, stayOnTop))
             {
-                return;
+                return true;
             }
+
+            ApplicationQuitGuard.CancelDesktopPetHandoff();
+            Debug.LogError(
+                "[DesktopPetLauncher] 外部ペットへ引き継げませんでした"
+                + " モデル編集で再保存してから再試行してください");
+            return false;
 #endif
 
             DesktopPetLaunchRequest.SetPending(validSlots);
@@ -91,6 +98,7 @@ namespace Scene.DesktopPet
                 stayOnTop,
                 OnRuntimeStopped);
             DesktopPetLaunchRequest.Clear();
+            return true;
         }
 
         private bool TryHandoffReadyCacheAndQuit(List<int> validSlots, bool stayOnTop)

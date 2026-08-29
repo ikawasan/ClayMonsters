@@ -12,6 +12,7 @@ namespace Scene.DesktopPet.Interface
         /// </summary>
         /// <param name="playerSlotIndices">未育成スロット番号(最大5)</param>
         /// <param name="stayOnTop">最前面ならtrue最背面ならfalse</param>
-        void Launch(IReadOnlyList<int> playerSlotIndices, bool stayOnTop);
+        /// <returns>起動または引き継ぎ開始ならtrue</returns>
+        bool Launch(IReadOnlyList<int> playerSlotIndices, bool stayOnTop);
     }
 }

@@ -50,6 +50,9 @@ namespace Scene.TitleScene.Presenter
         private ConfirmIntent confirmIntent = ConfirmIntent.None;
         private NpcTournamentDifficulty pendingTournamentDifficulty = NpcTournamentDifficulty.Normal;
 
+        private bool IsTitleInputBlocked =>
+            sceneManager.IsTransition || ApplicationQuitGuard.IsQuitting;
+
         [Inject]
         public TitlePresenter(
             IClayMonsterSceneManager sceneManager,
@@ -145,7 +148,7 @@ namespace Scene.TitleScene.Presenter
 
         private void OnClickClayEditButton()
         {
-            if (sceneManager.IsTransition)
+            if (IsTitleInputBlocked)
             {
                 return;
             }
@@ -155,7 +158,7 @@ namespace Scene.TitleScene.Presenter
 
         private void OnClickBattleNpcButton()
         {
-            if (sceneManager.IsTransition)
+            if (IsTitleInputBlocked)
             {
                 return;
             }
@@ -181,7 +184,7 @@ namespace Scene.TitleScene.Presenter
 
         private void OnClickNpcTournament()
         {
-            if (sceneManager.IsTransition)
+            if (IsTitleInputBlocked)
             {
                 return;
             }
@@ -209,7 +212,7 @@ namespace Scene.TitleScene.Presenter
 
         private void OnClickNpcFreeBattle()
         {
-            if (sceneManager.IsTransition)
+            if (IsTitleInputBlocked)
             {
                 return;
             }
@@ -229,7 +232,7 @@ namespace Scene.TitleScene.Presenter
 
         private void OnClickNpcDifficulty(NpcTournamentDifficulty difficulty)
         {
-            if (sceneManager.IsTransition)
+            if (IsTitleInputBlocked)
             {
                 return;
             }
@@ -294,7 +297,7 @@ namespace Scene.TitleScene.Presenter
 
         private void OnClickBattlePvpButton()
         {
-            if (sceneManager.IsTransition)
+            if (IsTitleInputBlocked)
             {
                 return;
             }
@@ -317,7 +320,7 @@ namespace Scene.TitleScene.Presenter
 
         private void OnClickTrainingButton()
         {
-            if (sceneManager.IsTransition)
+            if (IsTitleInputBlocked)
             {
                 return;
             }
@@ -355,7 +358,7 @@ namespace Scene.TitleScene.Presenter
 
         private void OnClickDesktopPetButton()
         {
-            if (sceneManager.IsTransition)
+            if (IsTitleInputBlocked)
             {
                 return;
             }
@@ -499,7 +502,12 @@ namespace Scene.TitleScene.Presenter
             optionPresenter.Hide();
             skillTreePresenter.Hide();
             modelGalleryPresenter.Hide();
-            desktopPetLauncher.Launch(slotIndices, stayOnTop);
+            if (!desktopPetLauncher.Launch(slotIndices, stayOnTop))
+            {
+                messageWindowView.ShowLocalized(
+                    GameTextKeys.DesktopPetCacheNotFound,
+                    "???????????????????\n??????????????????????");
+            }
         }
 
         private void OnNpcTournamentConfirmYes()
@@ -537,7 +545,7 @@ namespace Scene.TitleScene.Presenter
 
         private void OnClickQuitGameButton()
         {
-            if (sceneManager.IsTransition)
+            if (IsTitleInputBlocked)
             {
                 return;
             }

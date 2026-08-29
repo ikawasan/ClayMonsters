@@ -45,6 +45,7 @@ internal sealed class PetForm : Form
     private bool dragInterruptedSleep;
     private bool dragKeepSinging;
     private float brainStuckSeconds;
+    private float lineFollowStuckSeconds;
 
     public PetForm(string cacheDirectory, string? gameExe)
     {
@@ -191,7 +192,8 @@ internal sealed class PetForm : Form
         moveFrom = currentPos;
         moveTo = ClampToWorkArea(target);
         moveElapsed = 0f;
-        moveDuration = Math.Max(0.18f, durationSeconds);
+        float travel = MathF.Sqrt(DistanceSquared(moveFrom, moveTo));
+        moveDuration = PetMovementSpeeds.EnforceMinimumDuration(travel, durationSeconds, state);
         float dx = faceDeltaX ?? (moveTo.X - moveFrom.X);
         facing = ResolveFacing(dx);
         action = PetAction.Walk;
@@ -236,16 +238,32 @@ internal sealed class PetForm : Form
         float spacing = Math.Max(28f, spacingPixels);
         if (dist <= spacing * 1.08f)
         {
+            lineFollowStuckSeconds = 0f;
             action = PetAction.Walk;
             return;
         }
 
-        float step = Math.Max(10f, speedPixelsPerSec) * Math.Max(0.001f, dt);
+        float step = Math.Max(40f, speedPixelsPerSec) * Math.Max(0.001f, dt);
         float move = Math.Min(step, dist - spacing);
         float inv = 1f / dist;
         float nx = dx * inv;
         float ny = dy * inv;
-        PlaceAt(new PointF(currentPos.X + (nx * move), currentPos.Y + (ny * move)));
+        PointF before = currentPos;
+        PlaceAtForTransit(new PointF(currentPos.X + (nx * move), currentPos.Y + (ny * move)));
+        if (DistanceSquared(before, currentPos) < 1f)
+        {
+            lineFollowStuckSeconds += dt;
+        }
+        else
+        {
+            lineFollowStuckSeconds = 0f;
+        }
+
+        if (lineFollowStuckSeconds >= 2f)
+        {
+            RecoverLineFollow(leaderCenter, spacing, nx, ny);
+        }
+
         facing = ResolveFacing(nx * WindowSize);
         action = PetAction.Walk;
     }
@@ -256,6 +274,7 @@ internal sealed class PetForm : Form
     public void ClearLineFollowChase()
     {
         lineFollowChasing = false;
+        lineFollowStuckSeconds = 0f;
         if (aiState == PetAiState.LineFollow)
         {
             aiState = PetAiState.Idle;
@@ -880,9 +899,12 @@ internal sealed class PetForm : Form
         moveElapsed += dt;
         float t = Math.Clamp(moveElapsed / moveDuration, 0f, 1f);
         float eased = t * t * (3f - 2f * t);
-        currentPos = new PointF(
-            Lerp(moveFrom.X, moveTo.X, eased),
-            Lerp(moveFrom.Y, moveTo.Y, eased));
+        currentPos = PetDesktopBounds.ClampTopLeftForTransit(
+            new PointF(
+                Lerp(moveFrom.X, moveTo.X, eased),
+                Lerp(moveFrom.Y, moveTo.Y, eased)),
+            WindowSize,
+            WindowSize);
         Location = Point.Round(currentPos);
         if (t < 1f)
         {
@@ -923,10 +945,15 @@ internal sealed class PetForm : Form
 
     private void BeginLocalWander()
     {
-        BeginExternalMove(
-            PetDesktopBounds.RandomTopLeft(random, WindowSize, WindowSize),
-            3.2f + (float)random.NextDouble() * 2.0f,
-            PetAiState.Walk);
+        PointF target = PetDesktopBounds.RandomTopLeft(random, WindowSize, WindowSize);
+        PointF clampedTarget = ClampToWorkArea(target);
+        float travel = MathF.Sqrt(DistanceSquared(currentPos, clampedTarget));
+        float duration = PetMovementSpeeds.DurationFromTravel(
+            travel,
+            PetMovementSpeeds.SoloWanderPixelsPerSec,
+            PetMovementSpeeds.SoloWanderMinDurationSeconds,
+            PetMovementSpeeds.SoloWanderMaxDurationSeconds);
+        BeginExternalMove(target, duration, PetAiState.Walk);
     }
 
     private void DrawZzz(Graphics graphics)
@@ -1141,6 +1168,28 @@ internal sealed class PetForm : Form
     private static PointF ClampToWorkArea(PointF position)
     {
         return PetDesktopBounds.ClampTopLeft(position, WindowSize, WindowSize);
+    }
+
+    private void PlaceAtForTransit(PointF position)
+    {
+        currentPos = PetDesktopBounds.ClampTopLeftForTransit(position, WindowSize, WindowSize);
+        Location = Point.Round(currentPos);
+    }
+
+    private void RecoverLineFollow(PointF leaderCenter, float spacing, float nx, float ny)
+    {
+        PointF target = new PointF(
+            leaderCenter.X - (WindowSize * 0.5f) - (nx * spacing),
+            leaderCenter.Y - (WindowSize * 0.5f) - (ny * spacing));
+        PlaceAt(target);
+        lineFollowStuckSeconds = 0f;
+    }
+
+    private static float DistanceSquared(PointF a, PointF b)
+    {
+        float dx = a.X - b.X;
+        float dy = a.Y - b.Y;
+        return (dx * dx) + (dy * dy);
     }
 
     private static float Lerp(float a, float b, float t) => a + (b - a) * t;

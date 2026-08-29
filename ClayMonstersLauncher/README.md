@@ -7,7 +7,8 @@ Steamの起動exe用の極小ランチャーです。本編またはデスクト
 1. Steam が本ランチャーを起動する
 2. 同じフォルダの `ClayMonsters.exe` を起動する
 3. `ClayMonsters` または `ClayMonstersPet` が生きている間は終了しない
-4. 両方とも一定時間いなくなったら終了する（ペット引き継ぎ／再起動の猶予あり）
+4. 本編→ペット引き継ぎの短い隙間だけ `launcher_keepalive.txt` を使う（約45秒で失効。ペット起動時と終了時に削除）
+5. 両方とも一定時間いなくなったら終了する（ペット引き継ぎ／再起動の猶予あり）
 
 ## Steam設定
 
@@ -18,6 +19,8 @@ Steamの起動exe用の極小ランチャーです。本編またはデスクト
   ClayMonstersLauncher.exe   ← Steamの起動アイテム
   ClayMonsters.exe           ← Unityプレイヤー
   ClayMonsters_Data/
+  ClayMonstersPet/
+    ClayMonstersPet.exe
   ...
 ```
 
@@ -28,22 +31,24 @@ Steamworks / Steamクライアント:
 
 ## ビルド
 
+Release publish は `.NET 9 Desktop Runtime` 同梱の self-contained 単一exeになります。プレイヤーPCへの .NET インストールは不要です。
+
 ```powershell
-dotnet publish .\ClayMonstersLauncher\ClayMonstersLauncher.csproj -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -o .\Build\Steam
+dotnet publish .\ClayMonstersLauncher\ClayMonstersLauncher.csproj -c Release -o .\Build\Steam
 ```
 
 UnityのWindowsビルドも同じ `Build\Steam` に出すか、ランチャーだけをプレイヤー出力フォルダへコピーしてください。
 
-自己完結が必要なら:
+ペットexeも同フォルダへ配置する:
 
 ```powershell
-dotnet publish .\ClayMonstersLauncher\ClayMonstersLauncher.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o .\Build\Steam
+dotnet publish .\ClayMonstersPet\ClayMonstersPet.csproj -c Release -o .\Build\Steam\ClayMonstersPet
 ```
 
 ## ローカル動作チェック（Steamなし）
 
 1. UnityでWindowsプレイヤーをビルドし `ClayMonsters.exe` を用意
-2. 上記publishでランチャーを同じフォルダへ出力
+2. 上記publishでランチャーとペットを同じフォルダへ出力
 3. `ClayMonstersLauncher.exe` をダブルクリック
 4. タスクマネージャで `ClayMonstersLauncher` が残ることを確認
 5. ゲーム内でデスクトップペットを起動し本編が閉じたあと、ランチャーが残ったままペットが表示されることを確認

@@ -369,7 +369,7 @@ internal sealed class PetGroupBrain : IDisposable, IPetBehaviorAdvisor
         }
 
         float spacing = PetForm.WindowSize * 0.32f;
-        float followSpeed = 280f;
+        float followSpeed = PetMovementSpeeds.LineFollowPixelsPerSec;
         for (int i = 1; i < lineOrder.Count; i++)
         {
             PetForm prev = lineOrder[i - 1];
@@ -402,8 +402,10 @@ internal sealed class PetGroupBrain : IDisposable, IPetBehaviorAdvisor
         float dxFinal = target.X - current.X;
         float dyFinal = target.Y - current.Y;
         float travel = MathF.Sqrt((dxFinal * dxFinal) + (dyFinal * dyFinal));
-        float speed = 210f + (float)(random.NextDouble() * 70f);
-        float duration = Math.Clamp(travel / speed, 2.4f, 10f);
+        float speed = PetMovementSpeeds.LineLeaderMinPixelsPerSec
+            + ((float)random.NextDouble()
+                * (PetMovementSpeeds.LineLeaderMaxPixelsPerSec - PetMovementSpeeds.LineLeaderMinPixelsPerSec));
+        float duration = PetMovementSpeeds.DurationFromTravel(travel, speed, 3.5f, 14f);
         leader.BeginExternalMove(target, duration, PetAiState.Walk);
     }
 
@@ -483,8 +485,8 @@ internal sealed class PetGroupBrain : IDisposable, IPetBehaviorAdvisor
         battlePhase = BattlePhase.Idle;
         battleRoundCooldown = 0.2f;
         PointF mid = BattleMidpoint();
-        IssueBattleMove(battleA, BattleSlotTopLeft(battleA, mid, PetForm.WindowSize * 0.85f), 700f);
-        IssueBattleMove(battleB, BattleSlotTopLeft(battleB, mid, PetForm.WindowSize * 0.85f), 700f);
+        IssueBattleMove(battleA, BattleSlotTopLeft(battleA, mid, PetForm.WindowSize * 0.85f), PetMovementSpeeds.BattleSlotInPixelsPerSec);
+        IssueBattleMove(battleB, BattleSlotTopLeft(battleB, mid, PetForm.WindowSize * 0.85f), PetMovementSpeeds.BattleSlotInPixelsPerSec);
         FaceBattlePair();
     }
 
@@ -548,8 +550,8 @@ internal sealed class PetGroupBrain : IDisposable, IPetBehaviorAdvisor
         }
 
         PointF mid = BattleMidpoint();
-        IssueBattleMove(battleA, BattleSlotTopLeft(battleA, mid, PetForm.WindowSize * 0.62f), 900f);
-        IssueBattleMove(battleB, BattleSlotTopLeft(battleB, mid, PetForm.WindowSize * 0.62f), 900f);
+        IssueBattleMove(battleA, BattleSlotTopLeft(battleA, mid, PetForm.WindowSize * 0.62f), PetMovementSpeeds.BattleWindupPixelsPerSec);
+        IssueBattleMove(battleB, BattleSlotTopLeft(battleB, mid, PetForm.WindowSize * 0.62f), PetMovementSpeeds.BattleWindupPixelsPerSec);
     }
 
     private void IssueBattleApproach()
@@ -560,8 +562,8 @@ internal sealed class PetGroupBrain : IDisposable, IPetBehaviorAdvisor
         }
 
         PointF mid = BattleMidpoint();
-        IssueBattleMove(battleA, BattleSlotTopLeft(battleA, mid, PetForm.WindowSize * 0.14f), 1400f);
-        IssueBattleMove(battleB, BattleSlotTopLeft(battleB, mid, PetForm.WindowSize * 0.14f), 1400f);
+        IssueBattleMove(battleA, BattleSlotTopLeft(battleA, mid, PetForm.WindowSize * 0.14f), PetMovementSpeeds.BattleApproachPixelsPerSec);
+        IssueBattleMove(battleB, BattleSlotTopLeft(battleB, mid, PetForm.WindowSize * 0.14f), PetMovementSpeeds.BattleApproachPixelsPerSec);
     }
 
     private void IssueBattleKnockback()
@@ -572,8 +574,8 @@ internal sealed class PetGroupBrain : IDisposable, IPetBehaviorAdvisor
         }
 
         PointF mid = BattleMidpoint();
-        IssueBattleMove(battleA, BattleKnockbackTopLeft(battleA, mid), 1200f);
-        IssueBattleMove(battleB, BattleKnockbackTopLeft(battleB, mid), 1200f);
+        IssueBattleMove(battleA, BattleKnockbackTopLeft(battleA, mid), PetMovementSpeeds.BattleKnockbackPixelsPerSec);
+        IssueBattleMove(battleB, BattleKnockbackTopLeft(battleB, mid), PetMovementSpeeds.BattleKnockbackPixelsPerSec);
     }
 
     private void IssueBattleMove(PetForm pet, PointF target, float speedPixelsPerSec)
@@ -850,11 +852,15 @@ internal sealed class PetGroupBrain : IDisposable, IPetBehaviorAdvisor
         float dy = target.Y - pet.Position.Y;
         float travel = MathF.Sqrt((dx * dx) + (dy * dy));
         float speed = liveFollow
-            ? 280f + (float)(random.NextDouble() * 40f)
-            : 175f + (float)(random.NextDouble() * 40f);
+            ? PetMovementSpeeds.ChaseBallLiveMinPixelsPerSec
+                + ((float)random.NextDouble()
+                    * (PetMovementSpeeds.ChaseBallLiveMaxPixelsPerSec - PetMovementSpeeds.ChaseBallLiveMinPixelsPerSec))
+            : PetMovementSpeeds.ChaseBallNormalMinPixelsPerSec
+                + ((float)random.NextDouble()
+                    * (PetMovementSpeeds.ChaseBallNormalMaxPixelsPerSec - PetMovementSpeeds.ChaseBallNormalMinPixelsPerSec));
         float duration = liveFollow
-            ? Math.Clamp(travel / speed, 0.12f, 0.9f)
-            : Math.Clamp(travel / speed, 0.5f, 3.5f);
+            ? PetMovementSpeeds.DurationFromTravel(travel, speed, 0.18f, 1.2f)
+            : PetMovementSpeeds.DurationFromTravel(travel, speed, 0.8f, 4.5f);
         pet.BeginExternalMove(target, duration, PetAiState.Play, dx);
     }
 
@@ -944,7 +950,11 @@ internal sealed class PetGroupBrain : IDisposable, IPetBehaviorAdvisor
         float dx = target.X - pet.Position.X;
         float dy = target.Y - pet.Position.Y;
         float travel = MathF.Sqrt((dx * dx) + (dy * dy));
-        float duration = Math.Clamp(travel / 320f, 0.28f, 0.7f);
+        float duration = PetMovementSpeeds.DurationFromTravel(
+            travel,
+            PetMovementSpeeds.ChargeBallPixelsPerSec,
+            0.4f,
+            1.0f);
         pet.BeginExternalMove(target, duration, PetAiState.Play, KickFaceDeltaX());
     }
 
@@ -1087,7 +1097,11 @@ internal sealed class PetGroupBrain : IDisposable, IPetBehaviorAdvisor
         float dx = playKickDestination.X - ball.Position.X;
         float dy = playKickDestination.Y - ball.Position.Y;
         float travel = MathF.Sqrt((dx * dx) + (dy * dy));
-        float duration = Math.Clamp(travel / 420f, 0.45f, 1.6f);
+        float duration = PetMovementSpeeds.DurationFromTravel(
+            travel,
+            PetMovementSpeeds.BallKickPixelsPerSec,
+            0.55f,
+            2.2f);
         ball.KickTo(playKickDestination, duration);
     }
 

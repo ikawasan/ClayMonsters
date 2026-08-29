@@ -140,14 +140,15 @@ namespace Scene.DesktopPet
                 textTablesDirectory,
                 stayOnTop);
             string workingDirectory = ResolveWorkingDirectory(viewerPath, gameExe);
-            if (!TryStartViewerProcess(viewerPath, arguments, workingDirectory))
-            {
-                return false;
-            }
-
             DesktopPetSpriteCache.WriteLauncherKeepAliveMarker();
             DesktopPetSpriteCache.WriteActiveMarker(valid);
             DesktopPetSpriteCache.WriteLanguageMarker(languageCode);
+            if (!TryStartViewerProcess(viewerPath, arguments, workingDirectory))
+            {
+                DesktopPetSpriteCache.ClearLauncherKeepAliveMarker();
+                return false;
+            }
+
             DesktopPetPointAccrual.BeginSession();
             return true;
 #endif
@@ -160,32 +161,57 @@ namespace Scene.DesktopPet
         {
             try
             {
-                // UseShellExecuteでUnityのプロセスツリーから切り離す
+                // UseShellExecute=falseで起動成否を確実に判定する
+                // 終了時のtaskkillは/Tなしのため子プロセスのペットは巻き込まれない
                 ProcessStartInfo startInfo = new ProcessStartInfo
                 {
                     FileName = viewerPath,
                     Arguments = arguments,
-                    UseShellExecute = true,
+                    UseShellExecute = false,
                     WorkingDirectory = workingDirectory
                 };
-                Process process = Process.Start(startInfo);
-                if (process == null)
+                using Process process = Process.Start(startInfo);
+                if (process != null)
                 {
-                    UnityEngine.Debug.LogWarning(
-                        "[DesktopPetExternalProcess] Process.Startがnullを返しました");
-                    return false;
+                    UnityEngine.Debug.Log(
+                        "[DesktopPetExternalProcess] 外部ビューアを起動しました path="
+                        + viewerPath);
+                    return true;
                 }
 
-                UnityEngine.Debug.Log(
-                    "[DesktopPetExternalProcess] 外部ビューアを起動しました path="
-                    + viewerPath);
-                return true;
+                UnityEngine.Debug.LogWarning(
+                    "[DesktopPetExternalProcess] Process.Startがnullを返しました"
+                    + " 起動確認へフォールバックします");
+                return IsPetProcessRunning();
             }
             catch (Exception exception)
             {
                 UnityEngine.Debug.LogWarning(
                     "[DesktopPetExternalProcess] 外部ビューア起動失敗 "
                     + exception.Message);
+                return IsPetProcessRunning();
+            }
+        }
+
+        private static bool IsPetProcessRunning()
+        {
+            try
+            {
+                Process[] processes = Process.GetProcessesByName(ViewerProcessName);
+                if (processes == null || processes.Length == 0)
+                {
+                    return false;
+                }
+
+                for (int i = 0; i < processes.Length; i++)
+                {
+                    processes[i]?.Dispose();
+                }
+
+                return true;
+            }
+            catch
+            {
                 return false;
             }
         }

@@ -550,7 +550,7 @@ namespace Scene.DesktopPet
             }
 
             float spacing = 0.24f;
-            float followSpeed = 2.15f;
+            float followSpeed = 1.3f;
             for (int i = 1; i < lineOrder.Count; i++)
             {
                 int prevIndex = lineOrder[i - 1];
@@ -660,8 +660,8 @@ namespace Scene.DesktopPet
             Vector3 from = leader.Transform.localPosition;
             Vector3 target = DistantLineMarchPoint(from);
             float travel = Vector2.Distance(new Vector2(from.x, from.y), new Vector2(target.x, target.y));
-            float speed = UnityEngine.Random.Range(1.45f, 1.95f);
-            float duration = Mathf.Clamp(travel / speed, 2.4f, 9f);
+            float speed = UnityEngine.Random.Range(0.95f, 1.25f);
+            float duration = Mathf.Clamp(travel / speed, 3.5f, 14f);
             MoveActorAsync(leaderIndex, target, duration, cancellationToken).Forget();
         }
 
@@ -1744,8 +1744,8 @@ namespace Scene.DesktopPet
                 Vector3 origin = actor.Transform != null ? actor.Transform.localPosition : Vector3.zero;
                 Vector3 next = DistantLocalPoint(origin);
                 float travel = Vector2.Distance(new Vector2(origin.x, origin.y), new Vector2(next.x, next.y));
-                float speed = UnityEngine.Random.Range(1.15f, 1.55f);
-                float nextDuration = Mathf.Clamp(travel / speed, 1.6f, 4.5f);
+                float speed = UnityEngine.Random.Range(0.75f, 1.0f);
+                float nextDuration = Mathf.Clamp(travel / speed, 2.2f, 6f);
                 MoveActorAsync(index, next, nextDuration, cancellationToken).Forget();
                 return;
             }

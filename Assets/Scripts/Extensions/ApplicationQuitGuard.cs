@@ -18,6 +18,7 @@ namespace Extensions
 
         private static int forceExitScheduled;
         private static int cleanupDone;
+        private static int desktopPetHandoffActive;
 
         /// <summary>
         /// 終了処理中ならtrue
@@ -36,6 +37,7 @@ namespace Extensions
             IsQuitting = false;
             forceExitScheduled = 0;
             cleanupDone = 0;
+            desktopPetHandoffActive = 0;
             ExitCleanup = null;
             HookApplicationEvents();
         }
@@ -72,10 +74,33 @@ namespace Extensions
         }
 
         /// <summary>
+        /// 外部ペット引き継ぎ中の入力ロックを開始する
+        /// </summary>
+        public static void BeginDesktopPetHandoff()
+        {
+            Interlocked.Exchange(ref desktopPetHandoffActive, 1);
+            IsQuitting = true;
+        }
+
+        /// <summary>
+        /// 外部ペット引き継ぎ失敗時に入力ロックを戻す
+        /// </summary>
+        public static void CancelDesktopPetHandoff()
+        {
+            if (Interlocked.CompareExchange(ref desktopPetHandoffActive, 0, 1) != 1)
+            {
+                return;
+            }
+
+            IsQuitting = false;
+        }
+
+        /// <summary>
         /// 外部プロセスへ引き継いだあとUnityを即終了する
         /// </summary>
         public static void RequestImmediateQuit()
         {
+            Interlocked.Exchange(ref desktopPetHandoffActive, 0);
             IsQuitting = true;
 
 #if UNITY_EDITOR
