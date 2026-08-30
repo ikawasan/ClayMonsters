@@ -157,27 +157,27 @@ MonoBehaviour:
     spanish: Golem
     portugueseBrazil: Golem
   - slotIndex: 13
-    editorNote: "\u30A4\u30A8\u30ED\u30FC\u30EA\u30B6\u30FC\u30C9"
-    japanese: "\u30A4\u30A8\u30ED\u30FC\u30EA\u30B6\u30FC\u30C9"
-    english: Yellow Lizard
-    chineseSimplified: "\u9EC4\u8725\u8734"
-    chineseTraditional: "\u9EC3\u8725\u8734"
-    korean: "\uC610\uB85C\uC6B0 \uB9AC\uC790\uB4DC"
-    german: Gelbe Eidechse
-    french: "L\xE9zard jaune"
-    spanish: Lagarto amarillo
-    portugueseBrazil: Lagarto amarelo
+    editorNote: "\u30A4\u30A8\u30ED\u30FC\u30C9\u30E9\u30B4\u30F3"
+    japanese: "\u30A4\u30A8\u30ED\u30FC\u30C9\u30E9\u30B4\u30F3"
+    english: Yellow Dragon
+    chineseSimplified: "\u9EC4\u9F99"
+    chineseTraditional: "\u9EC3\u9F8D"
+    korean: "\uC628\uB85C \uB4DC\uB798\uACE4"
+    german: Gelber Drache
+    french: Dragon jaune
+    spanish: "Drag\xF3n amarillo"
+    portugueseBrazil: "Drag\xE3o amarelo"
   - slotIndex: 14
-    editorNote: "\u30D6\u30EB\u30FC\u30EA\u30B6\u30FC\u30C9"
-    japanese: "\u30D6\u30EB\u30FC\u30EA\u30B6\u30FC\u30C9"
-    english: Blue Lizard
-    chineseSimplified: "\u84DD\u8725\u8734"
-    chineseTraditional: "\u85CD\u8725\u8734"
-    korean: "\uBE14\uB8E8 \uB9AC\uC790\uB4DC"
-    german: Blaue Eidechse
-    french: "L\xE9zard bleu"
-    spanish: Lagarto azul
-    portugueseBrazil: Lagarto azul
+    editorNote: "\u30D1\u30FC\u30D7\u30EB\u30C9\u30E9\u30B4\u30F3"
+    japanese: "\u30D1\u30FC\u30D7\u30EB\u30C9\u30E9\u30B4\u30F3"
+    english: Purple Dragon
+    chineseSimplified: "\u7D2B\u9F99"
+    chineseTraditional: "\u7D2B\u9F8D"
+    korean: "\uD37C\uD50C \uB4DC\uB798\uACE4"
+    german: Violetter Drache
+    french: Dragon violet
+    spanish: "Drag\xF3n morado"
+    portugueseBrazil: "Drag\xE3o roxo"
   - slotIndex: 15
     editorNote: Jammo
     japanese: Jammo
@@ -212,27 +212,27 @@ MonoBehaviour:
     spanish: Rinoceronte demonio
     portugueseBrazil: "Rino dem\xF4nio"
   - slotIndex: 18
-    editorNote: "\u30B0\u30EA\u30FC\u30F3\u30EA\u30B6\u30FC\u30C9"
-    japanese: "\u30B0\u30EA\u30FC\u30F3\u30EA\u30B6\u30FC\u30C9"
-    english: Green Lizard
-    chineseSimplified: "\u7EFF\u8725\u8734"
-    chineseTraditional: "\u7DA0\u8725\u8734"
-    korean: "\uADF8\uB9B0 \uB9AC\uC790\uB4DC"
-    german: "Gr\xFCne Eidechse"
-    french: "L\xE9zard vert"
-    spanish: Lagarto verde
-    portugueseBrazil: Lagarto verde
+    editorNote: "\u30B0\u30EA\u30FC\u30F3\u30C9\u30E9\u30B4\u30F3"
+    japanese: "\u30B0\u30EA\u30FC\u30F3\u30C9\u30E9\u30B4\u30F3"
+    english: Green Dragon
+    chineseSimplified: "\u7EFF\u9F99"
+    chineseTraditional: "\u7DA0\u9F8D"
+    korean: "\uADF8\uB9B0 \uB4DC\uB798\uACE4"
+    german: "Gr\xFCner Drache"
+    french: Dragon vert
+    spanish: "Drag\xF3n verde"
+    portugueseBrazil: "Drag\xE3o verde"
   - slotIndex: 19
-    editorNote: "\u30EC\u30C3\u30C9\u30EA\u30B6\u30FC\u30C9"
-    japanese: "\u30EC\u30C3\u30C9\u30EA\u30B6\u30FC\u30C9"
-    english: Red Lizard
-    chineseSimplified: "\u7EA2\u8725\u8734"
-    chineseTraditional: "\u7D05\u8725\u8734"
-    korean: "\uB808\uB4DC \uB9AC\uC790\uB4DC"
-    german: Rote Eidechse
-    french: "L\xE9zard rouge"
-    spanish: Lagarto rojo
-    portugueseBrazil: Lagarto vermelho
+    editorNote: "\u30EC\u30C3\u30C9\u30C9\u30E9\u30B4\u30F3"
+    japanese: "\u30EC\u30C3\u30C9\u30C9\u30E9\u30B4\u30F3"
+    english: Red Dragon
+    chineseSimplified: "\u7EA2\u9F99"
+    chineseTraditional: "\u7D05\u9F8D"
+    korean: "\uB808\uB4DC \uB4DC\uB798\uACE4"
+    german: Roter Drache
+    french: Dragon rouge
+    spanish: "Drag\xF3n rojo"
+    portugueseBrazil: "Drag\xE3o vermelho"
   - slotIndex: 20
     editorNote: "\u30DE\u30C3\u30B7\u30E5"
     japanese: "\u30DE\u30C3\u30B7\u30E5"
