@@ -128,6 +128,7 @@ namespace Scene.TitleScene.Presenter
         /// <inheritdoc/>
         void ITitlePresenter.OnEnter()
         {
+            saveService.Reload();
             pointsService.Reload();
             titleView.SetPoints(pointsService.Points);
         }
@@ -200,7 +201,7 @@ namespace Scene.TitleScene.Presenter
                     npcBattleMenuView.Hide();
                     confirmWindowView.ShowLocalized(
                         GameTextKeys.TitleNpcTournamentContinueConfirm,
-                        "’†’f‚µ‚½ƒg[ƒiƒƒ“ƒg‚Ì‘±‚«‚©‚çs‚¢‚Ü‚·‚©H");
+                        "ä¸­æ–­ã—ãŸãƒˆãƒ¼ãƒŠãƒ¡ãƒ³ãƒˆã®ç¶šãã‹ã‚‰è¡Œã„ã¾ã™ã‹ï¼Ÿ");
                     return;
                 }
             }
@@ -242,7 +243,7 @@ namespace Scene.TitleScene.Presenter
             npcBattleMenuView.Hide();
             confirmWindowView.ShowLocalized(
                 GameTextKeys.TitleNpcTournamentConfirm,
-                "“ïˆÕ“xu{difficulty}v‚Åƒg[ƒiƒƒ“ƒg‚ğŠJn‚µ‚Ä—Ç‚¢‚Å‚·‚©H",
+                "é›£æ˜“åº¦ã€Œ{difficulty}ã€ã§ãƒˆãƒ¼ãƒŠãƒ¡ãƒ³ãƒˆã‚’é–‹å§‹ã—ã¦è‰¯ã„ã§ã™ã‹ï¼Ÿ",
                 "difficulty",
                 ResolveDifficultyLabel(difficulty));
         }
@@ -278,20 +279,20 @@ namespace Scene.TitleScene.Presenter
                 case NpcTournamentDifficulty.Easy:
                     return LocalizedText.GetOrFallback(
                         GameTextKeys.TitleNpcTournamentEasy,
-                        "ƒC[ƒW[");
+                        "ã‚¤ãƒ¼ã‚¸ãƒ¼");
                 case NpcTournamentDifficulty.Hard:
                     return LocalizedText.GetOrFallback(
                         GameTextKeys.TitleNpcTournamentHard,
-                        "ƒn[ƒh");
+                        "ãƒãƒ¼ãƒ‰");
                 case NpcTournamentDifficulty.VeryHard:
                     return LocalizedText.GetOrFallback(
                         GameTextKeys.TitleNpcTournamentVeryHard,
-                        "ƒxƒŠ[ƒn[ƒh");
+                        "ãƒ™ãƒªãƒ¼ãƒãƒ¼ãƒ‰");
                 case NpcTournamentDifficulty.Normal:
                 default:
                     return LocalizedText.GetOrFallback(
                         GameTextKeys.TitleNpcTournamentNormal,
-                        "ƒm[ƒ}ƒ‹");
+                        "ãƒãƒ¼ãƒãƒ«");
             }
         }
 
@@ -315,7 +316,7 @@ namespace Scene.TitleScene.Presenter
 
             messageWindowView.ShowLocalized(
                 GameTextKeys.TitleNoTrainedModel,
-                "ˆç¬Ï‚İ‚Ìƒ‚ƒ“ƒXƒ^[‚ª‚ ‚è‚Ü‚¹‚ñ");
+                "è‚²æˆæ¸ˆã¿ã®ãƒ¢ãƒ³ã‚¹ã‚¿ãƒ¼ãŒã‚ã‚Šã¾ã›ã‚“");
         }
 
         private void OnClickTrainingButton()
@@ -333,7 +334,7 @@ namespace Scene.TitleScene.Presenter
 
             messageWindowView.ShowLocalized(
                 GameTextKeys.TitleNoUntrainedModel,
-                "ƒ‚ƒ“ƒXƒ^[‚ğì¬‚µ‚Ä‚­‚¾‚³‚¢");
+                "ãƒ¢ãƒ³ã‚¹ã‚¿ãƒ¼ã‚’ä½œæˆã—ã¦ãã ã•ã„");
         }
 
         private void OnClickSkillTreeButton()
@@ -373,7 +374,7 @@ namespace Scene.TitleScene.Presenter
             {
                 messageWindowView.ShowLocalized(
                     GameTextKeys.TitleNoUntrainedModel,
-                    "ƒ‚ƒ“ƒXƒ^[‚ğì¬‚µ‚Ä‚­‚¾‚³‚¢");
+                    "ãƒ¢ãƒ³ã‚¹ã‚¿ãƒ¼ã‚’ä½œæˆã—ã¦ãã ã•ã„");
                 return;
             }
 
@@ -397,7 +398,7 @@ namespace Scene.TitleScene.Presenter
             confirmIntent = ConfirmIntent.DesktopPet;
             confirmWindowView.ShowLocalized(
                 GameTextKeys.TitleDesktopPetConfirm,
-                "ƒQ[ƒ€‚ğ•Â‚¶‚Äƒ‚ƒ“ƒXƒ^[‚ğƒfƒXƒNƒgƒbƒv‚Ö•\¦‚µ‚Ü‚·‚©H\niŒo‰ßŠÔ‚É‰‚¶‚Ä©“®‚Åƒ|ƒCƒ“ƒg‚ğŠl“¾‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·j");
+                "ã‚²ãƒ¼ãƒ ã‚’é–‰ã˜ã¦ãƒ¢ãƒ³ã‚¹ã‚¿ãƒ¼ã‚’ãƒ‡ã‚¹ã‚¯ãƒˆãƒƒãƒ—ã¸è¡¨ç¤ºã—ã¾ã™ã‹ï¼Ÿ\nï¼ˆçµŒéæ™‚é–“ã«å¿œã˜ã¦è‡ªå‹•ã§ãƒã‚¤ãƒ³ãƒˆã‚’ç²å¾—ã™ã‚‹ã“ã¨ãŒã§ãã¾ã™ï¼‰");
         }
 
         private void OnDesktopPetSlotSelectCancelled()
@@ -470,11 +471,11 @@ namespace Scene.TitleScene.Presenter
             confirmIntent = ConfirmIntent.DesktopPetZOrder;
             confirmWindowView.ShowLocalizedChoice(
                 GameTextKeys.TitleDesktopPetZOrderChoice,
-                "•\¦‚Ìd‚Ë‡‚ğ‘I‚ñ‚Å‚­‚¾‚³‚¢",
+                "è¡¨ç¤ºã®é‡ã­é †ã‚’é¸ã‚“ã§ãã ã•ã„",
                 GameTextKeys.TitleDesktopPetTopmost,
-                "Å‘O–Ê•\¦",
+                "æœ€å‰é¢è¡¨ç¤º",
                 GameTextKeys.TitleDesktopPetBottommost,
-                "Å”w–Ê•\¦");
+                "æœ€èƒŒé¢è¡¨ç¤º");
         }
 
         private void OnDesktopPetConfirmNo()
@@ -506,7 +507,7 @@ namespace Scene.TitleScene.Presenter
             {
                 messageWindowView.ShowLocalized(
                     GameTextKeys.DesktopPetCacheNotFound,
-                    "???????????????????\n??????????????????????");
+                    "ãƒ‡ã‚¹ã‚¯ãƒˆãƒƒãƒ—ãƒšãƒƒãƒˆã®ã‚­ãƒ£ãƒƒã‚·ãƒ¥ãŒè¦‹ã¤ã‹ã‚Šã¾ã›ã‚“ã€‚");
             }
         }
 
@@ -556,7 +557,7 @@ namespace Scene.TitleScene.Presenter
             confirmIntent = ConfirmIntent.QuitGame;
             confirmWindowView.ShowLocalized(
                 GameTextKeys.TitleQuitConfirm,
-                "ƒQ[ƒ€‚ğI—¹‚µ‚Ü‚·‚©H");
+                "ã‚²ãƒ¼ãƒ ã‚’çµ‚äº†ã—ã¾ã™ã‹ï¼Ÿ");
         }
 
         private void OnQuitGameConfirmYes()

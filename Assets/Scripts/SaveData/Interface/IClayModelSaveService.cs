@@ -23,6 +23,7 @@ namespace SaveData.Interface
         /// <param name="runtimeRenderer">出力するスキンメッシュ</param>
         /// <param name="boneRoot">ボーン階層のルート</param>
         /// <param name="thumbnailPng">サムネイル画像のPNGバイト列(nullなら保存しない)</param>
+        /// <param name="voxelSnapshot">ClayEditボクセルスナップショット未指定時は書き込まない</param>
         /// <param name="cancellationToken">キャンセル用トークン</param>
         /// <returns>保存に成功したか</returns>
         UniTask<bool> SaveAsync(
@@ -34,7 +35,26 @@ namespace SaveData.Interface
             SkinnedMeshRenderer runtimeRenderer,
             Transform boneRoot,
             byte[] thumbnailPng,
+            ClayVoxelSnapshotWriteRequest voxelSnapshot,
             CancellationToken cancellationToken);
+
+        /// <summary>
+        /// 指定スロットへボクセルスナップショットを書き込む
+        /// </summary>
+        /// <param name="pool">保存先プール</param>
+        /// <param name="slotIndex">スロット番号</param>
+        /// <param name="voxels">ボクセル密度配列</param>
+        /// <param name="colors">ボクセル色配列</param>
+        /// <param name="gridSize">造形グリッドのセル数</param>
+        /// <param name="boundsSize">造形グリッドのワールドサイズ</param>
+        /// <returns>成功した場合true</returns>
+        bool TryWriteVoxelSnapshot(
+            ModelSavePool pool,
+            int slotIndex,
+            float[] voxels,
+            Vector3[] colors,
+            int gridSize,
+            float boundsSize);
 
         /// <summary>
         /// 指定プールの全スロットのセーブデータを読み込む
@@ -84,6 +104,11 @@ namespace SaveData.Interface
         /// <param name="pool">対象プール</param>
         /// <returns>使用済みスロットにglbファイルが存在するか</returns>
         bool HasAnySavedModel(ModelSavePool pool);
+
+        /// <summary>
+        /// メモリ上のセーブキャッシュを破棄し次回読込時にディスクから再読込する
+        /// </summary>
+        void Reload();
 
         /// <summary>
         /// 指定プールのスロットのステータスだけを更新する
@@ -183,6 +208,7 @@ namespace SaveData.Interface
         /// <param name="attackMotions">攻撃構成</param>
         /// <param name="glbBytes">glbバイナリ</param>
         /// <param name="thumbnailPng">サムネイルPNGなければnull</param>
+        /// <param name="voxelBytes">ボクセルスナップショットバイナリ</param>
         /// <param name="overwrite">使用中スロットへの上書きを許可するか</param>
         /// <returns>取り込みに成功したか</returns>
         bool ImportUntrainedSlot(
@@ -192,6 +218,7 @@ namespace SaveData.Interface
             IReadOnlyList<MotionType> attackMotions,
             byte[] glbBytes,
             byte[] thumbnailPng,
+            byte[] voxelBytes,
             bool overwrite = false);
     }
 }

@@ -16,6 +16,9 @@ namespace ClayEditor.Paint
 
         /// <summary>塗る色</summary>
         public Color color;
+
+        /// <summary>塗り時の面法線（ワールド座標）</summary>
+        public Vector3 worldNormal;
     }
 
     /// <summary>

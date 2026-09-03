@@ -1343,18 +1343,20 @@ namespace ClayEditor
         /// Undo/Redoでストローク列を再現するために使う
         /// </summary>
         /// <param name="centers">各ストロークの中心（ワールド座標）</param>
+        /// <param name="normals">各ストローク時の面法線（ワールド座標）</param>
         /// <param name="radii">各ストロークの半径（ワールド単位）</param>
         /// <param name="colors">各ストロークの色</param>
         /// <param name="count">塗り直すストローク数</param>
         public void RepaintStrokes(
             IReadOnlyList<Vector3> centers,
+            IReadOnlyList<Vector3> normals,
             IReadOnlyList<float> radii,
             IReadOnlyList<Color> colors,
             int count)
         {
             for (int i = 0; i < count; i++)
             {
-                PaintVoxelsInternal(centers[i], radii[i], colors[i], Vector3.zero, false);
+                PaintVoxelsInternal(centers[i], radii[i], colors[i], normals[i], false);
             }
 
             // 表示中の経路に合わせて一度だけ反映する

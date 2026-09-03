@@ -2,6 +2,7 @@ using Battle;
 using Battle.Interface;
 using ClayEditor.Rigging;
 using Cysharp.Threading.Tasks;
+using Localization;
 using SaveData;
 using SaveData.Interface;
 using Scene.TitleScene;
@@ -691,7 +692,7 @@ namespace Scene.BattleNpcScene.Tournament
                     EnemySlotIndex = i,
                     DisplayName = string.IsNullOrEmpty(slot.modelName)
                         ? $"NPC{i + 1}"
-                        : slot.modelName,
+                        : EnemyDisplayName.Resolve(i, slot.modelName),
                 });
             }
 

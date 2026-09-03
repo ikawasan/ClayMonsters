@@ -931,6 +931,11 @@ namespace UI.ClayEditor.View
                     renderer,
                     boneRoot,
                     thumbnailPng,
+                    new ClayVoxelSnapshotWriteRequest(
+                        voxelEngine.GetVoxelData(),
+                        voxelEngine.GetVoxelColors(),
+                        voxelEngine.size,
+                        voxelEngine.boundsSize),
                     cancellationToken);
 
                 if (!success)
@@ -938,19 +943,6 @@ namespace UI.ClayEditor.View
                     Debug.LogError("[SaveSlotView] セーブに失敗しました");
                     RestoreConfirmCanvasAfterSaveFailure();
                     return;
-                }
-
-                string voxelFilePath = Path.Combine(
-                    Application.persistentDataPath,
-                    ModelSavePoolSettings.GetVoxelFileName(currentSavePool, selectedSlot));
-                if (!ClayVoxelSnapshotFile.TryWrite(
-                        voxelFilePath,
-                        voxelEngine.GetVoxelData(),
-                        voxelEngine.GetVoxelColors(),
-                        voxelEngine.size,
-                        voxelEngine.boundsSize))
-                {
-                    Debug.LogWarning("[SaveSlotView] ボクセルスナップショットの保存に失敗しました");
                 }
 
                 Debug.Log($"[SaveSlotView] {currentSavePool}スロット{selectedSlot}へ保存しました: {modelName}");

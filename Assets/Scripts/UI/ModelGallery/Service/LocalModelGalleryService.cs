@@ -22,9 +22,6 @@ namespace UI.ModelGallery.Service
         private const string IndexFileName = "index.json";
         private const string FavoritesFileName = "local_favorites.json";
         private const string ItemsFolderName = "items";
-        private const string MetaFileName = "package.json";
-        private const string ModelFileName = "model.glb";
-        private const string PreviewFileName = "preview.png";
         private const string LocalAuthorName = "LocalPlayer";
         private const int RandomDisplayCount = 30;
 
@@ -62,6 +59,15 @@ namespace UI.ModelGallery.Service
                 return ModelGalleryPublishResult.FromStatus(ModelGalleryOperationStatus.Failed);
             }
 
+            string voxelFileName = ModelSavePoolSettings.GetVoxelFileName(ModelSavePool.Player, sourceSlotIndex);
+            if (!ModelGalleryVoxelPackage.TryReadCompressedFromSlot(voxelFileName, out byte[] voxelCompressedBytes))
+            {
+                Debug.LogError(
+                    $"[LocalModelGalleryService] voxelが読めません: {voxelFileName}"
+                    + " ClayEditで保存し直してから投稿してください");
+                return ModelGalleryPublishResult.FromStatus(ModelGalleryOperationStatus.Failed);
+            }
+
             string itemId = Guid.NewGuid().ToString("N");
             string itemFolder = GetItemFolder(itemId);
             Directory.CreateDirectory(itemFolder);
@@ -72,7 +78,7 @@ namespace UI.ModelGallery.Service
 
             var meta = new ModelGalleryPackageMeta
             {
-                packageVersion = "1",
+                packageVersion = ModelGalleryPackageFiles.PackageVersionWithVoxel,
                 modelName = string.IsNullOrEmpty(slot.modelName) ? resolvedTitle : slot.modelName,
                 status = ModelStatus.CloneOrDefault(slot.status),
                 attackMotions = slot.attackMotions != null
@@ -80,16 +86,16 @@ namespace UI.ModelGallery.Service
                     : new List<MotionType>()
             };
 
-            File.WriteAllText(Path.Combine(itemFolder, MetaFileName), JsonUtility.ToJson(meta, true));
-            File.WriteAllBytes(Path.Combine(itemFolder, ModelFileName), glbBytes);
-
+            byte[] previewBytes = null;
             if (!string.IsNullOrEmpty(slot.thumbnailFileName))
             {
-                byte[] previewBytes = ModelSaveStorage.ReadAllBytes(slot.thumbnailFileName);
-                if (previewBytes != null && previewBytes.Length > 0)
-                {
-                    File.WriteAllBytes(Path.Combine(itemFolder, PreviewFileName), previewBytes);
-                }
+                previewBytes = ModelSaveStorage.ReadAllBytes(slot.thumbnailFileName);
+            }
+
+            if (!ModelGalleryPackageWriter.TryWrite(itemFolder, meta, glbBytes, voxelCompressedBytes, previewBytes))
+            {
+                Debug.LogError($"[LocalModelGalleryService] パッケージ書き込みに失敗しました: {itemId}");
+                return ModelGalleryPublishResult.FromStatus(ModelGalleryOperationStatus.Failed);
             }
 
             ModelGalleryIndex index = LoadIndex();
@@ -185,7 +191,7 @@ namespace UI.ModelGallery.Service
                 return null;
             }
 
-            string previewPath = Path.Combine(GetItemFolder(itemId), PreviewFileName);
+            string previewPath = Path.Combine(GetItemFolder(itemId), ModelGalleryPackageFiles.PreviewFileName);
             if (!File.Exists(previewPath))
             {
                 return null;
@@ -257,9 +263,9 @@ namespace UI.ModelGallery.Service
             }
 
             string itemFolder = GetItemFolder(itemId);
-            string metaPath = Path.Combine(itemFolder, MetaFileName);
-            string modelPath = Path.Combine(itemFolder, ModelFileName);
-            if (!File.Exists(metaPath) || !File.Exists(modelPath))
+            string metaPath = Path.Combine(itemFolder, ModelGalleryPackageFiles.MetaFileName);
+            string modelPath = Path.Combine(itemFolder, ModelGalleryPackageFiles.ModelFileName);
+            if (!File.Exists(metaPath) || !File.Exists(modelPath) || !ModelGalleryVoxelPackage.PackageContainsVoxel(itemFolder))
             {
                 Debug.LogError($"[LocalModelGalleryService] パッケージが見つかりません: {itemId}");
                 return false;
@@ -279,8 +285,14 @@ namespace UI.ModelGallery.Service
                 return false;
             }
 
+            if (!ModelGalleryVoxelPackage.TryReadRawFromPackageFolder(itemFolder, out byte[] voxelBytes))
+            {
+                Debug.LogError($"[LocalModelGalleryService] model.voxelが空です: {itemId}");
+                return false;
+            }
+
             byte[] thumbnailPng = null;
-            string previewPath = Path.Combine(itemFolder, PreviewFileName);
+            string previewPath = Path.Combine(itemFolder, ModelGalleryPackageFiles.PreviewFileName);
             if (File.Exists(previewPath))
             {
                 thumbnailPng = File.ReadAllBytes(previewPath);
@@ -294,6 +306,7 @@ namespace UI.ModelGallery.Service
                 meta.attackMotions,
                 glbBytes,
                 thumbnailPng,
+                voxelBytes,
                 overwrite: true);
         }
 

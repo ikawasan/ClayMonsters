@@ -39,6 +39,7 @@ namespace SaveData.Service
             SkinnedMeshRenderer runtimeRenderer,
             Transform boneRoot,
             byte[] thumbnailPng,
+            ClayVoxelSnapshotWriteRequest voxelSnapshot,
             CancellationToken cancellationToken)
         {
             if (!ModelSavePoolSettings.IsValidSlotIndex(pool, slotIndex))
@@ -121,7 +122,41 @@ namespace SaveData.Service
             data.slots[slotIndex] = written;
 
             WriteToFile(pool, data);
+            if (voxelSnapshot.HasData
+                && !TryWriteVoxelSnapshot(
+                    pool,
+                    slotIndex,
+                    voxelSnapshot.Voxels,
+                    voxelSnapshot.Colors,
+                    voxelSnapshot.GridSize,
+                    voxelSnapshot.BoundsSize))
+            {
+                Debug.LogError("[ClayModelSaveService] ボクセルスナップショットの保存に失敗しました");
+                return false;
+            }
+
             return true;
+        }
+
+        /// <inheritdoc />
+        public bool TryWriteVoxelSnapshot(
+            ModelSavePool pool,
+            int slotIndex,
+            float[] voxels,
+            Vector3[] colors,
+            int gridSize,
+            float boundsSize)
+        {
+            if (!ModelSavePoolSettings.IsValidSlotIndex(pool, slotIndex))
+            {
+                Debug.LogError($"[ClayModelSaveService] スロット番号が範囲外です: {slotIndex}");
+                return false;
+            }
+
+            string voxelFilePath = Path.Combine(
+                Application.persistentDataPath,
+                ModelSavePoolSettings.GetVoxelFileName(pool, slotIndex));
+            return ClayVoxelSnapshotFile.TryWrite(voxelFilePath, voxels, colors, gridSize, boundsSize);
         }
 
         /// <inheritdoc />
@@ -187,6 +222,12 @@ namespace SaveData.Service
             }
 
             return false;
+        }
+
+        /// <inheritdoc />
+        public void Reload()
+        {
+            loadedPoolCache.Clear();
         }
 
         /// <inheritdoc />
@@ -371,6 +412,7 @@ namespace SaveData.Service
                     runtimeRenderer,
                     boneRoot,
                     thumbnailPng,
+                    default,
                     cancellationToken);
             }
 
@@ -583,7 +625,6 @@ namespace SaveData.Service
         }
 
         /// <inheritdoc />
-        /// <inheritdoc />
         public bool ImportUntrainedSlot(
             int slotIndex,
             string modelName,
@@ -591,6 +632,7 @@ namespace SaveData.Service
             IReadOnlyList<MotionType> attackMotions,
             byte[] glbBytes,
             byte[] thumbnailPng,
+            byte[] voxelBytes,
             bool overwrite = false)
         {
             if (!ModelSavePoolSettings.IsValidSlotIndex(ModelSavePool.Player, slotIndex))
@@ -605,6 +647,12 @@ namespace SaveData.Service
                 return false;
             }
 
+            if (voxelBytes == null || voxelBytes.Length == 0)
+            {
+                Debug.LogError("[ClayModelSaveService] 取込用voxelが空です");
+                return false;
+            }
+
             if (status == null)
             {
                 Debug.LogError("[ClayModelSaveService] 取込用ステータスがnullです");
@@ -612,6 +660,7 @@ namespace SaveData.Service
             }
 
             ClayModelSaveData data = LoadOrCreate(ModelSavePool.Player);
+            string voxelFileName = ModelSavePoolSettings.GetVoxelFileName(ModelSavePool.Player, slotIndex);
             ModelSaveSlot existing = data.slots[slotIndex];
             if (existing != null && existing.isUsed)
             {
@@ -632,13 +681,14 @@ namespace SaveData.Service
                     ModelSaveStorage.Delete(existing.thumbnailFileName);
                 }
 
-                string voxelFileName = ModelSavePoolSettings.GetVoxelFileName(ModelSavePool.Player, slotIndex);
                 ModelSaveStorage.Delete(voxelFileName);
                 DeleteTrainingProgressFile(ModelSavePool.Player, slotIndex);
             }
 
             string glbFileName = ModelSavePoolSettings.GetGlbFileName(ModelSavePool.Player, slotIndex);
             ModelSaveStorage.WriteAllBytes(glbFileName, glbBytes);
+
+            ModelSaveStorage.WriteAllBytes(voxelFileName, voxelBytes);
 
             string thumbnailFileName = null;
             if (thumbnailPng != null && thumbnailPng.Length > 0)
@@ -685,9 +735,13 @@ namespace SaveData.Service
             SwapLogicalFiles(
                 ModelSavePoolSettings.GetThumbnailFileName(pool, slotIndexA),
                 ModelSavePoolSettings.GetThumbnailFileName(pool, slotIndexB));
-            SwapLogicalFiles(
-                ModelSavePoolSettings.GetVoxelFileName(pool, slotIndexA),
-                ModelSavePoolSettings.GetVoxelFileName(pool, slotIndexB));
+            if (ModelSavePoolSettings.UsesVoxelSnapshot(pool))
+            {
+                SwapLogicalFiles(
+                    ModelSavePoolSettings.GetVoxelFileName(pool, slotIndexA),
+                    ModelSavePoolSettings.GetVoxelFileName(pool, slotIndexB));
+            }
+
             SwapLogicalFiles(
                 ModelSavePoolSettings.GetTrainingProgressFileName(pool, slotIndexA),
                 ModelSavePoolSettings.GetTrainingProgressFileName(pool, slotIndexB));

@@ -20,9 +20,6 @@ namespace UI.ModelGallery.Service
     /// </summary>
     public sealed class SteamModelGalleryService : IModelGalleryService
     {
-        private const string MetaFileName = "package.json";
-        private const string ModelFileName = "model.glb";
-        private const string PreviewFileName = "preview.png";
         private const string UploadFolderName = "SteamGalleryUpload";
         private const string WorkshopTag = "ModelGallery";
         private const string WorkshopLegalAgreementUrl =
@@ -77,6 +74,15 @@ namespace UI.ModelGallery.Service
                 return ModelGalleryPublishResult.FromStatus(ModelGalleryOperationStatus.Failed);
             }
 
+            string voxelFileName = ModelSavePoolSettings.GetVoxelFileName(ModelSavePool.Player, sourceSlotIndex);
+            if (!ModelGalleryVoxelPackage.TryReadCompressedFromSlot(voxelFileName, out byte[] voxelCompressedBytes))
+            {
+                Debug.LogError(
+                    $"[SteamModelGalleryService] voxelが読めません: {voxelFileName}"
+                    + " ClayEditで保存し直してから投稿してください");
+                return ModelGalleryPublishResult.FromStatus(ModelGalleryOperationStatus.Failed);
+            }
+
             string resolvedTitle = string.IsNullOrWhiteSpace(title)
                 ? (string.IsNullOrEmpty(slot.modelName) ? $"Slot{sourceSlotIndex}" : slot.modelName)
                 : title.Trim();
@@ -118,7 +124,7 @@ namespace UI.ModelGallery.Service
                 PublishedFileId_t fileId = createOutcome.Result.m_nPublishedFileId;
                 createdFileId = fileId;
                 cleanupCreatedItemOnCancel = true;
-                string contentFolder = PrepareUploadFolder(fileId, slot, resolvedTitle, glbBytes);
+                string contentFolder = PrepareUploadFolder(fileId, slot, resolvedTitle, glbBytes, voxelCompressedBytes);
                 if (string.IsNullOrEmpty(contentFolder))
                 {
                     cleanupCreatedItemOnCancel = false;
@@ -126,7 +132,7 @@ namespace UI.ModelGallery.Service
                     return ModelGalleryPublishResult.FromStatus(ModelGalleryOperationStatus.Failed);
                 }
 
-                string previewPath = Path.Combine(contentFolder, PreviewFileName);
+                string previewPath = Path.Combine(contentFolder, ModelGalleryPackageFiles.PreviewFileName);
                 UGCUpdateHandle_t updateHandle = SteamUGC.StartItemUpdate(appId, fileId);
                 SteamUGC.SetItemTitle(updateHandle, resolvedTitle);
                 SteamUGC.SetItemDescription(updateHandle, resolvedTitle);
@@ -364,9 +370,9 @@ namespace UI.ModelGallery.Service
                 return false;
             }
 
-            string metaPath = Path.Combine(folder, MetaFileName);
-            string modelPath = Path.Combine(folder, ModelFileName);
-            if (!File.Exists(metaPath) || !File.Exists(modelPath))
+            string metaPath = Path.Combine(folder, ModelGalleryPackageFiles.MetaFileName);
+            string modelPath = Path.Combine(folder, ModelGalleryPackageFiles.ModelFileName);
+            if (!File.Exists(metaPath) || !File.Exists(modelPath) || !ModelGalleryVoxelPackage.PackageContainsVoxel(folder))
             {
                 Debug.LogError($"[SteamModelGalleryService] パッケージが見つかりません: {folder}");
                 return false;
@@ -387,8 +393,14 @@ namespace UI.ModelGallery.Service
                 return false;
             }
 
+            if (!ModelGalleryVoxelPackage.TryReadRawFromPackageFolder(folder, out byte[] voxelBytes))
+            {
+                Debug.LogError($"[SteamModelGalleryService] model.voxelが空です: {itemId}");
+                return false;
+            }
+
             byte[] thumbnailPng = null;
-            string previewPath = Path.Combine(folder, PreviewFileName);
+            string previewPath = Path.Combine(folder, ModelGalleryPackageFiles.PreviewFileName);
             if (File.Exists(previewPath))
             {
                 thumbnailPng = File.ReadAllBytes(previewPath);
@@ -401,6 +413,7 @@ namespace UI.ModelGallery.Service
                 meta.attackMotions,
                 glbBytes,
                 thumbnailPng,
+                voxelBytes,
                 overwrite: true);
         }
 
@@ -805,7 +818,8 @@ namespace UI.ModelGallery.Service
             PublishedFileId_t fileId,
             ModelSaveSlot slot,
             string resolvedTitle,
-            byte[] glbBytes)
+            byte[] glbBytes,
+            byte[] voxelCompressedBytes)
         {
             string folder = Path.Combine(
                 Application.temporaryCachePath,
@@ -816,7 +830,7 @@ namespace UI.ModelGallery.Service
 
             var meta = new ModelGalleryPackageMeta
             {
-                packageVersion = "1",
+                packageVersion = ModelGalleryPackageFiles.PackageVersionWithVoxel,
                 modelName = string.IsNullOrEmpty(slot.modelName) ? resolvedTitle : slot.modelName,
                 status = ModelStatus.CloneOrDefault(slot.status),
                 attackMotions = slot.attackMotions != null
@@ -824,16 +838,18 @@ namespace UI.ModelGallery.Service
                     : new List<MotionType>()
             };
 
-            File.WriteAllText(Path.Combine(folder, MetaFileName), JsonUtility.ToJson(meta, true));
-            File.WriteAllBytes(Path.Combine(folder, ModelFileName), glbBytes);
-
+            byte[] previewBytes = null;
             if (!string.IsNullOrEmpty(slot.thumbnailFileName))
             {
-                byte[] previewBytes = ModelSaveStorage.ReadAllBytes(slot.thumbnailFileName);
-                if (previewBytes != null && previewBytes.Length > 0)
-                {
-                    File.WriteAllBytes(Path.Combine(folder, PreviewFileName), previewBytes);
-                }
+                previewBytes = ModelSaveStorage.ReadAllBytes(slot.thumbnailFileName);
+            }
+
+            if (!ModelGalleryPackageWriter.TryWrite(folder, meta, glbBytes, voxelCompressedBytes, previewBytes))
+            {
+                Debug.LogError(
+                    $"[SteamModelGalleryService] パッケージ書き込みに失敗しました: {fileId.m_PublishedFileId}");
+                TryDeleteDirectory(folder);
+                return null;
             }
 
             return folder;

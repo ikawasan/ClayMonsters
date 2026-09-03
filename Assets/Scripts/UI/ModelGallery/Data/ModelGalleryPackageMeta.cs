@@ -13,8 +13,9 @@ namespace UI.ModelGallery.Data
     {
         /// <summary>
         /// パッケージ形式バージョン
+        /// 2からmodel.voxel同梱
         /// </summary>
-        public string packageVersion = "1";
+        public string packageVersion = ModelGalleryPackageFiles.PackageVersionWithVoxel;
 
         /// <summary>
         /// モデル名

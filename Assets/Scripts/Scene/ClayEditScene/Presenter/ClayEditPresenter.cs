@@ -1,5 +1,6 @@
 using Camera.Interface;
 using ClayEditor;
+using ClayEditor.Paint;
 using ClayEditor.Input.Interface;
 using Cysharp.Threading.Tasks;
 using Lighthouse.Scene;
@@ -27,6 +28,8 @@ namespace Scene.ClayEditScene.Presenter
         private IClayEditEditorUiGate editorUiGate;
         private ClayEditSessionContext sessionContext;
         private ClayHistoryManager historyManager;
+        private ClayPaintHistoryManager paintHistoryManager;
+        private ClayPainter clayPainter;
 
         private readonly CompositeDisposable disposables = new();
 
@@ -41,7 +44,9 @@ namespace Scene.ClayEditScene.Presenter
             ClayEditRemakeLoadSlotView remakeLoadSlotView,
             IClayEditEditorUiGate editorUiGate,
             ClayEditSessionContext sessionContext,
-            ClayHistoryManager historyManager)
+            ClayHistoryManager historyManager,
+            ClayPaintHistoryManager paintHistoryManager,
+            ClayPainter clayPainter)
         {
             this.sceneManager = sceneManager;
             this.clayEditView = clayEditView;
@@ -53,6 +58,8 @@ namespace Scene.ClayEditScene.Presenter
             this.editorUiGate = editorUiGate;
             this.sessionContext = sessionContext;
             this.historyManager = historyManager;
+            this.paintHistoryManager = paintHistoryManager;
+            this.clayPainter = clayPainter;
         }
 
         void IClayEditPresenter.Setup()
@@ -143,6 +150,9 @@ namespace Scene.ClayEditScene.Presenter
         private void BeginNewCreateFlow()
         {
             sessionContext.BeginNewCreate();
+            historyManager.Clear();
+            paintHistoryManager.Clear();
+            clayPainter.ResetPaintState();
             entryView.Hide();
             editorUiGate.SetEditorVisible(true);
             saveSlotView.ShowEditorChrome();
@@ -159,6 +169,8 @@ namespace Scene.ClayEditScene.Presenter
         {
             sessionContext.BeginRemake(selection.SlotIndex, selection.ModelName, selection.Pool);
             historyManager.Clear();
+            paintHistoryManager.Clear();
+            clayPainter.ResetPaintState();
             remakeLoadSlotView.Hide();
             editorUiGate.SetEditorVisible(true);
             saveSlotView.ShowEditorChrome();

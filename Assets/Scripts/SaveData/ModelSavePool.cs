@@ -133,6 +133,16 @@ namespace SaveData
             return $"{prefix}_Slot{slotIndex}.voxel";
         }
 
+        /// <summary>
+        /// 造形ボクセルスナップショットを保持するプールか
+        /// 育成済みはGLBのみを正とする
+        /// </summary>
+        /// <param name="pool">セーブプール</param>
+        public static bool UsesVoxelSnapshot(ModelSavePool pool)
+        {
+            return pool == ModelSavePool.Player || pool == ModelSavePool.Enemy;
+        }
+
         private static string GetFilePrefix(ModelSavePool pool)
         {
             return pool switch

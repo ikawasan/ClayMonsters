@@ -27,9 +27,12 @@ namespace ClayEditor.Paint
         private Color currentColor;
         private Vector3 lastDabWorldPos;
         private bool hasLastDabInStroke;
+        private Vector3[] initialVoxelColorsSnapshot;
+        private bool hasInitialVoxelColorsSnapshot;
 
         // 塗り直し用に履歴のストロークを展開する使い回しバッファ
         private readonly List<Vector3> repaintCenters = new();
+        private readonly List<Vector3> repaintNormals = new();
         private readonly List<float> repaintRadii = new();
         private readonly List<Color> repaintColors = new();
 
@@ -70,6 +73,8 @@ namespace ClayEditor.Paint
             currentColor = initialColor;
             hasLastDabInStroke = false;
             lastDabWorldPos = Vector3.zero;
+            hasInitialVoxelColorsSnapshot = false;
+            initialVoxelColorsSnapshot = null;
         }
 
         /// <summary>
@@ -87,6 +92,7 @@ namespace ClayEditor.Paint
         public void BeginStroke()
         {
             hasLastDabInStroke = false;
+            CaptureInitialVoxelColorsIfNeeded();
             historyManager.BeginStroke();
         }
 
@@ -123,7 +129,8 @@ namespace ClayEditor.Paint
             {
                 worldCenter = worldPos,
                 worldRadius = brushRadius,
-                color = currentColor
+                color = currentColor,
+                worldNormal = worldNormal
             });
 
             lastDabWorldPos = worldPos;
@@ -155,9 +162,17 @@ namespace ClayEditor.Paint
         // 色を既定へ戻してから 履歴の全ストロークの塗り操作を順に塗り直す
         private void Repaint()
         {
-            engine.ResetVoxelColors();
+            if (hasInitialVoxelColorsSnapshot && initialVoxelColorsSnapshot != null)
+            {
+                engine.SetVoxelColors(initialVoxelColorsSnapshot);
+            }
+            else
+            {
+                engine.ResetVoxelColors();
+            }
 
             repaintCenters.Clear();
+            repaintNormals.Clear();
             repaintRadii.Clear();
             repaintColors.Clear();
 
@@ -168,12 +183,24 @@ namespace ClayEditor.Paint
                 for (int d = 0; d < dabs.Count; d++)
                 {
                     repaintCenters.Add(dabs[d].worldCenter);
+                    repaintNormals.Add(dabs[d].worldNormal);
                     repaintRadii.Add(dabs[d].worldRadius);
                     repaintColors.Add(dabs[d].color);
                 }
             }
 
-            engine.RepaintStrokes(repaintCenters, repaintRadii, repaintColors, repaintCenters.Count);
+            engine.RepaintStrokes(repaintCenters, repaintNormals, repaintRadii, repaintColors, repaintCenters.Count);
+        }
+
+        private void CaptureInitialVoxelColorsIfNeeded()
+        {
+            if (hasInitialVoxelColorsSnapshot)
+            {
+                return;
+            }
+
+            initialVoxelColorsSnapshot = engine.GetVoxelColors();
+            hasInitialVoxelColorsSnapshot = initialVoxelColorsSnapshot != null;
         }
     }
 }

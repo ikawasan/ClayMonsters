@@ -565,16 +565,14 @@ namespace UI.ClayEditor.View
 
         private void PersistVoxelSnapshot(ModelSavePool pool, int slotIndex)
         {
-            if (voxelEngine == null || !voxelEngine.HasMesh())
+            if (voxelEngine == null || !voxelEngine.HasMesh() || saveService == null)
             {
                 return;
             }
 
-            string voxelFilePath = Path.Combine(
-                Application.persistentDataPath,
-                ModelSavePoolSettings.GetVoxelFileName(pool, slotIndex));
-            if (!ClayVoxelSnapshotFile.TryWrite(
-                    voxelFilePath,
+            if (!saveService.TryWriteVoxelSnapshot(
+                    pool,
+                    slotIndex,
                     voxelEngine.GetVoxelData(),
                     voxelEngine.GetVoxelColors(),
                     voxelEngine.size,
