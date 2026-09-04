@@ -630,6 +630,7 @@ ClayEdit.LeaveWithoutSaveButton	保存せず戻る
 ClayEdit.NamePrompt	名前を付けてください
 ClayEdit.SculptMode	成形
 ClayEdit.ShowGuide	操作説明を表示
+ClayEdit.HideUi	UIを非表示
 ClayEdit.Idle	待機
 ClayEdit.Run	走る
 ClayEdit.Attack	攻撃

@@ -298,6 +298,7 @@ namespace Localization
         public const string ClayEditPaintMode = "ClayEdit.PaintMode";
         public const string ClayEditAnimationMode = "ClayEdit.AnimationMode";
         public const string ClayEditShowGuide = "ClayEdit.ShowGuide";
+        public const string ClayEditHideUi = "ClayEdit.HideUi";
         public const string ClayEditBackgroundColor = "ClayEdit.BackgroundColor";
         public const string ClayEditIdle = "ClayEdit.Idle";
         public const string ClayEditRun = "ClayEdit.Run";

@@ -17,6 +17,7 @@ namespace UI.ClayEditor.View
     {
         [Inject] private readonly ClayEditModeViewModel viewModel;
 
+        [SerializeField] private Canvas modeSwitchCanvas;
         [SerializeField] private TMP_Dropdown editModeUI;
         [SerializeField] private List<EditModeTypeObject> editModeTypeObjects;
 
@@ -30,6 +31,13 @@ namespace UI.ClayEditor.View
 
         private void Start()
         {
+            if (modeSwitchCanvas == null)
+            {
+                Debug.LogError(
+                    "[ClayEditModeView]modeSwitchCanvasが未配線ですHierarchyで接続してください",
+                    this);
+            }
+
             ApplyModeDropdownOptions();
 
             if (editModeUI != null)
@@ -127,11 +135,21 @@ namespace UI.ClayEditor.View
         private void UpdateModeObjects(EditModeType mode, bool hasModel)
         {
             int modeIndex = (int)mode;
+            bool hideEditorUi = viewModel.IsEditorUiHidden.CurrentValue
+                && hasModel
+                && (mode is EditModeType.Clay or EditModeType.Paint);
 
             foreach (var editModeTypeObject in editModeTypeObjects)
             {
-                // モデル未選択(hasModel == false) なら、常に -1 を渡して全て Disable にする
-                editModeTypeObject.SetActive(hasModel ? modeIndex : -1);
+                // モデル未選択なら常に-1を渡して全てDisableにする
+                // UI非表示のCanvas復元はClayEditHideUiView側に任せる
+                editModeTypeObject.SetActive(hasModel ? modeIndex : -1, enableUi: hideEditorUi == false);
+            }
+
+            // 非表示中にここから落とすとゲートの復元キャッシュが壊れる
+            if (hideEditorUi == false)
+            {
+                CanvasVisibilityUtility.SetCanvasEnabled(modeSwitchCanvas, hasModel);
             }
         }
     }

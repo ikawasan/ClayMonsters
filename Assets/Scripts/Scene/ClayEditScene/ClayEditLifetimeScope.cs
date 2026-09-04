@@ -72,6 +72,7 @@ namespace Scene.ClayEditScene
         [Header("Visualizer")]
         [SerializeField] ClayBoneVisualizer clayBoneVisualizer;
         [SerializeField] SkeletonPartAnalyzer skeletonPartAnalyzer;
+        [SerializeField] ClayEditHideUiView clayEditHideUiView;
 
         protected override void Configure(IContainerBuilder builder)
         {
@@ -123,6 +124,11 @@ namespace Scene.ClayEditScene
             if (clayEditOperationGuideView != null)
             {
                 builder.RegisterComponent(clayEditOperationGuideView);
+            }
+
+            if (clayEditHideUiView != null)
+            {
+                builder.RegisterComponent(clayEditHideUiView);
             }
 
             if (clayEditBackgroundColorView != null)
@@ -219,7 +225,8 @@ namespace Scene.ClayEditScene
                 || clayEditRemakeLoadSlotView == null
                 || clayEditEditorUiGate == null
                 || clayBoneVisualizer == null
-                || skeletonPartAnalyzer == null)
+                || skeletonPartAnalyzer == null
+                || clayEditHideUiView == null)
             {
                 Debug.LogError(
                     "[ClayEditLifetimeScope] 必須SerializeFieldが未配線ですHierarchyで接続してください",

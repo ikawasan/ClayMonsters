@@ -630,6 +630,7 @@ ClayEdit.LeaveWithoutSaveButton	Verwerfen
 ClayEdit.NamePrompt	Namen eingeben
 ClayEdit.SculptMode	Formen
 ClayEdit.ShowGuide	Hilfe
+ClayEdit.HideUi	UI ausblenden
 ClayEdit.Idle	Warten
 ClayEdit.Run	Rennen
 ClayEdit.Attack	Angriff

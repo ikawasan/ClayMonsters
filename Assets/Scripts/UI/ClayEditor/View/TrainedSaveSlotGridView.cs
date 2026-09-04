@@ -327,6 +327,9 @@ namespace UI.ClayEditor.View
                 return;
             }
 
+            // persistentDataPath等はメインスレッド限定のため先にキャッシュする
+            ModelSaveStorage.EnsureUnityPathsCached();
+
             var loadedBytes = new byte[pending.Count][];
             var revisions = new long[pending.Count];
             await UniTask.RunOnThreadPool(

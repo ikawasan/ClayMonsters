@@ -630,6 +630,7 @@ ClayEdit.LeaveWithoutSaveButton	Sans sauver
 ClayEdit.NamePrompt	Entrez un nom
 ClayEdit.SculptMode	Sculpter
 ClayEdit.ShowGuide	Aide
+ClayEdit.HideUi	Masquer l'UI
 ClayEdit.Idle	Attente
 ClayEdit.Run	Courir
 ClayEdit.Attack	Attaque

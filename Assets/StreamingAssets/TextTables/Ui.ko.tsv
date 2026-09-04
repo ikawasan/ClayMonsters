@@ -630,6 +630,7 @@ ClayEdit.LeaveWithoutSaveButton	저장안함
 ClayEdit.NamePrompt	이름을 입력하세요
 ClayEdit.SculptMode	성형
 ClayEdit.ShowGuide	조작
+ClayEdit.HideUi	UI 숨기기
 ClayEdit.Idle	대기
 ClayEdit.Run	달리기
 ClayEdit.Attack	공격

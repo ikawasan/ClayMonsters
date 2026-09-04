@@ -31,7 +31,13 @@ namespace UI.ClayEditor.ViewModel
         /// </summary>
         public ReadOnlyReactiveProperty<bool> IsGuideVisible => isGuideVisible;
 
-        private readonly ReactiveProperty<bool> isGuideVisible = new(true);
+        /// <summary>
+        /// 成形ペイント中に編集UIを隠すか
+        /// </summary>
+        public ReadOnlyReactiveProperty<bool> IsEditorUiHidden => isEditorUiHidden;
+
+        private readonly ReactiveProperty<bool> isGuideVisible = new(false);
+        private readonly ReactiveProperty<bool> isEditorUiHidden = new(false);
 
         [Inject]
         public ClayEditModeViewModel(IClaySceneContext context, ClayAutoRigController autoRigController, ClayVoxelEngine engine)
@@ -55,9 +61,29 @@ namespace UI.ClayEditor.ViewModel
             isGuideVisible.Value = visible;
         }
 
+        /// <summary>
+        /// 編集UIの非表示状態を変更する
+        /// </summary>
+        /// <param name="hidden">非表示にする場合true</param>
+        public void SetEditorUiHidden(bool hidden)
+        {
+            isEditorUiHidden.Value = hidden;
+        }
+
+        /// <summary>
+        /// 入場退出時に操作説明とUI非表示フラグを初期化する
+        /// </summary>
+        public void ResetUiVisibilityFlags()
+        {
+            isGuideVisible.Value = false;
+            isEditorUiHidden.Value = false;
+        }
+
         /// <inheritdoc />
         public void Initialize()
         {
+            ResetUiVisibilityFlags();
+
             // モード遷移に応じて表示するメッシュを切り替える
             context.CurrentMode
                 .Subscribe(OnModeChanged)
@@ -82,6 +108,7 @@ namespace UI.ClayEditor.ViewModel
         public void Dispose()
         {
             isGuideVisible.Dispose();
+            isEditorUiHidden.Dispose();
             disposables.Dispose();
         }
     }

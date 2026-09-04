@@ -14,21 +14,63 @@ namespace SaveData
     {
         private const string CompressedExtension = ".gz";
 
+        private static string cachedWritableRoot;
+        private static string cachedStreamingRoot;
+        private static string cachedTemporaryCachePath;
+
         /// <summary>
         /// StreamingAssets内でモデルセーブを格納するサブフォルダ名
         /// </summary>
         public const string StreamingSubFolder = "ModelSave";
 
         /// <summary>
+        /// UnityのパスAPIをメインスレッドでキャッシュする
+        /// スレッドプールからの読込前に呼ぶ
+        /// </summary>
+        public static void EnsureUnityPathsCached()
+        {
+            if (cachedWritableRoot != null)
+            {
+                return;
+            }
+
+            cachedWritableRoot = Application.persistentDataPath;
+            cachedStreamingRoot = Path.Combine(Application.streamingAssetsPath, StreamingSubFolder);
+            cachedTemporaryCachePath = Application.temporaryCachePath;
+        }
+
+        /// <summary>
         /// 書き込み先のルート(persistentDataPath)
         /// </summary>
-        public static string WritableRoot => Application.persistentDataPath;
+        public static string WritableRoot
+        {
+            get
+            {
+                EnsureUnityPathsCached();
+                return cachedWritableRoot;
+            }
+        }
 
         /// <summary>
         /// ビルド同梱の読み取り専用ルート(StreamingAssets内)
         /// </summary>
-        public static string StreamingRoot =>
-            Path.Combine(Application.streamingAssetsPath, StreamingSubFolder);
+        public static string StreamingRoot
+        {
+            get
+            {
+                EnsureUnityPathsCached();
+                return cachedStreamingRoot;
+            }
+        }
+
+        private static string TemporaryCacheRoot
+        {
+            get
+            {
+                EnsureUnityPathsCached();
+                return cachedTemporaryCachePath;
+            }
+        }
 
         /// <summary>
         /// 書き込み用のフルパスを返す
@@ -61,7 +103,7 @@ namespace SaveData
             string sourceKind = sourcePath.StartsWith(WritableRoot, System.StringComparison.OrdinalIgnoreCase)
                 ? "Writable"
                 : "Streaming";
-            string cacheRoot = Path.Combine(Application.temporaryCachePath, StreamingSubFolder, sourceKind);
+            string cacheRoot = Path.Combine(TemporaryCacheRoot, StreamingSubFolder, sourceKind);
             string cachePath = Path.Combine(cacheRoot, fileName);
             if (File.Exists(cachePath)
                 && File.GetLastWriteTimeUtc(cachePath) == File.GetLastWriteTimeUtc(sourcePath))
@@ -647,7 +689,7 @@ namespace SaveData
 
         private static void DeleteDecompressedCache(string fileName)
         {
-            string cacheRoot = Path.Combine(Application.temporaryCachePath, StreamingSubFolder);
+            string cacheRoot = Path.Combine(TemporaryCacheRoot, StreamingSubFolder);
             DeleteIfExists(Path.Combine(cacheRoot, "Writable", fileName));
             DeleteIfExists(Path.Combine(cacheRoot, "Streaming", fileName));
         }

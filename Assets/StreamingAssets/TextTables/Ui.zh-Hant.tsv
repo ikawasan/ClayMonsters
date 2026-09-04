@@ -630,6 +630,7 @@ ClayEdit.LeaveWithoutSaveButton	不儲存
 ClayEdit.NamePrompt	請輸入名稱
 ClayEdit.SculptMode	塑形
 ClayEdit.ShowGuide	操作
+ClayEdit.HideUi	隱藏UI
 ClayEdit.Idle	待機
 ClayEdit.Run	跑
 ClayEdit.Attack	攻擊

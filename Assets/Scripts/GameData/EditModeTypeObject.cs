@@ -12,7 +12,7 @@ namespace GameData
         [SerializeField] private List<GameObject> editModeObjects;
         [SerializeField] private List<Canvas> editModeUI;
 
-        public void SetActive(int index)
+        public void SetActive(int index, bool enableUi = true)
         {
             bool isActive = (int)editModeType == index;
             foreach (var obj in editModeObjects)
@@ -22,7 +22,7 @@ namespace GameData
 
             foreach (var ui in editModeUI)
             {
-                ui.enabled = isActive;
+                ui.enabled = isActive && enableUi;
             }
         }
     }

@@ -13,8 +13,8 @@ using VContainer;
 namespace UI.ClayEditor.View
 {
     /// <summary>
-    /// ClayEditシーンの成形・ペイント操作説明を表示する
-    /// シーン上のCanvasとTMP_Textを参照しToggleで表示・非表示を切り替える
+    /// ClayEditシーンの成形ペイント操作説明を表示する
+    /// シーン上のCanvasとTMP_Textを参照しToggleで表示非表示を切り替える
     /// </summary>
     public sealed class ClayEditOperationGuideView : MonoBehaviour, ILanguageAwareUi
     {
@@ -31,34 +31,57 @@ namespace UI.ClayEditor.View
         [SerializeField] private TMP_Text paintGuideText;
 
         private IDisposable languageSubscription;
+        private bool guideLabelOriginalCaptured;
+        private bool started;
+        private string showGuideOriginal = "操作説明を表示";
+
+        private void Awake()
+        {
+            // シーン上Activeな説明パネルが入場直後に出ないよう先に隠す
+            HideGuidePanels();
+            if (canvas != null)
+            {
+                canvas.enabled = false;
+            }
+        }
+
+        private void OnEnable()
+        {
+            if (started == false || viewModel == null)
+            {
+                return;
+            }
+
+            // ルート再有効化時もViewModelの非表示状態を再適用する
+            ApplyToggleFromViewModel();
+            UpdateVisibility(
+                viewModel.CurrentMode.CurrentValue,
+                viewModel.HasModel.CurrentValue,
+                viewModel.IsGuideVisible.CurrentValue);
+        }
 
         private void Start()
         {
-            if (visibilityToggle != null)
+            if (canvas == null || visibilityToggle == null || clayGuidePanel == null || paintGuidePanel == null)
             {
-                Transform legacyCheckmark = visibilityToggle.transform.Find("Background/Checkmark");
-                if (legacyCheckmark != null)
-                {
-                    legacyCheckmark.gameObject.SetActive(false);
-                }
-
-                visibilityToggle.graphic = null;
-                visibilityToggle.toggleTransition = Toggle.ToggleTransition.None;
+                Debug.LogError(
+                    "[ClayEditOperationGuideView]必須SerializeFieldが未配線ですHierarchyで接続してください",
+                    this);
+                return;
             }
 
             ApplyLocalizedLabels();
             SubscribeLanguageChange();
 
-            bool isVisible = viewModel.IsGuideVisible.CurrentValue;
-            visibilityToggle.SetIsOnWithoutNotify(isVisible);
-            UpdateChevron(isVisible);
+            ApplyToggleFromViewModel();
 
             visibilityToggle.OnValueChangedAsObservable()
-                .Subscribe(isOn =>
-                {
-                    viewModel.SetGuideVisible(isOn);
-                    UpdateChevron(isOn);
-                })
+                .Subscribe(isOn => viewModel.SetGuideVisible(isOn))
+                .AddTo(this);
+
+            // 再入場リセット時もトグル見た目をViewModelに追従させる
+            viewModel.IsGuideVisible
+                .Subscribe(visible => visibilityToggle.SetIsOnWithoutNotify(visible))
                 .AddTo(this);
 
             Observable.CombineLatest(
@@ -68,6 +91,31 @@ namespace UI.ClayEditor.View
                     (mode, hasModel, visible) => (mode, hasModel, visible))
                 .Subscribe(state => UpdateVisibility(state.mode, state.hasModel, state.visible))
                 .AddTo(this);
+
+            started = true;
+        }
+
+        private void ApplyToggleFromViewModel()
+        {
+            if (visibilityToggle == null || viewModel == null)
+            {
+                return;
+            }
+
+            visibilityToggle.SetIsOnWithoutNotify(viewModel.IsGuideVisible.CurrentValue);
+        }
+
+        private void HideGuidePanels()
+        {
+            if (clayGuidePanel != null)
+            {
+                clayGuidePanel.SetActive(false);
+            }
+
+            if (paintGuidePanel != null)
+            {
+                paintGuidePanel.SetActive(false);
+            }
         }
 
         private void OnDestroy()
@@ -75,7 +123,6 @@ namespace UI.ClayEditor.View
             languageSubscription?.Dispose();
             languageSubscription = null;
         }
-
 
         /// <inheritdoc/>
         public void RefreshLocalizedUi()
@@ -90,7 +137,7 @@ namespace UI.ClayEditor.View
             if (label == null)
             {
                 Debug.LogError(
-                    "[ClayEditOperationGuideView] visibilityToggleLabel(ToggleLabel)が未配線です",
+                    "[ClayEditOperationGuideView]visibilityToggleLabel(ToggleLabel)が未配線です",
                     this);
                 return;
             }
@@ -100,9 +147,6 @@ namespace UI.ClayEditor.View
                 label,
                 SceneLocalizedLabel.Resolve(GameTextKeys.ClayEditShowGuide, showGuideOriginal));
         }
-
-        private bool guideLabelOriginalCaptured;
-        private string showGuideOriginal = "操作説明を表示";
 
         private void CaptureGuideLabelOriginalIfNeeded()
         {
@@ -128,8 +172,6 @@ namespace UI.ClayEditor.View
                 return null;
             }
 
-            // GuidePanel全体がToggleのため最初の子TMPはChevronになる
-            // ToggleLabelを名前一致で解決する
             TMP_Text[] texts = visibilityToggle.GetComponentsInChildren<TMP_Text>(true);
             for (int i = 0; i < texts.Length; i++)
             {
@@ -141,7 +183,6 @@ namespace UI.ClayEditor.View
                 }
             }
 
-            // 旧ベイク文言も含めて一致させる
             for (int i = 0; i < texts.Length; i++)
             {
                 TMP_Text text = texts[i];
@@ -186,7 +227,7 @@ namespace UI.ClayEditor.View
             else
             {
                 Debug.LogError(
-                    "[ClayEditOperationGuideView] clayGuideTextが未配線です",
+                    "[ClayEditOperationGuideView]clayGuideTextが未配線です",
                     this);
             }
 
@@ -198,7 +239,7 @@ namespace UI.ClayEditor.View
             else
             {
                 Debug.LogError(
-                    "[ClayEditOperationGuideView] paintGuideTextが未配線です",
+                    "[ClayEditOperationGuideView]paintGuideTextが未配線です",
                     this);
             }
         }
@@ -224,16 +265,6 @@ namespace UI.ClayEditor.View
             bool showText = inTargetMode && visible;
             clayGuidePanel.SetActive(showText && mode == EditModeType.Clay);
             paintGuidePanel.SetActive(showText && mode == EditModeType.Paint);
-        }
-
-        private void UpdateChevron(bool isOpen)
-        {
-            if (chevronIcon == null)
-            {
-                return;
-            }
-
-            chevronIcon.localEulerAngles = isOpen ? new Vector3(0f, 0f, -90f) : Vector3.zero;
         }
     }
 }

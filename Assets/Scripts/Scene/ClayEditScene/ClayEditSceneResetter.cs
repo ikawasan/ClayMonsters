@@ -7,6 +7,7 @@ using Scene.ClayEditScene.Interface;
 using Scene.ClayEditScene.View;
 using TMPro;
 using UI.ClayEditor.View;
+using UI.ClayEditor.ViewModel;
 using UI.ColorPicker;
 using UnityEngine;
 using VContainer;
@@ -14,8 +15,8 @@ using VContainer;
 namespace Scene.ClayEditScene
 {
     /// <summary>
-    /// ClayEdit シーンから別シーンへ遷移する際に、シーンの状態を初期化する。
-    /// 造形メッシュ・ボクセル色・Undo/ペイント履歴・カラーピッカー・編集モードをリセットする。
+    /// ClayEditシーンから別シーンへ遷移する際にシーン状態を初期化する
+    /// 造形メッシュボクセル色Undoペイント履歴カラーピッカー編集モード操作説明をリセットする
     /// </summary>
     public sealed class ClayEditSceneResetter
     {
@@ -31,6 +32,7 @@ namespace Scene.ClayEditScene
         private readonly ClaySculptBrushShapeContext brushShapeContext;
         private readonly IClayEditPostProcess clayEditPostProcess;
         private readonly ClayEditBackgroundColorView backgroundColorView;
+        private readonly ClayEditModeViewModel modeViewModel;
 
         [Inject]
         public ClayEditSceneResetter(
@@ -45,7 +47,8 @@ namespace Scene.ClayEditScene
             ClayEditSessionContext sessionContext,
             ClaySculptBrushShapeContext brushShapeContext,
             IClayEditPostProcess clayEditPostProcess,
-            ClayEditBackgroundColorView backgroundColorView)
+            ClayEditBackgroundColorView backgroundColorView,
+            ClayEditModeViewModel modeViewModel)
         {
             this.context = context;
             this.editor = editor;
@@ -59,6 +62,7 @@ namespace Scene.ClayEditScene
             this.brushShapeContext = brushShapeContext;
             this.clayEditPostProcess = clayEditPostProcess;
             this.backgroundColorView = backgroundColorView;
+            this.modeViewModel = modeViewModel;
         }
 
         /// <summary>
@@ -66,6 +70,7 @@ namespace Scene.ClayEditScene
         /// </summary>
         public void ResetOnEnter()
         {
+            ResetUiVisibilityFlags();
             ResetBrushShape();
             ResetBackgroundColor();
         }
@@ -76,6 +81,7 @@ namespace Scene.ClayEditScene
         public void Reset()
         {
             sessionContext.Reset();
+            ResetUiVisibilityFlags();
             CollapseModeDropdown();
             ResetBrushShape();
             ResetBackgroundColor();
@@ -108,6 +114,11 @@ namespace Scene.ClayEditScene
 
             // 編集モードを初期化する
             context.ChangeMode(EditModeType.Clay);
+        }
+
+        private void ResetUiVisibilityFlags()
+        {
+            modeViewModel.ResetUiVisibilityFlags();
         }
 
         private void ResetBrushShape()
