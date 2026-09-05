@@ -11,7 +11,7 @@ namespace Extensions
     /// </summary>
     public static class InputIconTmpUtility
     {
-        private const string ResourcesFolder = "Image/InputIcons/";
+        private const string ResourcesFolder = "Image/GameUiInputIcons/";
         private const float IconScale = 1.45f;
         // 複数文字キーも単一キーと同程度の表示幅に揃える
         private const float WideKeyIconScale = 1.45f;
@@ -126,10 +126,10 @@ namespace Extensions
             // 複数文字キーのぼやけを抑えるためニアレスト近傍
             atlas.filterMode = FilterMode.Point;
             atlas.wrapMode = TextureWrapMode.Clamp;
-            atlas.name = "InputIconAtlas";
+            atlas.name = "GameUiInputIconAtlas";
 
             var asset = ScriptableObject.CreateInstance<TMP_SpriteAsset>();
-            asset.name = "InputIcons";
+            asset.name = "GameUiInputIcons";
             asset.spriteSheet = atlas;
             SetAssetVersion(asset, "1.1.0");
 
@@ -142,7 +142,7 @@ namespace Extensions
 
             var material = new Material(shader)
             {
-                name = "InputIcons Material",
+                name = "GameUiInputIcons Material",
                 mainTexture = atlas
             };
             // 一部端末でマテリアル側のフィルタがバイリニアに戻るのを防ぐ
@@ -189,7 +189,7 @@ namespace Extensions
 
             asset.faceInfo = new FaceInfo
             {
-                familyName = "InputIcons",
+                familyName = "GameUiInputIcons",
                 styleName = "Regular",
                 pointSize = 60,
                 scale = 1f,

@@ -4,6 +4,7 @@ using R3;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using VContainer;
 
@@ -256,6 +257,50 @@ namespace UI.ColorPicker
             sliderSeBinder.Attach(valueSlider);
         }
 
+        /// <summary>
+        /// スライダー操作中のポインタキャプチャを接続する
+        /// </summary>
+        /// <param name="onBegin">操作開始時</param>
+        /// <param name="onEnd">操作終了時</param>
+        public void BindUiPointerCapture(Action onBegin, Action onEnd)
+        {
+            if (onBegin == null || onEnd == null)
+            {
+                return;
+            }
+
+            BindSliderPointerCapture(hueSlider, onBegin, onEnd);
+            BindSliderPointerCapture(saturationSlider, onBegin, onEnd);
+            BindSliderPointerCapture(valueSlider, onBegin, onEnd);
+        }
+
+        private static void BindSliderPointerCapture(Slider slider, Action onBegin, Action onEnd)
+        {
+            if (slider == null)
+            {
+                return;
+            }
+
+            EventTrigger trigger = slider.GetComponent<EventTrigger>();
+            if (trigger == null)
+            {
+                trigger = slider.gameObject.AddComponent<EventTrigger>();
+            }
+
+            AddTrigger(trigger, EventTriggerType.PointerDown, onBegin);
+            AddTrigger(trigger, EventTriggerType.BeginDrag, onBegin);
+            AddTrigger(trigger, EventTriggerType.PointerUp, onEnd);
+            AddTrigger(trigger, EventTriggerType.EndDrag, onEnd);
+            AddTrigger(trigger, EventTriggerType.Cancel, onEnd);
+        }
+
+        private static void AddTrigger(EventTrigger trigger, EventTriggerType type, Action action)
+        {
+            var entry = new EventTrigger.Entry { eventID = type };
+            entry.callback.AddListener(_ => action());
+            trigger.triggers.Add(entry);
+        }
+
         private void ApplyVisualStyles()
         {
             ApplySliderStyle(hueSlider, "GameUi_SliderFill", new Color(0.88f, 0.58f, 0.28f, 1f));
@@ -429,6 +474,9 @@ namespace UI.ColorPicker
             }
         }
 
+        private static readonly Color HistoryOutlineColor = new Color(0.55f, 0.55f, 0.55f, 1f);
+        private static readonly Vector2 HistoryOutlineDistance = new Vector2(2f, 2f);
+
         private static void ApplyHistoryButtons(Button[] buttons)
         {
             if (buttons == null)
@@ -437,7 +485,6 @@ namespace UI.ColorPicker
             }
 
             Sprite sprite = Resources.Load<Sprite>("Image/GameUi/GameUi_Frame");
-            Color tint = new Color(0.42f, 0.46f, 0.54f, 1f);
             for (int i = 0; i < buttons.Length; i++)
             {
                 Button button = buttons[i];
@@ -451,9 +498,28 @@ namespace UI.ColorPicker
                 {
                     image.sprite = sprite;
                     image.type = Image.Type.Sliced;
-                    image.color = tint;
                 }
+
+                EnsureHistoryOutline(button.gameObject);
             }
+        }
+
+        private static void EnsureHistoryOutline(GameObject target)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            Outline outline = target.GetComponent<Outline>();
+            if (outline == null)
+            {
+                outline = target.AddComponent<Outline>();
+            }
+
+            outline.effectColor = HistoryOutlineColor;
+            outline.effectDistance = HistoryOutlineDistance;
+            outline.useGraphicAlpha = true;
         }
 
         private void SyncUIAndBackgrounds()

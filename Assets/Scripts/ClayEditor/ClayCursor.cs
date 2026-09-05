@@ -40,6 +40,10 @@ namespace ClayEditor
         private bool wasModifying;
         // 直前フレームでShiftによる深度固定中だったか
         private bool wasShiftPressed;
+        // 直前フレームでポインタがUI上だったか
+        private bool wasPointerOverUI;
+        // UI操作の押しっぱなしでモデルへ出ても造形しない
+        private bool suppressSculptUntilPointerRelease;
         private SeTrackId? playingSculptSe;
 
         void Awake()
@@ -138,6 +142,7 @@ namespace ClayEditor
             if (!isActiveAndEnabled)
             {
                 wasShiftPressed = false;
+                wasPointerOverUI = input.IsPointerOverUI;
                 FlushIfStrokeEnded();
                 return;
             }
@@ -146,6 +151,7 @@ namespace ClayEditor
             if (sceneContext.CurrentMode.Value != EditModeType.Clay)
             {
                 wasShiftPressed = false;
+                wasPointerOverUI = input.IsPointerOverUI;
                 FlushIfStrokeEnded();
                 return;
             }
@@ -156,9 +162,29 @@ namespace ClayEditor
                 return;
             }
 
-            if (input.IsPointerOverUI)
+            bool isOverUI = input.IsPointerOverUI;
+            // 背景色スライダー等で押したクリックのままモデルへ出ても造形しない
+            if (wasPointerOverUI && !isOverUI && (input.IsPrimaryHeld || input.IsSecondaryHeld))
+            {
+                suppressSculptUntilPointerRelease = true;
+            }
+
+            wasPointerOverUI = isOverUI;
+
+            if (isOverUI)
             {
                 wasShiftPressed = input.IsShiftPressed;
+                FlushIfStrokeEnded();
+                return;
+            }
+
+            if (suppressSculptUntilPointerRelease)
+            {
+                if (!input.IsPrimaryHeld && !input.IsSecondaryHeld)
+                {
+                    suppressSculptUntilPointerRelease = false;
+                }
+
                 FlushIfStrokeEnded();
                 return;
             }

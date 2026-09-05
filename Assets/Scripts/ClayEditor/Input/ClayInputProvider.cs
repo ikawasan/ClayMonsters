@@ -28,6 +28,9 @@ namespace ClayEditor.Input
         // スライダー操作中などポインタがUI外へ出てもオーバー扱いを維持する件数
         private int uiPointerCaptureCount;
 
+        // UI操作の左クリックを離すまでオーバー扱いを維持する
+        private bool holdUiOverUntilPrimaryRelease;
+
         /// <inheritdoc />
         public Observable<Unit> OnUndo => onUndo;
 
@@ -83,6 +86,7 @@ namespace ClayEditor.Input
         public void BeginUiPointerCapture()
         {
             uiPointerCaptureCount++;
+            holdUiOverUntilPrimaryRelease = false;
             if (uiPointerCaptureCount == 1)
             {
                 isPointerOverUI.Value = true;
@@ -98,8 +102,22 @@ namespace ClayEditor.Input
             }
 
             uiPointerCaptureCount--;
-            if (uiPointerCaptureCount == 0
-                && (EventSystem.current == null || !EventSystem.current.IsPointerOverGameObject()))
+            if (uiPointerCaptureCount > 0)
+            {
+                return;
+            }
+
+            Mouse mouse = Mouse.current;
+            if (mouse != null && mouse.leftButton.isPressed)
+            {
+                // 離すまではペイント等へ遷移させない
+                holdUiOverUntilPrimaryRelease = true;
+                isPointerOverUI.Value = true;
+                return;
+            }
+
+            holdUiOverUntilPrimaryRelease = false;
+            if (EventSystem.current == null || !EventSystem.current.IsPointerOverGameObject())
             {
                 isPointerOverUI.Value = false;
             }
@@ -129,7 +147,16 @@ namespace ClayEditor.Input
 
             // 現在フレームの状態を更新
             bool isOverUi = uiPointerCaptureCount > 0
+                || holdUiOverUntilPrimaryRelease
                 || (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject());
+
+            if (holdUiOverUntilPrimaryRelease && !mouse.leftButton.isPressed)
+            {
+                holdUiOverUntilPrimaryRelease = false;
+                isOverUi = uiPointerCaptureCount > 0
+                    || (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject());
+            }
+
             isPointerOverUI.Value = isOverUi;
             PointerPosition = mouse.position.ReadValue();
             IsShiftPressed = keyboard.shiftKey.isPressed;

@@ -445,7 +445,7 @@ namespace UI.ClayEditor.View
                         existingMaskImage.sprite = resolvedMaskSprite;
                         existingMaskImage.type = Image.Type.Sliced;
                         existingMaskImage.color = Color.white;
-                        existingMaskImage.raycastTarget = false;
+                        // 再適用時にraycastを落とすとスライダートラックが操作不能になる
                     }
 
                     return;

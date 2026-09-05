@@ -46,6 +46,8 @@ namespace ClayEditor.Paint
         private bool wasPainting;
         // 直前フレームでShiftによる深度固定中だったか
         private bool wasShiftPressed;
+        // 直前フレームでポインタがUI上だったか
+        private bool wasPointerOverUI;
 
         // 現在のストロークで実際に1回でも塗ったか(空振りを履歴へ入れないため)
         private bool paintedInStroke;
@@ -79,6 +81,14 @@ namespace ClayEditor.Paint
 
             // 初期色をカーソルへ反映
             ApplyCursorColor(painter.CurrentColor);
+
+            // カラーピッカースライダー操作中はペイント入力を止める
+            if (colorPicker != null)
+            {
+                colorPicker.BindUiPointerCapture(
+                    input.BeginUiPointerCapture,
+                    input.EndUiPointerCapture);
+            }
 
             // カラーピッカーで選ばれた色をペイント色とカーソル色の両方へ反映する
             colorPicker.OnColorSelected
@@ -204,6 +214,7 @@ namespace ClayEditor.Paint
             if (!isActiveAndEnabled)
             {
                 wasShiftPressed = false;
+                wasPointerOverUI = input.IsPointerOverUI;
                 EndStrokeIfNeeded();
                 return;
             }
@@ -217,11 +228,21 @@ namespace ClayEditor.Paint
             if (sceneContext.CurrentMode.Value != EditModeType.Paint)
             {
                 wasShiftPressed = false;
+                wasPointerOverUI = input.IsPointerOverUI;
                 EndStrokeIfNeeded();
                 return;
             }
 
-            if (input.IsPointerOverUI)
+            bool isOverUI = input.IsPointerOverUI;
+            // スライダー等で押した左クリックのままモデルへ出ても塗らない
+            if (wasPointerOverUI && !isOverUI && input.IsPrimaryHeld)
+            {
+                suppressPaintUntilPrimaryRelease = true;
+            }
+
+            wasPointerOverUI = isOverUI;
+
+            if (isOverUI)
             {
                 wasShiftPressed = input.IsShiftPressed;
                 EndStrokeIfNeeded();

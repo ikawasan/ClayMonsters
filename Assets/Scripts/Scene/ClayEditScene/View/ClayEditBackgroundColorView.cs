@@ -80,7 +80,7 @@ namespace Scene.ClayEditScene.View
             backgroundColorSlider.SetValueWithoutNotify(initialValue);
             InitializeGaugeBackground();
             ClayEditUiVisualUtility.ApplySlider(backgroundColorSlider);
-            ClayEditUiVisualUtility.EnsureRoundedMask(gaugeBackground);
+            EnsureTrackReceivesPointer();
             BindSliderInputBlock();
             BindSliderMoveSe();
 
@@ -168,12 +168,48 @@ namespace Scene.ClayEditScene.View
             gaugeBackground.raycastTarget = true;
         }
 
+        private void EnsureTrackReceivesPointer()
+        {
+            // カラーピッカー同様トラック全体で値を変えられるようレイキャストを保証する
+            if (gaugeBackground == null)
+            {
+                return;
+            }
+
+            Transform parent = gaugeBackground.transform.parent;
+            if (parent != null && parent.name == "RoundMask")
+            {
+                Image maskImage = parent.GetComponent<Image>();
+                if (maskImage != null)
+                {
+                    maskImage.raycastTarget = true;
+                }
+
+                gaugeBackground.raycastTarget = false;
+                return;
+            }
+
+            gaugeBackground.raycastTarget = true;
+        }
+
         private void BindSliderInputBlock()
         {
-            EventTrigger trigger = backgroundColorSlider.GetComponent<EventTrigger>();
+            // EventTriggerはSlider本体のみに付ける
+            // 子へ付けるとIDragHandlerを奪ってスライダーが動かなくなる
+            BindCaptureTriggers(backgroundColorSlider.gameObject);
+        }
+
+        private void BindCaptureTriggers(GameObject target)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            EventTrigger trigger = target.GetComponent<EventTrigger>();
             if (trigger == null)
             {
-                trigger = backgroundColorSlider.gameObject.AddComponent<EventTrigger>();
+                trigger = target.AddComponent<EventTrigger>();
             }
 
             AddTrigger(trigger, EventTriggerType.PointerDown, BeginPointerCapture);
