@@ -47,7 +47,11 @@ namespace ClayEditor.Paint
 
             Vector3 normal = worldNormal.sqrMagnitude > 1e-6f ? worldNormal.normalized : Vector3.up;
             float radius = Mathf.Max(0.02f, brushRadius);
-            Color ink = PaintColorUtility.ToMaterialColor(color);
+            // パーティクルは表示色を使い少し明るくして飛沫を見やすくする
+            Color ink = Color.Lerp(color, Color.white, 0.35f);
+            ink.r = Mathf.Clamp01(ink.r);
+            ink.g = Mathf.Clamp01(ink.g);
+            ink.b = Mathf.Clamp01(ink.b);
             ink.a = 1f;
 
             GameObject host = Rent(worldPosition + normal * (radius * 0.08f), normal);
@@ -155,8 +159,8 @@ namespace ClayEditor.Paint
         private float PlayDroplets(Transform parent, Color ink, float radius)
         {
             ParticleSystem particleSystem = GetOrCreateChild(parent, "Droplets", ParticleSystemRenderMode.Billboard);
-            Color dark = Color.Lerp(ink, Color.black, 0.22f);
-            dark.a = 1f;
+            Color shade = Color.Lerp(ink, Color.white, 0.18f);
+            shade.a = 1f;
 
             ParticleSystem.MainModule main = particleSystem.main;
             main.playOnAwake = false;
@@ -170,7 +174,7 @@ namespace ClayEditor.Paint
             main.gravityModifier = 1.2f;
             main.maxParticles = 20;
             main.simulationSpace = ParticleSystemSimulationSpace.World;
-            main.startColor = new ParticleSystem.MinMaxGradient(ink, dark);
+            main.startColor = new ParticleSystem.MinMaxGradient(ink, shade);
             main.startRotation = new ParticleSystem.MinMaxCurve(0f, Mathf.PI * 2f);
 
             ParticleSystem.EmissionModule emission = particleSystem.emission;
@@ -198,7 +202,7 @@ namespace ClayEditor.Paint
         private float PlaySpecks(Transform parent, Color ink, float radius)
         {
             ParticleSystem particleSystem = GetOrCreateChild(parent, "Specks", ParticleSystemRenderMode.Billboard);
-            Color bright = Color.Lerp(ink, Color.white, 0.18f);
+            Color bright = Color.Lerp(ink, Color.white, 0.55f);
             bright.a = 1f;
 
             ParticleSystem.MainModule main = particleSystem.main;
@@ -241,8 +245,8 @@ namespace ClayEditor.Paint
         private float PlayRing(Transform parent, Color ink, float radius)
         {
             ParticleSystem particleSystem = GetOrCreateChild(parent, "Ring", ParticleSystemRenderMode.Billboard);
-            Color splash = ink;
-            splash.a = 0.85f;
+            Color splash = Color.Lerp(ink, Color.white, 0.45f);
+            splash.a = 1f;
 
             ParticleSystem.MainModule main = particleSystem.main;
             main.playOnAwake = false;
