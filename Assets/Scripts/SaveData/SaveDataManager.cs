@@ -40,10 +40,11 @@ namespace SaveData
                 return CreateDefault();
             }
 
-            EnsureDefaults(loaded);
-            if (wasLegacyPlain)
+            bool startingPointsGranted = EnsureDefaults(loaded);
+            if (wasLegacyPlain || startingPointsGranted)
             {
                 // 旧平文を暗号化形式へ移行する
+                // または初期ポイント未付与セーブへ初回ポイントを書き込む
                 Save(loaded);
             }
 
@@ -114,7 +115,7 @@ namespace SaveData
             return data;
         }
 
-        private static void EnsureDefaults(SaveData data)
+        private static bool EnsureDefaults(SaveData data)
         {
             if (data.VideoOptionData == null)
             {
@@ -142,6 +143,7 @@ namespace SaveData
                 };
             }
 
+            bool startingPointsGranted = EnsureStartingPointsGranted(data);
             data.Points = BattlePointsRules.ClampHeldPoints(data.Points);
 
             if (data.SkillTree == null)
@@ -192,6 +194,29 @@ namespace SaveData
                         NpcBattleProgressRules.InitialSlotStrengthCount;
                 }
             }
+
+            return startingPointsGranted;
+        }
+
+        /// <summary>
+        /// 初期ポイント未付与のセーブへ開始ポイントを保証する
+        /// </summary>
+        /// <param name="data">セーブデータ</param>
+        /// <returns>付与またはフラグ更新した場合true</returns>
+        private static bool EnsureStartingPointsGranted(SaveData data)
+        {
+            if (data == null || data.StartingPointsGranted)
+            {
+                return false;
+            }
+
+            if (data.Points < BattlePointsRules.InitialHeldPoints)
+            {
+                data.Points = BattlePointsRules.InitialHeldPoints;
+            }
+
+            data.StartingPointsGranted = true;
+            return true;
         }
     }
 }

@@ -41,7 +41,12 @@ namespace SaveData
         /// <summary>
         /// 育成ゴールドとは別のゲーム内ポイント
         /// </summary>
-        public int Points;
+        public int Points = BattlePointsRules.InitialHeldPoints;
+
+        /// <summary>
+        /// 初期ポイント付与済みか
+        /// </summary>
+        public bool StartingPointsGranted;
 
         /// <summary>
         /// スキルツリー解放進捗

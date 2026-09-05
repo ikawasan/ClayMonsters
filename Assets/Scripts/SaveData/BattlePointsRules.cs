@@ -11,6 +11,11 @@ namespace SaveData
         public const int MaxHeldPoints = 9999;
 
         /// <summary>
+        /// ゲーム開始時に付与する所持ポイント
+        /// </summary>
+        public const int InitialHeldPoints = 100;
+
+        /// <summary>
         /// NPC弱い勝利の基本ポイント
         /// </summary>
         public const int NpcWeakVictoryPoints = 10;
