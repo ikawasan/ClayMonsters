@@ -100,15 +100,20 @@ namespace Scene.TrainingScene.Domain
         /// 強敵急襲イベントの発生を抽選する
         /// </summary>
         /// <param name="random">乱数</param>
+        /// <param name="weather">天候</param>
         /// <returns>発生したらtrue</returns>
-        public static bool TryRollAmbushEvent(System.Random random)
+        public static bool TryRollAmbushEvent(
+            System.Random random,
+            TrainingWeather weather = TrainingWeather.Clear)
         {
             if (random == null)
             {
                 return false;
             }
 
-            return random.NextDouble() * 100d < TrainingSettings.AmbushEventTriggerPercent;
+            float triggerPercent = TrainingSettings.AmbushEventTriggerPercent
+                * TrainingWeatherCatalog.GetAmbushRateMultiplier(weather);
+            return random.NextDouble() * 100d < triggerPercent;
         }
 
         /// <summary>

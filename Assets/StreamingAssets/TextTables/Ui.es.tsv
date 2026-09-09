@@ -100,6 +100,13 @@ Training.AmbushEnemyDefault	Enemigo fuerte
 Training.AmbushMessage	¡{name} ataca!\n¿Luchar o huir?
 Training.Complete	Entrenamiento completo
 Training.Motivation	Motivación 
+Training.Weather	Clima
+Training.Weather.Clear	Despejado
+Training.Weather.Cloudy	Nublado
+Training.Weather.Rainy	Lluvia
+Training.Weather.Desc.Clear	Despejado\nGanancias de estado de entrenamiento / Tasa de gran éxito ligeramente aumentada.
+Training.Weather.Desc.Cloudy	Nublado\nGanancias de estado de entrenamiento ligeramente reducidas / Encuentro con enemigos fuertes ligeramente aumentado.
+Training.Weather.Desc.Rainy	Lluvia\nGanancias de estado de entrenamiento reducidas / Encuentro con enemigos fuertes aumentado.
 Training.LearnedHeader	▼ Técnica aprendida
 Training.SwapHeader	▼ Espacio a reemplazar
 Training.AttackComposition	▼ Técnicas

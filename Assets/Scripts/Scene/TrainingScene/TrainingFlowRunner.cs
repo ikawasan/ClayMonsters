@@ -1305,7 +1305,7 @@ namespace Scene.TrainingScene
 
                 if ((int)session.CurrentDay >= TrainingSettings.TotalDays)
                 {
-                    session.AdvanceDay();
+                    session.AdvanceDay(random);
                     CheckpointSave(session);
                     break;
                 }
@@ -1314,7 +1314,7 @@ namespace Scene.TrainingScene
                     cancellationToken,
                     () =>
                     {
-                        session.AdvanceDay();
+                        session.AdvanceDay(random);
                         CheckpointSave(session);
                         hudView.BindSession(
                             session,
@@ -1812,7 +1812,7 @@ namespace Scene.TrainingScene
             string modelName,
             CancellationToken cancellationToken)
         {
-            if (!TrainingEventResolver.TryRollAmbushEvent(random))
+            if (!TrainingEventResolver.TryRollAmbushEvent(random, session.Weather))
             {
                 return false;
             }

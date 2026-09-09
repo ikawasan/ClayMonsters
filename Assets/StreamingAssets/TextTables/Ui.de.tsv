@@ -100,6 +100,13 @@ Training.AmbushEnemyDefault	Starker Gegner
 Training.AmbushMessage	{name} greift an!\nKämpfen oder fliehen?
 Training.Complete	Training abgeschlossen
 Training.Motivation	Motivation 
+Training.Weather	Wetter
+Training.Weather.Clear	Sonnig
+Training.Weather.Cloudy	Bewölkt
+Training.Weather.Rainy	Regen
+Training.Weather.Desc.Clear	Sonnig\nTrainings-Statuszuwachs / Großerfolgschance leicht erhöht.
+Training.Weather.Desc.Cloudy	Bewölkt\nTrainings-Statuszuwachs leicht verringert / Begegnung mit starken Gegnern leicht erhöht.
+Training.Weather.Desc.Rainy	Regen\nTrainings-Statuszuwachs verringert / Begegnung mit starken Gegnern erhöht.
 Training.LearnedHeader	▼ Neue Technik
 Training.SwapHeader	▼ Zu ersetzender Slot
 Training.AttackComposition	▼ Techniken

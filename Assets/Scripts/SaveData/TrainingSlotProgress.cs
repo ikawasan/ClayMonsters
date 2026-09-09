@@ -46,6 +46,11 @@ namespace SaveData
         public int motivation = 2;
 
         /// <summary>
+        /// 天候(0〜2)
+        /// </summary>
+        public int weather;
+
+        /// <summary>
         /// 所持金
         /// </summary>
         public int money;

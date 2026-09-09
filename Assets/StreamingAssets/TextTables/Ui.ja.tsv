@@ -100,6 +100,13 @@ Training.AmbushEnemyDefault	強敵
 Training.AmbushMessage	{name}が襲いかかってきた\n戦うか逃げるか選んでください
 Training.Complete	育成完了
 Training.Motivation	やる気
+Training.Weather	天候
+Training.Weather.Clear	快晴
+Training.Weather.Cloudy	曇り
+Training.Weather.Rainy	雨
+Training.Weather.Desc.Clear	快晴\nトレーニングでのステータス上昇値 / 大成功率少しアップ。
+Training.Weather.Desc.Cloudy	曇り\nトレーニングでのステータス上昇値少しダウン / 強敵遭遇率少しアップ。
+Training.Weather.Desc.Rainy	雨\nトレーニングでのステータス上昇値ダウン / 強敵遭遇率アップ。
 Training.LearnedHeader	▼習得する技
 Training.SwapHeader	▼入れ替えるスロット
 Training.AttackComposition	▼技構成

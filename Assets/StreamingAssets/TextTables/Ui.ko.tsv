@@ -100,6 +100,13 @@ Training.AmbushEnemyDefault	강적
 Training.AmbushMessage	{name}이(가) 습격했습니다\n싸울지 도망칠지 선택하세요
 Training.Complete	육성 완료
 Training.Motivation	의욕 
+Training.Weather	날씨
+Training.Weather.Clear	맑음
+Training.Weather.Cloudy	흐림
+Training.Weather.Rainy	비
+Training.Weather.Desc.Clear	맑음\n훈련 스테이터스 상승치 / 대성공률 조금 상승.
+Training.Weather.Desc.Cloudy	흐림\n훈련 스테이터스 상승치 조금 하락 / 강적 조우율 조금 상승.
+Training.Weather.Desc.Rainy	비\n훈련 스테이터스 상승치 하락 / 강적 조우율 상승.
 Training.LearnedHeader	▼ 습득 기술
 Training.SwapHeader	▼ 교체할 슬롯
 Training.AttackComposition	▼ 기술 구성

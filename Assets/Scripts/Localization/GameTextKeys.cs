@@ -232,6 +232,13 @@ namespace Localization
         public const string TrainingAmbushFlee = "Training.AmbushFlee";
         public const string TrainingComplete = "Training.Complete";
         public const string TrainingMotivation = "Training.Motivation";
+        public const string TrainingWeather = "Training.Weather";
+        public const string TrainingWeatherClear = "Training.Weather.Clear";
+        public const string TrainingWeatherCloudy = "Training.Weather.Cloudy";
+        public const string TrainingWeatherRainy = "Training.Weather.Rainy";
+        public const string TrainingWeatherDescClear = "Training.Weather.Desc.Clear";
+        public const string TrainingWeatherDescCloudy = "Training.Weather.Desc.Cloudy";
+        public const string TrainingWeatherDescRainy = "Training.Weather.Desc.Rainy";
         public const string TrainingLearnedHeader = "Training.LearnedHeader";
         public const string TrainingSwapHeader = "Training.SwapHeader";
         public const string TrainingSwapSkip = "Training.SwapSkip";

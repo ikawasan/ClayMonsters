@@ -36,7 +36,7 @@ namespace Scene.TrainingScene.Domain
                         break;
                     }
 
-                    session.AdvanceDay();
+                    session.AdvanceDay(random);
                 }
             }
             finally

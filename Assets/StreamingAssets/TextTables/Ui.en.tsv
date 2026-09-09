@@ -100,6 +100,13 @@ Training.AmbushEnemyDefault	Strong Foe
 Training.AmbushMessage	{name} attacks!\nFight or flee?
 Training.Complete	Training Complete
 Training.Motivation	Motivation 
+Training.Weather	Weather
+Training.Weather.Clear	Clear
+Training.Weather.Cloudy	Cloudy
+Training.Weather.Rainy	Rain
+Training.Weather.Desc.Clear	Clear\nTraining status gains / Great-success rate slightly increased.
+Training.Weather.Desc.Cloudy	Cloudy\nTraining status gains slightly decreased / Strong-enemy encounter rate slightly increased.
+Training.Weather.Desc.Rainy	Rain\nTraining status gains decreased / Strong-enemy encounter rate increased.
 Training.LearnedHeader	▼ New Move
 Training.SwapHeader	▼ Slot to Replace
 Training.AttackComposition	▼ Moves

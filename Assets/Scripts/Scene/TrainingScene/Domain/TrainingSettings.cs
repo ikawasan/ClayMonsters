@@ -297,6 +297,66 @@ namespace Scene.TrainingScene.Domain
         public const float AmbushEventTriggerPercent = 12f;
 
         /// <summary>
+        /// 快晴の抽選重み
+        /// </summary>
+        public const int WeatherRollWeightClear = 4;
+
+        /// <summary>
+        /// 曇りの抽選重み
+        /// </summary>
+        public const int WeatherRollWeightCloudy = 1;
+
+        /// <summary>
+        /// 雨の抽選重み
+        /// </summary>
+        public const int WeatherRollWeightRainy = 1;
+
+        /// <summary>
+        /// 快晴時の訓練上昇倍率
+        /// </summary>
+        public const float WeatherTrainMultiplierClear = 1.1f;
+
+        /// <summary>
+        /// 曇り時の訓練上昇倍率
+        /// </summary>
+        public const float WeatherTrainMultiplierCloudy = 0.9f;
+
+        /// <summary>
+        /// 雨時の訓練上昇倍率
+        /// </summary>
+        public const float WeatherTrainMultiplierRainy = 0.8f;
+
+        /// <summary>
+        /// 快晴時の訓練大成功率加算(百分率)
+        /// </summary>
+        public const float WeatherGreatSuccessBonusClear = 5f;
+
+        /// <summary>
+        /// 曇り時の訓練大成功率加算(百分率)
+        /// </summary>
+        public const float WeatherGreatSuccessBonusCloudy = 0f;
+
+        /// <summary>
+        /// 雨時の訓練大成功率加算(百分率)
+        /// </summary>
+        public const float WeatherGreatSuccessBonusRainy = 0f;
+
+        /// <summary>
+        /// 快晴時の強敵遭遇率倍率
+        /// </summary>
+        public const float WeatherAmbushMultiplierClear = 1f;
+
+        /// <summary>
+        /// 曇り時の強敵遭遇率倍率
+        /// </summary>
+        public const float WeatherAmbushMultiplierCloudy = 1.25f;
+
+        /// <summary>
+        /// 雨時の強敵遭遇率倍率
+        /// </summary>
+        public const float WeatherAmbushMultiplierRainy = 1.5f;
+
+        /// <summary>
         /// 強敵急襲勝利時の基礎賞金
         /// </summary>
         public const int AmbushVictoryReward = 200;

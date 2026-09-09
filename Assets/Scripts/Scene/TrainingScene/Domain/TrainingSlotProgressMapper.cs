@@ -80,6 +80,7 @@ namespace Scene.TrainingScene.Domain
                 turnIndexInDay = session.TurnIndexInDay,
                 stamina = session.Stamina,
                 motivation = (int)session.Motivation,
+                weather = (int)session.Weather,
                 money = session.Money,
                 trainGreatSuccessBonusPercent = session.TrainGreatSuccessBonusPercent,
                 trainGreatSuccessBonusWeeks = session.TrainGreatSuccessBonusWeeks,

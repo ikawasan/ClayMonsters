@@ -29,14 +29,21 @@ namespace Scene.TrainingScene.Domain
             float motivationMultiplier = session != null
                 ? TrainingMotivationCatalog.GetTrainGainMultiplier(session.Motivation)
                 : 1f;
+            float weatherMultiplier = session != null
+                ? TrainingWeatherCatalog.GetTrainGainMultiplier(session.Weather)
+                : 1f;
+            float weatherGreatSuccessBonus = session != null
+                ? TrainingWeatherCatalog.GetGreatSuccessBonusPercent(session.Weather)
+                : 0f;
+            float gainMultiplier = motivationMultiplier * weatherMultiplier;
             return ExecuteFocusCommand(
                 TrainingCommandType.Train,
                 focus,
                 session != null ? session.Stamina : TrainingSettings.MaxStamina,
                 TrainingFocusCatalog.GetTrainStaminaCost(focus),
-                TrainingSettings.TrainGreatSuccessPercent + bonus,
-                1f * motivationMultiplier,
-                TrainingSettings.TrainGreatSuccessMultiplier * motivationMultiplier,
+                TrainingSettings.TrainGreatSuccessPercent + bonus + weatherGreatSuccessBonus,
+                1f * gainMultiplier,
+                TrainingSettings.TrainGreatSuccessMultiplier * gainMultiplier,
                 random);
         }
 
@@ -59,14 +66,21 @@ namespace Scene.TrainingScene.Domain
             float motivationMultiplier = session != null
                 ? TrainingMotivationCatalog.GetTrainGainMultiplier(session.Motivation)
                 : 1f;
+            float weatherMultiplier = session != null
+                ? TrainingWeatherCatalog.GetTrainGainMultiplier(session.Weather)
+                : 1f;
+            float weatherGreatSuccessBonus = session != null
+                ? TrainingWeatherCatalog.GetGreatSuccessBonusPercent(session.Weather)
+                : 0f;
+            float gainMultiplier = motivationMultiplier * weatherMultiplier;
             return ExecuteFocusCommand(
                 TrainingCommandType.SpecialTrain,
                 focus,
                 session != null ? session.Stamina : TrainingSettings.MaxStamina,
                 TrainingFocusCatalog.GetSpecialTrainStaminaCost(focus),
-                TrainingSettings.SpecialTrainGreatSuccessPercent + bonus,
-                TrainingSettings.SpecialTrainSuccessMultiplier * motivationMultiplier,
-                TrainingSettings.SpecialTrainGreatSuccessMultiplier * motivationMultiplier,
+                TrainingSettings.SpecialTrainGreatSuccessPercent + bonus + weatherGreatSuccessBonus,
+                TrainingSettings.SpecialTrainSuccessMultiplier * gainMultiplier,
+                TrainingSettings.SpecialTrainGreatSuccessMultiplier * gainMultiplier,
                 random);
         }
 

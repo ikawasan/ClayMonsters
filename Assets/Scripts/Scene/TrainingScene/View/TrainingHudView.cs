@@ -43,6 +43,10 @@ namespace Scene.TrainingScene.View
         [SerializeField] private TMP_Text motivationText;
         [Tooltip("やる気アイコン。未配線時はmotivationTextへ記号を出す")]
         [SerializeField] private Image motivationIcon;
+        [Tooltip("天候ラベル。天候　のあとにアイコンを出す")]
+        [SerializeField] private TMP_Text weatherText;
+        [Tooltip("天候アイコン。HudHeaderPanel配下")]
+        [SerializeField] private Image weatherIcon;
         [Tooltip("所持金の数値表示。nG")]
         [SerializeField] private TMP_Text moneyText;
         [Tooltip("HP・攻撃・防御・速度・命中のステータス表示")]
@@ -136,6 +140,11 @@ namespace Scene.TrainingScene.View
         private float motivationFrameTimer;
         private TrainingMotivation playingMotivation;
         private const float MotivationFrameSeconds = 0.12f;
+        private Sprite[] weatherFrames;
+        private int weatherFrameIndex;
+        private float weatherFrameTimer;
+        private TrainingWeather playingWeather;
+        private const float WeatherFrameSeconds = 0.12f;
         private static string CommandChoicePrompt =>
             LocalizedText.GetOrFallback(GameTextKeys.TrainingPromptCommand, "この時間の行動を選んでください");
 
@@ -175,7 +184,9 @@ namespace Scene.TrainingScene.View
         private int cachedLocationStamina;
         private TrainingPeriod? boundPeriod;
         private bool isStatusHoverBound;
+        private bool isWeatherHoverBound;
         private bool isPointerOverStats;
+        private int weatherHoverDepth;
         private string hoveredStatusLinkId = string.Empty;
         private bool isShowingStatusHoverDescription;
         private string logMessageBeforeStatusHover = string.Empty;
@@ -203,7 +214,9 @@ namespace Scene.TrainingScene.View
         private void Update()
         {
             TickMotivationIconAnimation();
+            TickWeatherIconAnimation();
             TickStatusHover();
+            TickWeatherHover();
             TickGreatSuccessBoostStatusBlink();
         }
 
@@ -256,6 +269,58 @@ namespace Scene.TrainingScene.View
             if (frame != null)
             {
                 motivationIcon.sprite = frame;
+            }
+        }
+
+        private void PlayWeatherIcon(TrainingWeather weather)
+        {
+            if (weatherIcon == null)
+            {
+                return;
+            }
+
+            bool changed = weatherFrames == null
+                || weatherFrames.Length == 0
+                || playingWeather != weather;
+            if (changed)
+            {
+                playingWeather = weather;
+                weatherFrames = TrainingWeatherCatalog.ResolveIconFrames(weather);
+                weatherFrameIndex = 0;
+                weatherFrameTimer = 0f;
+                Sprite first = weatherFrames != null && weatherFrames.Length > 0
+                    ? weatherFrames[0]
+                    : null;
+                weatherIcon.sprite = first;
+            }
+
+            bool hasFrames = weatherFrames != null && weatherFrames.Length > 0;
+            weatherIcon.enabled = hasFrames && weatherIcon.sprite != null;
+            weatherIcon.gameObject.SetActive(true);
+        }
+
+        private void TickWeatherIconAnimation()
+        {
+            if (weatherIcon == null
+                || !weatherIcon.isActiveAndEnabled
+                || weatherFrames == null
+                || weatherFrames.Length <= 1)
+            {
+                return;
+            }
+
+            weatherFrameTimer += Time.unscaledDeltaTime;
+            if (weatherFrameTimer < WeatherFrameSeconds)
+            {
+                return;
+            }
+
+            weatherFrameTimer = 0f;
+            weatherFrameIndex = (weatherFrameIndex + 1) % weatherFrames.Length;
+            Sprite frame = weatherFrames[weatherFrameIndex];
+            if (frame != null)
+            {
+                weatherIcon.sprite = frame;
             }
         }
 
@@ -409,6 +474,20 @@ namespace Scene.TrainingScene.View
             {
                 PlayMotivationIcon(session.Motivation);
             }
+
+            if (weatherText != null)
+            {
+                weatherText.text = LocalizedText.GetOrFallback(
+                    GameTextKeys.TrainingWeather,
+                    "天候");
+            }
+
+            if (weatherIcon != null)
+            {
+                PlayWeatherIcon(session.Weather);
+            }
+
+            BindWeatherHover();
 
             if (statsText != null)
             {
@@ -1709,6 +1788,7 @@ namespace Scene.TrainingScene.View
 
             EnsureSerializedReferences();
             BindStatusHover();
+            BindWeatherHover();
 
             if (continueButton != null)
             {
@@ -2001,6 +2081,8 @@ namespace Scene.TrainingScene.View
                 || staminaText == null
                 || motivationText == null
                 || motivationIcon == null
+                || weatherText == null
+                || weatherIcon == null
                 || moneyText == null
                 || moneyPanel == null
                 || statsText == null
@@ -2195,7 +2277,10 @@ namespace Scene.TrainingScene.View
                 if (!string.IsNullOrEmpty(hoveredStatusLinkId))
                 {
                     hoveredStatusLinkId = string.Empty;
-                    RestoreStatusHoverExitLog();
+                    if (weatherHoverDepth <= 0)
+                    {
+                        RestoreHoverDescription();
+                    }
                 }
 
                 return;
@@ -2215,14 +2300,7 @@ namespace Scene.TrainingScene.View
                 return;
             }
 
-            // 説明に切り替える直前の本文を保持し退出時に戻す
-            if (!isShowingStatusHoverDescription)
-            {
-                logMessageBeforeStatusHover = logText != null ? logText.text : string.Empty;
-                isShowingStatusHoverDescription = true;
-            }
-
-            SetLogMessage(description);
+            ShowHoverDescription(description);
         }
 
         /// <summary>
@@ -2257,10 +2335,120 @@ namespace Scene.TrainingScene.View
             }
 
             hoveredStatusLinkId = string.Empty;
-            RestoreStatusHoverExitLog();
+            if (weatherHoverDepth <= 0)
+            {
+                RestoreHoverDescription();
+            }
         }
 
-        private void RestoreStatusHoverExitLog()
+        private void BindWeatherHover()
+        {
+            if (isWeatherHoverBound)
+            {
+                return;
+            }
+
+            bool boundAny = false;
+            if (weatherText != null)
+            {
+                weatherText.raycastTarget = true;
+                BindWeatherHoverTarget(weatherText.gameObject);
+                boundAny = true;
+            }
+
+            if (weatherIcon != null)
+            {
+                weatherIcon.raycastTarget = true;
+                BindWeatherHoverTarget(weatherIcon.gameObject);
+                boundAny = true;
+            }
+
+            isWeatherHoverBound = boundAny;
+        }
+
+        private void BindWeatherHoverTarget(GameObject target)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            EventTrigger trigger = target.GetComponent<EventTrigger>();
+            if (trigger == null)
+            {
+                trigger = target.AddComponent<EventTrigger>();
+            }
+
+            AddHoverEntry(
+                trigger,
+                EventTriggerType.PointerEnter,
+                OnWeatherHoverEnter);
+            AddHoverEntry(
+                trigger,
+                EventTriggerType.PointerExit,
+                OnWeatherHoverExit);
+        }
+
+        private void OnWeatherHoverEnter()
+        {
+            weatherHoverDepth++;
+            if (boundSession == null)
+            {
+                return;
+            }
+
+            string description = TrainingWeatherCatalog.GetDescription(boundSession.Weather);
+            if (string.IsNullOrEmpty(description))
+            {
+                return;
+            }
+
+            ShowHoverDescription(description);
+        }
+
+        private void OnWeatherHoverExit()
+        {
+            weatherHoverDepth = Mathf.Max(0, weatherHoverDepth - 1);
+        }
+
+        private void TickWeatherHover()
+        {
+            if (weatherHoverDepth > 0)
+            {
+                return;
+            }
+
+            if (isPointerOverStats && !string.IsNullOrEmpty(hoveredStatusLinkId))
+            {
+                return;
+            }
+
+            // テキストとアイコン間移動では同フレームでEnterが来るため復元は次フレームへ遅延する
+            if (!isShowingStatusHoverDescription)
+            {
+                return;
+            }
+
+            if (isPointerOverStats)
+            {
+                return;
+            }
+
+            RestoreHoverDescription();
+        }
+
+        private void ShowHoverDescription(string description)
+        {
+            if (!isShowingStatusHoverDescription)
+            {
+                logMessageBeforeStatusHover = logText != null ? logText.text : string.Empty;
+                isShowingStatusHoverDescription = true;
+            }
+
+            SetLogMessage(description);
+        }
+
+        private void RestoreHoverDescription()
         {
             if (!isShowingStatusHoverDescription)
             {
@@ -2270,6 +2458,11 @@ namespace Scene.TrainingScene.View
             isShowingStatusHoverDescription = false;
             SetLogMessage(logMessageBeforeStatusHover);
             logMessageBeforeStatusHover = string.Empty;
+        }
+
+        private void RestoreStatusHoverExitLog()
+        {
+            RestoreHoverDescription();
         }
 
         private static string FormatStatsText(ModelStatus status)

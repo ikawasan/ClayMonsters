@@ -517,6 +517,7 @@ namespace SaveData.Service
                 turnIndexInDay = source.turnIndexInDay,
                 stamina = source.stamina,
                 motivation = source.motivation,
+                weather = source.weather,
                 money = source.money,
                 trainGreatSuccessBonusPercent = source.trainGreatSuccessBonusPercent,
                 trainGreatSuccessBonusWeeks = source.trainGreatSuccessBonusWeeks,

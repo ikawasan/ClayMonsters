@@ -150,6 +150,11 @@ namespace Scene.TrainingScene.Domain
         public TrainingMotivation Motivation { get; private set; }
 
         /// <summary>
+        /// 現在の天候
+        /// </summary>
+        public TrainingWeather Weather { get; private set; }
+
+        /// <summary>
         /// 所持金
         /// </summary>
         public int Money { get; private set; }
@@ -234,6 +239,7 @@ namespace Scene.TrainingScene.Domain
             TurnIndexInDay = 0;
             Stamina = TrainingSettings.MaxStamina;
             Motivation = TrainingSettings.StartingMotivation;
+            Weather = TrainingWeatherCatalog.Roll();
             Money = TrainingSettings.StartingMoney;
             CurrentStatus = ModelStatus.CloneOrDefault(baseStatus);
             TrainingActionResolver.ClampStatus(CurrentStatus);
@@ -264,6 +270,7 @@ namespace Scene.TrainingScene.Domain
                 TrainingDailySchedule.TurnsPerDay);
             session.Stamina = Mathf.Clamp(progress.stamina, 0, TrainingSettings.MaxStamina);
             session.Motivation = TrainingMotivationCatalog.Clamp(progress.motivation);
+            session.Weather = TrainingWeatherCatalog.Clamp(progress.weather);
             session.Money = Mathf.Max(0, progress.money);
             session.TrainGreatSuccessBonusPercent =
                 Mathf.Max(0f, progress.trainGreatSuccessBonusPercent);
@@ -729,7 +736,8 @@ namespace Scene.TrainingScene.Domain
         /// <summary>
         /// 翌日へ進む
         /// </summary>
-        public void AdvanceDay()
+        /// <param name="random">乱数</param>
+        public void AdvanceDay(System.Random random = null)
         {
             TurnIndexInDay = 0;
 
@@ -740,6 +748,7 @@ namespace Scene.TrainingScene.Domain
             }
 
             CurrentDay = (TrainingDayOfWeek)((int)CurrentDay + 1);
+            Weather = TrainingWeatherCatalog.Roll(random);
         }
 
         /// <summary>

@@ -100,6 +100,13 @@ Training.AmbushEnemyDefault	强敌
 Training.AmbushMessage	{name}袭来！\n选择战斗或逃跑
 Training.Complete	育成完成
 Training.Motivation	干劲 
+Training.Weather	天气
+Training.Weather.Clear	晴朗
+Training.Weather.Cloudy	多云
+Training.Weather.Rainy	雨
+Training.Weather.Desc.Clear	晴朗\n训练状态值提升 / 大成功率略微上升。
+Training.Weather.Desc.Cloudy	多云\n训练状态值提升略微下降 / 强敌遭遇率略微上升。
+Training.Weather.Desc.Rainy	雨\n训练状态值提升下降 / 强敌遭遇率上升。
 Training.LearnedHeader	▼掌握的技能
 Training.SwapHeader	▼替换槽位
 Training.AttackComposition	▼技能构成
