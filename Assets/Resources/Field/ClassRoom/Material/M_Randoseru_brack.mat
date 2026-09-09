@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: M_Randoseru_brack
-  m_Shader: {fileID: 4800000, guid: cbd90815f343da144b443557b4a13aef, type: 3}
+  m_Shader: {fileID: 4800000, guid: 8f3a1c6e9b204d7a85c42e1d0f76a9b3, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -30,6 +30,7 @@ Material:
     m_Ints: []
     m_Floats:
     - _Cull: 2
+    - _OutlineWidth: 0.005
     - _RimPower: 3
     - _ShowBackFacesOnly: 0
     - _SpecularSmoothness: 0.01
@@ -38,6 +39,7 @@ Material:
     - _ToonThreshold: 0.5
     m_Colors:
     - _BaseColor: {r: 0, g: 0, b: 0, a: 1}
+    - _OutlineColor: {r: 0.3679245, g: 0.3679245, b: 0.3679245, a: 1}
     - _RimColor: {r: 1, g: 0.85, b: 0.5, a: 1}
     - _ShadowColor: {r: 0.75, g: 0.6, b: 0.5, a: 1}
     - _SpecularColor: {r: 0, g: 0, b: 0, a: 0}
