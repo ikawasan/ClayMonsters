@@ -17,6 +17,8 @@ namespace UI.ClayEditor.View
         private const int DefaultCaptureRendererIndex = 1;
         private const float BackdropViewPadding = 1.15f;
         private const float BackdropDepthPadding = 0.5f;
+        // 1未満だとモデルが画角からはみ出すため余白込みで収める
+        private const float ForcedFitMargin = 1.08f;
         private const float BoardClearKeyThreshold = 0.2f;
         private static readonly Color BoardClearKey = new Color(1f, 0f, 1f, 1f);
 
@@ -47,7 +49,8 @@ namespace UI.ClayEditor.View
 
         [Header("画角")]
         [SerializeField] private Vector3 viewEulerAngles = new Vector3(15f, -150f, 0f);
-        [SerializeField] private float fitMargin = 1.2f;
+        [Tooltip("未使用実行時はForcedFitMarginを使う")]
+        [SerializeField] private float fitMargin = 1.05f;
         [SerializeField] private bool orthographic = true;
         [SerializeField] private int captureLayer = 31;
 
@@ -177,7 +180,7 @@ namespace UI.ClayEditor.View
                 await UniTask.WaitForEndOfFrame(this, cancellationToken);
 
                 Bounds captureBounds = ResolveCaptureBounds(targetRenderer);
-                FrameModel(captureBounds);
+                FrameModel(targetRenderer, captureBounds);
 
                 if (includeBoardBackground)
                 {
@@ -295,6 +298,40 @@ namespace UI.ClayEditor.View
 
         private static Bounds ResolveCaptureBounds(Renderer targetRenderer)
         {
+            if (targetRenderer is SkinnedMeshRenderer skinned
+                && skinned.sharedMesh != null
+                && skinned.sharedMesh.vertexCount > 0)
+            {
+                var bakedMesh = new Mesh();
+                skinned.BakeMesh(bakedMesh);
+                Vector3[] vertices = bakedMesh.vertices;
+                if (vertices != null && vertices.Length > 0)
+                {
+                    Transform meshTransform = skinned.transform;
+                    Vector3 worldMin = meshTransform.TransformPoint(vertices[0]);
+                    Vector3 worldMax = worldMin;
+                    for (int i = 1; i < vertices.Length; i++)
+                    {
+                        Vector3 world = meshTransform.TransformPoint(vertices[i]);
+                        worldMin = Vector3.Min(worldMin, world);
+                        worldMax = Vector3.Max(worldMax, world);
+                    }
+
+                    Destroy(bakedMesh);
+
+                    var meshBounds = new Bounds();
+                    meshBounds.SetMinMax(worldMin, worldMax);
+                    if (meshBounds.size.sqrMagnitude > 0.000001f)
+                    {
+                        return meshBounds;
+                    }
+                }
+                else
+                {
+                    Destroy(bakedMesh);
+                }
+            }
+
             Bounds bounds = targetRenderer.bounds;
             if (bounds.size.sqrMagnitude > 0.000001f)
             {
@@ -638,31 +675,208 @@ namespace UI.ClayEditor.View
             texture = null;
         }
 
-        private void FrameModel(Bounds bounds)
+        private void FrameModel(Renderer targetRenderer, Bounds fallbackBounds)
         {
             Quaternion rotation = Quaternion.Euler(viewEulerAngles);
             Vector3 direction = rotation * Vector3.forward;
-            float radius = Mathf.Max(0.0001f, bounds.extents.magnitude);
-            float margin = Mathf.Max(0.01f, fitMargin);
+            Vector3 right = rotation * Vector3.right;
+            Vector3 up = rotation * Vector3.up;
+            float margin = ForcedFitMargin;
 
+            // 実頂点をカメラ軸へ投影し斜め視点でも見た目の中心へ合わせる
+            if (!TryResolveViewAlignedFrameFromRenderer(
+                    targetRenderer,
+                    right,
+                    up,
+                    direction,
+                    out Vector3 lookAt,
+                    out float halfWidth,
+                    out float halfHeight,
+                    out float halfDepth))
+            {
+                ResolveViewAlignedFrame(
+                    fallbackBounds,
+                    right,
+                    up,
+                    direction,
+                    out lookAt,
+                    out halfWidth,
+                    out halfHeight,
+                    out halfDepth);
+            }
+
+            float halfExtent = Mathf.Max(0.0001f, Mathf.Max(halfWidth, halfHeight));
             captureCamera.transform.rotation = rotation;
 
             if (captureCamera.orthographic)
             {
-                captureCamera.orthographicSize = radius * margin;
-                float distance = radius * 2f + 1f;
-                captureCamera.transform.position = bounds.center - direction * distance;
+                captureCamera.orthographicSize = halfExtent * margin;
+                float distance = halfDepth + halfExtent + 1f;
+                captureCamera.transform.position = lookAt - direction * distance;
                 captureCamera.nearClipPlane = 0.01f;
-                captureCamera.farClipPlane = distance + radius * 2f + 1f;
+                captureCamera.farClipPlane = distance + halfDepth + halfExtent + 1f;
             }
             else
             {
                 float halfFov = captureCamera.fieldOfView * 0.5f * Mathf.Deg2Rad;
-                float distance = (radius * margin) / Mathf.Sin(halfFov);
-                captureCamera.transform.position = bounds.center - direction * distance;
+                float distance = (halfExtent * margin) / Mathf.Sin(halfFov);
+                captureCamera.transform.position = lookAt - direction * distance;
                 captureCamera.nearClipPlane = 0.01f;
-                captureCamera.farClipPlane = distance + radius * 2f + 1f;
+                captureCamera.farClipPlane = distance + halfDepth + halfExtent + 1f;
             }
+        }
+
+        private static bool TryResolveViewAlignedFrameFromRenderer(
+            Renderer targetRenderer,
+            Vector3 right,
+            Vector3 up,
+            Vector3 forward,
+            out Vector3 lookAt,
+            out float halfWidth,
+            out float halfHeight,
+            out float halfDepth)
+        {
+            lookAt = Vector3.zero;
+            halfWidth = 0f;
+            halfHeight = 0f;
+            halfDepth = 0f;
+
+            if (!TryGetWorldVertices(targetRenderer, out Vector3[] worldVertices))
+            {
+                return false;
+            }
+
+            float minRight = float.PositiveInfinity;
+            float maxRight = float.NegativeInfinity;
+            float minUp = float.PositiveInfinity;
+            float maxUp = float.NegativeInfinity;
+            float minForward = float.PositiveInfinity;
+            float maxForward = float.NegativeInfinity;
+
+            for (int i = 0; i < worldVertices.Length; i++)
+            {
+                Vector3 world = worldVertices[i];
+                float projectedRight = Vector3.Dot(world, right);
+                float projectedUp = Vector3.Dot(world, up);
+                float projectedForward = Vector3.Dot(world, forward);
+                minRight = Mathf.Min(minRight, projectedRight);
+                maxRight = Mathf.Max(maxRight, projectedRight);
+                minUp = Mathf.Min(minUp, projectedUp);
+                maxUp = Mathf.Max(maxUp, projectedUp);
+                minForward = Mathf.Min(minForward, projectedForward);
+                maxForward = Mathf.Max(maxForward, projectedForward);
+            }
+
+            if (!float.IsFinite(minRight) || !float.IsFinite(maxRight))
+            {
+                return false;
+            }
+
+            float centerRight = (minRight + maxRight) * 0.5f;
+            float centerUp = (minUp + maxUp) * 0.5f;
+            float centerForward = (minForward + maxForward) * 0.5f;
+            lookAt = (right * centerRight) + (up * centerUp) + (forward * centerForward);
+            halfWidth = Mathf.Max(0.0001f, (maxRight - minRight) * 0.5f);
+            halfHeight = Mathf.Max(0.0001f, (maxUp - minUp) * 0.5f);
+            halfDepth = Mathf.Max(0.0001f, (maxForward - minForward) * 0.5f);
+            return true;
+        }
+
+        private static bool TryGetWorldVertices(Renderer targetRenderer, out Vector3[] worldVertices)
+        {
+            worldVertices = null;
+            if (targetRenderer == null)
+            {
+                return false;
+            }
+
+            Transform meshTransform = targetRenderer.transform;
+            Vector3[] localVertices = null;
+            Mesh bakedMesh = null;
+
+            if (targetRenderer is SkinnedMeshRenderer skinned
+                && skinned.sharedMesh != null
+                && skinned.sharedMesh.vertexCount > 0)
+            {
+                bakedMesh = new Mesh();
+                skinned.BakeMesh(bakedMesh);
+                localVertices = bakedMesh.vertices;
+            }
+            else if (targetRenderer is MeshRenderer
+                && targetRenderer.TryGetComponent(out MeshFilter meshFilter)
+                && meshFilter.sharedMesh != null)
+            {
+                localVertices = meshFilter.sharedMesh.vertices;
+            }
+
+            if (localVertices == null || localVertices.Length == 0)
+            {
+                if (bakedMesh != null)
+                {
+                    Destroy(bakedMesh);
+                }
+
+                return false;
+            }
+
+            worldVertices = new Vector3[localVertices.Length];
+            for (int i = 0; i < localVertices.Length; i++)
+            {
+                worldVertices[i] = meshTransform.TransformPoint(localVertices[i]);
+            }
+
+            if (bakedMesh != null)
+            {
+                Destroy(bakedMesh);
+            }
+
+            return true;
+        }
+
+        private static void ResolveViewAlignedFrame(
+            Bounds bounds,
+            Vector3 right,
+            Vector3 up,
+            Vector3 forward,
+            out Vector3 lookAt,
+            out float halfWidth,
+            out float halfHeight,
+            out float halfDepth)
+        {
+            Vector3 center = bounds.center;
+            Vector3 extents = bounds.extents;
+            float minRight = float.PositiveInfinity;
+            float maxRight = float.NegativeInfinity;
+            float minUp = float.PositiveInfinity;
+            float maxUp = float.NegativeInfinity;
+            float minForward = float.PositiveInfinity;
+            float maxForward = float.NegativeInfinity;
+
+            for (int i = 0; i < 8; i++)
+            {
+                Vector3 corner = center + new Vector3(
+                    ((i & 1) == 0 ? -extents.x : extents.x),
+                    ((i & 2) == 0 ? -extents.y : extents.y),
+                    ((i & 4) == 0 ? -extents.z : extents.z));
+                Vector3 offset = corner - center;
+                float projectedRight = Vector3.Dot(offset, right);
+                float projectedUp = Vector3.Dot(offset, up);
+                float projectedForward = Vector3.Dot(offset, forward);
+                minRight = Mathf.Min(minRight, projectedRight);
+                maxRight = Mathf.Max(maxRight, projectedRight);
+                minUp = Mathf.Min(minUp, projectedUp);
+                maxUp = Mathf.Max(maxUp, projectedUp);
+                minForward = Mathf.Min(minForward, projectedForward);
+                maxForward = Mathf.Max(maxForward, projectedForward);
+            }
+
+            float centerRight = (minRight + maxRight) * 0.5f;
+            float centerUp = (minUp + maxUp) * 0.5f;
+            float centerForward = (minForward + maxForward) * 0.5f;
+            lookAt = center + (right * centerRight) + (up * centerUp) + (forward * centerForward);
+            halfWidth = Mathf.Max(0.0001f, (maxRight - minRight) * 0.5f);
+            halfHeight = Mathf.Max(0.0001f, (maxUp - minUp) * 0.5f);
+            halfDepth = Mathf.Max(0.0001f, (maxForward - minForward) * 0.5f);
         }
     }
 }
