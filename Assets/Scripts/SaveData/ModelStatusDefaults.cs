@@ -2,7 +2,7 @@ namespace SaveData
 {
     /// <summary>
     /// 新規モデル保存時の既定ステータス
-    /// Max系は作成時の形状反映範囲(最大100)
+    /// Max系は作成時の形状反映範囲(最大200)
     /// 育成後の戦闘上限はBattleStatusBalanceを使う
     /// </summary>
     public static class ModelStatusDefaults
@@ -16,7 +16,7 @@ namespace SaveData
         /// 作成時HP上限
         /// 育成でBattleStatusBalance.MaxHpまで伸ばせる
         /// </summary>
-        public const int MaxHp = 100;
+        public const int MaxHp = 200;
 
         /// <summary>
         /// 作成時HP既定値
@@ -31,7 +31,7 @@ namespace SaveData
         /// <summary>
         /// 作成時攻撃上限
         /// </summary>
-        public const int MaxAttack = 100;
+        public const int MaxAttack = 200;
 
         /// <summary>
         /// 作成時攻撃既定値
@@ -46,7 +46,7 @@ namespace SaveData
         /// <summary>
         /// 作成時防御上限
         /// </summary>
-        public const int MaxDefense = 100;
+        public const int MaxDefense = 200;
 
         /// <summary>
         /// 作成時防御既定値
@@ -61,7 +61,7 @@ namespace SaveData
         /// <summary>
         /// 作成時速度上限
         /// </summary>
-        public const int MaxSpeed = 100;
+        public const int MaxSpeed = 200;
 
         /// <summary>
         /// 作成時速度既定値
@@ -76,7 +76,7 @@ namespace SaveData
         /// <summary>
         /// 作成時命中上限
         /// </summary>
-        public const int MaxHit = 100;
+        public const int MaxHit = 200;
 
         /// <summary>
         /// 作成時命中既定値

@@ -6,7 +6,7 @@ namespace SaveData
 {
     /// <summary>
     /// モデルの色・部位・形状からHP・攻撃力・防御力・速度・命中を算出する
-    /// 各ステは独立した指標で作成時0〜100帯へばらつかせる
+    /// 各ステは独立した指標で作成時0〜200帯へばらつかせる
     /// </summary>
     public static class ModelStatusCalculator
     {

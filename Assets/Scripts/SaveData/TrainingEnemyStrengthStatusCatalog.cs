@@ -30,7 +30,7 @@ namespace SaveData
 
         /// <summary>
         /// 育成HPソフト目標
-        /// 作成時上限100を超えて段階差が付く値
+        /// 作成時上限200を超えて段階差が付く値
         /// </summary>
         public const int SoftTargetHp = 220;
 
