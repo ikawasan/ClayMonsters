@@ -18,7 +18,7 @@ namespace UI.ClayEditor.View
         private const float BackdropViewPadding = 1.15f;
         private const float BackdropDepthPadding = 0.5f;
         // 1–¢–‚¾‚Æƒ‚ƒfƒ‹‚ª‰æŠp‚©‚ç‚Í‚İo‚·‚½‚ß—]”’‚İ‚Åû‚ß‚é
-        private const float ForcedFitMargin = 1.08f;
+        private const float ForcedFitMargin = 1.16f;
         private const float BoardClearKeyThreshold = 0.2f;
         private static readonly Color BoardClearKey = new Color(1f, 0f, 1f, 1f);
 
