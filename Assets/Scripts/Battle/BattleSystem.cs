@@ -260,6 +260,7 @@ namespace Battle
         public bool IsKnockbackAvailable =>
             Distance < settings.MaxDistance - 1e-3f
             && player.CanAct
+            && attackLockoutRemaining <= 0f
             && playerKnockbackRecastRemaining <= 0f
             && player.Guts >= settings.KnockbackGutsCost;
 
@@ -797,6 +798,7 @@ namespace Battle
                 enemyAttackCooldownRemaining,
                 enemyStepCooldownRemaining,
                 enemyKnockbackRecastRemaining,
+                attackLockoutRemaining,
                 deltaTime,
                 settings);
 
@@ -1308,8 +1310,6 @@ namespace Battle
 
             combatSync?.ReportLocalKnockback(Distance);
             knockbackPerformedSubject.OnNext(new KnockbackPerformed(player, enemy));
-            combatSync?.ReportLocalKnockback(Distance);
-            knockbackPerformedSubject.OnNext(new KnockbackPerformed(player, enemy));
             // 進行中の接近ステップを切って押し返した直後の詰め戻りを防ぐ
             CancelEnemyApproachStepIfAny();
             SuppressEnemyApproachSteps(AfterPlayerKnockbackEnemyApproachStepSuppressSeconds);
@@ -1354,6 +1354,7 @@ namespace Battle
         public bool IsEnemyKnockbackAvailable =>
             Distance < settings.MaxDistance - 1e-3f
             && enemy.CanAct
+            && attackLockoutRemaining <= 0f
             && enemyKnockbackRecastRemaining <= 0f
             && enemy.Guts >= settings.KnockbackGutsCost;
 

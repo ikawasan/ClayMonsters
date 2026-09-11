@@ -18,6 +18,7 @@ namespace Battle
             float attackCooldownRemaining,
             float stepCooldownRemaining,
             float knockbackRecastRemaining,
+            float attackLockoutRemaining,
             float deltaTime,
             BattleSettings settings)
         {
@@ -30,6 +31,7 @@ namespace Battle
             AttackCooldownRemaining = attackCooldownRemaining;
             StepCooldownRemaining = stepCooldownRemaining;
             KnockbackRecastRemaining = knockbackRecastRemaining;
+            AttackLockoutRemaining = attackLockoutRemaining;
             DeltaTime = deltaTime;
             Settings = settings;
         }
@@ -80,6 +82,11 @@ namespace Battle
         public float KnockbackRecastRemaining { get; }
 
         /// <summary>
+        /// 攻撃後ロックアウト残り(秒)
+        /// </summary>
+        public float AttackLockoutRemaining { get; }
+
+        /// <summary>
         /// 今フレームの経過秒
         /// </summary>
         public float DeltaTime { get; }
@@ -105,11 +112,12 @@ namespace Battle
         public float OpponentHpRatio => Opponent.MaxHp > 0 ? (float)Opponent.CurrentHp / Opponent.MaxHp : 0f;
 
         /// <summary>
-        /// ふきとばし可能かガッツとリキャストから判定
+        /// ふきとばし可能かガッツとリキャストと攻撃後ロックアウトから判定
         /// </summary>
         public bool CanUseKnockback =>
             Self != null
             && Self.CanAct
+            && AttackLockoutRemaining <= 0f
             && KnockbackRecastRemaining <= 0f
             && Self.Guts >= Settings.KnockbackGutsCost
             && Distance < MaxDistance - 1e-3f;
