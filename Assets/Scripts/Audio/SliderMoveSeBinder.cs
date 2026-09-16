@@ -1,8 +1,6 @@
 using Audio.Interface;
 using System;
 using UnityEngine;
-using UnityEngine.Events;
-using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace Audio
@@ -43,17 +41,14 @@ namespace Audio
                 return;
             }
 
-            EventTrigger trigger = slider.GetComponent<EventTrigger>();
-            if (trigger == null)
+            // EventTriggerはIDragHandlerを持ちSliderのドラッグを壊しうるため専用Relayを使う
+            SliderPointerCaptureRelay relay = slider.GetComponent<SliderPointerCaptureRelay>();
+            if (relay == null)
             {
-                trigger = slider.gameObject.AddComponent<EventTrigger>();
+                relay = slider.gameObject.AddComponent<SliderPointerCaptureRelay>();
             }
 
-            AddTrigger(trigger, EventTriggerType.PointerDown, () => BeginDrag(slider));
-            AddTrigger(trigger, EventTriggerType.BeginDrag, () => BeginDrag(slider));
-            AddTrigger(trigger, EventTriggerType.PointerUp, EndDrag);
-            AddTrigger(trigger, EventTriggerType.EndDrag, EndDrag);
-            AddTrigger(trigger, EventTriggerType.Cancel, EndDrag);
+            relay.AddListener(() => BeginDrag(slider), EndDrag);
 
             slider.onValueChanged.AddListener(_ =>
             {
@@ -176,13 +171,6 @@ namespace Audio
 
             seService.Stop(trackId);
             isPlaying = false;
-        }
-
-        private static void AddTrigger(EventTrigger trigger, EventTriggerType type, UnityAction action)
-        {
-            var entry = new EventTrigger.Entry { eventID = type };
-            entry.callback.AddListener(_ => action());
-            trigger.triggers.Add(entry);
         }
 
         private sealed class TickHost : MonoBehaviour

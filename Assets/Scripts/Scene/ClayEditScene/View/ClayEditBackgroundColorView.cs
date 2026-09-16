@@ -6,8 +6,6 @@ using R3;
 using Scene.ClayEditScene.Interface;
 using UI.ClayEditor.View;
 using UnityEngine;
-using UnityEngine.Events;
-using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using VContainer;
 
@@ -31,7 +29,6 @@ namespace Scene.ClayEditScene.View
         private ISeService seService;
         private LocalizedBakedTextApplier bakedLabelApplier;
         private SliderMoveSeBinder sliderSeBinder;
-        private bool isCapturingPointer;
         private Texture2D gaugeTexture;
         private Sprite gaugeSprite;
 
@@ -130,13 +127,11 @@ namespace Scene.ClayEditScene.View
 
         private void OnDisable()
         {
-            EndPointerCapture();
             sliderSeBinder?.Stop();
         }
 
         private void OnDestroy()
         {
-            EndPointerCapture();
             sliderSeBinder?.Dispose();
             sliderSeBinder = null;
             if (gaugeSprite != null)
@@ -194,29 +189,22 @@ namespace Scene.ClayEditScene.View
 
         private void BindSliderInputBlock()
         {
-            // EventTriggerはSlider本体のみに付ける
-            // 子へ付けるとIDragHandlerを奪ってスライダーが動かなくなる
-            BindCaptureTriggers(backgroundColorSlider.gameObject);
-        }
-
-        private void BindCaptureTriggers(GameObject target)
-        {
-            if (target == null)
+            if (backgroundColorSlider == null || clayInputProvider == null)
             {
                 return;
             }
 
-            EventTrigger trigger = target.GetComponent<EventTrigger>();
-            if (trigger == null)
+            // EventTriggerはIDragHandlerを持ちSlider操作を壊しうるため専用Relayを使う
+            SliderPointerCaptureRelay relay =
+                backgroundColorSlider.GetComponent<SliderPointerCaptureRelay>();
+            if (relay == null)
             {
-                trigger = target.AddComponent<EventTrigger>();
+                relay = backgroundColorSlider.gameObject.AddComponent<SliderPointerCaptureRelay>();
             }
 
-            AddTrigger(trigger, EventTriggerType.PointerDown, BeginPointerCapture);
-            AddTrigger(trigger, EventTriggerType.BeginDrag, BeginPointerCapture);
-            AddTrigger(trigger, EventTriggerType.PointerUp, EndPointerCapture);
-            AddTrigger(trigger, EventTriggerType.EndDrag, EndPointerCapture);
-            AddTrigger(trigger, EventTriggerType.Cancel, EndPointerCapture);
+            relay.AddListener(
+                clayInputProvider.BeginUiPointerCapture,
+                clayInputProvider.EndUiPointerCapture);
         }
 
         private void BindSliderMoveSe()
@@ -229,35 +217,6 @@ namespace Scene.ClayEditScene.View
 
             sliderSeBinder = new SliderMoveSeBinder(seService, SeTrackId.ClayEditSlider);
             sliderSeBinder.Attach(backgroundColorSlider);
-        }
-
-        private static void AddTrigger(EventTrigger trigger, EventTriggerType type, UnityAction action)
-        {
-            var entry = new EventTrigger.Entry { eventID = type };
-            entry.callback.AddListener(_ => action());
-            trigger.triggers.Add(entry);
-        }
-
-        private void BeginPointerCapture()
-        {
-            if (isCapturingPointer || clayInputProvider == null)
-            {
-                return;
-            }
-
-            isCapturingPointer = true;
-            clayInputProvider.BeginUiPointerCapture();
-        }
-
-        private void EndPointerCapture()
-        {
-            if (!isCapturingPointer || clayInputProvider == null)
-            {
-                return;
-            }
-
-            isCapturingPointer = false;
-            clayInputProvider.EndUiPointerCapture();
         }
 
         private void ApplySliderValue(float value)

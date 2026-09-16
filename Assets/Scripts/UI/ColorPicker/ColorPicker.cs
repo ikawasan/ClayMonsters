@@ -4,7 +4,6 @@ using R3;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using VContainer;
 
@@ -281,24 +280,14 @@ namespace UI.ColorPicker
                 return;
             }
 
-            EventTrigger trigger = slider.GetComponent<EventTrigger>();
-            if (trigger == null)
+            // EventTriggerはIDragHandlerを持ちペイント後にSliderが操作不能になるため使わない
+            SliderPointerCaptureRelay relay = slider.GetComponent<SliderPointerCaptureRelay>();
+            if (relay == null)
             {
-                trigger = slider.gameObject.AddComponent<EventTrigger>();
+                relay = slider.gameObject.AddComponent<SliderPointerCaptureRelay>();
             }
 
-            AddTrigger(trigger, EventTriggerType.PointerDown, onBegin);
-            AddTrigger(trigger, EventTriggerType.BeginDrag, onBegin);
-            AddTrigger(trigger, EventTriggerType.PointerUp, onEnd);
-            AddTrigger(trigger, EventTriggerType.EndDrag, onEnd);
-            AddTrigger(trigger, EventTriggerType.Cancel, onEnd);
-        }
-
-        private static void AddTrigger(EventTrigger trigger, EventTriggerType type, Action action)
-        {
-            var entry = new EventTrigger.Entry { eventID = type };
-            entry.callback.AddListener(_ => action());
-            trigger.triggers.Add(entry);
+            relay.AddListener(onBegin, onEnd);
         }
 
         private void ApplyVisualStyles()
@@ -378,10 +367,18 @@ namespace UI.ColorPicker
                 {
                     existingMask.showMaskGraphic = false;
                     contentImage.maskable = true;
+                    // 再適用時にraycastを落とすとスライダートラックが操作不能になる
+                    Image existingMaskImage = currentParent.GetComponent<Image>();
                     EnsureSlicedRoundedSprite(
-                        currentParent.GetComponent<Image>(),
+                        existingMaskImage,
                         maskSpriteName,
                         Color.white);
+                    if (existingMaskImage != null)
+                    {
+                        existingMaskImage.raycastTarget = true;
+                    }
+
+                    contentImage.raycastTarget = false;
                     return;
                 }
             }
