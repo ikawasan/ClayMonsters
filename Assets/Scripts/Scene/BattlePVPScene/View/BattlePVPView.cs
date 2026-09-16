@@ -6,6 +6,7 @@ using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.UI;
 
 namespace Scene.BattlePVPScene.View
 {
@@ -66,6 +67,7 @@ namespace Scene.BattlePVPScene.View
         private void Awake()
         {
             ValidateRequiredLabels();
+            EnsurePanelsBlockBehindInput();
             CaptureSceneLabelOriginals();
             ApplyLocalizedLabels();
         }
@@ -84,6 +86,38 @@ namespace Scene.BattlePVPScene.View
                     "[BattlePVPView] lobbyTitleTextが未配線ですPvpLobbyHostで接続してください",
                     this);
             }
+        }
+
+        /// <summary>
+        /// 全画面パネルのImageで背面Title入力を遮断する
+        /// </summary>
+        private void EnsurePanelsBlockBehindInput()
+        {
+            EnsurePanelBlocksRaycasts(modeSelectPanel, "modeSelectPanel");
+            EnsurePanelBlocksRaycasts(directMatchPanel, "directMatchPanel");
+            EnsurePanelBlocksRaycasts(randomMatchPanel, "randomMatchPanel");
+            EnsurePanelBlocksRaycasts(matchingPanel, "matchingPanel");
+        }
+
+        private void EnsurePanelBlocksRaycasts(GameObject panel, string panelName)
+        {
+            if (panel == null)
+            {
+                Debug.LogError(
+                    $"[BattlePVPView] {panelName}が未配線です背面入力を防げません",
+                    this);
+                return;
+            }
+
+            if (!panel.TryGetComponent(out Image image))
+            {
+                Debug.LogError(
+                    $"[BattlePVPView] {panelName}にImageがありません背面入力を防げません",
+                    panel);
+                return;
+            }
+
+            image.raycastTarget = true;
         }
 
         /// <inheritdoc/>

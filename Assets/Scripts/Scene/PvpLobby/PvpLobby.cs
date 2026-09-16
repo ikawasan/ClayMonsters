@@ -1,3 +1,4 @@
+using Extensions;
 using Scene.BattlePVPScene.Interface;
 using Scene.PvpLobby.Interface;
 using Scene.PvpLobby.Presenter;
@@ -11,12 +12,15 @@ namespace Scene.PvpLobby
     /// </summary>
     public sealed class PvpLobby : MonoBehaviour
     {
+        private const int MatchmakingCanvasSortingOrder = 500;
+
         [SerializeField] private GameObject uiRoot;
 
         private IPvpLobbyRegistry registry;
         private IPvpLobbyPresenter presenter;
         private IBattlePvpMatchmakingService matchmakingService;
         private bool isInitialized;
+        private Canvas matchmakingCanvas;
 
         [Inject]
         public void Construct(
@@ -36,7 +40,7 @@ namespace Scene.PvpLobby
                 uiRoot = gameObject;
             }
 
-            uiRoot.SetActive(false);
+            SetMatchmakingCanvasVisible(false);
         }
 
         /// <summary>
@@ -45,7 +49,8 @@ namespace Scene.PvpLobby
         public void ConfigureForRuntime(GameObject root)
         {
             uiRoot = root;
-            uiRoot.SetActive(false);
+            matchmakingCanvas = null;
+            SetMatchmakingCanvasVisible(false);
         }
 
         private void Start()
@@ -65,7 +70,7 @@ namespace Scene.PvpLobby
 
             EnsureUiRoot();
             InitializeIfNeeded();
-            uiRoot.SetActive(true);
+            SetMatchmakingCanvasVisible(true);
             presenter?.OnShow();
         }
 
@@ -76,10 +81,7 @@ namespace Scene.PvpLobby
         {
             EnsureUiRoot();
             presenter?.OnHide();
-            if (uiRoot != null)
-            {
-                uiRoot.SetActive(false);
-            }
+            SetMatchmakingCanvasVisible(false);
         }
 
         private void EnsureUiRoot()
@@ -91,6 +93,41 @@ namespace Scene.PvpLobby
 
             Transform canvasTransform = transform.Find("MatchmakingCanvas");
             uiRoot = canvasTransform != null ? canvasTransform.gameObject : gameObject;
+            matchmakingCanvas = null;
+        }
+
+        private void SetMatchmakingCanvasVisible(bool visible)
+        {
+            EnsureUiRoot();
+            if (uiRoot == null)
+            {
+                return;
+            }
+
+            if (matchmakingCanvas == null)
+            {
+                matchmakingCanvas = uiRoot.GetComponent<Canvas>();
+            }
+
+            if (matchmakingCanvas == null)
+            {
+                Debug.LogError(
+                    "[PvpLobby] MatchmakingCanvasのCanvasがありません",
+                    this);
+                uiRoot.SetActive(visible);
+                return;
+            }
+
+            if (visible)
+            {
+                CanvasVisibilityUtility.SetCanvasEnabled(
+                    matchmakingCanvas,
+                    true,
+                    MatchmakingCanvasSortingOrder);
+                return;
+            }
+
+            CanvasVisibilityUtility.SetCanvasEnabled(matchmakingCanvas, false);
         }
 
         private void InitializeIfNeeded()

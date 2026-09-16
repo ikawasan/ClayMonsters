@@ -211,6 +211,8 @@ namespace UI.ClayEditor.View
             selectedSlot = -1;
             isSelectionVisible = true;
             SetConfirmVisible(false);
+            // 展示室保存直後など他画面の書込を一覧へ反映する
+            saveService?.Reload();
             Canvas canvas = GetComponent<Canvas>();
             if (canvas != null)
             {

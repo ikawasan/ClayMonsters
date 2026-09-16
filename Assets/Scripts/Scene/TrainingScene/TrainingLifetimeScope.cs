@@ -4,8 +4,6 @@ using Camera.Presenter;
 using Camera.View;
 using Extensions;
 using SaveData;
-using SaveData.Interface;
-using SaveData.Service;
 using Scene.BattleNpcScene;
 using Scene.BattleNpcScene.View;
 using Scene.Core;
@@ -141,10 +139,6 @@ namespace Scene.TrainingScene
             VContainerComponentRegistration.RegisterComponent(builder, classroomLighting, ScopeTag);
             builder.Register<BattleCanvasTransition>(Lifetime.Singleton).As<IBattleCanvasTransition>();
             builder.RegisterComponentInHierarchy<BattleStartOverlayView>();
-
-            builder.Register<ClayModelSaveService>(Lifetime.Singleton).As<IClayModelSaveService>();
-            builder.Register<ClayModelGltfImporter>(Lifetime.Singleton).As<IClayModelImporter>();
-            builder.Register<ClayModelGltfExporter>(Lifetime.Singleton).As<IClayModelExporter>();
         }
 
         private TrainingScene ConsolidateTrainingSceneRoots()

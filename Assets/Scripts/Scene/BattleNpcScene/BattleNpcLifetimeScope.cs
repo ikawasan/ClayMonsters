@@ -3,8 +3,6 @@ using Camera.Model;
 using Camera.Presenter;
 using Camera.View;
 using SaveData;
-using SaveData.Interface;
-using SaveData.Service;
 using Scene.BattleNpcScene.Tournament;
 using Scene.BattleNpcScene.View;
 using Scene.BattlePVPScene.View;
@@ -77,9 +75,6 @@ namespace Scene.BattleNpcScene
             builder.Register<BattleCanvasTransition>(Lifetime.Singleton).As<IBattleCanvasTransition>();
             builder.RegisterComponentInHierarchy<BattleStartOverlayView>();
 
-            builder.Register<ClayModelSaveService>(Lifetime.Singleton).As<IClayModelSaveService>();
-            builder.Register<ClayModelGltfImporter>(Lifetime.Singleton).As<IClayModelImporter>();
-            builder.Register<ClayModelGltfExporter>(Lifetime.Singleton).As<IClayModelExporter>();
             builder.RegisterComponent(loadSlotView);
         }
 

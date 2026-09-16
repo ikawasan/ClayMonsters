@@ -6,6 +6,7 @@ using Cysharp.Threading.Tasks;
 using Lighthouse.Scene;
 using R3;
 using SaveData;
+using SaveData.Interface;
 using Scene.ClayEditScene.Interface;
 using Scene.Core.Interface;
 using System;
@@ -30,6 +31,7 @@ namespace Scene.ClayEditScene.Presenter
         private ClayHistoryManager historyManager;
         private ClayPaintHistoryManager paintHistoryManager;
         private ClayPainter clayPainter;
+        private IClayModelSaveService saveService;
 
         private readonly CompositeDisposable disposables = new();
 
@@ -46,7 +48,8 @@ namespace Scene.ClayEditScene.Presenter
             ClayEditSessionContext sessionContext,
             ClayHistoryManager historyManager,
             ClayPaintHistoryManager paintHistoryManager,
-            ClayPainter clayPainter)
+            ClayPainter clayPainter,
+            IClayModelSaveService saveService)
         {
             this.sceneManager = sceneManager;
             this.clayEditView = clayEditView;
@@ -60,6 +63,7 @@ namespace Scene.ClayEditScene.Presenter
             this.historyManager = historyManager;
             this.paintHistoryManager = paintHistoryManager;
             this.clayPainter = clayPainter;
+            this.saveService = saveService;
         }
 
         void IClayEditPresenter.Setup()
@@ -117,6 +121,8 @@ namespace Scene.ClayEditScene.Presenter
 
         void IClayEditPresenter.OnEnter()
         {
+            // 展示室など他画面の保存を入場時に取り込む
+            saveService?.Reload();
             clayEditView.Inisialize();
             sessionContext.Reset();
             remakeLoadSlotView.Hide();

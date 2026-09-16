@@ -1,8 +1,5 @@
 using Camera.Model;
 using Camera.View;
-using SaveData;
-using SaveData.Interface;
-using SaveData.Service;
 using Scene.DesktopPet;
 using Scene.DesktopPet.Interface;
 using Scene.TitleScene.Interface;
@@ -147,10 +144,6 @@ namespace Scene.TitleScene
             }
 
             builder.RegisterComponent(titleSceneCamera);
-
-            builder.Register<ClayModelSaveService>(Lifetime.Singleton).As<IClayModelSaveService>();
-            builder.Register<ClayModelGltfImporter>(Lifetime.Singleton).As<IClayModelImporter>();
-            builder.Register<ClayModelGltfExporter>(Lifetime.Singleton).As<IClayModelExporter>();
         }
     }
 }

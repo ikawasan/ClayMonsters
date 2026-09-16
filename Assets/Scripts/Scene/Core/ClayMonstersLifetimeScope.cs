@@ -10,6 +10,8 @@ using LighthouseExtends.UIComponent.CanvasSceneObject;
 using LighthouseExtends.UIComponent.InputBlocker;
 using Localization;
 using SampleProduct.Core;
+using SaveData;
+using SaveData.Interface;
 using SaveData.Service;
 using Scene.Core.View;
 using Scene.PvpLobby;
@@ -30,11 +32,11 @@ namespace Scene.Core
         [SerializeField] LHCanvasSceneObject canvasSceneObjectPrefab;
         [SerializeField] LHInputBlocker inputBlockerPrefab;
 
-        // ƒV[ƒ“‘JˆÚ‚ÌƒtƒF[ƒh—pƒI[ƒo[ƒŒƒC(FEŠÔ‚Í‚±‚ÌƒvƒŒƒnƒu‚ÌSceneFadeView‚Åİ’è)
+        // ã‚·ãƒ¼ãƒ³é·ç§»æ™‚ã®ãƒ•ã‚§ãƒ¼ãƒ‰ç”¨ã‚ªãƒ¼ãƒãƒ¼ãƒ¬ã‚¤(è‰²ãƒ»æ™‚é–“ã¯ã“ã®ãƒ—ãƒ¬ãƒãƒ–ã®SceneFadeViewã§è¨­å®š)
         [SerializeField] SceneFadeView sceneFadePrefab;
 
         [Header("Global Settings")]
-        // ƒAƒvƒŠ‘S‘Ì‚Åí’“‚³‚¹‚éƒIƒvƒVƒ‡ƒ“‰æ–Ê‚ÌƒvƒŒƒnƒu
+        // ã‚¢ãƒ—ãƒªå…¨ä½“ã§å¸¸é§ã•ã›ã‚‹ã‚ªãƒ—ã‚·ãƒ§ãƒ³ç”»é¢ã®ãƒ—ãƒ¬ãƒãƒ–
         [SerializeField] OptionView optionViewPrefab;
         [SerializeField] SupportedLanguageSettings supportedLanguageSettings;
         [SerializeField] LanguageFontSettings languageFontSettings;
@@ -45,13 +47,13 @@ namespace Scene.Core
         [SerializeField] UiSoundSettings uiSoundSettings;
 
         /// <summary>
-        /// PvpLobbyHost‚Ì—\”õƒvƒŒƒnƒu
+        /// PvpLobbyHostã®äºˆå‚™ãƒ—ãƒ¬ãƒãƒ–
         /// </summary>
         public GameObject PvpLobbyHostPrefab => pvpLobbyHostPrefab;
 
         protected override void Configure(IContainerBuilder builder)
         {
-            // ƒGƒ“ƒgƒŠ[ƒ|ƒCƒ“ƒg‚ÆŠî–{İ’è‚Ì“o˜^
+            // ã‚¨ãƒ³ãƒˆãƒªãƒ¼ãƒã‚¤ãƒ³ãƒˆã¨åŸºæœ¬è¨­å®šã®ç™»éŒ²
             builder.RegisterEntryPoint<ClayMonstersEntryPoint>();
             builder.RegisterInstance(clayMonstersLifetimeScopeSettings);
 
@@ -66,10 +68,14 @@ namespace Scene.Core
             builder.Register<NpcTournamentProgressService>(Lifetime.Singleton).AsImplementedInterfaces();
             builder.Register<PointsService>(Lifetime.Singleton).AsImplementedInterfaces();
             builder.Register<SkillTreeService>(Lifetime.Singleton).AsImplementedInterfaces();
+            // å±•ç¤ºå®¤ä¿å­˜ã¨ClayEditä½œã‚Šç›´ã—ã§åŒä¸€ã‚­ãƒ£ãƒƒã‚·ãƒ¥ã‚’å…±æœ‰ã™ã‚‹
+            builder.Register<ClayModelGltfImporter>(Lifetime.Singleton).As<IClayModelImporter>();
+            builder.Register<ClayModelGltfExporter>(Lifetime.Singleton).As<IClayModelExporter>();
+            builder.Register<ClayModelSaveService>(Lifetime.Singleton).As<IClayModelSaveService>();
             builder.RegisterComponent(optionViewPrefab).AsImplementedInterfaces();
             builder.Register<OptionPresenter>(Lifetime.Singleton).AsImplementedInterfaces();
 
-            // Lighthouse ƒRƒAƒVƒXƒeƒ€‚Ì“o˜^
+            // Lighthouse ã‚³ã‚¢ã‚·ã‚¹ãƒ†ãƒ ã®ç™»éŒ²
             builder.Register<SceneManager>(Lifetime.Singleton).AsImplementedInterfaces();
             builder.Register<ClayMonstersSceneManager>(Lifetime.Singleton).AsImplementedInterfaces();
             builder.Register<SceneTransitionController>(Lifetime.Singleton).AsImplementedInterfaces();
@@ -87,11 +93,11 @@ namespace Scene.Core
                 .As<IPvpLobby>()
                 .As<IPvpSessionController>();
 
-            // Lighthouse‚ÌUIE“ü—Í§Œä—p‚ÌƒvƒŒƒnƒu“o˜^
+            // Lighthouseã®UIãƒ»å…¥åŠ›åˆ¶å¾¡ç”¨ã®ãƒ—ãƒ¬ãƒãƒ–ç™»éŒ²
             builder.RegisterComponentInNewPrefab(canvasSceneObjectPrefab, Lifetime.Singleton).DontDestroyOnLoad().AsImplementedInterfaces();
             builder.RegisterComponentInNewPrefab(inputBlockerPrefab, Lifetime.Singleton).DontDestroyOnLoad().AsImplementedInterfaces();
 
-            // ƒV[ƒ“‘JˆÚƒtƒF[ƒh—pƒI[ƒo[ƒŒƒC‚Ì“o˜^(í’“)
+            // ã‚·ãƒ¼ãƒ³é·ç§»ãƒ•ã‚§ãƒ¼ãƒ‰ç”¨ã‚ªãƒ¼ãƒãƒ¼ãƒ¬ã‚¤ã®ç™»éŒ²(å¸¸é§)
             builder.RegisterComponentInNewPrefab(sceneFadePrefab, Lifetime.Singleton).DontDestroyOnLoad().AsImplementedInterfaces();
         }
 
@@ -100,7 +106,7 @@ namespace Scene.Core
             if (supportedLanguageSettings == null)
             {
                 Debug.LogError(
-                    "[ClayMonstersLifetimeScope] supportedLanguageSettings‚ª–¢”zü‚Å‚·",
+                    "[ClayMonstersLifetimeScope] supportedLanguageSettingsãŒæœªé…ç·šã§ã™",
                     this);
             }
             else
@@ -111,7 +117,7 @@ namespace Scene.Core
             if (languageFontSettings == null)
             {
                 Debug.LogError(
-                    "[ClayMonstersLifetimeScope] languageFontSettings‚ª–¢”zü‚Å‚·",
+                    "[ClayMonstersLifetimeScope] languageFontSettingsãŒæœªé…ç·šã§ã™",
                     this);
             }
             else

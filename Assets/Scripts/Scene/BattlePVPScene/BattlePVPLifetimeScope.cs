@@ -4,8 +4,6 @@ using Camera.Presenter;
 using Camera.View;
 using Extensions;
 using SaveData;
-using SaveData.Interface;
-using SaveData.Service;
 using Scene.BattleNpcScene;
 using Scene.BattleNpcScene.Presenter;
 using Scene.BattleNpcScene.View;
@@ -115,9 +113,6 @@ namespace Scene.BattlePVPScene
             builder.Register<MonsterSelectionSession>(Lifetime.Singleton).AsImplementedInterfaces();
             RegisterOverlayFromSceneRoot(builder);
 
-            builder.Register<ClayModelSaveService>(Lifetime.Singleton).As<IClayModelSaveService>();
-            builder.Register<ClayModelGltfImporter>(Lifetime.Singleton).As<IClayModelImporter>();
-            builder.Register<ClayModelGltfExporter>(Lifetime.Singleton).As<IClayModelExporter>();
             VContainerComponentRegistration.RegisterComponent(builder, loadSlotView, ScopeTag);
 
             VContainerComponentRegistration.RegisterComponent(builder, networkManager, ScopeTag);
