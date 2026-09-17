@@ -143,10 +143,12 @@ namespace Scene.ClayEditScene.View
             {
                 if (pair.Key != null)
                 {
+                    // 非表示時と同じくRaycaster込みで戻す
                     CanvasVisibilityUtility.SetCanvasEnabled(pair.Key, pair.Value);
                 }
             }
 
+            cachedCanvasVisible.Clear();
             isCanvasesHidden = false;
         }
     }

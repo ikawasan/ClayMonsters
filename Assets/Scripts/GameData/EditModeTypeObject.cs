@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace GameData
 {
@@ -20,9 +21,32 @@ namespace GameData
                 obj.SetActive(isActive);
             }
 
+            bool visible = isActive && enableUi;
             foreach (var ui in editModeUI)
             {
-                ui.enabled = isActive && enableUi;
+                SetCanvasEnabled(ui, visible);
+            }
+        }
+
+        // UI非表示ゲートはGraphicRaycasterも落とすためCanvas.enabledだけでは操作が戻らない
+        private static void SetCanvasEnabled(Canvas canvas, bool visible)
+        {
+            if (canvas == null)
+            {
+                return;
+            }
+
+            if (visible && !canvas.gameObject.activeSelf)
+            {
+                canvas.gameObject.SetActive(true);
+            }
+
+            canvas.enabled = visible;
+
+            GraphicRaycaster raycaster = canvas.GetComponent<GraphicRaycaster>();
+            if (raycaster != null)
+            {
+                raycaster.enabled = visible;
             }
         }
     }

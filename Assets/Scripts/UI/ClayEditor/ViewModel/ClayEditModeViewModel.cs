@@ -36,8 +36,15 @@ namespace UI.ClayEditor.ViewModel
         /// </summary>
         public ReadOnlyReactiveProperty<bool> IsEditorUiHidden => isEditorUiHidden;
 
+        /// <summary>
+        /// 編集UI非表示が解除された直後
+        /// Canvas復元のあとにモード別UIを付け直すために使う
+        /// </summary>
+        public Observable<Unit> OnEditorUiUnhidden => onEditorUiUnhidden;
+
         private readonly ReactiveProperty<bool> isGuideVisible = new(false);
         private readonly ReactiveProperty<bool> isEditorUiHidden = new(false);
+        private readonly Subject<Unit> onEditorUiUnhidden = new();
 
         [Inject]
         public ClayEditModeViewModel(IClaySceneContext context, ClayAutoRigController autoRigController, ClayVoxelEngine engine)
@@ -68,6 +75,14 @@ namespace UI.ClayEditor.ViewModel
         public void SetEditorUiHidden(bool hidden)
         {
             isEditorUiHidden.Value = hidden;
+        }
+
+        /// <summary>
+        /// Canvas復元後にモード別UIの再適用を通知する
+        /// </summary>
+        public void NotifyEditorUiUnhidden()
+        {
+            onEditorUiUnhidden.OnNext(Unit.Default);
         }
 
         /// <summary>
@@ -109,6 +124,7 @@ namespace UI.ClayEditor.ViewModel
         {
             isGuideVisible.Dispose();
             isEditorUiHidden.Dispose();
+            onEditorUiUnhidden.Dispose();
             disposables.Dispose();
         }
     }

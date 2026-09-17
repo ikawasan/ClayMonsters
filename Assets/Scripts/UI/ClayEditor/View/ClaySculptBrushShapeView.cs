@@ -1,4 +1,5 @@
 using ClayEditor;
+using Extensions;
 using GameData;
 using R3;
 using System;
@@ -128,10 +129,7 @@ namespace UI.ClayEditor.View
 
         private void SetCanvasVisible(bool isVisible)
         {
-            if (canvas != null)
-            {
-                canvas.enabled = isVisible;
-            }
+            CanvasVisibilityUtility.SetCanvasEnabled(canvas, isVisible);
         }
     }
 }

@@ -61,8 +61,16 @@ namespace UI.ClayEditor.View
             Observable.CombineLatest(
                     viewModel.CurrentMode,
                     viewModel.HasModel,
-                    (mode, hasModel) => (mode, hasModel))
+                    viewModel.IsEditorUiHidden,
+                    (mode, hasModel, _) => (mode, hasModel))
                 .Subscribe(state => UpdateModeObjects(state.mode, state.hasModel))
+                .AddTo(this);
+
+            // UI非表示解除後はゲート復元のあとに必ずモード別Canvasを付け直す
+            viewModel.OnEditorUiUnhidden
+                .Subscribe(_ => UpdateModeObjects(
+                    viewModel.CurrentMode.CurrentValue,
+                    viewModel.HasModel.CurrentValue))
                 .AddTo(this);
         }
 

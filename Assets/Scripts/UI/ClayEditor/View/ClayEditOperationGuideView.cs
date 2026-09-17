@@ -39,10 +39,7 @@ namespace UI.ClayEditor.View
         {
             // シーン上Activeな説明パネルが入場直後に出ないよう先に隠す
             HideGuidePanels();
-            if (canvas != null)
-            {
-                canvas.enabled = false;
-            }
+            CanvasVisibilityUtility.SetCanvasEnabled(canvas, false);
         }
 
         private void OnEnable()
@@ -260,7 +257,7 @@ namespace UI.ClayEditor.View
         private void UpdateVisibility(EditModeType mode, bool hasModel, bool visible)
         {
             bool inTargetMode = hasModel && (mode is EditModeType.Clay or EditModeType.Paint);
-            canvas.enabled = inTargetMode;
+            CanvasVisibilityUtility.SetCanvasEnabled(canvas, inTargetMode);
 
             bool showText = inTargetMode && visible;
             clayGuidePanel.SetActive(showText && mode == EditModeType.Clay);

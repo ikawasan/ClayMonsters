@@ -63,6 +63,7 @@ namespace Scene.ClayEditScene.View
             if (editorUiGate != null && canvas != null)
             {
                 editorUiGate.SetEditorCanvasesVisible(true, canvas);
+                viewModel?.NotifyEditorUiUnhidden();
             }
         }
 
@@ -93,10 +94,15 @@ namespace Scene.ClayEditScene.View
         private void UpdateVisibility(EditModeType mode, bool hasModel, bool hidden)
         {
             bool inTargetMode = hasModel && (mode is EditModeType.Clay or EditModeType.Paint);
-            canvas.enabled = inTargetMode;
+            CanvasVisibilityUtility.SetCanvasEnabled(canvas, inTargetMode);
 
             bool showOtherUi = inTargetMode == false || hidden == false;
             editorUiGate.SetEditorCanvasesVisible(showOtherUi, canvas);
+            if (showOtherUi)
+            {
+                // 復元キャッシュは隠した時点のモード依存値のため現モードで付け直す
+                viewModel.NotifyEditorUiUnhidden();
+            }
         }
     }
 }
